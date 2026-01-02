@@ -1,0 +1,1563 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tirumakudalu Properties - Premium Real Estate Solutions</title>
+    <link rel="icon" type="image/png" href="/images/TirumakudaluProperties_Logo-2048x1858.png">
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <!-- Top Bar -->
+    <div class="top-bar">
+        <div class="container">
+            <div class="top-bar-content">
+                <div class="top-bar-left">
+                    <a href="tel:+919741111756"><i class="fas fa-phone"></i> +91 97411 11756</a>
+                    <a href="mailto:info@tirumakudaluproperties.com"><i class="fas fa-envelope"></i> info@tirumakudaluproperties.com</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="container">
+            <div class="nav-wrapper">
+                <div class="logo">
+                    <a href="#home" class="logo-link">
+                        <div class="logo-graphic">
+                            <img src="/images/TirumakudaluProperties_Logo-2048x1858.png" alt="Tirumakudalu Properties Logo" class="logo-img">
+                        </div>
+                    </a>
+                </div>
+                <ul class="nav-menu" id="navMenu">
+                    <li><a href="/index.html" class="active">HOME</a></li>
+                    <li><a href="/properties.html">PROPERTIES</a></li>
+                </ul>
+                <div class="nav-search">
+                    <div class="nav-search-wrapper">
+                        <i class="fas fa-search nav-search-icon"></i>
+                        <input 
+                            type="text" 
+                            id="navSearchInput" 
+                            class="nav-search-input" 
+                            placeholder="Search properties..."
+                            autocomplete="off"
+                        >
+                        <button type="button" class="nav-search-clear" id="navSearchClear" style="display: none;">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="nav-actions">
+                    <button class="btn-login" id="loginBtn">
+                        <i class="fas fa-user"></i>
+                        <span>LOGIN</span>
+                    </button>
+                </div>
+                <div class="nav-toggle" id="navToggle">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section - Split Layout -->
+    <section class="hero" id="home">
+        <div class="hero-split-container">
+            <!-- Left Panel - Text Content -->
+            <div class="hero-left-panel">
+                <div class="hero-left-content">
+                    <h1 class="hero-main-heading">
+                        <span class="hero-heading-line">TIRUMAKUDALU</span>
+                        <span class="hero-heading-line">PROPERTIES</span>
+                        <span class="hero-heading-line">PREMIUM</span>
+                        <span class="hero-heading-line">REAL ESTATE</span>
+                        <span class="hero-heading-line">SOLUTIONS</span>
+                    </h1>
+                    <p class="hero-sub-heading">YOUR TRUSTED PARTNER IN PROPERTY INVESTMENT & RENTAL SERVICES.</p>
+                    <div class="hero-scroll-indicator">
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Right Panel - Image Collage -->
+            <div class="hero-right-panel">
+                <div class="hero-image-collage">
+                    <div class="hero-image-section hero-image-top">
+                        <div class="hero-image-wrapper">
+                            <img src="/images/img1.jpg" alt="Modern Apartment">
+                        </div>
+                        <div class="diagonal-separator separator-top"></div>
+                    </div>
+                    <div class="hero-image-section hero-image-middle">
+                        <div class="hero-image-wrapper">
+                            <img src="/images/img2.jpg" alt="Interior Design">
+                        </div>
+                        <div class="diagonal-separator separator-middle"></div>
+                    </div>
+                    <div class="hero-image-section hero-image-bottom">
+                        <div class="hero-image-wrapper">
+                            <img src="/images/img3.jpg" alt="Luxury Property">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Main Search Bar -->
+    <section class="properties-section">
+        <div class="container">
+            <!-- Filters and Search -->
+            <div class="properties-filters">
+                <!-- Category Filter with Subcategories -->
+                <div class="filter-section category-section-centered">
+                    <div class="category-main-buttons">
+                        <button type="button" class="category-text-button" data-category="residential" id="filterResidential">Residential</button>
+                        <span class="category-divider">|</span>
+                        <button type="button" class="category-text-button" data-category="commercial" id="filterCommercial">Commercial</button>
+                    </div>
+                    <div class="category-subcategories-container">
+                        <div class="subcategory-buttons" data-category="residential">
+                            <button type="button" class="filter-button subcategory-button" data-property-type="plots" data-parent-category="residential" id="filterPlots">Plots</button>
+                            <button type="button" class="filter-button subcategory-button" data-property-type="house" data-parent-category="residential" id="filterIndividualHouse">Individual House</button>
+                            <button type="button" class="filter-button subcategory-button" data-property-type="villa" data-parent-category="residential" id="filterVillas">Villas</button>
+                            <button type="button" class="filter-button subcategory-button" data-property-type="row-house" data-parent-category="residential" id="filterRowHouses">Row Houses</button>
+                        </div>
+                        <div class="subcategory-buttons" data-category="commercial">
+                            <button type="button" class="filter-button subcategory-button" data-property-type="office-space" data-parent-category="commercial" id="filterOfficeSpace">Office Space</button>
+                            <button type="button" class="filter-button subcategory-button" data-property-type="warehouse" data-parent-category="commercial" id="filterWarehouse">Warehouse</button>
+                            <button type="button" class="filter-button subcategory-button" data-property-type="showrooms" data-parent-category="commercial" id="filterShowrooms">Showrooms</button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Advanced Search Form -->
+                <div class="properties-search">
+                    <form class="search-form" id="propertiesSearchForm">
+                        <div class="search-row">
+                            <div class="search-group">
+                                <label><i class="fas fa-map-marker-alt"></i> City</label>
+                                <input type="text" id="searchCity" placeholder="Enter city">
+                            </div>
+                            <div class="search-group">
+                                <label><i class="fas fa-map-marker-alt"></i> Area</label>
+                                <input type="text" id="searchArea" placeholder="Enter area">
+                            </div>
+                            <div class="search-group">
+                                <label><i class="fas fa-ruler-combined"></i> Dimensions</label>
+                                <input type="text" id="searchDimensions" placeholder="e.g., 30x40, 50x80">
+                            </div>
+                            <div class="search-group">
+                                <label><i class="fas fa-dollar-sign"></i> Price Range</label>
+                                <select id="searchPrice">
+                                    <option value="">Any Price</option>
+                                    <option value="0-300000">Under ₹300K</option>
+                                    <option value="300000-500000">₹300K - ₹500K</option>
+                                    <option value="500000-800000">₹500K - ₹800K</option>
+                                    <option value="800000-1200000">₹800K - ₹1.2M</option>
+                                    <option value="1200000-">₹1.2M+</option>
+                                </select>
+                            </div>
+                            <div class="search-group">
+                                <label><i class="fas fa-check-circle"></i> Property Condition</label>
+                                <select id="searchPropertyCondition">
+                                    <option value="">Any Condition</option>
+                                    <option value="new">New</option>
+                                    <option value="resale">Resale</option>
+                                </select>
+                            </div>
+                            <div class="search-group">
+                                <label><i class="fas fa-exchange-alt"></i> Transaction Type</label>
+                                <select id="searchTransactionType">
+                                    <option value="all">All Properties</option>
+                                    <option value="sale">Buy</option>
+                                    <option value="rent">Rent</option>
+                                </select>
+                            </div>
+                            <div class="search-group">
+                                <label><i class="fas fa-home"></i> Unit Type</label>
+                                <select id="searchUnitType">
+                                    <option value="">Any Unit Type</option>
+                                    <option value="rk" data-bhk="0">1RK</option>
+                                    <option value="bhk" data-bhk="1">1BHK</option>
+                                    <option value="bhk" data-bhk="2">2BHK</option>
+                                    <option value="bhk" data-bhk="3">3BHK</option>
+                                    <option value="4plus" data-bhk="4">4+BHK</option>
+                                </select>
+                            </div>
+                            <div class="search-group">
+                                <button type="submit" class="btn-search">
+                                    <i class="fas fa-filter"></i>
+                                    <span>Filter</span>
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                
+                <!-- Active Filter Tags -->
+                <div class="filter-tags-container" id="filterTagsContainer" style="display: none;">
+                    <div class="filter-tags-header">
+                        <span class="filter-tags-label">Active Filters:</span>
+                        <button type="button" class="clear-all-filters" id="clearAllFilters">
+                            <i class="fas fa-times-circle"></i> Clear All
+                        </button>
+                    </div>
+                    <div class="filter-tags" id="filterTags">
+                        <!-- Filter tags will be rendered here by JavaScript -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Property Types -->
+    <section class="property-types">
+        <div class="container">
+            <div class="section-header">
+                <h2>Browse by Property Type</h2>
+                <p>Explore our diverse range of premium properties</p>
+            </div>
+            <div class="types-grid">
+                <div class="type-card" data-type="apartment">
+                    <div class="type-icon">
+                        <i class="fas fa-building"></i>
+                    </div>
+                    <h3>Apartments</h3>
+                    <p class="type-count">0 Properties</p>
+                </div>
+                <div class="type-card" data-type="house">
+                    <div class="type-icon">
+                        <i class="fas fa-home"></i>
+                    </div>
+                    <h3>Houses</h3>
+                    <p class="type-count">0 Properties</p>
+                </div>
+                <div class="type-card" data-type="villa">
+                    <div class="type-icon">
+                        <i class="fas fa-igloo"></i>
+                    </div>
+                    <h3>Villas</h3>
+                    <p class="type-count">0 Properties</p>
+                </div>
+                <div class="type-card" data-type="condo">
+                    <div class="type-icon">
+                        <i class="fas fa-city"></i>
+                    </div>
+                    <h3>Condos</h3>
+                    <p class="type-count">0 Properties</p>
+                </div>
+                <div class="type-card" data-type="townhouse">
+                    <div class="type-icon">
+                        <i class="fas fa-warehouse"></i>
+                    </div>
+                    <h3>Townhouses</h3>
+                    <p class="type-count">0 Properties</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- About Section -->
+    <section class="about-compact" id="about">
+        <div class="container">
+            <div class="section-header">
+                <h2>About Us</h2>
+                <p>Reputable & Experienced Property Management & Real Estate Firm in Bengaluru</p>
+            </div>
+            
+            <div class="about-compact-content">
+                <!-- Introduction -->
+                <div class="about-intro-compact">
+                    <p class="about-intro-text">Tirumakudalu Properties is the place to be! With over ten years of experience in property-related services, we have established ourselves as one of the industry's leading companies.</p>
+                </div>
+
+                <!-- Vision & Mission Cards -->
+                <div class="about-vm-compact">
+                    <div class="vm-compact-card">
+                        <div class="vm-compact-icon">
+                            <i class="fas fa-eye"></i>
+                        </div>
+                        <h3>Vision</h3>
+                        <p>To be the most trusted and sought-after real estate and property management company in Bengaluru, recognized for our exceptional customer service, innovative solutions, and unwavering commitment to integrity and transparency.</p>
+                    </div>
+                    <div class="vm-compact-card">
+                        <div class="vm-compact-icon">
+                            <i class="fas fa-bullseye"></i>
+                        </div>
+                        <h3>Mission</h3>
+                        <p>To provide exceptional real estate and property management services that exceed expectations by leveraging our deep knowledge of the local market, adopting innovative technologies, and fostering a culture of honesty and transparency.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Partners Section -->
+    <section class="partners-compact" id="partners">
+        <div class="container">
+            <div class="section-header">
+                <h2>Our Partners</h2>
+                <p>Building Strong Relationships with Industry Leaders</p>
+            </div>
+            
+            <div class="partners-compact-content">
+                <div class="partners-intro-compact">
+                    <p>With its strong reputation for professionalism and integrity, Tirumakudalu Properties has established partnerships with some of the most reputed property-related companies in the region. These channel partners help the company to expand its reach and offer a wider range of services to its clients, ensuring that they receive the best possible advice and support.</p>
+                </div>
+                
+                <div class="partners-compact-grid" id="partnersCompactGrid">
+                    <!-- Partners will be rendered here -->
+                </div>
+                <div class="partners-load-more-container" id="partnersLoadMoreContainer" style="display: none;">
+                    <button class="btn-load-more-partners" id="loadMorePartnersBtn">
+                        <span>Load More Partners</span>
+                        <i class="fas fa-chevron-down"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Testimonials Section -->
+    <section class="testimonials-compact" id="testimonials">
+        <div class="container">
+            <div class="section-header">
+                <h2>What Our Clients Say</h2>
+                <p>Hear from our satisfied clients about their experience with Tirumakudalu Properties</p>
+            </div>
+            
+            <div class="testimonials-compact-content">
+                <div class="testimonials-compact-scroll-wrapper">
+                    <div class="testimonials-compact-grid" id="testimonialsCompactGrid">
+                        <!-- Testimonials will be rendered here -->
+                        <div class="testimonials-compact-empty">
+                            <div class="testimonials-empty-icon">
+                                <i class="fas fa-comments"></i>
+                            </div>
+                            <h3>Testimonials Coming Soon</h3>
+                            <p>We're collecting testimonials from our satisfied clients. Check back soon to read about their experiences with Tirumakudalu Properties.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Services Section -->
+    <section class="services-showcase" id="services">
+        <div class="container">
+            <div class="section-header">
+                <h2>Our Services</h2>
+            </div>
+            
+            <div class="services-layout">
+                <!-- Service 1: Rental of Properties - Blurred Background Style -->
+                <div class="service-section service-rental">
+                    <div class="service-bg-image" style="background-image: url('/images/img1.jpg');"></div>
+                    <div class="service-content-overlay">
+                        <div class="service-section-content">
+                            <div class="service-label">
+                                <div class="label-icon"></div>
+                                <span>Our Services</span>
+                            </div>
+                            <h3 class="service-main-title">Rental of Properties</h3>
+                            <p class="service-subtitle">Premium Property Solutions</p>
+                            
+                            <div class="service-cards-row">
+                                <div class="service-testimonial-card">
+                                    <p class="service-card-text">We offer comprehensive rental services for premium properties across Bengaluru, helping property owners find the right tenants and assisting tenants in finding their perfect space.</p>
+                                    <div class="service-card-footer">
+                                        <div class="service-card-icon">
+                                            <i class="fas fa-home"></i>
+                                        </div>
+                                        <div class="service-card-info">
+                                            <div class="service-card-title">High-end Apartments</div>
+                                            <div class="service-card-rating">
+                                                <i class="fas fa-star"></i>
+                                                <i class="fas fa-star"></i>
+                                                <i class="fas fa-star"></i>
+                                                <i class="fas fa-star"></i>
+                                                <i class="fas fa-star"></i>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="service-testimonial-card">
+                                    <p class="service-card-text">We also undertake advertising of rentals on top-rated property portals to attract potential tenants for existing properties, ensuring maximum visibility and reach.</p>
+                                    <div class="service-card-footer">
+                                        <div class="service-card-icon">
+                                            <i class="fas fa-building"></i>
+                                        </div>
+                                        <div class="service-card-info">
+                                            <div class="service-card-title">Commercial Spaces</div>
+                                            <div class="service-card-rating">
+                                                <i class="fas fa-star"></i>
+                                                <i class="fas fa-star"></i>
+                                                <i class="fas fa-star"></i>
+                                                <i class="fas fa-star"></i>
+                                                <i class="fas fa-star"></i>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="service-testimonial-card">
+                                    <p class="service-card-text">Office Space | Showrooms | Industrial Sheds | Godowns | Warehouses - we provide rental solutions for all types of commercial and industrial properties.</p>
+                                    <div class="service-card-footer">
+                                        <div class="service-card-icon">
+                                            <i class="fas fa-warehouse"></i>
+                                        </div>
+                                        <div class="service-card-info">
+                                            <div class="service-card-title">Industrial Properties</div>
+                                            <div class="service-card-rating">
+                                                <i class="fas fa-star"></i>
+                                                <i class="fas fa-star"></i>
+                                                <i class="fas fa-star"></i>
+                                                <i class="fas fa-star"></i>
+                                                <i class="fas fa-star"></i>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Service 2: Investment in Properties - Image Style Design -->
+                <div class="service-section service-investment">
+                    <div class="service-section-content">
+                        <div class="investment-header-layout">
+                            <div class="investment-header-left">
+                                <div class="service-label-small">
+                                    <div class="label-icon-small"></div>
+                                    <span>Investments in Bengaluru</span>
+                                </div>
+                                <h3 class="investment-main-title">
+                                    Investment in Properties in <span class="title-italic">Bengaluru</span>
+                                </h3>
+                            </div>
+                            <div class="investment-header-right">
+                                <p>Our partnership with renowned builders and developers in Bengaluru allows us to assist clients in finding the perfect investment property that meets their specific needs. We thoroughly investigate all properties by verifying facts, checking documents, conducting site inspections, and taking pictures.</p>
+                            </div>
+                        </div>
+                        
+                        <div class="investment-feature-cards-row">
+                            <div class="investment-feature-card">
+                                <div class="investment-feature-icon">
+                                    <i class="fas fa-search"></i>
+                                </div>
+                                <h4>Verifying Facts</h4>
+                                <p>Thorough verification of all property details and information to ensure accuracy and reliability.</p>
+                                <div class="investment-feature-line"></div>
+                            </div>
+                            
+                            <div class="investment-feature-card featured-investment">
+                                <div class="investment-feature-icon">
+                                    <i class="fas fa-file-alt"></i>
+                                </div>
+                                <h4>Checking Documents</h4>
+                                <p>Complete document verification and validation to ensure all legal requirements are met.</p>
+                                <div class="investment-feature-line"></div>
+                            </div>
+                            
+                            <div class="investment-feature-card">
+                                <div class="investment-feature-icon">
+                                    <i class="fas fa-building"></i>
+                                </div>
+                                <h4>Site Inspections</h4>
+                                <p>Comprehensive on-site property inspections to assess condition and value accurately.</p>
+                                <div class="investment-feature-line"></div>
+                            </div>
+                            
+                            <div class="investment-feature-card">
+                                <div class="investment-feature-icon">
+                                    <i class="fas fa-camera"></i>
+                                </div>
+                                <h4>Photography</h4>
+                                <p>Professional property photography services to showcase properties in the best light.</p>
+                                <div class="investment-feature-line"></div>
+                            </div>
+                        </div>
+                        
+                        <div class="investment-properties-section-bottom">
+                            <h4>We deal in the sale of properties across Bengaluru:</h4>
+                            <div class="investment-properties-list">
+                                <span class="property-tag">High-end Apartments</span>
+                                <span class="property-tag">Villas</span>
+                                <span class="property-tag">Commercial Spaces</span>
+                                <span class="property-tag">Office Space</span>
+                                <span class="property-tag">Showrooms</span>
+                                <span class="property-tag">Industrial Sheds</span>
+                                <span class="property-tag">Godowns</span>
+                                <span class="property-tag">Warehouses</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Service 3: Property Management - Grid with Background Numbers -->
+                <div class="service-section service-management">
+                    <div class="service-abstract-bg"></div>
+                    <div class="service-section-content">
+                        <div class="service-header-key">
+                            <h3>Property Management Services</h3>
+                            <div class="title-underline-small"></div>
+                        </div>
+                        <p class="service-intro">We undertake comprehensive property management to ensure your property is well-maintained, compliant, and generating optimal returns.</p>
+                        <div class="service-features-grid-key">
+                            <div class="key-feature-block">
+                                <div class="feature-number">01</div>
+                                <h4>Thorough Cleaning</h4>
+                                <div class="feature-underline-key"></div>
+                                <p>Complete cleaning before offering property for rent</p>
+                            </div>
+                            <div class="key-feature-block">
+                                <div class="feature-number">02</div>
+                                <h4>Regular Maintenance</h4>
+                                <div class="feature-underline-key"></div>
+                                <p>Ongoing maintenance and necessary repairs</p>
+                            </div>
+                            <div class="key-feature-block">
+                                <div class="feature-number">03</div>
+                                <h4>Tax Management</h4>
+                                <div class="feature-underline-key"></div>
+                                <p>Timely payment of property taxes</p>
+                            </div>
+                            <div class="key-feature-block">
+                                <div class="feature-number">04</div>
+                                <h4>Documentation</h4>
+                                <div class="feature-underline-key"></div>
+                                <p>Acquiring all necessary documents from government authorities</p>
+                            </div>
+                            <div class="key-feature-block">
+                                <div class="feature-number">05</div>
+                                <h4>Regular Inspections</h4>
+                                <div class="feature-underline-key"></div>
+                                <p>Conducting regular property inspections and providing detailed reports</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Service 4: Value Added Services - Clean Split Layout -->
+                <div class="service-section service-value">
+                    <div class="service-section-content split-layout">
+                        <div class="service-left-content">
+                            <h3>Value Added Services</h3>
+                            <div class="content-divider"></div>
+                            <p>Beyond our core services, we provide additional support to ensure a seamless property experience from acquisition to management.</p>
+                            <div class="service-info-section">
+                                <div class="service-info-group">
+                                    <h4 class="service-info-section-title">REGION</h4>
+                                    <div class="service-info-tags">
+                                        <span class="service-info-tag">Bengaluru</span>
+                                        <span class="service-info-tag">Mysuru</span>
+                                        <span class="service-info-tag">Mangalore</span>
+                                        <span class="service-info-tag">Hubli</span>
+                                    </div>
+                                </div>
+                                <div class="service-info-group">
+                                    <h4 class="service-info-section-title">SERVICES</h4>
+                                    <div class="service-info-tags">
+                                        <span class="service-info-tag">Property Solutions</span>
+                                        <span class="service-info-tag">Rental Management</span>
+                                        <span class="service-info-tag">Investment Advisory</span>
+                                        <span class="service-info-tag">Property Maintenance</span>
+                                        <span class="service-info-tag">Legal Documentation</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="service-cta">
+                            </div>
+                        </div>
+                        <div class="service-right-content">
+                            <div class="service-visual-card">
+                                <div class="visual-header">
+                                    <div class="visual-logo">Tirumakudalu Properties</div>
+                                    <div class="visual-menu">
+                                        <span></span>
+                                        <span></span>
+                                    </div>
+                                </div>
+                                <div class="visual-title">
+                                    <div class="visual-label">Property Services</div>
+                                    <div class="visual-main-title">VALUE ADDED</div>
+                                </div>
+                                <div class="service-value-cards">
+                                    <div class="value-service-card">
+                                        <div class="value-service-icon">
+                                            <i class="fas fa-stamp"></i>
+                                        </div>
+                                        <div class="value-service-info">
+                                            <div class="info-label">SERVICE</div>
+                                            <div class="info-value">Property Registration</div>
+                                            <div class="info-type">Registration & Documentation</div>
+                                        </div>
+                                    </div>
+                                    <div class="value-service-card">
+                                        <div class="value-service-icon">
+                                            <i class="fas fa-handshake"></i>
+                                        </div>
+                                        <div class="value-service-info">
+                                            <div class="info-label">SERVICE</div>
+                                            <div class="info-value">Property Transactions</div>
+                                            <div class="info-type">Buying, Selling & Reselling</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Team Highlights Section -->
+    <section class="about-team-compact">
+        <div class="container">
+            <h3 class="about-team-title">Our Team of Experts</h3>
+            <div class="team-compact-grid">
+                <div class="team-compact-item">
+                    <i class="fas fa-chart-line"></i>
+                    <p>Thorough understanding of the Bengaluru real estate market</p>
+                </div>
+                <div class="team-compact-item">
+                    <i class="fas fa-star"></i>
+                    <p>Attention to detail and excellent customer service</p>
+                </div>
+                <div class="team-compact-item">
+                    <i class="fas fa-cog"></i>
+                    <p>Expertise to make property transactions smooth and painless</p>
+                </div>
+                <div class="team-compact-item">
+                    <i class="fas fa-trophy"></i>
+                    <p>Dedicated to delivering the highest quality of service</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Founder Info Section -->
+    <section class="about-founder-compact">
+        <div class="container">
+            <div class="founder-compact-content">
+                <div class="founder-compact-image">
+                    <img src="images/Seshadri_TS_full.png" alt="Seshadri T S">
+                </div>
+                <div class="founder-compact-info">
+                    <div class="founder-compact-label">About T. S. Seshadri</div>
+                    <h3>Seshadri T S</h3>
+                    <div class="founder-compact-role">Proprietor | Consultant</div>
+                    <p>Tirumakudalu Properties is a solely owned and operated firm promoted by Mr. Seshadri T. S. He has over 30 years of vast professional experience in finance, marketing, and sales, and 10 years in the field of property management. Mr. Seshadri is the grandson of Sri T. Rama Rao, the late founder member of The National Institute of Engineering (NIE), Mysore.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Statistics -->
+    <section class="statistics">
+        <div class="container">
+            <div class="stats-grid">
+                <div class="stat-card" data-stat="properties_listed">
+                    <div class="stat-icon"><i class="fas fa-building"></i></div>
+                    <div class="stat-number" data-target="0">0</div>
+                    <div class="stat-label">Properties Listed</div>
+                </div>
+                <div class="stat-card" data-stat="happy_clients">
+                    <div class="stat-icon"><i class="fas fa-users"></i></div>
+                    <div class="stat-number" data-target="0">0</div>
+                    <div class="stat-label">Happy Clients</div>
+                </div>
+                <div class="stat-card" data-stat="years_experience">
+                    <div class="stat-icon"><i class="fas fa-award"></i></div>
+                    <div class="stat-number" data-target="0">0</div>
+                    <div class="stat-label">Years Experience</div>
+                </div>
+                <div class="stat-card" data-stat="deals_closed">
+                    <div class="stat-icon"><i class="fas fa-handshake"></i></div>
+                    <div class="stat-number" data-target="0">0</div>
+                    <div class="stat-label">Deals Closed</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Contact Section -->
+    <section class="contact" id="contact">
+        <div class="container">
+            <div class="section-header">
+                <h2>Get In Touch</h2>
+                <p>Have questions? We'd love to hear from you</p>
+            </div>
+            <div class="contact-content">
+                <div class="contact-info">
+                    <div class="contact-item">
+                        <div class="contact-icon">
+                            <i class="fas fa-map-marker-alt"></i>
+                        </div>
+                        <div>
+                            <h4>Address</h4>
+                            <p>78, SBM COLONY, 2ND CROSS, KONANAKUNTE<br>BANGALORE - 560062</p>
+                        </div>
+                    </div>
+                    <div class="contact-item">
+                        <div class="contact-icon">
+                            <i class="fas fa-phone"></i>
+                        </div>
+                        <div>
+                            <h4>Phone</h4>
+                            <p>+91 97411 11756</p>
+                        </div>
+                    </div>
+                    <div class="contact-item">
+                        <div class="contact-icon">
+                            <i class="fas fa-envelope"></i>
+                        </div>
+                        <div>
+                            <h4>Email</h4>
+                            <p>info@tirumakudaluproperties.com</p>
+                        </div>
+                    </div>
+                </div>
+                <form class="contact-form" id="contactForm">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <input type="text" id="contactName" name="name" placeholder="Your Name" required>
+                        </div>
+                        <div class="form-group">
+                            <input type="email" id="contactEmail" name="email" placeholder="Your Email" required>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <input type="text" id="contactSubject" name="subject" placeholder="Subject" required>
+                    </div>
+                    <div class="form-group">
+                        <textarea id="contactMessage" name="message" placeholder="Your Message" rows="5" required></textarea>
+                    </div>
+                    <div class="form-group">
+                        <input type="tel" id="contactPhone" name="phone" placeholder="Phone Number (Optional)">
+                    </div>
+                    <div class="form-message" id="contactFormMessage" style="display: none;"></div>
+                    <button type="submit" class="btn btn-primary" id="contactSubmitBtn">
+                        <span class="btn-text">Send Message</span>
+                        <span class="btn-loader" style="display: none;">
+                            <i class="fas fa-spinner fa-spin"></i> Sending...
+                        </span>
+                    </button>
+                </form>
+            </div>
+        </div>
+    </section>
+
+    <!-- Visitor Info Popup Modal -->
+    <div class="visitor-modal" id="visitorModal">
+        <div class="visitor-modal-overlay" id="visitorModalOverlay"></div>
+        <div class="visitor-modal-content">
+            <div class="visitor-modal-header">
+                <div class="visitor-modal-icon">
+                    <i class="fas fa-user-circle"></i>
+                </div>
+                <h2>Welcome to Tirumakudalu Properties</h2>
+                <p>Please share your information so we can assist you better</p>
+            </div>
+            <form class="visitor-form" id="visitorForm">
+                <div class="form-group">
+                    <label for="visitorFullName">
+                        <i class="fas fa-user"></i>
+                        Full Name <span class="required">*</span>
+                    </label>
+                    <input type="text" id="visitorFullName" name="full_name" placeholder="Enter your full name" required>
+                </div>
+                <div class="form-group">
+                    <label for="visitorEmail">
+                        <i class="fas fa-envelope"></i>
+                        Email Address <span class="required">*</span>
+                    </label>
+                    <input type="email" id="visitorEmail" name="email" placeholder="Enter your email" required>
+                </div>
+                <div class="form-group">
+                    <label for="visitorPhone">
+                        <i class="fas fa-phone"></i>
+                        Phone Number <span class="required">*</span>
+                    </label>
+                    <input type="tel" id="visitorPhone" name="phone" placeholder="Enter your phone number" required>
+                </div>
+                <div class="form-group">
+                    <label for="visitorLookingFor">
+                        <i class="fas fa-search"></i>
+                        What are you looking for?
+                    </label>
+                    <textarea id="visitorLookingFor" name="looking_for" placeholder="E.g., 2BHK apartment for rent, investment property, etc." rows="3"></textarea>
+                </div>
+                <div class="visitor-form-message" id="visitorFormMessage" style="display: none;"></div>
+                <div class="visitor-form-footer">
+                    <button type="button" class="visitor-skip-link" id="visitorSkipLink">
+                        >
+                    </button>
+                    <button type="submit" class="btn-visitor-submit">
+                        <span class="btn-text">Submit</span>
+                        <span class="btn-loader" style="display: none;">
+                            <i class="fas fa-spinner fa-spin"></i> Submitting...
+                        </span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Login Modal -->
+    <div class="login-modal" id="loginModal">
+        <div class="login-modal-overlay" id="loginModalOverlay"></div>
+        <div class="login-modal-content">
+            <button class="login-modal-close" id="loginModalClose">
+                <i class="fas fa-times"></i>
+            </button>
+            <div class="login-modal-header">
+                <div class="login-modal-icon">
+                    <i class="fas fa-user-circle"></i>
+                </div>
+                <h2>Welcome Back</h2>
+                <p>Sign in to your account to continue</p>
+            </div>
+            <form class="login-form" id="loginForm">
+                <div class="form-group">
+                    <label for="loginEmail">
+                        <i class="fas fa-envelope"></i>
+                        Email Address
+                    </label>
+                    <input type="email" id="loginEmail" name="email" placeholder="Enter your email" required>
+                </div>
+                <div class="form-group">
+                    <label for="loginPassword">
+                        <i class="fas fa-lock"></i>
+                        Password
+                    </label>
+                    <div class="password-input-wrapper">
+                        <input type="password" id="loginPassword" name="password" placeholder="Enter your password" required>
+                        <button type="button" class="password-toggle" id="passwordToggle">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="login-form-options">
+                    <a href="#" class="forgot-password">Forgot Password?</a>
+                </div>
+                <button type="submit" class="btn-login-submit">
+                    <span>Sign In</span>
+                    <i class="fas fa-arrow-right"></i>
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Frequently Asked Questions Section -->
+    <section class="about-faq-compact">
+        <div class="faq-background-overlay"></div>
+        <div class="container">
+            <div class="faq-section-header">
+                <div class="faq-header-icon">
+                    <i class="fas fa-question-circle"></i>
+                </div>
+                <h3 class="faq-compact-title">Frequently Asked Questions</h3>
+                <p class="faq-compact-subtitle">Find answers to common questions about our services and expertise</p>
+            </div>
+            <div class="faq-compact-grid">
+                <div class="faq-compact-item">
+                    <div class="faq-item-icon-wrapper">
+                        <i class="fas fa-question-circle"></i>
+                    </div>
+                    <h4>What services do you offer?</h4>
+                    <p>We offer property valuation, listing, marketing, legal services, property management, buying and selling real estate, building services, interior decoration, security, CCTV services, and more.</p>
+                    <div class="faq-item-decoration"></div>
+                </div>
+                <div class="faq-compact-item">
+                    <div class="faq-item-icon-wrapper">
+                        <i class="fas fa-question-circle"></i>
+                    </div>
+                    <h4>Do you provide government-related services?</h4>
+                    <p>Yes, we work with government agencies to provide land records, possession certificates, khata, tax certificates, loans, and other related services.</p>
+                    <div class="faq-item-decoration"></div>
+                </div>
+                <div class="faq-compact-item">
+                    <div class="faq-item-icon-wrapper">
+                        <i class="fas fa-question-circle"></i>
+                    </div>
+                    <h4>How can you help with my real estate needs?</h4>
+                    <p>Whether you're looking to buy, sell, or manage a property, our experienced team provides a hassle-free experience ensuring smooth and stress-free transactions.</p>
+                    <div class="faq-item-decoration"></div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-col">
+                    <div class="footer-logo">
+                        <a href="#home" class="logo-link">
+                            <div class="logo-graphic">
+                                <img src="/images/TS_LOGO_WHITE.png" alt="Tirumakudalu Properties Logo" class="logo-img">
+                            </div>
+                        </a>
+                    </div>
+                    <p>Tirumakudalu Properties offers Property Management & Real Estate Services in and around Bangalore City.</p>
+                </div>
+                <div class="footer-col">
+                    <h4>Quick Links</h4>
+                    <ul class="footer-links">
+                        <li><a href="/blogs.html">Blogs</a></li>
+                        <li><a href="#">Terms and Conditions</a></li>
+                        <li><a href="#">Privacy Policy</a></li>
+                        <li><a href="#">NRI Property Investment</a></li>
+                    </ul>
+                </div>
+                <div class="footer-col">
+                    <h4>Contact Information</h4>
+                    <ul class="footer-contact">
+                        <li>
+                            <i class="fas fa-phone"></i>
+                            <span>+91 97411 11756</span>
+                        </li>
+                        <li>
+                            <i class="fas fa-envelope"></i>
+                            <span>info@tirumakudaluproperties.com</span>
+                        </li>
+                        <li>
+                            <i class="fas fa-map-marker-alt"></i>
+                            <span>78, SBM COLONY, 2ND CROSS, KONANAKUNTE, BANGALORE - 560062</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>Copyright &copy; 2025 - Designed & Powered by <a href="https://www.google.com/maps/search/?api=1&query=904+12th+Main+ISRO+Layout+Bangalore+560078" target="_blank" rel="noopener noreferrer" class="footer-credit">Purple Hue Technosoft Pvt. Ltd.</a></p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Floating Button to Browse by Property Type -->
+    <button class="floating-property-type-btn" id="floatingPropertyTypeBtn" title="Browse by Property Type">
+        <i class="fas fa-building"></i>
+        <span class="floating-btn-text">Browse by Property Type</span>
+    </button>
+
+    <script src="/js/session-manager.js"></script>
+    <script src="/js/script.js"></script>
+    <script src="/js/properties.js"></script>
+    <script src="/js/page-tracking.js"></script>
+    <script src="/js/login.js"></script>
+    <script>
+        // Partners data and rendering for compact section
+        (function() {
+            let partners = [];
+
+            // Load partners from API
+            async function loadPartnersFromAPI() {
+                try {
+                    // Fetch active partners (sorted by display_order)
+                    let fetchedPartners = [];
+                    
+                    try {
+                        const response = await fetch('/api/partners?is_active=true', {
+                            headers: {
+                                'Accept': 'application/json',
+                                'Content-Type': 'application/json'
+                            }
+                        });
+                        
+                        if (response.ok) {
+                            try {
+                                const data = await response.json();
+                                // Validate response is an array
+                                if (Array.isArray(data)) {
+                                    fetchedPartners = data;
+                                } else {
+                                    console.warn('Partners API returned non-array response');
+                                }
+                            } catch (parseError) {
+                                console.warn('Error parsing partners response:', parseError);
+                            }
+                        } else {
+                            // Log error but don't throw
+                            let errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+                            try {
+                                const errorData = await response.json();
+                                errorMessage = errorData.detail || errorData.error || errorMessage;
+                            } catch (e) {
+                                // Ignore JSON parse errors
+                            }
+                            console.warn('Failed to fetch partners:', errorMessage);
+                        }
+                    } catch (fetchError) {
+                        // Handle network errors, CORS errors, or other fetch failures
+                        if (fetchError.name === 'TypeError' && fetchError.message.includes('fetch')) {
+                            console.warn('Network error fetching partners:', fetchError.message);
+                        } else {
+                            console.warn('Error fetching partners:', fetchError);
+                        }
+                    }
+                    
+                    // Convert API format to display format with validation
+                    partners = fetchedPartners
+                        .filter(p => p && p.name) // Only include partners with names
+                        .map(partner => ({
+                            id: partner.id || 0,
+                            name: partner.name || 'Partner',
+                            logo_url: partner.logo_url || null,
+                            website_url: partner.website_url || '#',
+                            description: partner.description || '',
+                            display_order: partner.display_order || 0
+                        }));
+                    
+                    // Sort by display_order (already sorted by API, but ensure it)
+                    partners.sort((a, b) => (a.display_order || 0) - (b.display_order || 0));
+                    
+                    renderPartnersCompact();
+                } catch (error) {
+                    // Silently handle any unexpected errors - don't break the page
+                    console.warn('Unexpected error loading partners from API:', error);
+                    // Keep empty state if API fails
+                    partners = [];
+                    renderPartnersCompact();
+                }
+            }
+
+            let displayedPartners = 0;
+            const partnersPerRow = 6; // Approximate number of cards per row (adjust based on your grid)
+            const initialRows = 2;
+            const initialPartnersCount = partnersPerRow * initialRows;
+
+            function renderPartnersCompact() {
+                const grid = document.getElementById('partnersCompactGrid');
+                const loadMoreContainer = document.getElementById('partnersLoadMoreContainer');
+                const loadMoreBtn = document.getElementById('loadMorePartnersBtn');
+                if (!grid) return;
+
+                if (partners.length === 0) {
+                    // Show empty state (already in HTML or can add one)
+                    if (loadMoreContainer) loadMoreContainer.style.display = 'none';
+                    return;
+                }
+
+                // Partners that need black background and white text (can be configured in dashboard)
+                // For now, we'll use a simple check based on logo or name
+                const blackBackgroundPartners = [];
+
+                // Reset displayed count
+                displayedPartners = Math.min(initialPartnersCount, partners.length);
+
+                // Render all partners but hide those beyond initial count
+                grid.innerHTML = partners.map((partner, index) => {
+                    const hasBlackBackground = blackBackgroundPartners.includes(partner.name);
+                    const cardClass = hasBlackBackground ? 'partner-compact-card partner-compact-card-dark' : 'partner-compact-card';
+                    const websiteUrl = partner.website_url && partner.website_url !== '#' 
+                        ? partner.website_url 
+                        : '#';
+                    const targetAttr = websiteUrl !== '#' ? 'target="_blank" rel="noopener noreferrer"' : '';
+                    const isHidden = index >= displayedPartners ? 'style="display: none;"' : '';
+                    
+                    return `
+                        <a href="${escapeHtml(websiteUrl)}" class="${cardClass}" ${targetAttr} ${isHidden}>
+                            ${partner.logo_url ? `
+                            <div class="partner-compact-logo">
+                                <img src="${escapeHtml(partner.logo_url)}" 
+                                     alt="${escapeHtml(partner.name)} Logo" 
+                                     class="partner-logo-img"
+                                     onerror="this.style.display='none'; this.parentElement.querySelector('.partner-compact-info').style.display='flex';">
+                            </div>` : ''}
+                            <div class="partner-compact-info" ${partner.logo_url ? '' : 'style="display: flex; width: 100%;"'}>
+                                <h4 class="partner-compact-name">${escapeHtml(partner.name)}</h4>
+                            </div>
+                        </a>
+                    `;
+                }).join('');
+
+                // Show/hide load more button
+                if (loadMoreContainer && loadMoreBtn) {
+                    if (partners.length > displayedPartners) {
+                        loadMoreContainer.style.display = 'flex';
+                        loadMoreBtn.onclick = function() {
+                            const hiddenCards = grid.querySelectorAll('.partner-compact-card[style*="display: none"]');
+                            const cardsToShow = Math.min(partnersPerRow, hiddenCards.length);
+                            
+                            for (let i = 0; i < cardsToShow; i++) {
+                                hiddenCards[i].style.display = '';
+                            }
+                            
+                            displayedPartners += cardsToShow;
+                            
+                            // Hide button if all cards are shown
+                            if (displayedPartners >= partners.length) {
+                                loadMoreContainer.style.display = 'none';
+                            }
+                        };
+                    } else {
+                        loadMoreContainer.style.display = 'none';
+                    }
+                }
+            }
+
+            // Helper function to escape HTML
+            function escapeHtml(text) {
+                const div = document.createElement('div');
+                div.textContent = text;
+                return div.innerHTML;
+            }
+
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', () => {
+                    loadPartnersFromAPI();
+                });
+            } else {
+                loadPartnersFromAPI();
+            }
+        })();
+
+        // Testimonials rendering for compact section
+        (function() {
+            let testimonials = [];
+
+            function generateStars(rating) {
+                let stars = '';
+                for (let i = 1; i <= 5; i++) {
+                    if (i <= rating) {
+                        stars += '<i class="fas fa-star"></i>';
+                    } else {
+                        stars += '<i class="far fa-star"></i>';
+                    }
+                }
+                return stars;
+            }
+
+            // Load testimonials from API
+            async function loadTestimonialsFromAPI() {
+                try {
+                    let fetchedTestimonials = [];
+                    
+                    // Fetch approved testimonials (API defaults to is_approved=true)
+                    // Optionally fetch featured testimonials first
+                    try {
+                        const response = await fetch('/api/testimonials?is_approved=true&is_featured=true', {
+                            headers: {
+                                'Accept': 'application/json',
+                                'Content-Type': 'application/json'
+                            }
+                        });
+                        
+                        if (response.ok) {
+                            try {
+                                const data = await response.json();
+                                // Validate response is an array
+                                if (Array.isArray(data)) {
+                                    fetchedTestimonials = data;
+                                } else {
+                                    console.warn('Testimonials API returned non-array response');
+                                }
+                            } catch (parseError) {
+                                console.warn('Error parsing featured testimonials response:', parseError);
+                            }
+                        } else {
+                            // If featured request fails, try to get error details
+                            let errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+                            try {
+                                const errorData = await response.json();
+                                errorMessage = errorData.detail || errorData.error || errorMessage;
+                            } catch (e) {
+                                // Ignore JSON parse errors
+                            }
+                            console.warn('Failed to fetch featured testimonials:', errorMessage);
+                        }
+                    } catch (fetchError) {
+                        // Handle network errors, CORS errors, or other fetch failures
+                        if (fetchError.name === 'TypeError' && fetchError.message.includes('fetch')) {
+                            console.warn('Network error fetching featured testimonials:', fetchError.message);
+                        } else {
+                            console.warn('Error fetching featured testimonials:', fetchError);
+                        }
+                    }
+                    
+                    // If no featured testimonials, get all approved
+                    if (fetchedTestimonials.length === 0) {
+                        try {
+                            const allResponse = await fetch('/api/testimonials?is_approved=true', {
+                                headers: {
+                                    'Accept': 'application/json',
+                                    'Content-Type': 'application/json'
+                                }
+                            });
+                            
+                            if (allResponse.ok) {
+                                try {
+                                    const allTestimonials = await allResponse.json();
+                                    if (Array.isArray(allTestimonials)) {
+                                        fetchedTestimonials = allTestimonials;
+                                    }
+                                } catch (parseError) {
+                                    console.warn('Error parsing all testimonials response:', parseError);
+                                }
+                            } else {
+                                // Log but don't throw
+                                let errorMessage = `HTTP ${allResponse.status}: ${allResponse.statusText}`;
+                                try {
+                                    const errorData = await allResponse.json();
+                                    errorMessage = errorData.detail || errorData.error || errorMessage;
+                                } catch (e) {
+                                    // Ignore JSON parse errors
+                                }
+                                console.warn('Failed to fetch all testimonials:', errorMessage);
+                            }
+                        } catch (fallbackError) {
+                            // Handle network errors for fallback request
+                            if (fallbackError.name === 'TypeError' && fallbackError.message.includes('fetch')) {
+                                console.warn('Network error fetching all testimonials:', fallbackError.message);
+                            } else {
+                                console.warn('Error fetching all testimonials:', fallbackError);
+                            }
+                        }
+                    }
+                    
+                    // Convert API format to display format with validation
+                    testimonials = fetchedTestimonials
+                        .filter(t => t && t.message) // Only include testimonials with messages
+                        .map(testimonial => ({
+                            id: testimonial.id || 0,
+                            name: testimonial.client_name || 'Anonymous',
+                            serviceType: testimonial.service_type || 'General',
+                            rating: testimonial.rating || 5,
+                            message: testimonial.message || '',
+                            date: testimonial.created_at ? new Date(testimonial.created_at).toLocaleDateString() : ''
+                        }));
+                    
+                    renderTestimonialsCompact();
+                } catch (error) {
+                    // Silently handle any unexpected errors - don't break the page
+                    console.warn('Unexpected error loading testimonials from API:', error);
+                    // Keep empty state if API fails
+                    testimonials = [];
+                    renderTestimonialsCompact();
+                }
+            }
+
+            function renderTestimonialsCompact() {
+                const grid = document.getElementById('testimonialsCompactGrid');
+                if (!grid) return;
+
+                if (testimonials.length === 0) {
+                    // Show empty state (already in HTML)
+                    grid.classList.remove('scrolling');
+                    return;
+                }
+
+                // Remove empty state and add scrolling class
+                grid.classList.add('scrolling');
+
+                // Render testimonials twice for seamless infinite scrolling
+                const displayTestimonials = testimonials;
+                const testimonialCards = displayTestimonials.map(testimonial => `
+                    <div class="testimonial-compact-card">
+                        <div class="testimonial-compact-header">
+                            <div class="testimonial-compact-avatar">
+                                <i class="fas fa-user"></i>
+                            </div>
+                            <div class="testimonial-compact-info">
+                                <h4 class="testimonial-compact-name">${escapeHtml(testimonial.name)}</h4>
+                                <div class="testimonial-compact-meta">
+                                    <span class="testimonial-compact-service">${escapeHtml(testimonial.serviceType)}</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="testimonial-compact-rating">
+                            ${generateStars(testimonial.rating)}
+                        </div>
+                        <div class="testimonial-compact-content">
+                            <p>"${escapeHtml(testimonial.message)}"</p>
+                        </div>
+                    </div>
+                `).join('');
+                
+                // Duplicate cards for seamless infinite scroll
+                grid.innerHTML = testimonialCards + testimonialCards;
+            }
+
+            // Helper function to escape HTML
+            function escapeHtml(text) {
+                const div = document.createElement('div');
+                div.textContent = text;
+                return div.innerHTML;
+            }
+
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', () => {
+                    loadTestimonialsFromAPI();
+                });
+            } else {
+                loadTestimonialsFromAPI();
+            }
+        })();
+
+        // Visitor Modal Functionality
+        (function() {
+            const visitorModal = document.getElementById('visitorModal');
+            const visitorForm = document.getElementById('visitorForm');
+            const visitorFormMessage = document.getElementById('visitorFormMessage');
+
+            // Check if modal was already shown in this session
+            const modalShownKey = 'visitorModalShown';
+            const modalShown = sessionStorage.getItem(modalShownKey);
+
+            // Show modal on page load if not shown before
+            function showVisitorModal() {
+                if (!modalShown) {
+                    // Small delay to ensure page is loaded
+                    setTimeout(() => {
+                        visitorModal.classList.add('active');
+                        document.body.style.overflow = 'hidden';
+                    }, 500);
+                }
+            }
+
+            // Close modal (only after successful submission)
+            function closeVisitorModal() {
+                visitorModal.classList.remove('active');
+                document.body.style.overflow = '';
+                // Mark as shown in session
+                sessionStorage.setItem(modalShownKey, 'true');
+            }
+
+            // Prevent closing modal with Escape key
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape' && visitorModal.classList.contains('active')) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    return false;
+                }
+            });
+
+            // Skip link functionality
+            const visitorSkipLink = document.getElementById('visitorSkipLink');
+            if (visitorSkipLink) {
+                visitorSkipLink.addEventListener('click', () => {
+                    closeVisitorModal();
+                });
+            }
+
+            // Form submission
+            if (visitorForm) {
+                visitorForm.addEventListener('submit', async (e) => {
+                    e.preventDefault();
+                    
+                    const submitBtn = visitorForm.querySelector('.btn-visitor-submit');
+                    const btnText = submitBtn.querySelector('.btn-text');
+                    const btnLoader = submitBtn.querySelector('.btn-loader');
+                    
+                    // Get form values
+                    const formData = {
+                        full_name: document.getElementById('visitorFullName').value.trim(),
+                        email: document.getElementById('visitorEmail').value.trim(),
+                        phone: document.getElementById('visitorPhone').value.trim(),
+                        looking_for: document.getElementById('visitorLookingFor').value.trim() || null
+                    };
+                    
+                    // Validate required fields
+                    if (!formData.full_name || !formData.email || !formData.phone) {
+                        showVisitorMessage('Please fill in all required fields.', 'error');
+                        return;
+                    }
+                    
+                    // Validate email format
+                    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                    if (!emailRegex.test(formData.email)) {
+                        showVisitorMessage('Please enter a valid email address.', 'error');
+                        return;
+                    }
+                    
+                    // Show loading state
+                    submitBtn.disabled = true;
+                    if (btnText) btnText.style.display = 'none';
+                    if (btnLoader) btnLoader.style.display = 'inline';
+                    if (visitorFormMessage) visitorFormMessage.style.display = 'none';
+                    
+                    try {
+                        const response = await fetch('/api/visitor-info', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify(formData)
+                        });
+                        
+                        const data = await response.json();
+                        
+                        if (response.ok) {
+                            // Success
+                            showVisitorMessage('Thank you! We will get in touch with you soon.', 'success');
+                            // Close modal after 2 seconds
+                            setTimeout(() => {
+                                closeVisitorModal();
+                                visitorForm.reset();
+                            }, 2000);
+                        } else {
+                            // Error from server
+                            const errorMessage = data.detail || data.error || 'Failed to submit. Please try again.';
+                            showVisitorMessage(errorMessage, 'error');
+                        }
+                    } catch (error) {
+                        console.error('Error submitting visitor form:', error);
+                        showVisitorMessage('Network error. Please check your connection and try again.', 'error');
+                    } finally {
+                        // Reset button state
+                        submitBtn.disabled = false;
+                        if (btnText) btnText.style.display = 'inline';
+                        if (btnLoader) btnLoader.style.display = 'none';
+                    }
+                });
+            }
+
+            // Helper function to show messages
+            function showVisitorMessage(message, type) {
+                if (!visitorFormMessage) return;
+                
+                visitorFormMessage.textContent = message;
+                visitorFormMessage.className = `visitor-form-message ${type}`;
+                visitorFormMessage.style.display = 'block';
+                
+                // Scroll to message
+                visitorFormMessage.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }
+
+            // Show modal on page load
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', showVisitorModal);
+            } else {
+                showVisitorModal();
+            }
+        })();
+
+
+        // Floating Button to Browse by Property Type
+        (function() {
+            const floatingBtn = document.getElementById('floatingPropertyTypeBtn');
+            const propertyTypesSection = document.querySelector('.property-types');
+            
+            if (!floatingBtn) {
+                console.error('Floating button not found');
+                return;
+            }
+            
+            if (!propertyTypesSection) {
+                console.error('Property types section not found');
+                return;
+            }
+
+            function checkScrollPosition() {
+                // Get section position relative to viewport
+                const rect = propertyTypesSection.getBoundingClientRect();
+                const sectionTop = rect.top;
+                const sectionBottom = rect.bottom;
+                
+                // Add buffer (200px) to make detection more forgiving
+                const buffer = 200;
+                
+                // Check if section is visible in viewport (with buffer)
+                // Section is considered visible if any part of it is within the viewport + buffer
+                const isSectionInView = sectionBottom > -buffer && sectionTop < (window.innerHeight + buffer);
+                
+                // Hide button if section IS in view, show it otherwise
+                if (isSectionInView) {
+                    floatingBtn.classList.add('hidden');
+                } else {
+                    floatingBtn.classList.remove('hidden');
+                }
+            }
+
+            // Handle button click - scroll to property types section
+            floatingBtn.addEventListener('click', () => {
+                propertyTypesSection.scrollIntoView({ 
+                    behavior: 'smooth',
+                    block: 'start'
+                });
+            });
+
+            // Check scroll position on scroll and on load
+            window.addEventListener('scroll', checkScrollPosition, { passive: true });
+            window.addEventListener('resize', checkScrollPosition);
+            
+            // Initial check - wait for page to fully load
+            function initButton() {
+                setTimeout(() => {
+                    checkScrollPosition();
+                }, 300);
+            }
+            
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', initButton);
+            } else {
+                initButton();
+            }
+            
+            // Also check after window fully loads (images, etc.)
+            window.addEventListener('load', () => {
+                setTimeout(checkScrollPosition, 100);
+            });
+        })();
+    </script>
+    <script>
+        // Suppress browser extension errors that are not related to our code
+        window.addEventListener('error', function(event) {
+            // Suppress common browser extension errors
+            if (event.message && (
+                event.message.includes('message channel closed') ||
+                event.message.includes('Extension context invalidated') ||
+                event.message.includes('Receiving end does not exist') ||
+                event.message.includes('asynchronous response') ||
+                event.message.includes('message channel closed before a response')
+            )) {
+                event.preventDefault();
+                event.stopPropagation();
+                return false;
+            }
+        }, true);
+        
+        // Suppress unhandled promise rejections from browser extensions
+        window.addEventListener('unhandledrejection', function(event) {
+            if (event.reason && typeof event.reason === 'object' && event.reason.message) {
+                const message = event.reason.message;
+                if (message.includes('message channel closed') ||
+                    message.includes('Extension context invalidated') ||
+                    message.includes('Receiving end does not exist') ||
+                    message.includes('asynchronous response') ||
+                    message.includes('message channel closed before a response')) {
+                    event.preventDefault();
+                    return false;
+                }
+            }
+            // Also check string errors
+            if (typeof event.reason === 'string' && (
+                event.reason.includes('message channel closed') ||
+                event.reason.includes('Extension context invalidated') ||
+                event.reason.includes('asynchronous response') ||
+                event.reason.includes('message channel closed before a response')
+            )) {
+                event.preventDefault();
+                return false;
+            }
+        });
+    </script>
+</body>
+</html>

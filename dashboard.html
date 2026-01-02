@@ -1,0 +1,1477 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <title>Dashboard - Tirumakudalu Properties</title>
+    <link rel="icon" type="image/png" href="/images/TirumakudaluProperties_Logo-2048x1858.png">
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://cdn.quilljs.com/1.3.7/quill.snow.css" rel="stylesheet">
+    <style>
+        /* Hide all content by default - only show after authentication check passes */
+        body {
+            display: none !important;
+            visibility: hidden !important;
+        }
+        body.authenticated {
+            display: block !important;
+            visibility: visible !important;
+        }
+    </style>
+</head>
+<body>
+    <!-- Authentication Check - Must run immediately before any content -->
+    <script>
+        (function() {
+            // Clear any stale or invalid authentication data first
+            function clearAllAuthData() {
+                sessionStorage.removeItem('dashboard_authenticated');
+                sessionStorage.removeItem('isAuthenticated');
+                sessionStorage.removeItem('user');
+                localStorage.removeItem('dashboard_authenticated');
+                localStorage.removeItem('isAuthenticated');
+                localStorage.removeItem('user');
+            }
+            
+            // Check authentication immediately before page renders
+            const isAuthenticated = localStorage.getItem('dashboard_authenticated') === 'true' ||
+                                   sessionStorage.getItem('dashboard_authenticated') === 'true';
+            const userStr = localStorage.getItem('user') || sessionStorage.getItem('user');
+            
+            // Validate user data exists and is valid JSON
+            let user = null;
+            if (userStr) {
+                try {
+                    user = JSON.parse(userStr);
+                    // Ensure user has required fields (email is mandatory)
+                    if (!user || !user.email || typeof user.email !== 'string' || user.email.trim() === '') {
+                        user = null;
+                    }
+                } catch (e) {
+                    // Invalid JSON, treat as not authenticated
+                    user = null;
+                }
+            }
+            
+            // If not authenticated or user data is invalid, redirect immediately
+            if (!isAuthenticated || !user) {
+                // Clear all authentication data
+                clearAllAuthData();
+                // Redirect to index page immediately
+                window.location.replace('/index.html');
+                // Prevent page from rendering
+                document.body.innerHTML = '<div style="display: flex; justify-content: center; align-items: center; height: 100vh; font-family: Inter, sans-serif;"><p>Redirecting to login...</p></div>';
+                // Stop script execution
+                throw new Error('Unauthorized access - redirecting to login');
+            }
+            
+            // Authentication passed - show the page
+            document.body.classList.add('authenticated');
+        })();
+    </script>
+    
+    <!-- Dashboard (shown when authenticated) -->
+    <div class="dashboard-container" id="dashboardContainer">
+        <!-- Dashboard Header -->
+        <header class="dashboard-header">
+            <div class="dashboard-header-content">
+                <div class="dashboard-header-left">
+                    <a href="/" class="dashboard-logo-link">
+                        <div class="logo-graphic">
+                            <img src="/images/TirumakudaluProperties_Logo-2048x1858.png" alt="Tirumakudalu Properties Logo" class="logo-img">
+                        </div>
+                    </a>
+                    <!-- Dashboard Navigation -->
+                    <nav class="dashboard-nav">
+                        <ul class="dashboard-nav-menu">
+                            <li><a href="/index.html">HOME</a></li>
+                            <li><a href="/properties.html">PROPERTIES</a></li>
+                        </ul>
+                    </nav>
+                </div>
+                <div class="dashboard-header-right">
+                    <!-- User Profile Dropdown -->
+                    <div class="dashboard-user-profile" id="dashboardUserProfile">
+                        <button class="dashboard-profile-btn" id="dashboardProfileBtn">
+                            <div class="dashboard-profile-avatar">
+                                <i class="fas fa-user"></i>
+                            </div>
+                            <span class="dashboard-profile-name" id="dashboardProfileName">Admin</span>
+                            <i class="fas fa-chevron-down dashboard-profile-chevron"></i>
+                        </button>
+                        <div class="dashboard-profile-dropdown" id="dashboardProfileDropdown">
+                            <div class="dashboard-profile-header">
+                                <div class="dashboard-profile-avatar-large">
+                                    <i class="fas fa-user"></i>
+                                </div>
+                                <div class="dashboard-profile-info">
+                                    <div class="dashboard-profile-fullname" id="dashboardProfileFullname">Admin User</div>
+                                    <div class="dashboard-profile-email" id="dashboardProfileEmail">admin@example.com</div>
+                                </div>
+                            </div>
+                            <div class="dashboard-profile-divider"></div>
+                            <button class="dashboard-profile-item dashboard-profile-logout" id="dashboardLogout">
+                                <i class="fas fa-sign-out-alt"></i>
+                                <span>Logout</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Dashboard Main Content -->
+        <main class="dashboard-main">
+            <div class="dashboard-content">
+                <!-- Welcome Message -->
+                <div class="dashboard-welcome">
+                    <h1 class="dashboard-welcome-title">
+                        <i class="fas fa-hand-sparkles"></i>
+                        Welcome to Tirumakudalu Dashboard
+                    </h1>
+                    <p class="dashboard-welcome-subtitle">Manage your properties, inquiries, and content from one central location</p>
+                </div>
+
+                <!-- Dashboard Stats -->
+                <div class="dashboard-stats">
+                    <div class="dashboard-stat-card" data-stat-type="total_properties" data-stat-label="Total Properties">
+                        <div class="dashboard-stat-icon">
+                            <i class="fas fa-building"></i>
+                        </div>
+                        <div class="dashboard-stat-info">
+                            <h3 id="totalProperties">0</h3>
+                            <p>Total Properties</p>
+                        </div>
+                    </div>
+                    <div class="dashboard-stat-card" data-stat-type="for_sale" data-stat-label="For Sale">
+                        <div class="dashboard-stat-icon sale">
+                            <i class="fas fa-tag"></i>
+                        </div>
+                        <div class="dashboard-stat-info">
+                            <h3 id="saleProperties">0</h3>
+                            <p>For Sale</p>
+                        </div>
+                    </div>
+                    <div class="dashboard-stat-card" data-stat-type="for_rent" data-stat-label="For Rent">
+                        <div class="dashboard-stat-icon rent">
+                            <i class="fas fa-key"></i>
+                        </div>
+                        <div class="dashboard-stat-info">
+                            <h3 id="rentProperties">0</h3>
+                            <p>For Rent</p>
+                        </div>
+                    </div>
+                    <div class="dashboard-stat-card" data-stat-type="total_logs" data-stat-label="Clicks Log">
+                        <div class="dashboard-stat-icon">
+                            <i class="fas fa-list-alt"></i>
+                        </div>
+                        <div class="dashboard-stat-info">
+                            <h3 id="totalLogs">0</h3>
+                            <p>Clicks Log</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Properties Table -->
+                <div class="dashboard-properties-section">
+                    <div class="dashboard-section-header">
+                        <h2>Properties</h2>
+                        <div style="display: flex; gap: 1rem; align-items: center;">
+                            <div class="dashboard-search-box">
+                                <i class="fas fa-search"></i>
+                                <input type="text" id="propertySearch" placeholder="Search properties...">
+                            </div>
+                            <input type="file" id="importPropertiesFile" accept=".csv" style="display: none;">
+                            <button class="dashboard-export dashboard-import" id="importPropertiesBtn" title="Import Properties from CSV" style="white-space: nowrap;">
+                                <i class="fas fa-upload"></i>
+                                IMPORT CSV
+                            </button>
+                            <button class="dashboard-export" id="exportPropertiesBtn" title="Export Properties to CSV" style="white-space: nowrap;">
+                                <i class="fas fa-download"></i>
+                                EXPORT CSV
+                            </button>
+                        </div>
+                    </div>
+                    <div class="dashboard-actions" style="margin-bottom: 1.5rem; display: flex; gap: 1rem;">
+                        <button class="dashboard-btn-primary" id="addResidentialPropertyBtn">
+                            <i class="fas fa-plus"></i>
+                            Add Other Properties
+                        </button>
+                        <button class="dashboard-btn-primary" id="addPlotPropertyBtn">
+                            <i class="fas fa-plus"></i>
+                            Add Plot Property
+                        </button>
+                    </div>
+                    <div class="dashboard-properties-table-container properties-table-scrollable">
+                        <table class="dashboard-properties-table">
+                            <thead>
+                                <tr>
+                                    <th>Image</th>
+                                    <th>Title</th>
+                                    <th>Location</th>
+                                    <th>Type</th>
+                                    <th>Price</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="propertiesTableBody">
+                                <!-- Properties will be loaded here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Testimonials Section -->
+                <div class="dashboard-properties-section">
+                    <div class="dashboard-section-header">
+                        <h2>Testimonials</h2>
+                        <div style="display: flex; gap: 1rem; align-items: center;">
+                            <div class="dashboard-search-box">
+                                <i class="fas fa-search"></i>
+                                <input type="text" id="testimonialSearch" placeholder="Search testimonials...">
+                            </div>
+                            <input type="file" id="importTestimonialsFile" accept=".csv" style="display: none;">
+                            <button class="dashboard-export dashboard-import" id="importTestimonialsBtn" title="Import Testimonials from CSV" style="white-space: nowrap;">
+                                <i class="fas fa-upload"></i>
+                                IMPORT CSV
+                            </button>
+                            <button class="dashboard-export" id="exportTestimonialsBtn" title="Export Testimonials to CSV" style="white-space: nowrap;">
+                                <i class="fas fa-download"></i>
+                                EXPORT CSV
+                            </button>
+                        </div>
+                    </div>
+                    <div class="dashboard-actions" style="margin-bottom: 1.5rem;">
+                        <button class="dashboard-btn-primary" id="addTestimonialBtn">
+                            <i class="fas fa-plus"></i>
+                            Add New Testimonial
+                        </button>
+                    </div>
+                    <div class="dashboard-properties-table-container properties-table-scrollable">
+                        <table class="dashboard-properties-table">
+                            <thead>
+                                <tr>
+                                    <th>Client Name</th>
+                                    <th>Email</th>
+                                    <th>Service Type</th>
+                                    <th>Rating</th>
+                                    <th>Message</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="testimonialsTableBody">
+                                <!-- Testimonials will be loaded here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Partners Section -->
+                <div class="dashboard-properties-section">
+                    <div class="dashboard-section-header">
+                        <h2>Partners</h2>
+                        <div style="display: flex; gap: 1rem; align-items: center;">
+                            <div class="dashboard-search-box">
+                                <i class="fas fa-search"></i>
+                                <input type="text" id="partnerSearch" placeholder="Search partners...">
+                            </div>
+                            <input type="file" id="importPartnersFile" accept=".csv" style="display: none;">
+                            <button class="dashboard-export dashboard-import" id="importPartnersBtn" title="Import Partners from CSV" style="white-space: nowrap;">
+                                <i class="fas fa-upload"></i>
+                                IMPORT CSV
+                            </button>
+                            <button class="dashboard-export" id="exportPartnersBtn" title="Export Partners to CSV" style="white-space: nowrap;">
+                                <i class="fas fa-download"></i>
+                                EXPORT CSV
+                            </button>
+                        </div>
+                    </div>
+                    <div class="dashboard-actions" style="margin-bottom: 1.5rem;">
+                        <button class="dashboard-btn-primary" id="addPartnerBtn">
+                            <i class="fas fa-plus"></i>
+                            Add New Partner
+                        </button>
+                    </div>
+                    <div class="dashboard-properties-table-container">
+                        <table class="dashboard-properties-table">
+                            <thead>
+                                <tr>
+                                    <th>Logo</th>
+                                    <th>Name</th>
+                                    <th>Website</th>
+                                    <th>Display Order</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="partnersTableBody">
+                                <!-- Partners will be loaded here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Blogs Section -->
+                <div class="dashboard-properties-section">
+                    <div class="dashboard-section-header">
+                        <h2>
+                            <i class="fas fa-blog" style="margin-right: 0.5rem;"></i>
+                            Blogs
+                        </h2>
+                        <div style="display: flex; gap: 1rem; align-items: center;">
+                            <div class="dashboard-search-box">
+                                <i class="fas fa-search"></i>
+                                <input type="text" id="blogSearch" placeholder="Search blogs...">
+                            </div>
+                            <input type="file" id="importBlogsFile" accept=".csv" style="display: none;">
+                            <button class="dashboard-export dashboard-import" id="importBlogsBtn" title="Import Blogs from CSV" style="white-space: nowrap;">
+                                <i class="fas fa-upload"></i>
+                                IMPORT CSV
+                            </button>
+                            <button class="dashboard-export" id="exportBlogsBtn" title="Export Blogs to CSV" style="white-space: nowrap;">
+                                <i class="fas fa-download"></i>
+                                EXPORT CSV
+                            </button>
+                        </div>
+                    </div>
+                    <div class="dashboard-actions" style="margin-bottom: 1.5rem;">
+                        <button class="dashboard-btn-primary" id="addBlogBtn">
+                            <i class="fas fa-plus"></i>
+                            Add New Blog
+                        </button>
+                    </div>
+                    <div class="dashboard-properties-table-container properties-table-scrollable">
+                        <table class="dashboard-properties-table">
+                            <thead>
+                                <tr>
+                                    <th>Image</th>
+                                    <th>Title</th>
+                                    <th>Category</th>
+                                    <th>Author</th>
+                                    <th>Views</th>
+                                    <th>Status</th>
+                                    <th>Created</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="blogsTableBody">
+                                <!-- Blogs will be loaded here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Schedule Visit Requests Section -->
+                <div class="dashboard-properties-section">
+                    <div class="dashboard-section-header">
+                        <h2>
+                            <i class="fas fa-calendar-check" style="margin-right: 0.5rem;"></i>
+                            Schedule Visit Requests
+                        </h2>
+                        <div style="display: flex; gap: 1rem; align-items: center;">
+                            <div class="dashboard-search-box">
+                                <i class="fas fa-search"></i>
+                                <input type="text" id="scheduleVisitSearch" placeholder="Search visit requests...">
+                            </div>
+                            <input type="file" id="importScheduleVisitsFile" accept=".csv" style="display: none;">
+                            <button class="dashboard-export dashboard-import" id="importScheduleVisitsBtn" title="Import Schedule Visit Requests from CSV" style="white-space: nowrap;">
+                                <i class="fas fa-upload"></i>
+                                IMPORT CSV
+                            </button>
+                            <button class="dashboard-export" id="exportScheduleVisitsBtn" title="Export Schedule Visit Requests to CSV" style="white-space: nowrap;">
+                                <i class="fas fa-download"></i>
+                                EXPORT CSV
+                            </button>
+                        </div>
+                    </div>
+                    <div class="dashboard-properties-table-container schedule-visit-table-container">
+                        <table class="dashboard-properties-table">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Email</th>
+                                    <th>Phone</th>
+                                    <th>Property</th>
+                                    <th>Visit Details</th>
+                                    <th>IP Address</th>
+                                    <th>Date</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="scheduleVisitTableBody">
+                                <!-- Schedule Visit requests will be loaded here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Contact Inquiries Section -->
+                <div class="dashboard-properties-section">
+                    <div class="dashboard-section-header">
+                        <h2>
+                            <i class="fas fa-envelope" style="margin-right: 0.5rem;"></i>
+                            Contact Inquiries
+                        </h2>
+                        <div style="display: flex; gap: 1rem; align-items: center;">
+                            <div class="dashboard-search-box">
+                                <i class="fas fa-search"></i>
+                                <input type="text" id="contactInquirySearch" placeholder="Search contact inquiries...">
+                            </div>
+                            <input type="file" id="importContactInquiriesFile" accept=".csv" style="display: none;">
+                            <button class="dashboard-export dashboard-import" id="importContactInquiriesBtn" title="Import Contact Inquiries from CSV" style="white-space: nowrap;">
+                                <i class="fas fa-upload"></i>
+                                IMPORT CSV
+                            </button>
+                            <button class="dashboard-export" id="exportContactInquiriesBtn" title="Export Contact Inquiries to CSV" style="white-space: nowrap;">
+                                <i class="fas fa-download"></i>
+                                EXPORT CSV
+                            </button>
+                        </div>
+                    </div>
+                    <div class="dashboard-properties-table-container contact-inquiry-table-container">
+                        <table class="dashboard-properties-table">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Email</th>
+                                    <th>Phone</th>
+                                    <th>Subject</th>
+                                    <th>Message</th>
+                                    <th>Property</th>
+                                    <th>IP Address</th>
+                                    <th>Date</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="contactInquiryTableBody">
+                                <!-- Contact inquiries will be loaded here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Visitor Info Section -->
+                <div class="dashboard-properties-section">
+                    <div class="dashboard-section-header">
+                        <h2>
+                            <i class="fas fa-users" style="margin-right: 0.5rem;"></i>
+                            Website Visitors
+                        </h2>
+                        <div style="display: flex; gap: 1rem; align-items: center;">
+                            <div class="dashboard-search-box">
+                                <i class="fas fa-search"></i>
+                                <input type="text" id="visitorSearch" placeholder="Search visitors...">
+                            </div>
+                            <input type="file" id="importVisitorsFile" accept=".csv" style="display: none;">
+                            <button class="dashboard-export dashboard-import" id="importVisitorsBtn" title="Import Website Visitors from CSV" style="white-space: nowrap;">
+                                <i class="fas fa-upload"></i>
+                                IMPORT CSV
+                            </button>
+                            <button class="dashboard-export" id="exportVisitorsBtn" title="Export Website Visitors to CSV" style="white-space: nowrap;">
+                                <i class="fas fa-download"></i>
+                                EXPORT CSV
+                            </button>
+                        </div>
+                    </div>
+                    <div class="dashboard-properties-table-container">
+                        <table class="dashboard-properties-table">
+                            <thead>
+                                <tr>
+                                    <th>Full Name</th>
+                                    <th>Email</th>
+                                    <th>Phone</th>
+                                    <th>Looking For</th>
+                                    <th>IP Address</th>
+                                    <th>Date</th>
+                                </tr>
+                            </thead>
+                            <tbody id="visitorInfoTableBody">
+                                <!-- Visitor info will be loaded here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- System Monitoring Section -->
+                <div class="dashboard-properties-section">
+                    <div class="dashboard-section-header">
+                        <h2>
+                            <i class="fas fa-chart-line" style="margin-right: 0.5rem;"></i>
+                            System Monitoring
+                        </h2>
+                        <div style="display: flex; gap: 1rem; align-items: center;">
+                            <button class="dashboard-btn-secondary" id="refreshMetricsBtn" style="white-space: nowrap;">
+                                <i class="fas fa-sync-alt"></i>
+                                Refresh
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Current Metrics Cards -->
+                    <div class="dashboard-stats" style="margin-bottom: 2rem;">
+                        <div class="dashboard-stat-card">
+                            <div class="dashboard-stat-icon" style="background: var(--yellow-pale); color: var(--yellow-bright);">
+                                <i class="fas fa-microchip"></i>
+                            </div>
+                            <div class="dashboard-stat-info">
+                                <h3 id="currentCpu">0%</h3>
+                                <p>CPU Usage</p>
+                            </div>
+                        </div>
+                        <div class="dashboard-stat-card">
+                            <div class="dashboard-stat-icon" style="background: var(--purple-pale); color: var(--purple);">
+                                <i class="fas fa-memory"></i>
+                            </div>
+                            <div class="dashboard-stat-info">
+                                <h3 id="currentRam">0%</h3>
+                                <p>RAM Usage</p>
+                            </div>
+                        </div>
+                        <div class="dashboard-stat-card">
+                            <div class="dashboard-stat-icon" style="background: var(--primary-lighter); color: var(--primary-darker);">
+                                <i class="fas fa-network-wired"></i>
+                            </div>
+                            <div class="dashboard-stat-info">
+                                <h3 id="currentBandwidth">0 MB</h3>
+                                <p>Bandwidth (Total)</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Logs Section -->
+                <div class="dashboard-properties-section">
+                    <div class="dashboard-section-header">
+                        <h2>
+                            <i class="fas fa-list-alt" style="margin-right: 0.5rem;"></i>
+                            Activity Logs
+                        </h2>
+                        <div style="display: flex; gap: 1rem; align-items: center;">
+                            <select id="logTypeFilter" class="dashboard-log-filter" style="padding: 0.5rem; border: 1px solid var(--border-color); border-radius: 5px; font-size: 0.9rem;">
+                                <option value="">All Types</option>
+                                <option value="info">Info</option>
+                                <option value="warning">Warning</option>
+                                <option value="error">Error</option>
+                                <option value="action">Action</option>
+                            </select>
+                            <div class="dashboard-search-box">
+                                <i class="fas fa-search"></i>
+                                <input type="text" id="logSearch" placeholder="Search logs...">
+                            </div>
+                            <input type="file" id="importLogsFile" accept=".csv" style="display: none;">
+                            <button class="dashboard-export dashboard-import" id="importLogsBtn" title="Import Activity Logs from CSV" style="white-space: nowrap;">
+                                <i class="fas fa-upload"></i>
+                                IMPORT CSV
+                            </button>
+                            <button class="dashboard-export" id="exportLogsBtn" title="Export Activity Logs to CSV" style="white-space: nowrap;">
+                                <i class="fas fa-download"></i>
+                                EXPORT CSV
+                            </button>
+                        </div>
+                    </div>
+                    <div class="dashboard-properties-table-container logs-table-container">
+                        <table class="dashboard-properties-table">
+                            <thead>
+                                <tr>
+                                    <th>Type</th>
+                                    <th>Action</th>
+                                    <th>Description</th>
+                                    <th>User</th>
+                                    <th>IP Address</th>
+                                    <th>Date & Time</th>
+                                </tr>
+                            </thead>
+                            <tbody id="logsTableBody">
+                                <!-- Logs will be loaded here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Add/Edit Partner Modal -->
+    <div class="dashboard-modal" id="partnerModal">
+        <div class="dashboard-modal-overlay" id="partnerModalOverlay"></div>
+        <div class="dashboard-modal-content">
+            <div class="dashboard-modal-header">
+                <h2 id="partnerModalTitle">Add New Partner</h2>
+                <button class="dashboard-modal-close" id="partnerModalClose">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <form class="dashboard-property-form" id="partnerForm">
+                <input type="hidden" id="partnerId" name="id">
+                
+                <div class="dashboard-form-row">
+                    <div class="dashboard-form-group">
+                        <label for="partnerName">
+                            <i class="fas fa-building"></i>
+                            Partner Name *
+                        </label>
+                        <input type="text" id="partnerName" name="name" placeholder="e.g., L&T Realty" required>
+                    </div>
+                    <div class="dashboard-form-group">
+                        <label for="partnerWebsite">
+                            <i class="fas fa-globe"></i>
+                            Website URL
+                        </label>
+                        <input type="url" id="partnerWebsite" name="website_url" placeholder="e.g., https://example.com">
+                    </div>
+                </div>
+
+                <div class="dashboard-form-row">
+                    <div class="dashboard-form-group">
+                        <label for="partnerDisplayOrder">
+                            <i class="fas fa-sort-numeric-down"></i>
+                            Display Order
+                        </label>
+                        <input type="number" id="partnerDisplayOrder" name="display_order" placeholder="e.g., 1" min="0" value="0">
+                    </div>
+                    <div class="dashboard-form-group">
+                        <label style="display: flex; align-items: center; gap: 0.5rem; margin-top: 2rem;">
+                            <input type="checkbox" id="partnerIsActive" name="is_active" style="width: auto;" checked>
+                            <span>Active</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="dashboard-form-group">
+                    <label>
+                        <i class="fas fa-image"></i>
+                        Partner Logo (PNG or SVG only, Max 2 files) *
+                    </label>
+                    <div class="dashboard-image-upload-area" id="partnerLogoUploadArea">
+                        <input type="file" id="partnerLogos" name="logos" multiple accept="image/png,image/svg+xml,.png,.svg" style="display: none;">
+                        <div class="dashboard-image-upload-placeholder" id="partnerLogoUploadPlaceholder">
+                            <i class="fas fa-cloud-upload-alt"></i>
+                            <p>Click to upload logo(s) or drag and drop</p>
+                            <span>Supports: PNG, SVG only (Max 2 files, 5MB per file)</span>
+                        </div>
+                        <div class="dashboard-image-preview-container" id="partnerLogoPreviewContainer"></div>
+                    </div>
+                </div>
+
+                <div class="dashboard-modal-actions">
+                    <button type="button" class="dashboard-btn-secondary" id="cancelPartnerBtn">Cancel</button>
+                    <button type="submit" class="dashboard-btn-primary">
+                        <i class="fas fa-save"></i>
+                        Save Partner
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Add/Edit Testimonial Modal -->
+    <div class="dashboard-modal" id="testimonialModal">
+        <div class="dashboard-modal-overlay" id="testimonialModalOverlay"></div>
+        <div class="dashboard-modal-content">
+            <div class="dashboard-modal-header">
+                <h2 id="testimonialModalTitle">Add New Testimonial</h2>
+                <button class="dashboard-modal-close" id="testimonialModalClose">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <form class="dashboard-property-form" id="testimonialForm">
+                <input type="hidden" id="testimonialId" name="id">
+                
+                <div class="dashboard-form-row">
+                    <div class="dashboard-form-group">
+                        <label for="testimonialClientName">
+                            <i class="fas fa-user"></i>
+                            Client Name *
+                        </label>
+                        <input type="text" id="testimonialClientName" name="client_name" placeholder="e.g., John Doe" required>
+                    </div>
+                    <div class="dashboard-form-group">
+                        <label for="testimonialClientEmail">
+                            <i class="fas fa-envelope"></i>
+                            Email
+                        </label>
+                        <input type="email" id="testimonialClientEmail" name="client_email" placeholder="e.g., john@example.com">
+                    </div>
+                </div>
+
+                <div class="dashboard-form-row">
+                    <div class="dashboard-form-group">
+                        <label for="testimonialClientPhone">
+                            <i class="fas fa-phone"></i>
+                            Phone
+                        </label>
+                        <input type="text" id="testimonialClientPhone" name="client_phone" placeholder="e.g., +1234567890">
+                    </div>
+                    <div class="dashboard-form-group">
+                        <label for="testimonialServiceType">
+                            <i class="fas fa-briefcase"></i>
+                            Service Type
+                        </label>
+                        <input type="text" id="testimonialServiceType" name="service_type" placeholder="e.g., Property Purchase">
+                    </div>
+                </div>
+
+                <div class="dashboard-form-row">
+                    <div class="dashboard-form-group">
+                        <label for="testimonialRating">
+                            <i class="fas fa-star"></i>
+                            Rating (1-5)
+                        </label>
+                        <select id="testimonialRating" name="rating">
+                            <option value="">Select Rating</option>
+                            <option value="1">1 Star</option>
+                            <option value="2">2 Stars</option>
+                            <option value="3">3 Stars</option>
+                            <option value="4">4 Stars</option>
+                            <option value="5">5 Stars</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="dashboard-form-group">
+                    <label for="testimonialMessage">
+                        <i class="fas fa-comment"></i>
+                        Message *
+                    </label>
+                    <textarea id="testimonialMessage" name="message" rows="5" placeholder="Enter testimonial message..." required></textarea>
+                </div>
+
+                <div class="dashboard-form-row">
+                    <div class="dashboard-form-group">
+                        <label style="display: flex; align-items: center; gap: 0.5rem;">
+                            <input type="checkbox" id="testimonialIsApproved" name="is_approved" style="width: auto;">
+                            <span>Approved</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="dashboard-modal-actions">
+                    <button type="button" class="dashboard-btn-secondary" id="cancelTestimonialBtn">Cancel</button>
+                    <button type="submit" class="dashboard-btn-primary">
+                        <i class="fas fa-save"></i>
+                        Save Testimonial
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Add/Edit Residential Property Modal (Builder Floor, House/Villa, Apartments) -->
+    <div class="dashboard-modal" id="residentialPropertyModal">
+        <div class="dashboard-modal-overlay" id="residentialPropertyModalOverlay"></div>
+        <div class="dashboard-modal-content">
+            <div class="dashboard-modal-header">
+                <h2 id="residentialModalTitle">Add Other Properties</h2>
+                <button class="dashboard-modal-close" id="residentialPropertyModalClose">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <form class="dashboard-property-form" id="residentialPropertyForm">
+                <input type="hidden" id="residentialPropertyId" name="id">
+                
+                <div class="dashboard-form-row">
+                    <div class="dashboard-form-group">
+                        <label for="residentialCity">
+                            <i class="fas fa-city"></i>
+                            City *
+                        </label>
+                        <input type="text" id="residentialCity" name="city" placeholder="e.g., Bengaluru" required>
+                    </div>
+                    <div class="dashboard-form-group">
+                        <label for="residentialLocality">
+                            <i class="fas fa-map-marker-alt"></i>
+                            Locality *
+                        </label>
+                        <input type="text" id="residentialLocality" name="locality" placeholder="e.g., Whitefield" required>
+                    </div>
+                </div>
+
+                <div class="dashboard-form-row">
+                    <div class="dashboard-form-group">
+                        <label for="residentialPropertyName">
+                            <i class="fas fa-building"></i>
+                            Property Name *
+                        </label>
+                        <input type="text" id="residentialPropertyName" name="property_name" placeholder="e.g., Luxury Apartments" required>
+                    </div>
+                    <div class="dashboard-form-group">
+                        <label for="residentialPropertyType">
+                            <i class="fas fa-home"></i>
+                            Property Type *
+                        </label>
+                        <select id="residentialPropertyType" name="type" required>
+                            <option value="">Select Type</option>
+                            <option value="builder_floor">Builder Floor</option>
+                            <option value="house">House</option>
+                            <option value="villa">Villa</option>
+                            <option value="apartment">Apartment</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="dashboard-form-row">
+                    <div class="dashboard-form-group">
+                        <label>
+                            <i class="fas fa-bed"></i>
+                            Unit Type *
+                        </label>
+                        <div class="dashboard-unit-type-buttons">
+                            <button type="button" class="dashboard-unit-type-btn" data-unit-type="rk" data-bedrooms="0" id="residentialUnitTypeRK">
+                                <span>1RK</span>
+                            </button>
+                            <button type="button" class="dashboard-unit-type-btn" data-unit-type="bhk" data-bedrooms="1" id="residentialUnitType1BHK">
+                                <span>1BHK</span>
+                            </button>
+                            <button type="button" class="dashboard-unit-type-btn" data-unit-type="bhk" data-bedrooms="2" id="residentialUnitType2BHK">
+                                <span>2BHK</span>
+                            </button>
+                            <button type="button" class="dashboard-unit-type-btn" data-unit-type="bhk" data-bedrooms="3" id="residentialUnitType3BHK">
+                                <span>3BHK</span>
+                            </button>
+                            <button type="button" class="dashboard-unit-type-btn" data-unit-type="4plus" data-bedrooms="4" id="residentialUnitType4PlusBHK">
+                                <span>4+BHK</span>
+                            </button>
+                        </div>
+                        <input type="hidden" id="residentialBedrooms" name="bedrooms" value="1" required>
+                        <input type="hidden" id="residentialUnitType" name="unit_type" value="">
+                    </div>
+                    <div class="dashboard-form-group">
+                        <label for="residentialStatus">
+                            <i class="fas fa-tag"></i>
+                            Status *
+                        </label>
+                        <select id="residentialStatus" name="status" required>
+                            <option value="">Select Status</option>
+                            <option value="sale">Sell</option>
+                            <option value="rent">Rent</option>
+                            <option value="resale">Resale</option>
+                            <option value="new">New</option>
+                            <option value="ready_to_move">Ready to Move</option>
+                            <option value="under_construction">Under Construction</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="dashboard-form-row">
+                    <div class="dashboard-form-group">
+                        <label for="residentialBuildupArea">
+                            <i class="fas fa-ruler-combined"></i>
+                            Buildup Area (Sq.Ft.) *
+                        </label>
+                        <input type="number" id="residentialBuildupArea" name="buildup_area" placeholder="e.g., 1500" step="0.01" required>
+                    </div>
+                    <div class="dashboard-form-group">
+                        <label for="residentialCarpetArea">
+                            <i class="fas fa-ruler"></i>
+                            Carpet Area (Sq.Ft.) *
+                        </label>
+                        <input type="number" id="residentialCarpetArea" name="carpet_area" placeholder="e.g., 1200" step="0.01" required>
+                    </div>
+                </div>
+
+                <div class="dashboard-form-row">
+                    <div class="dashboard-form-group">
+                        <label for="residentialPrice">
+                            <i class="fas fa-dollar-sign"></i>
+                            Price *
+                        </label>
+                        <input type="text" id="residentialPrice" name="price" placeholder="e.g., Rs. 1.5 Cr" required>
+                    </div>
+                    <div class="dashboard-form-group">
+                        <label style="display: flex; align-items: center; gap: 0.5rem; margin-top: 1.5rem;">
+                            <input type="checkbox" id="residentialPriceNegotiable" name="price_negotiable" style="width: auto;">
+                            <span>Price is Negotiable</span>
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 0.5rem; margin-top: 0.5rem;">
+                            <input type="checkbox" id="residentialPriceIncludesRegistration" name="price_includes_registration" style="width: auto;">
+                            <span>Price Includes Registration</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="dashboard-form-group">
+                    <label for="residentialDescription">
+                        <i class="fas fa-align-left"></i>
+                        Description *
+                    </label>
+                    <textarea id="residentialDescription" name="description" rows="5" placeholder="Enter detailed property description..." required></textarea>
+                </div>
+
+                <div class="dashboard-form-group">
+                    <label>
+                        <i class="fas fa-images"></i>
+                        Property Images *
+                    </label>
+                    <div class="dashboard-image-upload-area" id="residentialImageUploadArea">
+                        <input type="file" id="residentialPropertyImages" name="images" multiple accept="image/jpeg,image/jpg,image/png,image/webp,image/svg+xml" style="display: none;">
+                        <div class="dashboard-image-upload-placeholder" id="residentialImageUploadPlaceholder">
+                            <i class="fas fa-cloud-upload-alt"></i>
+                            <p>Click to upload images or drag and drop</p>
+                            <span>Supports: JPG, PNG, SVG, WebP (Max 5MB per image)</span>
+                        </div>
+                        <div class="dashboard-image-preview-container" id="residentialImagePreviewContainer"></div>
+                    </div>
+                </div>
+
+                <div class="dashboard-form-group">
+                    <label>
+                        <i class="fas fa-check-circle"></i>
+                        Amenities *
+                    </label>
+                    <select id="residentialAmenities" name="amenities" multiple size="8" required style="width: 100%; padding: 0.875rem 1rem; border: 2px solid var(--border-color); border-radius: 10px; font-size: 1rem; font-family: 'Inter', sans-serif;">
+                        <option value="club_house">Club House</option>
+                        <option value="security">Security</option>
+                        <option value="24hr_backup">24hr Backup</option>
+                        <option value="rain_water_harvesting">Rain Water Harvesting</option>
+                        <option value="maintenance_staff">Maintenance Staff</option>
+                        <option value="intercom">Intercom</option>
+                        <option value="garden">Garden</option>
+                        <option value="community_hall">Community Hall</option>
+                        <option value="electricity_full">Electricity Full</option>
+                        <option value="electricity_partial">Electricity Partial</option>
+                        <option value="basketball_court">Basketball Court</option>
+                        <option value="play_area">Play Area</option>
+                        <option value="badminton_court">Badminton Court</option>
+                        <option value="swimming_pool">Swimming Pool</option>
+                        <option value="tennis_court">Tennis Court</option>
+                        <option value="gymnasium">Gymnasium</option>
+                        <option value="indoor_games">Indoor Games</option>
+                        <option value="banks_atm">Banks/ATM</option>
+                        <option value="cafeteria">Cafeteria</option>
+                        <option value="library">Library</option>
+                        <option value="health_facilities">Health Facilities</option>
+                        <option value="recreation_facilities">Recreation Facilities</option>
+                        <option value="wifi_broadband">WiFi Broadband Internet</option>
+                        <option value="temple">Temple</option>
+                    </select>
+                    <small style="color: var(--text-gray); font-size: 0.85rem; margin-top: 0.5rem; display: block;">Hold Ctrl (Windows) or Cmd (Mac) to select multiple amenities</small>
+                </div>
+
+                <div class="dashboard-modal-actions">
+                    <button type="button" class="dashboard-btn-secondary" id="cancelResidentialPropertyBtn">Cancel</button>
+                    <button type="submit" class="dashboard-btn-primary">
+                        <i class="fas fa-save"></i>
+                        Save Property
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Add/Edit Plot Property Modal -->
+    <div class="dashboard-modal" id="plotPropertyModal">
+        <div class="dashboard-modal-overlay" id="plotPropertyModalOverlay"></div>
+        <div class="dashboard-modal-content">
+            <div class="dashboard-modal-header">
+                <h2 id="plotModalTitle">Add Plot Property</h2>
+                <button class="dashboard-modal-close" id="plotPropertyModalClose">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <form class="dashboard-property-form" id="plotPropertyForm">
+                <input type="hidden" id="plotPropertyId" name="id">
+                
+                <div class="dashboard-form-row">
+                    <div class="dashboard-form-group">
+                        <label for="plotCity">
+                            <i class="fas fa-city"></i>
+                            City *
+                        </label>
+                        <input type="text" id="plotCity" name="city" placeholder="e.g., Bengaluru" required>
+                    </div>
+                    <div class="dashboard-form-group">
+                        <label for="plotLocality">
+                            <i class="fas fa-map-marker-alt"></i>
+                            Locality *
+                        </label>
+                        <input type="text" id="plotLocality" name="locality" placeholder="e.g., Whitefield" required>
+                    </div>
+                </div>
+
+                <div class="dashboard-form-row">
+                    <div class="dashboard-form-group">
+                        <label for="plotProjectName">
+                            <i class="fas fa-building"></i>
+                            Project Name *
+                        </label>
+                        <input type="text" id="plotProjectName" name="project_name" placeholder="e.g., Green Valley Plots" required>
+                    </div>
+                    <div class="dashboard-form-group">
+                        <label for="plotStatus">
+                            <i class="fas fa-tag"></i>
+                            Status *
+                        </label>
+                        <select id="plotStatus" name="status" required>
+                            <option value="">Select Status</option>
+                            <option value="sale">Sell</option>
+                            <option value="rent">Rent</option>
+                            <option value="resale">Resale</option>
+                            <option value="new">New</option>
+                            <option value="ready_to_move">Ready to Move</option>
+                            <option value="under_construction">Under Construction</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="dashboard-form-row">
+                    <div class="dashboard-form-group">
+                        <label for="plotArea">
+                            <i class="fas fa-ruler-combined"></i>
+                            Plot Area (Sq.Ft.) *
+                        </label>
+                        <input type="number" id="plotArea" name="plot_area" placeholder="e.g., 2400" step="0.01" required>
+                    </div>
+                    <div class="dashboard-form-group">
+                        <label for="plotLength">
+                            <i class="fas fa-ruler-horizontal"></i>
+                            Plot Length (Ft.) *
+                        </label>
+                        <input type="number" id="plotLength" name="plot_length" placeholder="e.g., 60" step="0.01" required>
+                    </div>
+                    <div class="dashboard-form-group">
+                        <label for="plotBreadth">
+                            <i class="fas fa-ruler-vertical"></i>
+                            Plot Breadth (Ft.) *
+                        </label>
+                        <input type="number" id="plotBreadth" name="plot_breadth" placeholder="e.g., 40" step="0.01" required>
+                    </div>
+                </div>
+
+                <div class="dashboard-form-row">
+                    <div class="dashboard-form-group">
+                        <label for="plotPrice">
+                            <i class="fas fa-dollar-sign"></i>
+                            Price *
+                        </label>
+                        <input type="text" id="plotPrice" name="price" placeholder="e.g., Rs. 50 Lakh" required>
+                    </div>
+                    <div class="dashboard-form-group">
+                        <label style="display: flex; align-items: center; gap: 0.5rem; margin-top: 1.5rem;">
+                            <input type="checkbox" id="plotPriceNegotiable" name="price_negotiable" style="width: auto;">
+                            <span>Price is Negotiable</span>
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 0.5rem; margin-top: 0.5rem;">
+                            <input type="checkbox" id="plotPriceIncludesRegistration" name="price_includes_registration" style="width: auto;">
+                            <span>Price Includes Registration</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="dashboard-form-group">
+                    <label for="plotDescription">
+                        <i class="fas fa-align-left"></i>
+                        Description *
+                    </label>
+                    <textarea id="plotDescription" name="description" rows="5" placeholder="Enter detailed plot description..." required></textarea>
+                </div>
+
+                <div class="dashboard-form-group">
+                    <label>
+                        <i class="fas fa-images"></i>
+                        Property Images *
+                    </label>
+                    <div class="dashboard-image-upload-area" id="plotImageUploadArea">
+                        <input type="file" id="plotPropertyImages" name="images" multiple accept="image/jpeg,image/jpg,image/png,image/webp,image/svg+xml" style="display: none;">
+                        <div class="dashboard-image-upload-placeholder" id="plotImageUploadPlaceholder">
+                            <i class="fas fa-cloud-upload-alt"></i>
+                            <p>Click to upload images or drag and drop</p>
+                            <span>Supports: JPG, PNG, SVG, WebP (Max 5MB per image)</span>
+                        </div>
+                        <div class="dashboard-image-preview-container" id="plotImagePreviewContainer"></div>
+                    </div>
+                </div>
+
+                <div class="dashboard-form-group">
+                    <label>
+                        <i class="fas fa-check-circle"></i>
+                        Amenities *
+                    </label>
+                    <select id="plotAmenities" name="amenities" multiple size="8" required style="width: 100%; padding: 0.875rem 1rem; border: 2px solid var(--border-color); border-radius: 10px; font-size: 1rem; font-family: 'Inter', sans-serif;">
+                        <option value="club_house">Club House</option>
+                        <option value="security">Security</option>
+                        <option value="24hr_backup">24hr Backup</option>
+                        <option value="rain_water_harvesting">Rain Water Harvesting</option>
+                        <option value="maintenance_staff">Maintenance Staff</option>
+                        <option value="intercom">Intercom</option>
+                        <option value="garden">Garden</option>
+                        <option value="community_hall">Community Hall</option>
+                        <option value="electricity_full">Electricity Full</option>
+                        <option value="electricity_partial">Electricity Partial</option>
+                        <option value="basketball_court">Basketball Court</option>
+                        <option value="play_area">Play Area</option>
+                        <option value="badminton_court">Badminton Court</option>
+                        <option value="swimming_pool">Swimming Pool</option>
+                        <option value="tennis_court">Tennis Court</option>
+                        <option value="gymnasium">Gymnasium</option>
+                        <option value="indoor_games">Indoor Games</option>
+                        <option value="banks_atm">Banks/ATM</option>
+                        <option value="cafeteria">Cafeteria</option>
+                        <option value="library">Library</option>
+                        <option value="health_facilities">Health Facilities</option>
+                        <option value="recreation_facilities">Recreation Facilities</option>
+                        <option value="wifi_broadband">WiFi Broadband Internet</option>
+                        <option value="temple">Temple</option>
+                    </select>
+                    <small style="color: var(--text-gray); font-size: 0.85rem; margin-top: 0.5rem; display: block;">Hold Ctrl (Windows) or Cmd (Mac) to select multiple amenities</small>
+                </div>
+
+                <div class="dashboard-modal-actions">
+                    <button type="button" class="dashboard-btn-secondary" id="cancelPlotPropertyBtn">Cancel</button>
+                    <button type="submit" class="dashboard-btn-primary">
+                        <i class="fas fa-save"></i>
+                        Save Property
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Add/Edit Blog Modal -->
+    <div class="dashboard-modal" id="blogModal">
+        <div class="dashboard-modal-overlay" id="blogModalOverlay"></div>
+        <div class="dashboard-modal-content">
+            <div class="dashboard-modal-header">
+                <h2 id="blogModalTitle">Add New Blog</h2>
+                <button class="dashboard-modal-close" id="blogModalClose">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <form class="dashboard-property-form" id="blogForm">
+                <input type="hidden" id="blogId" name="id">
+                
+                <div class="dashboard-form-row">
+                    <div class="dashboard-form-group">
+                        <label for="blogTitle">
+                            <i class="fas fa-heading"></i>
+                            Blog Title *
+                        </label>
+                        <input type="text" id="blogTitle" name="title" placeholder="e.g., Top 10 Real Estate Investment Tips" required>
+                    </div>
+                    <div class="dashboard-form-group">
+                        <label for="blogCategory">
+                            <i class="fas fa-tags"></i>
+                            Category
+                        </label>
+                        <select id="blogCategory" name="category">
+                            <option value="">Select Category</option>
+                            <option value="real-estate">Real Estate</option>
+                            <option value="investment">Investment</option>
+                            <option value="property-management">Property Management</option>
+                            <option value="market-trends">Market Trends</option>
+                            <option value="tips">Tips & Advice</option>
+                            <option value="news">News & Updates</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="dashboard-form-row">
+                    <div class="dashboard-form-group">
+                        <label for="blogAuthor">
+                            <i class="fas fa-user"></i>
+                            Author
+                        </label>
+                        <input type="text" id="blogAuthor" name="author" placeholder="e.g., Tirumakudalu Properties" value="Tirumakudalu Properties">
+                    </div>
+                </div>
+
+                <div class="dashboard-form-group">
+                    <label>
+                        <i class="fas fa-image"></i>
+                        Blog Image *
+                    </label>
+                    <div class="dashboard-image-upload-area" id="blogImageUploadArea">
+                        <input type="file" id="blogImage" name="image" accept="image/*" style="display: none;">
+                        <div class="dashboard-image-upload-placeholder" id="blogImageUploadPlaceholder">
+                            <i class="fas fa-cloud-upload-alt"></i>
+                            <p>Click to upload image or drag and drop</p>
+                            <span>Supports: JPG, PNG, GIF, WebP (Max 5MB)</span>
+                        </div>
+                        <div class="dashboard-image-preview-container" id="blogImagePreviewContainer"></div>
+                    </div>
+                </div>
+
+                <div class="dashboard-form-group">
+                    <label for="blogExcerpt">
+                        <i class="fas fa-align-left"></i>
+                        Excerpt *
+                    </label>
+                    <textarea id="blogExcerpt" name="excerpt" rows="3" placeholder="Enter a brief summary of the blog post..." required></textarea>
+                </div>
+
+                <div class="dashboard-form-group">
+                    <label for="blogContent">
+                        <i class="fas fa-file-alt"></i>
+                        Content *
+                    </label>
+                    <div id="blogContentEditor" style="min-height: 300px;"></div>
+                    <textarea id="blogContent" name="content" style="display: none;" required></textarea>
+                </div>
+
+                <div class="dashboard-form-group">
+                    <label>
+                        <i class="fas fa-tags"></i>
+                        Tags
+                    </label>
+                    <div class="dashboard-features-container">
+                        <div class="dashboard-features-input-wrapper">
+                            <input type="text" id="blogTagInput" placeholder="Add a tag (e.g., bengaluru, investment, etc.)">
+                            <button type="button" class="dashboard-btn-add-feature" id="addBlogTagBtn">
+                                <i class="fas fa-plus"></i>
+                                Add
+                            </button>
+                        </div>
+                        <div class="dashboard-features-list" id="blogTagsList"></div>
+                    </div>
+                </div>
+
+                <div class="dashboard-form-row">
+                    <div class="dashboard-form-group">
+                        <label style="display: flex; align-items: center; gap: 0.5rem;">
+                            <input type="checkbox" id="blogIsFeatured" name="is_featured" style="width: auto;">
+                            <span>Featured</span>
+                        </label>
+                    </div>
+                    <div class="dashboard-form-group">
+                        <label style="display: flex; align-items: center; gap: 0.5rem;">
+                            <input type="checkbox" id="blogIsActive" name="is_active" style="width: auto;" checked>
+                            <span>Active</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="dashboard-modal-actions">
+                    <button type="button" class="dashboard-btn-secondary" id="cancelBlogBtn">Cancel</button>
+                    <button type="submit" class="dashboard-btn-primary">
+                        <i class="fas fa-save"></i>
+                        Save Blog
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div class="dashboard-modal" id="deleteModal">
+        <div class="dashboard-modal-overlay" id="deleteModalOverlay"></div>
+        <div class="dashboard-modal-content dashboard-modal-small">
+            <div class="dashboard-modal-header">
+                <h2 id="deleteModalTitle">Delete Property</h2>
+                <button class="dashboard-modal-close" id="deleteModalClose">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="dashboard-modal-body">
+                <p id="deleteModalMessage">Are you sure you want to delete this property? This action cannot be undone.</p>
+            </div>
+            <div class="dashboard-modal-actions">
+                <button type="button" class="dashboard-btn-secondary" id="cancelDeleteBtn">Cancel</button>
+                <button type="button" class="dashboard-btn-danger" id="confirmDeleteBtn">
+                    <i class="fas fa-trash"></i>
+                    Delete
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Contact Inquiry View Modal -->
+    <div class="dashboard-modal" id="contactInquiryViewModal">
+        <div class="dashboard-modal-overlay" id="contactInquiryViewModalOverlay"></div>
+        <div class="dashboard-modal-content" style="max-width: 800px;">
+            <div class="dashboard-modal-header">
+                <h2>
+                    <i class="fas fa-envelope" style="margin-right: 0.5rem;"></i>
+                    Contact Inquiry Details
+                </h2>
+                <button class="dashboard-modal-close" id="contactInquiryViewModalClose">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="dashboard-modal-body" style="padding: 2rem;">
+                <div class="contact-inquiry-view-content">
+                    <!-- Status Badge -->
+                    <div class="contact-inquiry-status-section" style="margin-bottom: 2rem;">
+                        <label class="contact-inquiry-label">Status</label>
+                        <div id="contactInquiryViewStatus" class="status-badge"></div>
+                    </div>
+
+                    <!-- Inquiry Information Grid -->
+                    <div class="contact-inquiry-info-grid">
+                        <div class="contact-inquiry-info-item">
+                            <div class="contact-inquiry-icon">
+                                <i class="fas fa-user"></i>
+                            </div>
+                            <div class="contact-inquiry-info-content">
+                                <label class="contact-inquiry-label">Name</label>
+                                <p class="contact-inquiry-value" id="contactInquiryViewName">-</p>
+                            </div>
+                        </div>
+
+                        <div class="contact-inquiry-info-item">
+                            <div class="contact-inquiry-icon">
+                                <i class="fas fa-envelope"></i>
+                            </div>
+                            <div class="contact-inquiry-info-content">
+                                <label class="contact-inquiry-label">Email</label>
+                                <p class="contact-inquiry-value">
+                                    <a href="#" id="contactInquiryViewEmail" style="color: var(--primary-color); text-decoration: none;">-</a>
+                                </p>
+                            </div>
+                        </div>
+
+                        <div class="contact-inquiry-info-item">
+                            <div class="contact-inquiry-icon">
+                                <i class="fas fa-phone"></i>
+                            </div>
+                            <div class="contact-inquiry-info-content">
+                                <label class="contact-inquiry-label">Phone</label>
+                                <p class="contact-inquiry-value" id="contactInquiryViewPhone">-</p>
+                            </div>
+                        </div>
+
+                        <div class="contact-inquiry-info-item">
+                            <div class="contact-inquiry-icon">
+                                <i class="fas fa-tag"></i>
+                            </div>
+                            <div class="contact-inquiry-info-content">
+                                <label class="contact-inquiry-label">Subject</label>
+                                <p class="contact-inquiry-value" id="contactInquiryViewSubject">-</p>
+                            </div>
+                        </div>
+
+                        <div class="contact-inquiry-info-item">
+                            <div class="contact-inquiry-icon">
+                                <i class="fas fa-building"></i>
+                            </div>
+                            <div class="contact-inquiry-info-content">
+                                <label class="contact-inquiry-label">Property</label>
+                                <p class="contact-inquiry-value" id="contactInquiryViewProperty">-</p>
+                            </div>
+                        </div>
+
+                        <div class="contact-inquiry-info-item">
+                            <div class="contact-inquiry-icon">
+                                <i class="fas fa-globe"></i>
+                            </div>
+                            <div class="contact-inquiry-info-content">
+                                <label class="contact-inquiry-label">IP Address</label>
+                                <p class="contact-inquiry-value" id="contactInquiryViewIpAddress">-</p>
+                            </div>
+                        </div>
+
+                        <div class="contact-inquiry-info-item">
+                            <div class="contact-inquiry-icon">
+                                <i class="fas fa-calendar"></i>
+                            </div>
+                            <div class="contact-inquiry-info-content">
+                                <label class="contact-inquiry-label">Date Submitted</label>
+                                <p class="contact-inquiry-value" id="contactInquiryViewDate">-</p>
+                            </div>
+                        </div>
+
+                        <div class="contact-inquiry-info-item">
+                            <div class="contact-inquiry-icon">
+                                <i class="fas fa-clock"></i>
+                            </div>
+                            <div class="contact-inquiry-info-content">
+                                <label class="contact-inquiry-label">Last Updated</label>
+                                <p class="contact-inquiry-value" id="contactInquiryViewUpdated">-</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Message Section -->
+                    <div class="contact-inquiry-message-section" style="margin-top: 2rem;">
+                        <label class="contact-inquiry-label">
+                            <i class="fas fa-comment-alt" style="margin-right: 0.5rem;"></i>
+                            Message
+                        </label>
+                        <div class="contact-inquiry-message-box" id="contactInquiryViewMessage">
+                            -
+                        </div>
+                    </div>
+
+                    <!-- Status Update Section -->
+                    <div class="contact-inquiry-status-update" style="margin-top: 2rem; padding-top: 2rem; border-top: 2px solid var(--primary-lighter);">
+                        <label class="contact-inquiry-label">
+                            <i class="fas fa-edit" style="margin-right: 0.5rem;"></i>
+                            Update Status
+                        </label>
+                        <select class="dashboard-status-select" id="contactInquiryViewStatusSelect" style="width: 100%; max-width: 300px; margin-top: 0.5rem;">
+                            <option value="new">New</option>
+                            <option value="read">Read</option>
+                            <option value="replied">Replied</option>
+                            <option value="closed">Closed</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <div class="dashboard-modal-actions" style="padding: 1.5rem 2rem; border-top: 2px solid var(--primary-lighter);">
+                <button type="button" class="dashboard-btn-secondary" id="contactInquiryViewCloseBtn">Close</button>
+                <button type="button" class="dashboard-btn-primary" id="contactInquiryViewUpdateBtn">
+                    <i class="fas fa-save"></i>
+                    Update Status
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.quilljs.com/1.3.7/quill.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script>
+        // Suppress browser extension errors that are not related to our code
+        window.addEventListener('error', function(event) {
+            // Suppress common browser extension errors
+            if (event.message && (
+                event.message.includes('message channel closed') ||
+                event.message.includes('Extension context invalidated') ||
+                event.message.includes('Receiving end does not exist') ||
+                event.message.includes('asynchronous response') ||
+                event.message.includes('message channel closed before a response')
+            )) {
+                event.preventDefault();
+                event.stopPropagation();
+                return false;
+            }
+        }, true);
+        
+        // Suppress unhandled promise rejections from browser extensions
+        window.addEventListener('unhandledrejection', function(event) {
+            if (event.reason && typeof event.reason === 'object' && event.reason.message) {
+                const message = event.reason.message;
+                if (message.includes('message channel closed') ||
+                    message.includes('Extension context invalidated') ||
+                    message.includes('Receiving end does not exist') ||
+                    message.includes('asynchronous response') ||
+                    message.includes('message channel closed before a response')) {
+                    event.preventDefault();
+                    return false;
+                }
+            }
+            // Also check string errors
+            if (typeof event.reason === 'string' && (
+                event.reason.includes('message channel closed') ||
+                event.reason.includes('Extension context invalidated') ||
+                event.reason.includes('asynchronous response') ||
+                event.reason.includes('message channel closed before a response')
+            )) {
+                event.preventDefault();
+                return false;
+            }
+        });
+    </script>
+    <script src="/js/session-manager.js"></script>
+    <script src="/js/dashboard.js?v=20250120120000"></script>
+    <script src="/js/page-tracking.js"></script>
+    <script src="/js/metrics-monitoring.js"></script>
+</body>
+</html>
+

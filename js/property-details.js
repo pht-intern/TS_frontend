@@ -1,0 +1,1446 @@
+// Property Details Page JavaScript
+
+// HTML escaping function for security
+function escapeHtml(text) {
+    if (text === null || text === undefined) return '';
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+// Store current property ID globally
+let currentPropertyId = null;
+
+// Show loading state
+function showLoadingState() {
+    const loadingEl = document.getElementById('propertyLoading');
+    const errorEl = document.getElementById('propertyError');
+    const headerEl = document.getElementById('propertyHeader');
+    const contentEl = document.getElementById('propertyContent');
+    
+    if (loadingEl) loadingEl.style.display = 'flex';
+    if (errorEl) errorEl.style.display = 'none';
+    if (headerEl) headerEl.style.display = 'none';
+    if (contentEl) contentEl.style.display = 'none';
+}
+
+// Hide loading state
+function hideLoadingState() {
+    const loadingEl = document.getElementById('propertyLoading');
+    const headerEl = document.getElementById('propertyHeader');
+    const contentEl = document.getElementById('propertyContent');
+    
+    if (loadingEl) loadingEl.style.display = 'none';
+    if (headerEl) headerEl.style.display = 'block';
+    if (contentEl) contentEl.style.display = 'flex';
+}
+
+// Show error state
+function showErrorState(message = 'Property not found') {
+    const loadingEl = document.getElementById('propertyLoading');
+    const errorEl = document.getElementById('propertyError');
+    const headerEl = document.getElementById('propertyHeader');
+    const contentEl = document.getElementById('propertyContent');
+    
+    if (loadingEl) loadingEl.style.display = 'none';
+    if (errorEl) {
+        errorEl.style.display = 'block';
+        const errorMsg = errorEl.querySelector('p');
+        if (errorMsg) errorMsg.textContent = message;
+    }
+    if (headerEl) headerEl.style.display = 'none';
+    if (contentEl) contentEl.style.display = 'none';
+}
+
+// Load Property from API by ID
+async function loadPropertyFromAPI(propertyId) {
+    try {
+        const response = await fetch(`/api/properties/${propertyId}`);
+        if (!response.ok) {
+            if (response.status === 404) {
+                throw new Error('Property not found');
+            }
+            const errorText = await response.text();
+            throw new Error(`Failed to fetch property: ${response.status} ${errorText}`);
+        }
+        const property = await response.json();
+        
+        // Convert API format to display format
+        return convertPropertyFromAPI(property);
+    } catch (error) {
+        console.error('Error loading property from API:', error);
+        throw error; // Re-throw to let caller handle it
+    }
+}
+
+// Helper function to normalize image URLs
+function normalizeImageUrl(url) {
+    if (!url) return null;
+    
+    // If it's already a data URL (base64), return as is
+    if (url.startsWith('data:')) {
+        return url;
+    }
+    
+    // If it's an absolute URL (http/https), return as is (external image)
+    if (url.startsWith('http://') || url.startsWith('https://')) {
+        return url;
+    }
+    
+    // If it's a relative path starting with /, return as is
+    if (url.startsWith('/')) {
+        return url;
+    }
+    
+    // If it's a relative path without /, add /images/properties/ prefix
+    // This handles cases where just the filename is stored
+    if (url.includes('.jpeg') || url.includes('.jpg') || url.includes('.png') || url.includes('.gif') || url.includes('.webp')) {
+        // Check if it already has /images/ in the path
+        if (url.includes('/images/')) {
+            return url.startsWith('/') ? url : '/' + url;
+        }
+        // Otherwise, assume it's a property image
+        return '/images/properties/' + url;
+    }
+    
+    // Default: return as relative path with leading /
+    return url.startsWith('/') ? url : '/' + url;
+}
+
+// Convert API property format to display format
+function convertPropertyFromAPI(property) {
+    // Handle images - API returns array of objects with image_url
+    let images = [];
+    if (property.images && property.images.length > 0) {
+        images = property.images.map(img => {
+            let imageUrl = null;
+            if (typeof img === 'string') {
+                imageUrl = img;
+            } else if (img && img.image_url) {
+                imageUrl = img.image_url;
+            }
+            // Normalize the URL
+            return normalizeImageUrl(imageUrl);
+        }).filter(Boolean);
+    }
+    
+    // Handle features - API returns array of objects with feature_name
+    let features = [];
+    if (property.features && property.features.length > 0) {
+        features = property.features.map(feature => {
+            if (typeof feature === 'string') {
+                return feature;
+            } else if (feature && feature.feature_name) {
+                return feature.feature_name;
+            }
+            return null;
+        }).filter(Boolean);
+    }
+    
+    // Construct location from city and locality if location is not provided
+    let location = property.location;
+    if (!location && (property.city || property.locality)) {
+        const city = property.city || '';
+        const locality = property.locality || '';
+        if (city && locality) {
+            location = `${city}, ${locality}`;
+        } else if (city) {
+            location = city;
+        } else if (locality) {
+            location = locality;
+        }
+    }
+    if (!location) {
+        location = 'Location not specified';
+    }
+    
+    // Get title - check property_name or project_name if title is not available
+    let title = property.title;
+    if (!title) {
+        title = property.property_name || property.project_name || 'Untitled Property';
+    }
+    
+    // Get area - check multiple possible fields (area, buildup_area, plot_area)
+    let area = property.area;
+    if (!area && property.buildup_area) {
+        area = property.buildup_area;
+    }
+    if (!area && property.plot_area) {
+        area = property.plot_area;
+    }
+    
+    // Get bedrooms - default to 0 if not available (for plots)
+    let bedrooms = property.bedrooms;
+    if (bedrooms === null || bedrooms === undefined) {
+        bedrooms = 0;
+    }
+    
+    // Get bathrooms - default to 0 if not available
+    let bathrooms = property.bathrooms;
+    if (bathrooms === null || bathrooms === undefined) {
+        bathrooms = 0;
+    }
+    
+    // Get property details directly from property object (not from description)
+    let descriptionText = property.description || '';
+    
+    // Remove "--- Property Details ---" section from description if it exists
+    const detailsSeparator = '--- Property Details ---';
+    if (descriptionText.includes(detailsSeparator)) {
+        const parts = descriptionText.split(detailsSeparator);
+        descriptionText = parts[0].trim();
+    }
+    
+    // Get fields from property object
+    let builder = property.builder || '';
+    let configuration = property.configuration || '';
+    let plotArea = property.plot_area || '';
+    let superBuiltUpArea = property.super_built_up_area || '';
+    let totalFlats = property.total_flats || '';
+    let totalFloors = property.total_floors || '';
+    let totalAcres = property.total_acres || '';
+    
+    // Get unit_type for configuration if available
+    if (!configuration && property.unit_type) {
+        configuration = property.unit_type.toUpperCase();
+    }
+    
+    // Get price_text from property - check multiple possible locations
+    let priceText = '';
+    if (property.price_text) {
+        priceText = String(property.price_text).trim();
+    } else if (property.price_text === null || property.price_text === undefined) {
+        // price_text is explicitly null/undefined - don't use price as fallback
+        priceText = '';
+    }
+    
+    // If fields are not in property object, try to extract from description (for backward compatibility)
+    // but don't display them in description
+    if (!builder || !configuration || !superBuiltUpArea) {
+        const tempDescription = property.description || '';
+        if (tempDescription.includes(detailsSeparator)) {
+            const parts = tempDescription.split(detailsSeparator);
+            if (parts[1]) {
+                const details = parts[1].trim().split('\n');
+                details.forEach(detail => {
+                    if (detail.includes(':')) {
+                        const [key, ...valueParts] = detail.split(':');
+                        const value = valueParts.join(':').trim();
+                        const keyLower = key.trim().toLowerCase();
+                        
+                        if (keyLower.includes('builder') && !builder) builder = value;
+                        else if (keyLower.includes('configuration') && !configuration) configuration = value;
+                        else if (keyLower.includes('plot area') && !plotArea) plotArea = value;
+                        else if (keyLower.includes('super built-up area') && !superBuiltUpArea) superBuiltUpArea = value;
+                        else if (keyLower.includes('total flats') && !totalFlats) totalFlats = value;
+                        else if (keyLower.includes('total floors') && !totalFloors) totalFloors = value;
+                        else if (keyLower.includes('total acres') && !totalAcres) totalAcres = value;
+                    }
+                });
+            }
+        }
+    }
+    
+    // Get status - check for property_status (ready_to_move) or use status
+    let statusValue = property.property_status || property.status;
+    if (typeof statusValue !== 'string') {
+        statusValue = statusValue?.value || statusValue;
+    }
+    
+    // Get type - handle enum values
+    let propertyType = property.type;
+    if (typeof propertyType !== 'string') {
+        propertyType = propertyType?.value || propertyType || 'apartment';
+    }
+    
+    return {
+        id: property.id,
+        title: title,
+        location: location,
+        price: property.price, // Numeric value for backend
+        price_text: priceText, // Text value for display
+        type: propertyType,
+        status: statusValue,
+        bedrooms: bedrooms,
+        bathrooms: bathrooms,
+        area: area,
+        image: images.length > 0 ? images[0] : '/images/img1.jpg',
+        images: images,
+        description: descriptionText,
+        features: features,
+        // New fields
+        builder: builder,
+        configuration: configuration,
+        plot_area: plotArea,
+        super_built_up_area: superBuiltUpArea,
+        total_flats: totalFlats,
+        total_floors: totalFloors,
+        total_acres: totalAcres,
+        // Additional database fields
+        city: property.city || '',
+        locality: property.locality || '',
+        unit_type: property.unit_type || '',
+        buildup_area: property.buildup_area || '',
+        carpet_area: property.carpet_area || '',
+        plot_length: property.plot_length || '',
+        plot_breadth: property.plot_breadth || '',
+        property_category: property.property_category || ''
+    };
+}
+
+// Get Properties from localStorage or use defaults (fallback)
+function getPropertiesFromStorage() {
+    const stored = localStorage.getItem('dashboard_properties');
+    if (stored) {
+        return JSON.parse(stored);
+    }
+    // Return default properties if none in storage
+    return getDefaultProperties();
+}
+
+function getDefaultProperties() {
+    return [
+    {
+        id: 1,
+        title: "Luxury Modern Apartment",
+        location: "Downtown District, Bengaluru",
+        price: 450000,
+        type: "apartment",
+        bedrooms: 3,
+        bathrooms: 2,
+        area: 1800,
+        image: "/images/img1.jpg",
+        status: "sale",
+        description: "This stunning modern apartment offers a perfect blend of luxury and comfort. Located in the heart of Downtown District, this property features spacious rooms, high-end finishes, and breathtaking city views. The open-concept living area is perfect for entertaining, while the master suite provides a private retreat. The building includes premium amenities such as a fitness center, rooftop terrace, and 24/7 security.",
+        features: ["Air Conditioning", "Balcony", "Parking", "Security", "Elevator", "Gym", "Swimming Pool", "Garden", "Rooftop Terrace", "24/7 Security"]
+    },
+    {
+        id: 2,
+        title: "Spacious Family House",
+        location: "Suburban Area, Bengaluru",
+        price: 650000,
+        type: "house",
+        bedrooms: 4,
+        bathrooms: 3,
+        area: 2500,
+        image: "/images/img2.jpg",
+        status: "sale",
+        description: "Perfect for growing families, this spacious house offers ample living space and a beautiful backyard. The property features a modern kitchen, large family room, and multiple bedrooms with walk-in closets. The master bedroom includes an ensuite bathroom and private balcony. The backyard is perfect for outdoor activities and gardening.",
+        features: ["Garage", "Garden", "Fireplace", "Central Heating", "Storage", "Patio", "Security System", "Pet Friendly", "Walk-in Closets", "Modern Kitchen"]
+    },
+    {
+        id: 3,
+        title: "Elegant Villa with Pool",
+        location: "Hillside View, Bengaluru",
+        price: 1200000,
+        type: "villa",
+        bedrooms: 5,
+        bathrooms: 4,
+        area: 4000,
+        image: "/images/img3.jpg",
+        status: "sale",
+        description: "An exquisite villa offering the ultimate in luxury living. This property features a private swimming pool, landscaped gardens, and stunning hillside views. The interior boasts high ceilings, marble floors, and designer finishes throughout. Multiple living areas provide space for both relaxation and entertainment.",
+        features: ["Swimming Pool", "Garden", "Garage", "Security", "Home Theater", "Wine Cellar", "Guest House", "Maid's Room"]
+    },
+    {
+        id: 4,
+        title: "Modern Condo Unit",
+        location: "City Center, Bengaluru",
+        price: 320000,
+        type: "condo",
+        bedrooms: 2,
+        bathrooms: 2,
+        area: 1200,
+        image: "/images/img4.jpg",
+        status: "rent",
+        description: "A contemporary condo unit in the vibrant city center. This property offers modern amenities and easy access to shopping, dining, and entertainment. The unit features an open floor plan, updated kitchen, and large windows that flood the space with natural light.",
+        features: ["Air Conditioning", "Balcony", "Parking", "Security", "Elevator", "Gym", "Concierge", "Rooftop Access", "Open Floor Plan", "Natural Light"]
+    },
+    {
+        id: 5,
+        title: "Cozy Townhouse",
+        location: "Residential Zone, Bengaluru",
+        price: 380000,
+        type: "townhouse",
+        bedrooms: 3,
+        bathrooms: 2.5,
+        area: 1600,
+        image: "/images/img5.jpg",
+        status: "sale",
+        description: "A charming townhouse in a quiet residential neighborhood. This property offers a perfect balance of privacy and community living. Features include a private garage, small garden, and modern interior finishes. Ideal for first-time buyers or small families.",
+        features: ["Garage", "Garden", "Storage", "Security", "Pet Friendly", "Modern Kitchen", "Hardwood Floors", "Private Entrance", "Community Living"]
+    },
+    {
+        id: 6,
+        title: "Premium Apartment Suite",
+        location: "Waterfront, Bengaluru",
+        price: 550000,
+        type: "apartment",
+        bedrooms: 3,
+        bathrooms: 2,
+        area: 2000,
+        image: "/images/img1.jpg",
+        status: "sale",
+        description: "A premium apartment suite with stunning waterfront views. This property features luxury finishes, spacious rooms, and access to exclusive building amenities. The location offers easy access to the waterfront promenade and nearby attractions.",
+        features: ["Waterfront View", "Balcony", "Parking", "Security", "Elevator", "Gym", "Swimming Pool", "Concierge"]
+    },
+    {
+        id: 7,
+        title: "Luxury House Estate",
+        location: "Gated Community, Bengaluru",
+        price: 850000,
+        type: "house",
+        bedrooms: 5,
+        bathrooms: 4,
+        area: 3500,
+        image: "/images/img2.jpg",
+        status: "sale",
+        description: "A magnificent estate in a prestigious gated community. This property offers unparalleled luxury with extensive grounds, multiple living areas, and premium finishes. The estate includes a private pool, tennis court, and guest accommodations.",
+        features: ["Swimming Pool", "Tennis Court", "Garage", "Garden", "Security", "Home Theater", "Guest House", "Wine Cellar"]
+    },
+    {
+        id: 8,
+        title: "Beachfront Villa",
+        location: "Coastal Area, Bengaluru",
+        price: 1500000,
+        type: "villa",
+        bedrooms: 6,
+        bathrooms: 5,
+        area: 5000,
+        image: "/images/img3.jpg",
+        status: "sale",
+        description: "An extraordinary beachfront villa offering direct access to the beach. This property features multiple levels, panoramic ocean views, and luxury amenities throughout. Perfect for those seeking a premium coastal lifestyle.",
+        features: ["Beachfront", "Swimming Pool", "Garden", "Garage", "Security", "Home Theater", "Guest House", "Ocean View"]
+    },
+    {
+        id: 9,
+        title: "Contemporary Apartment",
+        location: "Business District, Bengaluru",
+        price: 420000,
+        type: "apartment",
+        bedrooms: 2,
+        bathrooms: 2,
+        area: 1500,
+        image: "/images/img4.jpg",
+        status: "rent",
+        description: "A contemporary apartment in the bustling business district. Perfect for professionals, this property offers modern design, convenient location, and access to business amenities. The unit features smart home technology and energy-efficient systems.",
+        features: ["Air Conditioning", "Balcony", "Parking", "Security", "Elevator", "Gym", "Business Center", "Smart Home"]
+    },
+    {
+        id: 10,
+        title: "Family-Friendly House",
+        location: "Quiet Neighborhood, Bengaluru",
+        price: 580000,
+        type: "house",
+        bedrooms: 4,
+        bathrooms: 3,
+        area: 2200,
+        image: "/images/img5.jpg",
+        status: "sale",
+        description: "A family-friendly house in a peaceful neighborhood. This property offers a safe environment for children, nearby schools, and community parks. The house features a large backyard, play area, and family-oriented design.",
+        features: ["Garage", "Garden", "Play Area", "Storage", "Security", "Pet Friendly", "Family Room", "Modern Kitchen"]
+    },
+    {
+        id: 11,
+        title: "Executive Villa",
+        location: "Prestigious Area, Bengaluru",
+        price: 1350000,
+        type: "villa",
+        bedrooms: 6,
+        bathrooms: 5,
+        area: 4500,
+        image: "/images/img1.jpg",
+        status: "sale",
+        description: "An executive villa in a prestigious area, designed for luxury living and entertaining. This property features grand architecture, premium materials, and extensive grounds. Perfect for high-profile individuals and families.",
+        features: ["Swimming Pool", "Garden", "Garage", "Security", "Home Theater", "Wine Cellar", "Guest House", "Helipad"]
+    },
+    {
+        id: 12,
+        title: "Modern Condo with View",
+        location: "City Skyline, Bengaluru",
+        price: 350000,
+        type: "condo",
+        bedrooms: 2,
+        bathrooms: 2,
+        area: 1300,
+        image: "/images/img2.jpg",
+        status: "rent",
+        description: "A modern condo with spectacular city skyline views. This property offers contemporary design, premium finishes, and access to building amenities. The location provides easy access to urban attractions and transportation.",
+        features: ["City View", "Balcony", "Parking", "Security", "Elevator", "Gym", "Rooftop Terrace", "Concierge"]
+    }
+    ];
+}
+
+// Initialize
+document.addEventListener('DOMContentLoaded', async () => {
+    await loadPropertyDetails();
+});
+
+// Load Property Details
+async function loadPropertyDetails() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const propertyId = parseInt(urlParams.get('id'));
+    
+    if (!propertyId) {
+        showErrorState('Invalid property ID');
+        return;
+    }
+    
+    showLoadingState();
+    
+    try {
+    // Try to load from API first
+    let property = await loadPropertyFromAPI(propertyId);
+    
+    if (!property) {
+            showErrorState('Property not found');
+        return;
+    }
+    
+    // Store property ID for contact form
+    currentPropertyId = property.id;
+    
+        hideLoadingState();
+    renderPropertyDetails(property);
+    initContactAgentModal();
+    initScheduleVisitModal();
+        
+        console.log(`Loaded property ${propertyId} from database`);
+        
+    } catch (error) {
+        console.error('Error loading property details:', error);
+        hideLoadingState();
+        
+        if (error.message.includes('not found') || error.message.includes('404')) {
+            showErrorState('Property not found. It may have been removed.');
+        } else {
+            showErrorState('Failed to load property. Please try again later.');
+        }
+    }
+}
+
+// Render Property Details
+function renderPropertyDetails(property) {
+    // Update page title
+    document.title = `${property.title} - Tirumakudalu Properties`;
+    
+    // Render Header
+    const header = document.getElementById('propertyHeader');
+    const title = escapeHtml(property.title || 'Untitled Property');
+    const location = escapeHtml(property.location || 'Location not specified');
+    const builder = property.builder ? escapeHtml(property.builder) : null;
+    const configuration = property.configuration ? escapeHtml(property.configuration) : null;
+    const superBuiltUpArea = property.super_built_up_area ? escapeHtml(property.super_built_up_area) : null;
+    
+    header.innerHTML = `
+        <div class="property-header-content">
+            <h1 class="property-details-title">${title}</h1>
+            <div class="property-details-location">
+                <i class="fas fa-map-marker-alt"></i>
+                <span>${location}</span>
+            </div>
+            <div class="property-details-meta">
+                ${builder ? `
+                <span class="property-meta-item">
+                    <i class="fas fa-building"></i> ${builder}
+                </span>
+                ` : ''}
+                ${configuration ? `
+                <span class="property-meta-item">
+                    <i class="fas fa-home"></i> ${configuration}
+                </span>
+                ` : ''}
+                ${superBuiltUpArea ? `
+                <span class="property-meta-item">
+                    <i class="fas fa-ruler-combined"></i> ${superBuiltUpArea}
+                </span>
+                ` : ''}
+            </div>
+        </div>
+    `;
+    
+    // Render Gallery
+    const gallery = document.getElementById('propertyGallery');
+    const images = property.images && property.images.length > 0 ? property.images : 
+                   (property.image ? [property.image] : ['/images/img1.jpg']);
+    const mainImage = images[0] || '/images/img1.jpg';
+    const propertyTitle = escapeHtml(property.title || 'Property');
+    
+    gallery.innerHTML = `
+        <div class="property-main-image">
+            <img src="${escapeHtml(mainImage)}" alt="${propertyTitle}" onerror="this.src='/images/img1.jpg'">
+        </div>
+        <div class="property-thumbnails">
+            ${images.map((img, index) => `
+                <div class="property-thumbnail ${index === 0 ? 'active' : ''}">
+                    <img src="${escapeHtml(img || '/images/img1.jpg')}" alt="${propertyTitle}" onerror="this.src='/images/img1.jpg'">
+                </div>
+            `).join('')}
+        </div>
+    `;
+    
+    // Render Description (clean description - remove property details section if it exists)
+    const description = document.getElementById('propertyDescription');
+    let cleanDescription = property.description || 'No description available.';
+    // Remove "--- Property Details ---" section if it exists
+    const detailsSeparator = '--- Property Details ---';
+    if (cleanDescription.includes(detailsSeparator)) {
+        const parts = cleanDescription.split(detailsSeparator);
+        cleanDescription = parts[0].trim();
+    }
+    // Escape HTML but preserve line breaks
+    const escapedDescription = escapeHtml(cleanDescription).replace(/\n/g, '<br>');
+    description.innerHTML = `<p>${escapedDescription}</p>`;
+    
+    // Render Features
+    const features = document.getElementById('propertyFeatures');
+    if (property.features && property.features.length > 0) {
+        features.innerHTML = property.features.map(feature => {
+            const featureName = escapeHtml(feature);
+            return `
+        <div class="property-feature-item">
+            <i class="fas fa-check-circle"></i>
+                <span>${featureName}</span>
+        </div>
+            `;
+        }).join('');
+    } else {
+        features.innerHTML = '<p class="no-features">No features listed for this property.</p>';
+    }
+    
+    // Render Sidebar - Price Display
+    const price = document.getElementById('propertyPrice');
+    
+    // Get price text from property object (set in convertPropertyFromAPI)
+    // Ensure it's a string and not empty/null
+    let displayPriceText = '';
+    if (property.price_text) {
+        displayPriceText = String(property.price_text).trim();
+    }
+    
+    // If no price_text, check if price is a string
+    if (!displayPriceText && typeof property.price === 'string' && property.price.trim() !== '') {
+        displayPriceText = property.price.trim();
+    }
+    
+    // Check if this is a per sq.ft. price - if so, display price_text as-is or format the numeric price
+    const isPerSqft = displayPriceText && (
+        displayPriceText.toLowerCase().includes('sq.ft') || 
+        displayPriceText.toLowerCase().includes('sqft') || 
+        displayPriceText.toLowerCase().includes('per sq') ||
+        displayPriceText.toLowerCase().includes('/sq')
+    );
+    
+    // Display price with proper formatting and heading
+    // Priority: price_text > string price > formatted numeric price
+    let priceContent = '';
+    
+    // Handle per sq.ft. prices first
+    if (isPerSqft) {
+        // For per sq.ft. prices, show the price_text if available, otherwise format the numeric price
+        if (displayPriceText) {
+            priceContent = displayPriceText;
+        } else if (typeof property.price === 'number' && property.price > 0) {
+            priceContent = `Rs. ${property.price.toLocaleString('en-IN')}/- Sq.Ft.`;
+        } else {
+            priceContent = 'Price on request';
+        }
+    } else if (displayPriceText && displayPriceText !== '' && displayPriceText !== String(property.price) && displayPriceText !== String(Math.round(property.price))) {
+        // Use the price text if available (e.g., "3BHK: Rs.3.32 Cr, 4BHK: Rs.3.72 Cr")
+        // Format it nicely with line breaks if it contains multiple prices
+        let formattedPrice = displayPriceText;
+        // If it contains "3BHK" and "4BHK", format with line breaks
+        if (displayPriceText.includes('3BHK') && displayPriceText.includes('4BHK')) {
+            formattedPrice = displayPriceText
+                .replace(/(3BHK[^4]*?)(4BHK)/g, '$1<br>$2')
+                .replace(/,/g, '<br>');
+        } else if (displayPriceText.includes(',')) {
+            // If it has commas, replace with line breaks
+            formattedPrice = displayPriceText.replace(/,/g, '<br>');
+        }
+        priceContent = formattedPrice;
+    } else if (typeof property.price === 'string' && property.price.trim() !== '') {
+        // Price is already a string - use it directly
+        priceContent = property.price;
+    } else if (typeof property.price === 'number' && property.price > 0) {
+        // Price is a number - format it with Indian currency
+        if (property.price >= 10000000) {
+            // Crores
+            const crores = (property.price / 10000000).toFixed(2);
+            priceContent = `Rs. ${crores} Cr`;
+        } else if (property.price >= 100000) {
+            // Lakhs
+            const lakhs = (property.price / 100000).toFixed(2);
+            priceContent = `Rs. ${lakhs} Lakh`;
+        } else {
+            // For small numbers, check if it might be in crores (e.g., 3.32 could mean 3.32 Cr)
+            if (property.price < 100 && property.price > 0) {
+                priceContent = `Rs. ${property.price.toFixed(2)} Cr`;
+            } else {
+                // Regular formatting with commas
+                priceContent = `Rs. ${property.price.toLocaleString('en-IN')}`;
+            }
+        }
+    } else {
+        // Fallback
+        priceContent = 'Price on request';
+    }
+    
+    // Wrap price content with heading and appropriately sized font
+    // Note: priceContent may contain HTML (line breaks), so we don't escape it
+    price.innerHTML = `
+        <div style="margin-bottom: 0.5rem;">
+            <h3 style="font-size: 1.125rem; font-weight: 600; margin: 0 0 0.75rem 0; color: #1f2937; display: flex; align-items: center; gap: 0.5rem;">
+                <i class="fas fa-tag" style="font-size: 1rem;"></i>
+                <span>Price</span>
+            </h3>
+        </div>
+        <div style="font-size: 1rem; line-height: 1.6; color: #374151;">
+            ${priceContent}
+        </div>
+    `;
+    
+    const status = document.getElementById('propertyStatus');
+    let statusText = 'For Sale';
+    let statusClass = 'sale';
+    if (property.status === 'rent') {
+        statusText = 'For Rent';
+        statusClass = 'rent';
+    } else if (property.status === 'ready_to_move') {
+        statusText = 'Ready to Move';
+        statusClass = 'ready-to-move';
+    }
+    status.innerHTML = `<span class="status-badge ${statusClass}">${escapeHtml(statusText)}</span>`;
+    
+    const quickInfo = document.getElementById('propertyQuickInfo');
+    const propertyType = escapeHtml((property.type || 'apartment').charAt(0).toUpperCase() + (property.type || 'apartment').slice(1));
+    const isPlot = property.type === 'plot' || property.property_category === 'plot';
+    
+    let quickInfoHTML = `
+        <div class="quick-info-item">
+            <i class="fas fa-building"></i>
+            <div>
+                <span class="quick-info-label">Type</span>
+                <span class="quick-info-value">${propertyType}</span>
+            </div>
+        </div>
+    `;
+    
+    // For residential properties, show bedrooms and bathrooms
+    if (!isPlot && property.bedrooms !== null && property.bedrooms !== undefined && property.bedrooms > 0) {
+        quickInfoHTML += `
+        <div class="quick-info-item">
+            <i class="fas fa-bed"></i>
+            <div>
+                <span class="quick-info-label">Bedrooms</span>
+                <span class="quick-info-value">${property.bedrooms}</span>
+            </div>
+        </div>
+        `;
+    }
+    
+    if (!isPlot && property.bathrooms !== null && property.bathrooms !== undefined && property.bathrooms > 0) {
+        quickInfoHTML += `
+        <div class="quick-info-item">
+            <i class="fas fa-bath"></i>
+            <div>
+                <span class="quick-info-label">Bathrooms</span>
+                <span class="quick-info-value">${property.bathrooms}</span>
+            </div>
+        </div>
+        `;
+    }
+    
+    // Show area (buildup_area for residential, plot_area for plots)
+    if (property.area) {
+        const areaLabel = isPlot ? 'Plot Area' : 'Area';
+        const areaValue = isPlot ? (property.plot_area || property.area) : (property.buildup_area || property.area);
+        quickInfoHTML += `
+        <div class="quick-info-item">
+            <i class="fas fa-ruler-combined"></i>
+            <div>
+                <span class="quick-info-label">${areaLabel}</span>
+                <span class="quick-info-value">${escapeHtml(String(areaValue))} sq.ft.</span>
+            </div>
+        </div>
+        `;
+    }
+    
+    // For plots, show plot dimensions
+    if (isPlot && property.plot_length && property.plot_breadth) {
+        quickInfoHTML += `
+        <div class="quick-info-item">
+            <i class="fas fa-ruler"></i>
+            <div>
+                <span class="quick-info-label">Dimensions</span>
+                <span class="quick-info-value">${escapeHtml(String(property.plot_length))} × ${escapeHtml(String(property.plot_breadth))} ft</span>
+            </div>
+        </div>
+        `;
+    }
+    
+    // For residential, show carpet area if available
+    if (!isPlot && property.carpet_area) {
+        quickInfoHTML += `
+        <div class="quick-info-item">
+            <i class="fas fa-ruler"></i>
+            <div>
+                <span class="quick-info-label">Carpet Area</span>
+                <span class="quick-info-value">${escapeHtml(String(property.carpet_area))} sq.ft.</span>
+            </div>
+        </div>
+        `;
+    }
+    
+    // Add new fields if available (with proper escaping)
+    if (property.builder) {
+        quickInfoHTML += `
+        <div class="quick-info-item">
+            <i class="fas fa-building"></i>
+            <div>
+                <span class="quick-info-label">Builder</span>
+                <span class="quick-info-value">${escapeHtml(property.builder)}</span>
+            </div>
+        </div>
+        `;
+    }
+    
+    if (property.configuration || property.unit_type) {
+        const configValue = property.configuration || property.unit_type;
+        quickInfoHTML += `
+        <div class="quick-info-item">
+            <i class="fas fa-home"></i>
+            <div>
+                <span class="quick-info-label">Configuration</span>
+                <span class="quick-info-value">${escapeHtml(String(configValue).toUpperCase())}</span>
+            </div>
+        </div>
+        `;
+    }
+    
+    if (property.super_built_up_area) {
+        quickInfoHTML += `
+        <div class="quick-info-item">
+            <i class="fas fa-ruler-combined"></i>
+            <div>
+                <span class="quick-info-label">Super Built-up Area</span>
+                <span class="quick-info-value">${escapeHtml(property.super_built_up_area)}</span>
+            </div>
+        </div>
+        `;
+    }
+    
+    if (property.total_flats) {
+        quickInfoHTML += `
+        <div class="quick-info-item">
+            <i class="fas fa-building"></i>
+            <div>
+                <span class="quick-info-label">Total Flats</span>
+                <span class="quick-info-value">${escapeHtml(String(property.total_flats))}</span>
+            </div>
+        </div>
+        `;
+    }
+    
+    if (property.total_floors) {
+        quickInfoHTML += `
+        <div class="quick-info-item">
+            <i class="fas fa-layer-group"></i>
+            <div>
+                <span class="quick-info-label">Total Floors</span>
+                <span class="quick-info-value">${escapeHtml(String(property.total_floors))}</span>
+            </div>
+        </div>
+        `;
+    }
+    
+    if (property.total_acres) {
+        quickInfoHTML += `
+        <div class="quick-info-item">
+            <i class="fas fa-map"></i>
+            <div>
+                <span class="quick-info-label">Total Acres</span>
+                <span class="quick-info-value">${escapeHtml(String(property.total_acres))}</span>
+            </div>
+        </div>
+        `;
+    }
+    
+    // Show plot_area separately if it's different from area (for plots)
+    if (isPlot && property.plot_area && property.plot_area !== property.area) {
+        quickInfoHTML += `
+        <div class="quick-info-item">
+            <i class="fas fa-ruler"></i>
+            <div>
+                <span class="quick-info-label">Plot Area</span>
+                <span class="quick-info-value">${escapeHtml(String(property.plot_area))} sq.ft.</span>
+            </div>
+        </div>
+        `;
+    }
+    
+    quickInfo.innerHTML = quickInfoHTML;
+    
+    // Add thumbnail click handlers
+    const thumbnails = gallery.querySelectorAll('.property-thumbnail');
+    const mainImageElement = gallery.querySelector('.property-main-image img');
+    
+    thumbnails.forEach(thumbnail => {
+        thumbnail.addEventListener('click', () => {
+            thumbnails.forEach(t => t.classList.remove('active'));
+            thumbnail.classList.add('active');
+            const imgSrc = thumbnail.querySelector('img').src;
+            mainImageElement.src = imgSrc;
+        });
+    });
+    
+    // Initialize image lightbox
+    initImageLightbox(images, propertyTitle);
+}
+
+// Initialize Image Lightbox
+function initImageLightbox(images, propertyTitle) {
+    const lightbox = document.getElementById('imageLightbox');
+    const lightboxImage = document.getElementById('lightboxImage');
+    const lightboxCounter = document.getElementById('lightboxCounter');
+    const lightboxClose = document.getElementById('lightboxClose');
+    const lightboxOverlay = document.getElementById('lightboxOverlay');
+    const lightboxPrev = document.getElementById('lightboxPrev');
+    const lightboxNext = document.getElementById('lightboxNext');
+    
+    if (!lightbox || !lightboxImage) return;
+    
+    let currentImageIndex = 0;
+    const totalImages = images.length;
+    
+    // Function to update lightbox image
+    function updateLightboxImage(index) {
+        if (index < 0 || index >= totalImages) return;
+        currentImageIndex = index;
+        const imageUrl = images[index] || '/images/img1.jpg';
+        lightboxImage.src = imageUrl;
+        lightboxImage.alt = `${propertyTitle} - Image ${index + 1}`;
+        lightboxCounter.textContent = `${index + 1} / ${totalImages}`;
+        
+        // Update navigation buttons visibility
+        lightboxPrev.style.display = index === 0 ? 'none' : 'flex';
+        lightboxNext.style.display = index === totalImages - 1 ? 'none' : 'flex';
+    }
+    
+    // Function to open lightbox
+    function openLightbox(index) {
+        if (index < 0 || index >= totalImages) return;
+        currentImageIndex = index;
+        updateLightboxImage(index);
+        lightbox.style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+    }
+    
+    // Function to close lightbox
+    function closeLightbox() {
+        lightbox.style.display = 'none';
+        document.body.style.overflow = '';
+    }
+    
+    // Function to go to previous image
+    function prevImage() {
+        if (currentImageIndex > 0) {
+            updateLightboxImage(currentImageIndex - 1);
+        }
+    }
+    
+    // Function to go to next image
+    function nextImage() {
+        if (currentImageIndex < totalImages - 1) {
+            updateLightboxImage(currentImageIndex + 1);
+        }
+    }
+    
+    // Add click handlers to all images (main image and thumbnails)
+    const gallery = document.getElementById('propertyGallery');
+    if (gallery) {
+        const allImages = gallery.querySelectorAll('img');
+        allImages.forEach((img, index) => {
+            img.style.cursor = 'pointer';
+            img.addEventListener('click', (e) => {
+                e.stopPropagation();
+                // Find which image was clicked
+                let clickedIndex = 0;
+                if (img.closest('.property-main-image')) {
+                    // Main image clicked
+                    clickedIndex = 0;
+                } else if (img.closest('.property-thumbnail')) {
+                    // Thumbnail clicked - find its index
+                    const thumbnails = gallery.querySelectorAll('.property-thumbnail');
+                    thumbnails.forEach((thumb, idx) => {
+                        if (thumb.contains(img)) {
+                            clickedIndex = idx;
+                        }
+                    });
+                }
+                openLightbox(clickedIndex);
+            });
+        });
+    }
+    
+    // Close button
+    if (lightboxClose) {
+        lightboxClose.addEventListener('click', closeLightbox);
+    }
+    
+    // Overlay click to close
+    if (lightboxOverlay) {
+        lightboxOverlay.addEventListener('click', closeLightbox);
+    }
+    
+    // Navigation buttons
+    if (lightboxPrev) {
+        lightboxPrev.addEventListener('click', (e) => {
+            e.stopPropagation();
+            prevImage();
+        });
+    }
+    
+    if (lightboxNext) {
+        lightboxNext.addEventListener('click', (e) => {
+            e.stopPropagation();
+            nextImage();
+        });
+    }
+    
+    // Keyboard navigation
+    document.addEventListener('keydown', (e) => {
+        if (lightbox.style.display === 'none' || lightbox.style.display === '') return;
+        
+        switch(e.key) {
+            case 'Escape':
+                closeLightbox();
+                break;
+            case 'ArrowLeft':
+                e.preventDefault();
+                prevImage();
+                break;
+            case 'ArrowRight':
+                e.preventDefault();
+                nextImage();
+                break;
+        }
+    });
+    
+    // Prevent lightbox content clicks from closing
+    if (lightboxImage) {
+        lightboxImage.addEventListener('click', (e) => {
+            e.stopPropagation();
+        });
+    }
+}
+
+// Initialize Contact Agent Modal
+function initContactAgentModal() {
+    const contactAgentBtn = document.getElementById('contactAgentBtn');
+    const contactInfoModal = document.getElementById('contactInfoModal');
+    const contactInfoModalClose = document.getElementById('contactInfoModalClose');
+    const contactInfoModalOverlay = document.getElementById('contactInfoModalOverlay');
+    const contactAgentModal = document.getElementById('contactAgentModal');
+    const contactAgentModalClose = document.getElementById('contactAgentModalClose');
+    const contactAgentModalOverlay = document.getElementById('contactAgentModalOverlay');
+    const contactAgentForm = document.getElementById('contactAgentForm');
+    const contactAgentMessage = document.getElementById('contactAgentMessage');
+
+    // Detect if device is mobile
+    function isMobileDevice() {
+        return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || 
+               (window.matchMedia && window.matchMedia('(max-width: 768px)').matches);
+    }
+
+    // Open contact info modal
+    function openContactInfoModal() {
+        if (contactInfoModal) {
+            contactInfoModal.classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+    }
+
+    // Close contact info modal
+    function closeContactInfoModal() {
+        if (contactInfoModal) {
+            contactInfoModal.classList.remove('active');
+            document.body.style.overflow = '';
+        }
+    }
+
+    // Handle Contact Agent button click
+    if (contactAgentBtn) {
+        contactAgentBtn.addEventListener('click', (e) => {
+            // If mobile device, open dialer directly
+            if (isMobileDevice()) {
+                window.location.href = 'tel:+919741111756';
+            } else {
+                // If desktop, show contact info modal
+                e.preventDefault();
+                openContactInfoModal();
+            }
+        });
+    }
+
+    // Close contact info modal handlers
+    if (contactInfoModalClose) {
+        contactInfoModalClose.addEventListener('click', closeContactInfoModal);
+    }
+
+    if (contactInfoModalOverlay) {
+        contactInfoModalOverlay.addEventListener('click', closeContactInfoModal);
+    }
+
+    // Close contact info modal on Escape key
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && contactInfoModal && contactInfoModal.classList.contains('active')) {
+            closeContactInfoModal();
+        }
+    });
+
+    // Copy phone number to clipboard on click
+    const contactInfoLink = document.querySelector('#contactInfoModal .contact-info-link');
+    if (contactInfoLink) {
+        contactInfoLink.addEventListener('click', async (e) => {
+            // On mobile, let the tel: link work normally
+            if (isMobileDevice()) {
+                return; // Allow default tel: behavior
+            }
+            
+            // On desktop, copy to clipboard
+            e.preventDefault();
+            const phoneNumber = '+91 97411 11756';
+            
+            try {
+                await navigator.clipboard.writeText(phoneNumber);
+                
+                // Show feedback
+                const originalText = contactInfoLink.textContent;
+                contactInfoLink.textContent = 'Copied!';
+                contactInfoLink.style.color = '#22c55e';
+                
+                setTimeout(() => {
+                    contactInfoLink.textContent = originalText;
+                    contactInfoLink.style.color = '';
+                }, 2000);
+            } catch (err) {
+                console.error('Failed to copy:', err);
+                // Fallback for older browsers
+                const textArea = document.createElement('textarea');
+                textArea.value = phoneNumber;
+                textArea.style.position = 'fixed';
+                textArea.style.opacity = '0';
+                document.body.appendChild(textArea);
+                textArea.select();
+                try {
+                    document.execCommand('copy');
+                    const originalText = contactInfoLink.textContent;
+                    contactInfoLink.textContent = 'Copied!';
+                    contactInfoLink.style.color = '#22c55e';
+                    setTimeout(() => {
+                        contactInfoLink.textContent = originalText;
+                        contactInfoLink.style.color = '';
+                    }, 2000);
+                } catch (fallbackErr) {
+                    console.error('Fallback copy failed:', fallbackErr);
+                }
+                document.body.removeChild(textArea);
+            }
+        });
+    }
+
+    // Close modal
+    function closeModal() {
+        contactAgentModal.classList.remove('active');
+        document.body.style.overflow = '';
+        contactAgentMessage.style.display = 'none';
+        contactAgentForm.reset();
+    }
+
+    if (contactAgentModalClose) {
+        contactAgentModalClose.addEventListener('click', closeModal);
+    }
+
+    if (contactAgentModalOverlay) {
+        contactAgentModalOverlay.addEventListener('click', closeModal);
+    }
+
+    // Close on Escape key
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && contactAgentModal.classList.contains('active')) {
+            closeModal();
+        }
+    });
+
+    // Form submission
+    if (contactAgentForm) {
+        contactAgentForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const name = document.getElementById('contactName').value.trim();
+            const email = document.getElementById('contactEmail').value.trim();
+            const phone = document.getElementById('contactPhone').value.trim();
+            const subject = document.getElementById('contactSubject').value.trim();
+            const message = document.getElementById('contactMessage').value.trim();
+            
+            const submitBtn = contactAgentForm.querySelector('.btn-login-submit');
+            const originalText = submitBtn.innerHTML;
+            
+            // Disable button and show loading
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
+            contactAgentMessage.style.display = 'none';
+            
+            try {
+                // Build form data - set specific subject for Contact Agent inquiries
+                const formData = {
+                    name: name,
+                    email: email,
+                    message: message,
+                    subject: 'Contact Agent', // Set specific subject to identify Contact Agent inquiries
+                    phone: phone || null
+                };
+                
+                // Add property_id only if it exists
+                if (currentPropertyId !== null && currentPropertyId !== undefined) {
+                    formData.property_id = parseInt(currentPropertyId);
+                }
+                
+                const response = await fetch('/api/contact', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(formData)
+                });
+                
+                let data;
+                try {
+                    data = await response.json();
+                } catch (parseError) {
+                    console.error('Error parsing response:', parseError);
+                    throw new Error('Invalid response from server');
+                }
+                
+                if (response.ok) {
+                    // Success
+                    contactAgentMessage.style.display = 'block';
+                    contactAgentMessage.className = 'form-message success';
+                    contactAgentMessage.textContent = 'Thank you for your message! Our agent will get back to you soon.';
+                    contactAgentForm.reset();
+                    
+                    // Close modal after 2 seconds
+                    setTimeout(() => {
+                        closeModal();
+                    }, 2000);
+                } else {
+                    // Error from server - handle validation errors
+                    let errorMsg = 'Failed to send message. Please try again.';
+                    
+                    if (data.detail) {
+                        // FastAPI validation errors come as a list
+                        if (Array.isArray(data.detail)) {
+                            const errors = data.detail.map(err => {
+                                const field = err.loc ? err.loc.join('.') : 'field';
+                                return `${field}: ${err.msg}`;
+                            }).join(', ');
+                            errorMsg = `Validation error: ${errors}`;
+                        } else if (typeof data.detail === 'string') {
+                            errorMsg = data.detail;
+                        } else {
+                            errorMsg = JSON.stringify(data.detail);
+                        }
+                    } else if (data.error) {
+                        errorMsg = data.error;
+                    }
+                    
+                    contactAgentMessage.style.display = 'block';
+                    contactAgentMessage.className = 'form-message error';
+                    contactAgentMessage.textContent = errorMsg;
+                }
+            } catch (error) {
+                console.error('Error submitting contact form:', error);
+                contactAgentMessage.style.display = 'block';
+                contactAgentMessage.className = 'form-message error';
+                contactAgentMessage.textContent = 'Network error. Please check your connection and try again.';
+            } finally {
+                // Reset button
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalText;
+            }
+        });
+    }
+}
+
+// Initialize Schedule Visit Modal
+function initScheduleVisitModal() {
+    const scheduleVisitBtn = document.getElementById('scheduleVisitBtn');
+    const scheduleVisitModal = document.getElementById('scheduleVisitModal');
+    const scheduleVisitModalClose = document.getElementById('scheduleVisitModalClose');
+    const scheduleVisitModalOverlay = document.getElementById('scheduleVisitModalOverlay');
+    const scheduleVisitForm = document.getElementById('scheduleVisitForm');
+    const scheduleVisitMessage = document.getElementById('scheduleVisitMessage');
+    const visitDateInput = document.getElementById('visitDate');
+
+    // Set minimum date to today
+    if (visitDateInput) {
+        const today = new Date().toISOString().split('T')[0];
+        visitDateInput.setAttribute('min', today);
+    }
+
+    // Open modal
+    if (scheduleVisitBtn) {
+        scheduleVisitBtn.addEventListener('click', () => {
+            scheduleVisitModal.classList.add('active');
+            document.body.style.overflow = 'hidden';
+        });
+    }
+
+    // Close modal
+    function closeModal() {
+        scheduleVisitModal.classList.remove('active');
+        document.body.style.overflow = '';
+        scheduleVisitMessage.style.display = 'none';
+        scheduleVisitForm.reset();
+    }
+
+    if (scheduleVisitModalClose) {
+        scheduleVisitModalClose.addEventListener('click', closeModal);
+    }
+
+    if (scheduleVisitModalOverlay) {
+        scheduleVisitModalOverlay.addEventListener('click', closeModal);
+    }
+
+    // Close on Escape key
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && scheduleVisitModal.classList.contains('active')) {
+            closeModal();
+        }
+    });
+
+    // Form submission
+    if (scheduleVisitForm) {
+        scheduleVisitForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const name = document.getElementById('visitName').value.trim();
+            const email = document.getElementById('visitEmail').value.trim();
+            const phone = document.getElementById('visitPhone').value.trim();
+            const visitDate = document.getElementById('visitDate').value;
+            const visitTime = document.getElementById('visitTime').value;
+            const message = document.getElementById('visitMessage').value.trim();
+            
+            const submitBtn = scheduleVisitForm.querySelector('.btn-login-submit');
+            const originalText = submitBtn.innerHTML;
+            
+            // Disable button and show loading
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Scheduling...';
+            scheduleVisitMessage.style.display = 'none';
+            
+            try {
+                // Format date and time for display
+                const dateObj = new Date(visitDate);
+                const formattedDate = dateObj.toLocaleDateString('en-US', { 
+                    weekday: 'long', 
+                    year: 'numeric', 
+                    month: 'long', 
+                    day: 'numeric' 
+                });
+                const formattedTime = visitTime ? new Date(`2000-01-01T${visitTime}`).toLocaleTimeString('en-US', { 
+                    hour: 'numeric', 
+                    minute: '2-digit',
+                    hour12: true 
+                }) : '';
+                
+                // Build message with visit details
+                let fullMessage = `I would like to schedule a visit for:\n\n`;
+                fullMessage += `Preferred Date: ${formattedDate}\n`;
+                fullMessage += `Preferred Time: ${formattedTime}\n\n`;
+                
+                if (message) {
+                    fullMessage += `Additional Notes:\n${message}`;
+                }
+                
+                // Build form data - match the pattern from existing contact form
+                const formData = {
+                    name: name,
+                    email: email,
+                    message: fullMessage,
+                    subject: 'Schedule Visit',
+                    phone: phone || null
+                };
+                
+                // Add property_id only if it exists
+                if (currentPropertyId !== null && currentPropertyId !== undefined) {
+                    formData.property_id = parseInt(currentPropertyId);
+                }
+                
+                const response = await fetch('/api/contact', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(formData)
+                });
+                
+                let data;
+                try {
+                    data = await response.json();
+                } catch (parseError) {
+                    console.error('Error parsing response:', parseError);
+                    throw new Error('Invalid response from server');
+                }
+                
+                if (response.ok) {
+                    // Success
+                    scheduleVisitMessage.style.display = 'block';
+                    scheduleVisitMessage.className = 'form-message success';
+                    scheduleVisitMessage.textContent = 'Visit scheduled successfully! Our agent will confirm the appointment and contact you soon.';
+                    scheduleVisitForm.reset();
+                    
+                    // Close modal after 3 seconds
+                    setTimeout(() => {
+                        closeModal();
+                    }, 3000);
+                } else {
+                    // Error from server - handle validation errors
+                    let errorMsg = 'Failed to schedule visit. Please try again.';
+                    
+                    if (data.detail) {
+                        // FastAPI validation errors come as a list
+                        if (Array.isArray(data.detail)) {
+                            const errors = data.detail.map(err => {
+                                const field = err.loc ? err.loc.join('.') : 'field';
+                                return `${field}: ${err.msg}`;
+                            }).join(', ');
+                            errorMsg = `Validation error: ${errors}`;
+                        } else if (typeof data.detail === 'string') {
+                            errorMsg = data.detail;
+                        } else {
+                            errorMsg = JSON.stringify(data.detail);
+                        }
+                    } else if (data.error) {
+                        errorMsg = data.error;
+                    }
+                    
+                    scheduleVisitMessage.style.display = 'block';
+                    scheduleVisitMessage.className = 'form-message error';
+                    scheduleVisitMessage.textContent = errorMsg;
+                }
+            } catch (error) {
+                console.error('Error submitting schedule visit form:', error);
+                scheduleVisitMessage.style.display = 'block';
+                scheduleVisitMessage.className = 'form-message error';
+                scheduleVisitMessage.textContent = 'Network error. Please check your connection and try again.';
+            } finally {
+                // Reset button
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalText;
+            }
+        });
+    }
+}
+

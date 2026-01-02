@@ -1,0 +1,844 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NRI Property Investment in India - Tirumakudalu Properties</title>
+    <link rel="icon" type="image/png" href="/images/TirumakudaluProperties_Logo-2048x1858.png">
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .nri-container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 40px 20px;
+            line-height: 1.8;
+            color: #333;
+            background: #ffffff;
+        }
+        .nri-header {
+            text-align: center;
+            margin-bottom: 50px;
+            padding-bottom: 30px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+        .nri-header h1 {
+            font-family: 'Playfair Display', serif;
+            font-size: 2.5rem;
+            color: #1a1a1a;
+            margin-bottom: 15px;
+        }
+        .nri-header p {
+            color: #666;
+            font-size: 1rem;
+        }
+        .nri-content {
+            margin-top: 40px;
+        }
+        section:not(.properties-hero) {
+            background: #ffffff;
+            padding: 4rem 0;
+            opacity: 1 !important;
+            visibility: visible !important;
+        }
+        .section-coming-into-view {
+            opacity: 1 !important;
+            visibility: visible !important;
+        }
+        .nri-container,
+        .nri-content,
+        .nri-section {
+            opacity: 1 !important;
+            visibility: visible !important;
+        }
+        .nri-section {
+            margin-bottom: 40px;
+        }
+        .nri-section h2 {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.8rem;
+            color: #1a1a1a;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        .nri-section h3 {
+            font-size: 1.3rem;
+            color: #2c3e50;
+            margin-top: 25px;
+            margin-bottom: 15px;
+        }
+        .nri-section p {
+            margin-bottom: 15px;
+            text-align: justify;
+        }
+        .nri-section ul, .nri-section ol {
+            margin: 15px 0;
+            padding-left: 30px;
+        }
+        .nri-section li {
+            margin-bottom: 10px;
+        }
+        .nri-section strong {
+            color: #2c3e50;
+        }
+        .info-box {
+            background: #f0f7ff;
+            padding: 25px;
+            border-radius: 8px;
+            margin: 25px 0;
+            border-left: 4px solid #2c3e50;
+        }
+        .info-box h4 {
+            margin-bottom: 15px;
+            color: #2c3e50;
+            font-size: 1.2rem;
+        }
+        .info-box p {
+            margin-bottom: 10px;
+        }
+        .warning-box {
+            background: #fff3cd;
+            padding: 25px;
+            border-radius: 8px;
+            margin: 25px 0;
+            border-left: 4px solid #ffc107;
+        }
+        .warning-box h4 {
+            margin-bottom: 15px;
+            color: #856404;
+            font-size: 1.2rem;
+        }
+        .benefit-box {
+            background: #d4edda;
+            padding: 25px;
+            border-radius: 8px;
+            margin: 25px 0;
+            border-left: 4px solid #28a745;
+        }
+        .benefit-box h4 {
+            margin-bottom: 15px;
+            color: #155724;
+            font-size: 1.2rem;
+        }
+        .contact-box {
+            background: #f8f9fa;
+            padding: 25px;
+            border-radius: 8px;
+            margin: 30px 0;
+            border-left: 4px solid #2c3e50;
+        }
+        .contact-box h4 {
+            margin-bottom: 15px;
+            color: #2c3e50;
+        }
+        .contact-box p {
+            margin-bottom: 8px;
+        }
+        .process-steps {
+            counter-reset: step-counter;
+            list-style: none;
+            padding-left: 0;
+        }
+        .process-steps li {
+            counter-increment: step-counter;
+            margin-bottom: 20px;
+            padding-left: 50px;
+            position: relative;
+        }
+        .process-steps li::before {
+            content: counter(step-counter);
+            position: absolute;
+            left: 0;
+            top: 0;
+            background: #2c3e50;
+            color: white;
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 1.1rem;
+        }
+        .table-container {
+            overflow-x: auto;
+            margin: 25px 0;
+        }
+        .nri-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        .nri-table th, .nri-table td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: left;
+        }
+        .nri-table th {
+            background-color: #2c3e50;
+            color: white;
+        }
+        .nri-table tr:nth-child(even) {
+            background-color: #f8f9fa;
+        }
+        @media (max-width: 768px) {
+            .nri-header h1 {
+                font-size: 2rem;
+            }
+            .nri-section h2 {
+                font-size: 1.5rem;
+            }
+            .nri-table {
+                font-size: 0.9rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Top Bar -->
+    <div class="top-bar">
+        <div class="container">
+            <div class="top-bar-content">
+                <div class="top-bar-left">
+                    <a href="tel:+919741111756"><i class="fas fa-phone"></i> +91 97411 11756</a>
+                    <a href="mailto:info@tirumakudaluproperties.com"><i class="fas fa-envelope"></i> info@tirumakudaluproperties.com</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="container">
+            <div class="nav-wrapper">
+                <div class="logo">
+                    <a href="/index.html" class="logo-link">
+                        <div class="logo-graphic">
+                            <img src="/images/TirumakudaluProperties_Logo-2048x1858.png" alt="Tirumakudalu Properties Logo" class="logo-img">
+                        </div>
+                    </a>
+                </div>
+                <ul class="nav-menu" id="navMenu">
+                    <li><a href="/index.html">HOME</a></li>
+                        <li><a href="/properties.html">PROPERTIES</a></li>
+                </ul>
+                <div class="nav-actions">
+                    <button class="btn-login" id="loginBtn">
+                        <i class="fas fa-user"></i>
+                        <span>LOGIN</span>
+                    </button>
+                </div>
+                <div class="nav-toggle" id="navToggle">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- NRI Property Investment Content -->
+    <section class="properties-hero">
+        <div class="container">
+            <div class="properties-hero-content">
+                <h1 class="properties-hero-title">NRI Property Investment in India</h1>
+                <p class="properties-hero-subtitle">Complete Guide to Investing in Indian Real Estate for Non-Resident Indians</p>
+            </div>
+        </div>
+    </section>
+
+    <section>
+        <div class="container">
+            <div class="nri-container">
+                <div class="nri-header">
+                    <h1>NRI Property Investment in India</h1>
+                    <p>Your Comprehensive Guide to Real Estate Investment</p>
+                </div>
+
+                <div class="nri-content">
+                    <!-- Section 1 -->
+                    <div class="nri-section">
+                        <h2>1. Introduction</h2>
+                        <p>India's real estate market has emerged as one of the most attractive investment destinations for Non-Resident Indians (NRIs). With a growing economy, favorable government policies, and strong potential for appreciation, investing in Indian real estate offers NRIs an excellent opportunity to diversify their portfolio and maintain a connection with their homeland.</p>
+                        <p>This comprehensive guide provides NRIs with essential information about property investment in India, covering legal frameworks, procedures, tax implications, and best practices to help you make informed investment decisions.</p>
+                        <div class="info-box">
+                            <h4><i class="fas fa-info-circle"></i> Why Invest in Indian Real Estate?</h4>
+                            <p>India's real estate sector offers several advantages for NRIs:</p>
+                            <ul>
+                                <li>Strong potential for capital appreciation</li>
+                                <li>Stable rental income in major cities like Bengaluru</li>
+                                <li>Favorable exchange rates</li>
+                                <li>Diversification of investment portfolio</li>
+                                <li>Emotional connection to homeland</li>
+                                <li>Potential for retirement planning</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <!-- Section 2 -->
+                    <div class="nri-section">
+                        <h2>2. Who is an NRI?</h2>
+                        <p>According to the Foreign Exchange Management Act (FEMA), 1999, a person is considered a Non-Resident Indian (NRI) if:</p>
+                        <ul>
+                            <li>They are an Indian citizen who stays abroad for employment, business, or any other purpose indicating an indefinite period of stay outside India</li>
+                            <li>They are an Indian citizen working abroad on assignments with foreign governments, government agencies, or international organizations</li>
+                            <li>They are an Indian citizen who has been away from India for more than 182 days in a financial year</li>
+                        </ul>
+                        <p>Additionally, the following categories are also considered NRIs for property investment purposes:</p>
+                        <ul>
+                            <li><strong>Person of Indian Origin (PIO):</strong> A person who was a citizen of India at any time, or whose parents or grandparents were citizens of India</li>
+                            <li><strong>Overseas Citizen of India (OCI):</strong> A person registered as an OCI cardholder under the Citizenship Act, 1955</li>
+                        </ul>
+                        <div class="info-box">
+                            <h4><i class="fas fa-check-circle"></i> Important Note</h4>
+                            <p>NRIs, PIOs, and OCIs have the same rights as Indian residents when it comes to purchasing immovable property in India, except for agricultural land, plantation property, or farmhouse property, which require special permissions.</p>
+                        </div>
+                    </div>
+
+                    <!-- Section 3 -->
+                    <div class="nri-section">
+                        <h2>3. Legal Framework and Regulations</h2>
+                        <h3>3.1 FEMA Regulations</h3>
+                        <p>The Foreign Exchange Management Act (FEMA), 1999, and its regulations govern property transactions by NRIs in India. Key provisions include:</p>
+                        <ul>
+                            <li>NRIs can purchase any number of residential or commercial properties in India</li>
+                            <li>No prior approval from the Reserve Bank of India (RBI) is required for property purchase</li>
+                            <li>Payment must be made through normal banking channels using funds from NRE (Non-Resident External), NRO (Non-Resident Ordinary), or FCNR (Foreign Currency Non-Resident) accounts</li>
+                            <li>NRIs can also use foreign currency remittances for property purchase</li>
+                        </ul>
+
+                        <h3>3.2 Property Types NRIs Can Purchase</h3>
+                        <div class="table-container">
+                            <table class="nri-table">
+                                <thead>
+                                    <tr>
+                                        <th>Property Type</th>
+                                        <th>Allowed</th>
+                                        <th>Restrictions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>Residential Property</td>
+                                        <td>Yes</td>
+                                        <td>No restrictions</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Commercial Property</td>
+                                        <td>Yes</td>
+                                        <td>No restrictions</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Industrial Property</td>
+                                        <td>Yes</td>
+                                        <td>No restrictions</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Agricultural Land</td>
+                                        <td>No</td>
+                                        <td>Requires special permission from RBI</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Plantation Property</td>
+                                        <td>No</td>
+                                        <td>Requires special permission from RBI</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Farmhouse</td>
+                                        <td>No</td>
+                                        <td>Requires special permission from RBI</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <h3>3.3 Property Types NRIs Cannot Purchase</h3>
+                        <div class="warning-box">
+                            <h4><i class="fas fa-exclamation-triangle"></i> Restricted Property Types</h4>
+                            <p>NRIs cannot purchase the following types of properties without special permission from the RBI:</p>
+                            <ul>
+                                <li>Agricultural land</li>
+                                <li>Plantation property</li>
+                                <li>Farmhouse property</li>
+                            </ul>
+                            <p>However, NRIs can inherit such properties and can also hold them if acquired before becoming an NRI.</p>
+                        </div>
+                    </div>
+
+                    <!-- Section 4 -->
+                    <div class="nri-section">
+                        <h2>4. Payment Methods and Banking</h2>
+                        <h3>4.1 Payment Options</h3>
+                        <p>NRIs can purchase property in India using funds from:</p>
+                        <ul>
+                            <li><strong>NRE Account (Non-Resident External):</strong> Funds in foreign currency that can be freely repatriated</li>
+                            <li><strong>NRO Account (Non-Resident Ordinary):</strong> Funds in Indian Rupees, with limited repatriation</li>
+                            <li><strong>FCNR Account (Foreign Currency Non-Resident):</strong> Fixed deposits in foreign currency</li>
+                            <li><strong>Foreign Currency Remittances:</strong> Direct remittances from abroad through authorized dealers</li>
+                        </ul>
+
+                        <h3>4.2 Repatriation of Funds</h3>
+                        <p>NRIs can repatriate funds from property sale subject to certain conditions:</p>
+                        <ul>
+                            <li>Up to two residential properties can be sold with repatriation of proceeds (subject to certain limits)</li>
+                            <li>Commercial property sale proceeds can be fully repatriated</li>
+                            <li>Original investment amount can be repatriated, subject to tax clearance</li>
+                            <li>Repatriation must be done through authorized dealers and with proper documentation</li>
+                        </ul>
+
+                        <h3>4.3 Home Loans for NRIs</h3>
+                        <p>NRIs can avail home loans from Indian banks and financial institutions:</p>
+                        <ul>
+                            <li>Most major banks offer NRI home loans</li>
+                            <li>Loan amount typically ranges from 80-90% of property value</li>
+                            <li>Interest rates are competitive and similar to resident Indian rates</li>
+                            <li>Repayment can be made through NRE/NRO accounts or foreign remittances</li>
+                            <li>Power of Attorney (POA) may be required if the NRI cannot be present for documentation</li>
+                        </ul>
+                    </div>
+
+                    <!-- Section 5 -->
+                    <div class="nri-section">
+                        <h2>5. Tax Implications</h2>
+                        <h3>5.1 Tax on Property Purchase</h3>
+                        <ul>
+                            <li><strong>Stamp Duty:</strong> Varies by state (typically 5-7% of property value in Karnataka)</li>
+                            <li><strong>Registration Charges:</strong> Usually 1% of property value</li>
+                            <li><strong>GST (Goods and Services Tax):</strong> Applicable on under-construction properties (5% for affordable housing, 12% for others)</li>
+                            <li><strong>TDS (Tax Deducted at Source):</strong> 1% TDS on property purchase if value exceeds ₹50 lakhs</li>
+                        </ul>
+
+                        <h3>5.2 Tax on Rental Income</h3>
+                        <p>If you rent out your property, rental income is taxable:</p>
+                        <ul>
+                            <li>Rental income is added to your total income and taxed as per applicable income tax slabs</li>
+                            <li>Standard deduction of 30% is allowed on rental income</li>
+                            <li>Deductions for property tax, insurance, repairs, and maintenance are allowed</li>
+                            <li>If property is vacant, no tax on rental income</li>
+                        </ul>
+
+                        <h3>5.3 Tax on Property Sale</h3>
+                        <p>Capital gains tax applies when you sell property:</p>
+                        <ul>
+                            <li><strong>Short-term Capital Gains (STCG):</strong> If property held for less than 24 months, gains are taxed as per income tax slab</li>
+                            <li><strong>Long-term Capital Gains (LTCG):</strong> If property held for 24 months or more, taxed at 20% with indexation benefit</li>
+                            <li>Exemption available under Section 54 if proceeds are reinvested in another residential property</li>
+                            <li>Exemption under Section 54EC if proceeds are invested in specified bonds</li>
+                        </ul>
+
+                        <h3>5.4 TDS on Property Sale</h3>
+                        <p>When an NRI sells property, the buyer must deduct TDS:</p>
+                        <ul>
+                            <li>TDS rate is 20% for long-term capital gains (after indexation)</li>
+                            <li>TDS rate is 30% for short-term capital gains or if property held for less than 24 months</li>
+                            <li>Buyer must obtain TAN (Tax Deduction Account Number) and file TDS returns</li>
+                            <li>NRI can claim credit for TDS while filing income tax returns</li>
+                        </ul>
+
+                        <div class="info-box">
+                            <h4><i class="fas fa-lightbulb"></i> Tax Planning Tips</h4>
+                            <ul>
+                                <li>Consider holding property for more than 24 months to qualify for long-term capital gains benefits</li>
+                                <li>Explore tax-saving investment options like Section 54 and 54EC</li>
+                                <li>Maintain proper documentation of all expenses for tax deductions</li>
+                                <li>Consult with a tax advisor familiar with NRI taxation</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <!-- Section 6 -->
+                    <div class="nri-section">
+                        <h2>6. Documentation Requirements</h2>
+                        <h3>6.1 Essential Documents for Property Purchase</h3>
+                        <ul>
+                            <li><strong>Identity Proof:</strong> Passport copy, OCI/PIO card (if applicable)</li>
+                            <li><strong>Address Proof:</strong> Overseas address proof, Indian address proof (if available)</li>
+                            <li><strong>PAN Card:</strong> Permanent Account Number (mandatory for property transactions)</li>
+                            <li><strong>Passport Size Photographs:</strong> Recent photographs</li>
+                            <li><strong>Power of Attorney (POA):</strong> If property purchase is through a representative</li>
+                            <li><strong>Bank Statements:</strong> NRE/NRO account statements showing fund availability</li>
+                        </ul>
+
+                        <h3>6.2 Property Documents to Verify</h3>
+                        <p>Before purchasing any property, ensure you verify:</p>
+                        <ul>
+                            <li><strong>Title Deed:</strong> Clear and marketable title</li>
+                            <li><strong>Encumbrance Certificate:</strong> No pending loans or legal issues</li>
+                            <li><strong>Khata Certificate:</strong> Property registration with local municipality</li>
+                            <li><strong>Approval Plans:</strong> Building plan approvals from local authorities</li>
+                            <li><strong>Occupancy Certificate:</strong> For completed properties</li>
+                            <li><strong>No Objection Certificates (NOCs):</strong> From relevant authorities</li>
+                            <li><strong>Tax Receipts:</strong> Property tax payment receipts</li>
+                        </ul>
+
+                        <h3>6.3 Power of Attorney (POA)</h3>
+                        <p>Since NRIs may not be present in India during property transactions, a Power of Attorney is often necessary:</p>
+                        <ul>
+                            <li>POA can be executed at Indian consulates/embassies abroad</li>
+                            <li>POA can also be executed in India if the NRI visits</li>
+                            <li>POA must be properly notarized and attested</li>
+                            <li>Specific POA for property transactions is recommended</li>
+                            <li>POA can authorize property purchase, sale, registration, and related activities</li>
+                        </ul>
+                    </div>
+
+                    <!-- Section 7 -->
+                    <div class="nri-section">
+                        <h2>7. Investment Process</h2>
+                        <h3>7.1 Step-by-Step Process</h3>
+                        <ol class="process-steps">
+                            <li>
+                                <strong>Define Your Investment Goals:</strong> Determine whether you're investing for rental income, capital appreciation, or personal use. Set a budget and identify preferred locations.
+                            </li>
+                            <li>
+                                <strong>Research and Property Selection:</strong> Research properties in your preferred location. Consider factors like connectivity, infrastructure, future development plans, and rental potential. Work with reputable real estate consultants like Tirumakudalu Properties.
+                            </li>
+                            <li>
+                                <strong>Legal Due Diligence:</strong> Verify all property documents, title, encumbrances, and approvals. Engage a qualified lawyer for thorough verification.
+                            </li>
+                            <li>
+                                <strong>Financial Arrangements:</strong> Arrange funds in NRE/NRO accounts or arrange for home loan pre-approval. Ensure compliance with FEMA regulations.
+                            </li>
+                            <li>
+                                <strong>Property Valuation and Negotiation:</strong> Get the property valued by a certified valuer. Negotiate the price and terms with the seller.
+                            </li>
+                            <li>
+                                <strong>Agreement to Sell:</strong> Execute a Sale Agreement with the seller, including all terms and conditions, payment schedule, and possession date.
+                            </li>
+                            <li>
+                                <strong>Payment and Registration:</strong> Make payments as per agreement. Execute the Sale Deed and register it with the Sub-Registrar's office. Pay stamp duty and registration charges.
+                            </li>
+                            <li>
+                                <strong>Post-Purchase Formalities:</strong> Transfer utilities (electricity, water, gas), update property records, obtain possession certificate, and ensure property tax transfer.
+                            </li>
+                        </ol>
+                    </div>
+
+                    <!-- Section 8 -->
+                    <div class="nri-section">
+                        <h2>8. Benefits of Investing in Bengaluru</h2>
+                        <div class="benefit-box">
+                            <h4><i class="fas fa-star"></i> Why Bengaluru is Ideal for NRI Investment</h4>
+                            <ul>
+                                <li><strong>IT Hub:</strong> Bengaluru is India's Silicon Valley, ensuring strong rental demand and property appreciation</li>
+                                <li><strong>Infrastructure Development:</strong> Metro connectivity, new airports, and planned infrastructure projects</li>
+                                <li><strong>Quality of Life:</strong> Pleasant climate, good schools, hospitals, and recreational facilities</li>
+                                <li><strong>Growing Economy:</strong> Strong job market and economic growth driving real estate demand</li>
+                                <li><strong>Rental Yields:</strong> Competitive rental yields of 3-5% in prime locations</li>
+                                <li><strong>Future Appreciation:</strong> Strong potential for capital appreciation in emerging areas</li>
+                                <li><strong>NRI-Friendly:</strong> Well-established NRI community and support services</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <!-- Section 9 -->
+                    <div class="nri-section">
+                        <h2>9. Common Challenges and Solutions</h2>
+                        <h3>9.1 Physical Presence</h3>
+                        <p><strong>Challenge:</strong> NRIs may not be able to visit India frequently for property transactions.</p>
+                        <p><strong>Solution:</strong> Execute a Power of Attorney authorizing a trusted representative or family member to handle transactions on your behalf.</p>
+
+                        <h3>9.2 Currency Fluctuations</h3>
+                        <p><strong>Challenge:</strong> Exchange rate fluctuations can affect investment value.</p>
+                        <p><strong>Solution:</strong> Consider timing your investment based on favorable exchange rates. Maintain funds in NRE accounts for better exchange rates.</p>
+
+                        <h3>9.3 Property Management</h3>
+                        <p><strong>Challenge:</strong> Managing property from abroad can be difficult.</p>
+                        <p><strong>Solution:</strong> Engage professional property management services like Tirumakudalu Properties to handle maintenance, tenant management, rent collection, and tax payments.</p>
+
+                        <h3>9.4 Legal Compliance</h3>
+                        <p><strong>Challenge:</strong> Understanding and complying with Indian property laws and regulations.</p>
+                        <p><strong>Solution:</strong> Work with experienced real estate consultants and legal advisors who specialize in NRI property transactions.</p>
+
+                        <h3>9.5 Tax Filing</h3>
+                        <p><strong>Challenge:</strong> Filing income tax returns in India for rental income and capital gains.</p>
+                        <p><strong>Solution:</strong> Engage a qualified Chartered Accountant (CA) familiar with NRI taxation to handle tax compliance and filing.</p>
+                    </div>
+
+                    <!-- Section 10 -->
+                    <div class="nri-section">
+                        <h2>10. Property Management Services for NRIs</h2>
+                        <p>As an NRI, managing your property from abroad can be challenging. Tirumakudalu Properties offers comprehensive property management services specifically designed for NRIs:</p>
+                        <ul>
+                            <li><strong>Property Maintenance:</strong> Regular upkeep, repairs, and maintenance of your property</li>
+                            <li><strong>Tenant Management:</strong> Finding reliable tenants, background verification, lease agreements, and tenant relations</li>
+                            <li><strong>Rent Collection:</strong> Timely collection of rent and remittance to your NRE/NRO account</li>
+                            <li><strong>Tax Management:</strong> Payment of property taxes, income tax filing, and TDS compliance</li>
+                            <li><strong>Documentation:</strong> Maintaining all property-related documents and handling renewals</li>
+                            <li><strong>Regular Inspections:</strong> Periodic property inspections with detailed reports and photographs</li>
+                            <li><strong>Legal Compliance:</strong> Ensuring compliance with all local laws and regulations</li>
+                            <li><strong>Emergency Support:</strong> 24/7 support for any property-related emergencies</li>
+                        </ul>
+                    </div>
+
+                    <!-- Section 11 -->
+                    <div class="nri-section">
+                        <h2>11. Important Considerations</h2>
+                        <h3>11.1 Due Diligence</h3>
+                        <p>Never skip due diligence. Always verify:</p>
+                        <ul>
+                            <li>Property title and ownership</li>
+                            <li>All legal documents and approvals</li>
+                            <li>Property condition and valuation</li>
+                            <li>Market rates and comparable properties</li>
+                            <li>Future development plans in the area</li>
+                        </ul>
+
+                        <h3>11.2 Professional Assistance</h3>
+                        <p>Engage professionals for:</p>
+                        <ul>
+                            <li>Legal verification (lawyer)</li>
+                            <li>Property valuation (certified valuer)</li>
+                            <li>Tax planning (Chartered Accountant)</li>
+                            <li>Property management (real estate consultant)</li>
+                        </ul>
+
+                        <h3>11.3 Insurance</h3>
+                        <p>Consider purchasing:</p>
+                        <ul>
+                            <li>Property insurance for protection against natural disasters and accidents</li>
+                            <li>Title insurance for protection against title defects</li>
+                            <li>Liability insurance if renting out the property</li>
+                        </ul>
+
+                        <h3>11.4 Will and Succession Planning</h3>
+                        <p>Ensure you have:</p>
+                        <ul>
+                            <li>A valid will in India for your property</li>
+                            <li>Proper succession planning for your heirs</li>
+                            <li>Nomination in bank accounts and investments</li>
+                        </ul>
+                    </div>
+
+                    <!-- Section 12 -->
+                    <div class="nri-section">
+                        <h2>12. Frequently Asked Questions (FAQs)</h2>
+                        <h3>Q1: Can NRIs buy property in India without visiting?</h3>
+                        <p><strong>A:</strong> Yes, NRIs can buy property in India without visiting by executing a Power of Attorney (POA) at an Indian consulate/embassy abroad, authorizing a representative to complete the transaction.</p>
+
+                        <h3>Q2: What is the maximum number of properties an NRI can buy?</h3>
+                        <p><strong>A:</strong> There is no limit on the number of residential or commercial properties an NRI can purchase in India.</p>
+
+                        <h3>Q3: Can NRIs take home loans in India?</h3>
+                        <p><strong>A:</strong> Yes, most Indian banks offer home loans to NRIs with competitive interest rates. Loan amount typically ranges from 80-90% of property value.</p>
+
+                        <h3>Q4: Can NRIs repatriate funds from property sale?</h3>
+                        <p><strong>A:</strong> Yes, NRIs can repatriate funds from property sale subject to certain conditions. Up to two residential properties can be sold with repatriation, and commercial property sale proceeds can be fully repatriated.</p>
+
+                        <h3>Q5: What taxes apply to NRI property transactions?</h3>
+                        <p><strong>A:</strong> NRIs are subject to stamp duty, registration charges, GST (for under-construction properties), TDS on purchase, income tax on rental income, and capital gains tax on sale.</p>
+
+                        <h3>Q6: Can NRIs rent out their property in India?</h3>
+                        <p><strong>A:</strong> Yes, NRIs can rent out their property. Rental income is taxable in India, and TDS may be applicable on rental payments.</p>
+
+                        <h3>Q7: Do NRIs need a PAN card for property purchase?</h3>
+                        <p><strong>A:</strong> Yes, a PAN (Permanent Account Number) card is mandatory for all property transactions in India, including purchase, sale, and rental.</p>
+
+                        <h3>Q8: Can NRIs buy agricultural land in India?</h3>
+                        <p><strong>A:</strong> No, NRIs cannot buy agricultural land, plantation property, or farmhouse property without special permission from the Reserve Bank of India (RBI).</p>
+                    </div>
+
+                    <!-- Section 13 -->
+                    <div class="nri-section">
+                        <h2>13. How Tirumakudalu Properties Can Help</h2>
+                        <p>Tirumakudalu Properties specializes in assisting NRIs with property investment in Bengaluru. Our services include:</p>
+                        <ul>
+                            <li><strong>Property Selection:</strong> We help you find the right property based on your investment goals, budget, and preferences</li>
+                            <li><strong>Legal Verification:</strong> Thorough verification of all property documents and legal compliance</li>
+                            <li><strong>Transaction Support:</strong> Complete assistance throughout the purchase process, including documentation and registration</li>
+                            <li><strong>Property Management:</strong> Comprehensive property management services for NRIs, including maintenance, tenant management, and rent collection</li>
+                            <li><strong>Tax Compliance:</strong> Assistance with tax planning, filing, and compliance</li>
+                            <li><strong>Post-Purchase Support:</strong> Ongoing support for property-related matters, including utilities, maintenance, and legal compliance</li>
+                        </ul>
+                        <p>With over 10 years of experience in property management and real estate services, we understand the unique needs of NRI investors and provide personalized solutions to make your property investment journey smooth and hassle-free.</p>
+                    </div>
+
+                    <!-- Section 14 -->
+                    <div class="nri-section">
+                        <h2>14. Contact Us</h2>
+                        <p>If you are an NRI looking to invest in property in Bengaluru, we are here to help. Our team of experienced professionals can guide you through every step of the investment process.</p>
+                        <div class="contact-box">
+                            <h4>Tirumakudalu Properties</h4>
+                            <p><strong>Address:</strong> 78, SBM COLONY, 2ND CROSS, KONANAKUNTE, BANGALORE - 560062</p>
+                            <p><strong>Phone:</strong> +91 97411 11756</p>
+                            <p><strong>Email:</strong> info@tirumakudaluproperties.com</p>
+                            <p><strong>Services:</strong> NRI Property Investment, Property Management, Legal Verification, Transaction Support</p>
+                        </div>
+                        <p>We understand that investing in property from abroad can be complex. Let us simplify the process for you and ensure a seamless investment experience.</p>
+                    </div>
+
+                    <!-- Section 15 -->
+                    <div class="nri-section">
+                        <h2>15. Disclaimer</h2>
+                        <p>This guide is for informational purposes only and should not be considered as legal, financial, or tax advice. Property investment involves risks, and you should conduct your own due diligence before making any investment decisions.</p>
+                        <p>Laws and regulations regarding NRI property investment may change, and it is advisable to consult with qualified professionals, including lawyers, Chartered Accountants, and real estate consultants, before proceeding with any property transaction.</p>
+                        <p>Tirumakudalu Properties recommends that all NRIs seek professional advice tailored to their specific circumstances before making property investment decisions.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-col">
+                    <div class="footer-logo">
+                        <a href="/" class="logo-link">
+                            <div class="logo-graphic">
+                                <img src="/images/TirumakudaluProperties_Logo-2048x1858.png" alt="Tirumakudalu Properties Logo" class="logo-img">
+                            </div>
+                            <div class="logo-text">
+                                <span class="logo-text-line1">TIRUMAKUDALU</span>
+                                <span class="logo-text-line2">PROPERTIES</span>
+                            </div>
+                        </a>
+                    </div>
+                    <p>Tirumakudalu Properties offers Property Management & Real Estate Services in and around Bangalore City.</p>
+                </div>
+                <div class="footer-col">
+                    <h4>Quick Links</h4>
+                    <ul class="footer-links">
+                        <li><a href="#">Blogs</a></li>
+                        <li><a href="#">Terms and Conditions</a></li>
+                        <li><a href="#">Privacy Policy</a></li>
+                        <li><a href="#">NRI Property Investment</a></li>
+                    </ul>
+                </div>
+                <div class="footer-col">
+                    <h4>Contact Information</h4>
+                    <ul class="footer-contact">
+                        <li>
+                            <i class="fas fa-phone"></i>
+                            <span>+91 97411 11756</span>
+                        </li>
+                        <li>
+                            <i class="fas fa-envelope"></i>
+                            <span>info@tirumakudaluproperties.com</span>
+                        </li>
+                        <li>
+                            <i class="fas fa-map-marker-alt"></i>
+                            <span>78, SBM COLONY, 2ND CROSS, KONANAKUNTE, BANGALORE - 560062</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>Copyright &copy; 2025 - Designed & Powered by <span class="footer-credit">Purple Hue Technosoft Pvt. Ltd.</span></p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Login Modal -->
+    <div class="login-modal" id="loginModal">
+        <div class="login-modal-overlay" id="loginModalOverlay"></div>
+        <div class="login-modal-content">
+            <button class="login-modal-close" id="loginModalClose">
+                <i class="fas fa-times"></i>
+            </button>
+            <div class="login-modal-header">
+                <div class="login-modal-icon">
+                    <i class="fas fa-user-circle"></i>
+                </div>
+                <h2>Welcome Back</h2>
+                <p>Sign in to your account to continue</p>
+            </div>
+            <form class="login-form" id="loginForm">
+                <div class="form-group">
+                    <label for="loginEmail">
+                        <i class="fas fa-envelope"></i>
+                        Email Address
+                    </label>
+                    <input type="email" id="loginEmail" name="email" placeholder="Enter your email" required>
+                </div>
+                <div class="form-group">
+                    <label for="loginPassword">
+                        <i class="fas fa-lock"></i>
+                        Password
+                    </label>
+                    <div class="password-input-wrapper">
+                        <input type="password" id="loginPassword" name="password" placeholder="Enter your password" required>
+                        <button type="button" class="password-toggle" id="passwordToggle">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="login-form-options">
+                    <a href="#" class="forgot-password">Forgot Password?</a>
+                </div>
+                <button type="submit" class="btn-login-submit">
+                    <span>Sign In</span>
+                    <i class="fas fa-arrow-right"></i>
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Disable scroll-based visibility animations for NRI page - RUN IMMEDIATELY
+        (function() {
+            function disableAnimations() {
+                // Remove animation classes and ensure visibility
+                document.querySelectorAll('section:not(.properties-hero)').forEach(section => {
+                    section.classList.remove('section-coming-into-view');
+                    section.classList.add('section-visible');
+                    section.style.opacity = '1';
+                    section.style.visibility = 'visible';
+                    section.style.display = '';
+                });
+                
+                // Also ensure all content inside is visible
+                document.querySelectorAll('.nri-container, .nri-content, .nri-section').forEach(el => {
+                    el.style.opacity = '1';
+                    el.style.visibility = 'visible';
+                });
+            }
+            
+            // Run immediately
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', disableAnimations);
+            } else {
+                disableAnimations();
+            }
+            
+            // Use MutationObserver to prevent animation classes from being added
+            const observer = new MutationObserver(function(mutations) {
+                mutations.forEach(function(mutation) {
+                    if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
+                        const target = mutation.target;
+                        if (target.tagName === 'SECTION' && !target.classList.contains('properties-hero')) {
+                            if (target.classList.contains('section-coming-into-view')) {
+                                target.classList.remove('section-coming-into-view');
+                                target.classList.add('section-visible');
+                                target.style.opacity = '1';
+                                target.style.visibility = 'visible';
+                            }
+                        }
+                    }
+                });
+            });
+            
+            // Observe all sections
+            document.querySelectorAll('section').forEach(section => {
+                observer.observe(section, {
+                    attributes: true,
+                    attributeFilter: ['class']
+                });
+            });
+            
+            // Also run after a short delay to catch any late additions
+            setTimeout(disableAnimations, 100);
+            setTimeout(disableAnimations, 500);
+        })();
+    </script>
+    <script src="/js/script.js"></script>
+    <script src="/js/login.js"></script>
+</body>
+</html>
+

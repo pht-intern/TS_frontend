@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Properties - Tirumakudalu Properties</title>
+    <link rel="icon" type="image/png" href="/images/TirumakudaluProperties_Logo-2048x1858.png">
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <!-- Top Bar -->
+    <div class="top-bar">
+        <div class="container">
+            <div class="top-bar-content">
+                <div class="top-bar-left">
+                    <a href="tel:+919741111756" class="btn-call-us">
+                        <i class="fas fa-phone"></i> Call Us
+                    </a>
+                    <a href="mailto:info@tirumakudaluproperties.com"><i class="fas fa-envelope"></i> info@tirumakudaluproperties.com</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="container">
+            <div class="nav-wrapper">
+                <div class="logo">
+                    <a href="/index.html" class="logo-link">
+                        <div class="logo-graphic">
+                            <img src="/images/TirumakudaluProperties_Logo-2048x1858.png" alt="Tirumakudalu Properties Logo" class="logo-img">
+                        </div>
+                    </a>
+                </div>
+                <ul class="nav-menu" id="navMenu">
+                    <li><a href="/index.html">HOME</a></li>
+                    <li><a href="/properties.html" class="active">PROPERTIES</a></li>
+                </ul>
+                <div class="nav-search">
+                    <div class="nav-search-wrapper">
+                        <i class="fas fa-search nav-search-icon"></i>
+                        <input 
+                            type="text" 
+                            id="navSearchInput" 
+                            class="nav-search-input" 
+                            placeholder="Search properties..."
+                            autocomplete="off"
+                        >
+                        <button type="button" class="nav-search-clear" id="navSearchClear" style="display: none;">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="nav-actions">
+                    <button class="btn-login" id="loginBtn">
+                        <i class="fas fa-user"></i>
+                        <span>LOGIN</span>
+                    </button>
+                </div>
+                <div class="nav-toggle" id="navToggle">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Properties Hero Section -->
+    <section class="properties-hero">
+        <div class="container">
+            <div class="properties-hero-content">
+                <h1 class="properties-hero-title">Find Your Perfect Property</h1>
+                <p class="properties-hero-subtitle">Discover premium real estate opportunities across Bengaluru</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Properties Section -->
+    <section class="properties-section">
+        <div class="container">
+            <!-- Filters and Search -->
+            <div class="properties-filters">
+                <!-- Category Filter with Subcategories -->
+                <div class="filter-section category-section-centered">
+                    <div class="category-main-buttons">
+                        <button type="button" class="category-text-button" data-category="residential" id="filterResidential">Residential</button>
+                        <span class="category-divider">|</span>
+                        <button type="button" class="category-text-button" data-category="commercial" id="filterCommercial">Commercial</button>
+                    </div>
+                    <div class="category-subcategories-container">
+                        <div class="subcategory-buttons" data-category="residential">
+                            <button type="button" class="filter-button subcategory-button" data-property-type="plots" data-parent-category="residential" id="filterPlots">Plots</button>
+                            <button type="button" class="filter-button subcategory-button" data-property-type="house" data-parent-category="residential" id="filterIndividualHouse">Individual House</button>
+                            <button type="button" class="filter-button subcategory-button" data-property-type="villa" data-parent-category="residential" id="filterVillas">Villas</button>
+                            <button type="button" class="filter-button subcategory-button" data-property-type="row-house" data-parent-category="residential" id="filterRowHouses">Row Houses</button>
+                        </div>
+                        <div class="subcategory-buttons" data-category="commercial">
+                            <button type="button" class="filter-button subcategory-button" data-property-type="office-space" data-parent-category="commercial" id="filterOfficeSpace">Office Space</button>
+                            <button type="button" class="filter-button subcategory-button" data-property-type="warehouse" data-parent-category="commercial" id="filterWarehouse">Warehouse</button>
+                            <button type="button" class="filter-button subcategory-button" data-property-type="showrooms" data-parent-category="commercial" id="filterShowrooms">Showrooms</button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Advanced Search Form -->
+                <div class="properties-search">
+                    <form class="search-form" id="propertiesSearchForm">
+                        <div class="search-row">
+                            <div class="search-group">
+                                <label><i class="fas fa-map-marker-alt"></i> City</label>
+                                <input type="text" id="searchCity" placeholder="Enter city">
+                            </div>
+                            <div class="search-group">
+                                <label><i class="fas fa-map-marker-alt"></i> Area</label>
+                                <input type="text" id="searchArea" placeholder="Enter area">
+                            </div>
+                            <div class="search-group">
+                                <label><i class="fas fa-ruler-combined"></i> Dimensions</label>
+                                <input type="text" id="searchDimensions" placeholder="e.g., 30x40, 50x80">
+                            </div>
+                            <div class="search-group">
+                                <label><i class="fas fa-dollar-sign"></i> Price Range</label>
+                                <select id="searchPrice">
+                                    <option value="">Any Price</option>
+                                    <option value="0-300000">Under ₹300Cr</option>
+                                    <option value="300000-500000">₹300Cr - ₹500Cr</option>
+                                    <option value="500000-800000">₹500Cr - ₹800Cr</option>
+                                    <option value="800000-1200000">₹800Cr - ₹1.2Cr</option>
+                                    <option value="1200000-">₹2Cr+</option>
+                                </select>
+                            </div>
+                            <div class="search-group">
+                                <label><i class="fas fa-check-circle"></i> Property Condition</label>
+                                <select id="searchPropertyCondition">
+                                    <option value="">Any Condition</option>
+                                    <option value="new">New</option>
+                                    <option value="resale">Resale</option>
+                                </select>
+                            </div>
+                            <div class="search-group">
+                                <label><i class="fas fa-exchange-alt"></i> Transaction Type</label>
+                                <select id="searchTransactionType">
+                                    <option value="all">All Properties</option>
+                                    <option value="sale">Buy</option>
+                                    <option value="rent">Rent</option>
+                                </select>
+                            </div>
+                            <div class="search-group">
+                                <label><i class="fas fa-home"></i> Unit Type</label>
+                                <select id="searchUnitType">
+                                    <option value="">Any Unit Type</option>
+                                    <option value="rk" data-bhk="0">1RK</option>
+                                    <option value="bhk" data-bhk="1">1BHK</option>
+                                    <option value="bhk" data-bhk="2">2BHK</option>
+                                    <option value="bhk" data-bhk="3">3BHK</option>
+                                    <option value="4plus" data-bhk="4">4+BHK</option>
+                                </select>
+                            </div>
+                            <div class="search-group">
+                                <button type="submit" class="btn-search">
+                                    <i class="fas fa-filter"></i>
+                                    <span>Filter</span>
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                
+                <!-- Active Filter Tags -->
+                <div class="filter-tags-container" id="filterTagsContainer" style="display: none;">
+                    <div class="filter-tags-header">
+                        <span class="filter-tags-label">Active Filters:</span>
+                        <button type="button" class="clear-all-filters" id="clearAllFilters">
+                            <i class="fas fa-times-circle"></i> Clear All
+                        </button>
+                    </div>
+                    <div class="filter-tags" id="filterTags">
+                        <!-- Filter tags will be rendered here by JavaScript -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Loading State -->
+            <div class="properties-loading" id="propertiesLoading" style="display: none;">
+                <div class="loading-spinner">
+                    <i class="fas fa-spinner fa-spin"></i>
+                </div>
+                <p>Loading properties...</p>
+            </div>
+
+            <!-- Error State -->
+            <div class="properties-error" id="propertiesError" style="display: none;">
+                <i class="fas fa-spinner fa-spin"></i>
+                <h3>Best Properties Being Selected</h3>
+                <p>Best of the properties are being selected for you, please wait...</p>
+                <button class="btn-retry" id="retryLoadBtn">Retry</button>
+            </div>
+
+            <!-- Properties Grid -->
+            <div class="properties-grid" id="propertiesGrid">
+                <!-- Properties will be rendered here by JavaScript -->
+            </div>
+
+            <!-- Load More Button -->
+            <div class="properties-load-more">
+                <button class="btn-load-more" id="loadMoreBtn">
+                    <span>Load More Properties</span>
+                    <i class="fas fa-arrow-down"></i>
+                </button>
+            </div>
+        </div>
+    </section>
+
+    <!-- Contact Information Modal -->
+    <div class="login-modal" id="contactInfoModal">
+        <div class="login-modal-overlay" id="contactInfoModalOverlay"></div>
+        <div class="login-modal-content">
+            <button class="login-modal-close" id="contactInfoModalClose">
+                <i class="fas fa-times"></i>
+            </button>
+            <div class="login-modal-header">
+                <div class="login-modal-icon">
+                    <i class="fas fa-phone"></i>
+                </div>
+                <h2>Contact Us</h2>
+                <p>Get in touch with us</p>
+            </div>
+            <div class="contact-info-content">
+                <div class="contact-info-item">
+                    <div class="contact-info-icon">
+                        <i class="fas fa-phone"></i>
+                    </div>
+                    <div class="contact-info-details">
+                        <h3>Phone Number</h3>
+                        <a href="tel:+919741111756" class="contact-info-link">
+                            +91 97411 11756
+                        </a>
+                    </div>
+                </div>
+                <div class="contact-info-item">
+                    <div class="contact-info-icon">
+                        <i class="fas fa-envelope"></i>
+                    </div>
+                    <div class="contact-info-details">
+                        <h3>Email Address</h3>
+                        <a href="mailto:info@tirumakudaluproperties.com" class="contact-info-link">
+                            info@tirumakudaluproperties.com
+                        </a>
+                    </div>
+                </div>
+                <div class="contact-info-item">
+                    <div class="contact-info-icon">
+                        <i class="fas fa-map-marker-alt"></i>
+                    </div>
+                    <div class="contact-info-details">
+                        <h3>Address</h3>
+                        <p class="contact-info-text">78, SBM COLONY, 2ND CROSS, KONANAKUNTE, BANGALORE - 560062</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Login Modal -->
+    <div class="login-modal" id="loginModal">
+        <div class="login-modal-overlay" id="loginModalOverlay"></div>
+        <div class="login-modal-content">
+            <button class="login-modal-close" id="loginModalClose">
+                <i class="fas fa-times"></i>
+            </button>
+            <div class="login-modal-header">
+                <div class="login-modal-icon">
+                    <i class="fas fa-user-circle"></i>
+                </div>
+                <h2>Welcome Back</h2>
+                <p>Sign in to your account to continue</p>
+            </div>
+            <form class="login-form" id="loginForm">
+                <div class="form-group">
+                    <label for="loginEmail">
+                        <i class="fas fa-envelope"></i>
+                        Email Address
+                    </label>
+                    <input type="email" id="loginEmail" name="email" placeholder="Enter your email" required>
+                </div>
+                <div class="form-group">
+                    <label for="loginPassword">
+                        <i class="fas fa-lock"></i>
+                        Password
+                    </label>
+                    <div class="password-input-wrapper">
+                        <input type="password" id="loginPassword" name="password" placeholder="Enter your password" required>
+                        <button type="button" class="password-toggle" id="passwordToggle">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="login-form-options">
+                    <a href="#" class="forgot-password">Forgot Password?</a>
+                </div>
+                <button type="submit" class="btn-login-submit">
+                    <span>Sign In</span>
+                    <i class="fas fa-arrow-right"></i>
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-col">
+                    <div class="footer-logo">
+                        <a href="/index.html" class="logo-link">
+                            <div class="logo-graphic">
+                                <img src="/images/TS_LOGO_WHITE.png" alt="Tirumakudalu Properties Logo" class="logo-img">
+                            </div>
+                        </a>
+                    </div>
+                    <p>Tirumakudalu Properties offers Property Management & Real Estate Services in and around Bangalore City.</p>
+                    <div class="social-links">
+                        <a href="#"><i class="fab fa-facebook-f"></i></a>
+                        <a href="#"><i class="fab fa-twitter"></i></a>
+                        <a href="#"><i class="fab fa-instagram"></i></a>
+                        <a href="#"><i class="fab fa-linkedin-in"></i></a>
+                    </div>
+                </div>
+                <div class="footer-col">
+                    <h4>Quick Links</h4>
+                    <ul class="footer-links">
+                        <li><a href="/blogs.html">Blogs</a></li>
+                        <li><a href="#">Terms and Conditions</a></li>
+                        <li><a href="#">Privacy Policy</a></li>
+                        <li><a href="#">NRI Property Investment</a></li>
+                    </ul>
+                </div>
+                <div class="footer-col">
+                    <h4>Contact Information</h4>
+                    <ul class="footer-contact">
+                        <li>
+                            <i class="fas fa-phone"></i>
+                            <span>+91 97411 11756</span>
+                        </li>
+                        <li>
+                            <i class="fas fa-envelope"></i>
+                            <span>info@tirumakudaluproperties.com</span>
+                        </li>
+                        <li>
+                            <i class="fas fa-map-marker-alt"></i>
+                            <span>78, SBM COLONY, 2ND CROSS, KONANAKUNTE, BANGALORE - 560062</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>Copyright &copy; 2025 - Designed & Powered by <span class="footer-credit">Purple Hue Technosoft Pvt. Ltd.</span></p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="/js/script.js"></script>
+    <script src="/js/properties.js"></script>
+    <script src="/js/page-tracking.js"></script>
+    <script src="/js/login.js"></script>
+    <script>
+        // Call Us Button Functionality
+        (function() {
+            const callUsBtn = document.querySelector('.btn-call-us');
+            const contactInfoModal = document.getElementById('contactInfoModal');
+            const contactInfoModalClose = document.getElementById('contactInfoModalClose');
+            const contactInfoModalOverlay = document.getElementById('contactInfoModalOverlay');
+
+            // Detect if device is mobile
+            function isMobileDevice() {
+                return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || 
+                       (window.matchMedia && window.matchMedia('(max-width: 768px)').matches);
+            }
+
+            // Open modal
+            function openContactModal() {
+                if (contactInfoModal) {
+                    contactInfoModal.classList.add('active');
+                    document.body.style.overflow = 'hidden';
+                }
+            }
+
+            // Close modal
+            function closeContactModal() {
+                if (contactInfoModal) {
+                    contactInfoModal.classList.remove('active');
+                    document.body.style.overflow = '';
+                }
+            }
+
+            // Handle Call Us button click
+            if (callUsBtn) {
+                callUsBtn.addEventListener('click', (e) => {
+                    // If mobile device, let the tel: link work normally
+                    if (isMobileDevice()) {
+                        // Allow default behavior (tel: link will open dialer)
+                        return;
+                    } else {
+                        // If desktop, prevent default and show modal
+                        e.preventDefault();
+                        openContactModal();
+                    }
+                });
+            }
+
+            // Close modal handlers
+            if (contactInfoModalClose) {
+                contactInfoModalClose.addEventListener('click', closeContactModal);
+            }
+
+            if (contactInfoModalOverlay) {
+                contactInfoModalOverlay.addEventListener('click', closeContactModal);
+            }
+
+            // Close on Escape key
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape' && contactInfoModal && contactInfoModal.classList.contains('active')) {
+                    closeContactModal();
+                }
+            });
+        })();
+
+    </script>
+</body>
+</html>
+

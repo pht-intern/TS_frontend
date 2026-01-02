@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Property Details - Tirumakudalu Properties</title>
+    <link rel="icon" type="image/png" href="/images/TirumakudaluProperties_Logo-2048x1858.png">
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <!-- Top Bar -->
+    <div class="top-bar">
+        <div class="container">
+            <div class="top-bar-content">
+                <div class="top-bar-left">
+                    <a href="tel:+919741111756"><i class="fas fa-phone"></i> +91 97411 11756</a>
+                    <a href="mailto:info@tirumakudaluproperties.com"><i class="fas fa-envelope"></i> info@tirumakudaluproperties.com</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="container">
+            <div class="nav-wrapper">
+                <div class="logo">
+                    <a href="/index.html" class="logo-link">
+                        <div class="logo-graphic">
+                            <img src="/images/TirumakudaluProperties_Logo-2048x1858.png" alt="Tirumakudalu Properties Logo" class="logo-img">
+                        </div>
+                    </a>
+                </div>
+                <ul class="nav-menu" id="navMenu">
+                    <li><a href="/index.html">HOME</a></li>
+                    <li><a href="/properties.html">PROPERTIES</a></li>
+                </ul>
+                <div class="nav-actions">
+                    <button class="btn-login" id="loginBtn">
+                        <i class="fas fa-user"></i>
+                        <span>LOGIN</span>
+                    </button>
+                </div>
+                <div class="nav-toggle" id="navToggle">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Property Details Section -->
+    <section class="property-details-section">
+        <div class="container">
+            <!-- Back Button -->
+            <div class="property-details-back">
+                <a href="/properties.html" class="btn-back">
+                    <i class="fas fa-arrow-left"></i> Back to Properties
+                </a>
+            </div>
+
+            <!-- Loading State -->
+            <div class="property-loading" id="propertyLoading" style="display: none;">
+                <div class="loading-spinner">
+                    <i class="fas fa-spinner fa-spin"></i>
+                </div>
+                <p>Loading property details...</p>
+            </div>
+
+            <!-- Error State -->
+            <div class="property-error" id="propertyError" style="display: none;">
+                <i class="fas fa-exclamation-triangle"></i>
+                <h3>Property Not Found</h3>
+                <p>The property you're looking for doesn't exist or has been removed.</p>
+                <a href="/properties.html" class="btn-retry">Back to Properties</a>
+            </div>
+
+            <!-- Property Header -->
+            <div class="property-details-header" id="propertyHeader" style="display: none;">
+                <!-- Content will be loaded by JavaScript -->
+            </div>
+
+            <!-- Property Main Content -->
+            <div class="property-details-content" id="propertyContent" style="display: none;">
+                <div class="property-details-main">
+                    <!-- Property Images Gallery -->
+                    <div class="property-gallery" id="propertyGallery">
+                        <!-- Images will be loaded by JavaScript -->
+                    </div>
+
+                    <!-- Property Description -->
+                    <div class="property-description-section">
+                        <h2>Description</h2>
+                        <div id="propertyDescription">
+                            <!-- Description will be loaded by JavaScript -->
+                        </div>
+                    </div>
+
+                    <!-- Property Features -->
+                    <div class="property-features-section">
+                        <h2>Features & Amenities</h2>
+                        <div class="property-features-grid" id="propertyFeatures">
+                            <!-- Features will be loaded by JavaScript -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Property Sidebar -->
+                <div class="property-details-sidebar">
+                    <!-- Property Info Card -->
+                    <div class="property-info-card">
+                        <div class="property-price-large" id="propertyPrice">
+                            <!-- Price will be loaded by JavaScript -->
+                        </div>
+                        <div class="property-status-badge" id="propertyStatus">
+                            <!-- Status will be loaded by JavaScript -->
+                        </div>
+                        <div class="property-quick-info" id="propertyQuickInfo">
+                            <!-- Quick info will be loaded by JavaScript -->
+                        </div>
+                        <div class="property-actions-sidebar">
+                            <button class="btn-contact-agent" id="contactAgentBtn">
+                                <i class="fas fa-phone"></i> Call US
+                            </button>
+                            <button class="btn-schedule-visit" id="scheduleVisitBtn">
+                                <i class="fas fa-calendar"></i> Schedule Visit
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Contact Agent Card -->
+                    <div class="contact-agent-card">
+                        <h3>Contact Agent</h3>
+                        <div class="agent-info">
+                            <div class="agent-avatar">
+                                <i class="fas fa-user"></i>
+                            </div>
+                            <div class="agent-details">
+                                <h4>Tirumakudalu Properties</h4>
+                                <p>Real Estate Agent</p>
+                            </div>
+                        </div>
+                        <div class="agent-contact">
+                            <a href="tel:+919741111756" class="agent-phone">
+                                <i class="fas fa-phone"></i> +91 97411 11756
+                            </a>
+                            <a href="mailto:info@tirumakudaluproperties.com" class="agent-email">
+                                <i class="fas fa-envelope"></i> info@tirumakudaluproperties.com
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Login Modal -->
+    <div class="login-modal" id="loginModal">
+        <div class="login-modal-overlay" id="loginModalOverlay"></div>
+        <div class="login-modal-content">
+            <button class="login-modal-close" id="loginModalClose">
+                <i class="fas fa-times"></i>
+            </button>
+            <div class="login-modal-header">
+                <div class="login-modal-icon">
+                    <i class="fas fa-user-circle"></i>
+                </div>
+                <h2>Welcome Back</h2>
+                <p>Sign in to your account to continue</p>
+            </div>
+            <form class="login-form" id="loginForm">
+                <div class="form-group">
+                    <label for="loginEmail">
+                        <i class="fas fa-envelope"></i>
+                        Email Address
+                    </label>
+                    <input type="email" id="loginEmail" name="email" placeholder="Enter your email" required>
+                </div>
+                <div class="form-group">
+                    <label for="loginPassword">
+                        <i class="fas fa-lock"></i>
+                        Password
+                    </label>
+                    <div class="password-input-wrapper">
+                        <input type="password" id="loginPassword" name="password" placeholder="Enter your password" required>
+                        <button type="button" class="password-toggle" id="passwordToggle">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="login-form-options">
+                    <a href="#" class="forgot-password">Forgot Password?</a>
+                </div>
+                <button type="submit" class="btn-login-submit">
+                    <span>Sign In</span>
+                    <i class="fas fa-arrow-right"></i>
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Contact Information Modal -->
+    <div class="login-modal" id="contactInfoModal">
+        <div class="login-modal-overlay" id="contactInfoModalOverlay"></div>
+        <div class="login-modal-content">
+            <button class="login-modal-close" id="contactInfoModalClose">
+                <i class="fas fa-times"></i>
+            </button>
+            <div class="contact-info-horizontal">
+                <div class="contact-info-photo">
+                    <img src="/images/properties/66780ba8-9d98-4ab1-9809-201cc6114657.jpeg" alt="Contact Person" onerror="this.src='/images/img1.jpg'">
+                </div>
+                <div class="contact-info-phone">
+                    <i class="fas fa-phone"></i>
+                    <a href="tel:+919741111756" class="contact-info-link">
+                        +91 97411 11756
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Contact Agent Form Modal -->
+    <div class="login-modal" id="contactAgentModal">
+        <div class="login-modal-overlay" id="contactAgentModalOverlay"></div>
+        <div class="login-modal-content">
+            <button class="login-modal-close" id="contactAgentModalClose">
+                <i class="fas fa-times"></i>
+            </button>
+            <div class="login-modal-header">
+                <div class="login-modal-icon">
+                    <i class="fas fa-phone"></i>
+                </div>
+                <h2>Contact Agent</h2>
+                <p>Get in touch with our agent about this property</p>
+            </div>
+            <form class="login-form" id="contactAgentForm">
+                <div class="form-group">
+                    <label for="contactName">
+                        <i class="fas fa-user"></i>
+                        Full Name
+                    </label>
+                    <input type="text" id="contactName" name="name" placeholder="Enter your full name" required>
+                </div>
+                <div class="form-group">
+                    <label for="contactEmail">
+                        <i class="fas fa-envelope"></i>
+                        Email Address
+                    </label>
+                    <input type="email" id="contactEmail" name="email" placeholder="Enter your email" required>
+                </div>
+                <div class="form-group">
+                    <label for="contactPhone">
+                        <i class="fas fa-phone"></i>
+                        Phone Number
+                    </label>
+                    <input type="tel" id="contactPhone" name="phone" placeholder="Enter your phone number">
+                </div>
+                <div class="form-group">
+                    <label for="contactSubject">
+                        <i class="fas fa-tag"></i>
+                        Subject
+                    </label>
+                    <input type="text" id="contactSubject" name="subject" placeholder="Enter subject (optional)">
+                </div>
+                <div class="form-group">
+                    <label for="contactMessage">
+                        <i class="fas fa-comment"></i>
+                        Message
+                    </label>
+                    <textarea id="contactMessage" name="message" rows="5" placeholder="Enter your message" required></textarea>
+                </div>
+                <div id="contactAgentMessage" class="form-message" style="display: none;"></div>
+                <button type="submit" class="btn-login-submit">
+                    <span>Send Message</span>
+                    <i class="fas fa-paper-plane"></i>
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Image Lightbox Modal -->
+    <div class="image-lightbox" id="imageLightbox" style="display: none;">
+        <div class="lightbox-overlay" id="lightboxOverlay"></div>
+        <button class="lightbox-close" id="lightboxClose" aria-label="Close lightbox">
+            <i class="fas fa-times"></i>
+        </button>
+        <button class="lightbox-nav lightbox-prev" id="lightboxPrev" aria-label="Previous image">
+            <i class="fas fa-chevron-left"></i>
+        </button>
+        <button class="lightbox-nav lightbox-next" id="lightboxNext" aria-label="Next image">
+            <i class="fas fa-chevron-right"></i>
+        </button>
+        <div class="lightbox-content">
+            <img id="lightboxImage" src="" alt="Property image">
+            <div class="lightbox-counter" id="lightboxCounter"></div>
+        </div>
+    </div>
+
+    <!-- Schedule Visit Modal -->
+    <div class="login-modal" id="scheduleVisitModal">
+        <div class="login-modal-overlay" id="scheduleVisitModalOverlay"></div>
+        <div class="login-modal-content">
+            <button class="login-modal-close" id="scheduleVisitModalClose">
+                <i class="fas fa-times"></i>
+            </button>
+            <div class="login-modal-header">
+                <div class="login-modal-icon">
+                    <i class="fas fa-calendar-check"></i>
+                </div>
+                <h2>Schedule a Visit</h2>
+                <p>Book a viewing appointment for this property</p>
+            </div>
+            <form class="login-form" id="scheduleVisitForm">
+                <div class="form-group">
+                    <label for="visitName">
+                        <i class="fas fa-user"></i>
+                        Full Name
+                    </label>
+                    <input type="text" id="visitName" name="name" placeholder="Enter your full name" required>
+                </div>
+                <div class="form-group">
+                    <label for="visitEmail">
+                        <i class="fas fa-envelope"></i>
+                        Email Address
+                    </label>
+                    <input type="email" id="visitEmail" name="email" placeholder="Enter your email" required>
+                </div>
+                <div class="form-group">
+                    <label for="visitPhone">
+                        <i class="fas fa-phone"></i>
+                        Phone Number
+                    </label>
+                    <input type="tel" id="visitPhone" name="phone" placeholder="Enter your phone number" required>
+                </div>
+                <div class="form-group">
+                    <label for="visitDate">
+                        <i class="fas fa-calendar"></i>
+                        Preferred Date
+                    </label>
+                    <input type="date" id="visitDate" name="visitDate" required>
+                </div>
+                <div class="form-group">
+                    <label for="visitTime">
+                        <i class="fas fa-clock"></i>
+                        Preferred Time
+                    </label>
+                    <input type="time" id="visitTime" name="visitTime" required>
+                </div>
+                <div class="form-group">
+                    <label for="visitMessage">
+                        <i class="fas fa-comment"></i>
+                        Additional Notes
+                    </label>
+                    <textarea id="visitMessage" name="message" rows="4" placeholder="Any special requests or additional information (optional)"></textarea>
+                </div>
+                <div id="scheduleVisitMessage" class="form-message" style="display: none;"></div>
+                <button type="submit" class="btn-login-submit">
+                    <span>Schedule Visit</span>
+                    <i class="fas fa-calendar-check"></i>
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-col">
+                    <div class="footer-logo">
+                        <a href="/index.html" class="logo-link">
+                            <div class="logo-graphic">
+                                <img src="/images/TS_LOGO_WHITE.png" alt="Tirumakudalu Properties Logo" class="logo-img">
+                            </div>
+                        </a>
+                    </div>
+                    <p>Tirumakudalu Properties offers Property Management & Real Estate Services in and around Bangalore City.</p>
+                    <div class="social-links">
+                        <a href="#"><i class="fab fa-facebook-f"></i></a>
+                        <a href="#"><i class="fab fa-twitter"></i></a>
+                        <a href="#"><i class="fab fa-instagram"></i></a>
+                        <a href="#"><i class="fab fa-linkedin-in"></i></a>
+                    </div>
+                </div>
+                <div class="footer-col">
+                    <h4>Contact Information</h4>
+                    <ul class="footer-contact">
+                        <li>
+                            <i class="fas fa-phone"></i>
+                            <span>+91 97411 11756</span>
+                        </li>
+                        <li>
+                            <i class="fas fa-envelope"></i>
+                            <span>info@tirumakudaluproperties.com</span>
+                        </li>
+                        <li>
+                            <i class="fas fa-map-marker-alt"></i>
+                            <span>78, SBM COLONY, 2ND CROSS, KONANAKUNTE, BANGALORE - 560062</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>Copyright &copy; 2025 - Designed & Powered by <span class="footer-credit">Purple Hue Technosoft Pvt. Ltd.</span></p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="/js/script.js"></script>
+    <script src="/js/property-details.js"></script>
+    <script src="/js/page-tracking.js"></script>
+    <script src="/js/login.js"></script>
+</body>
+</html>
+

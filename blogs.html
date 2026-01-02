@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Blogs - Tirumakudalu Properties</title>
+    <link rel="icon" type="image/png" href="/images/TirumakudaluProperties_Logo-2048x1858.png">
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <!-- Top Bar -->
+    <div class="top-bar">
+        <div class="container">
+            <div class="top-bar-content">
+                <div class="top-bar-left">
+                    <a href="tel:+919741111756" class="btn-call-us">
+                        <i class="fas fa-phone"></i> Call Us
+                    </a>
+                    <a href="mailto:info@tirumakudaluproperties.com"><i class="fas fa-envelope"></i> info@tirumakudaluproperties.com</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="container">
+            <div class="nav-wrapper">
+                <div class="logo">
+                    <a href="/index.html" class="logo-link">
+                        <div class="logo-graphic">
+                            <img src="/images/TirumakudaluProperties_Logo-2048x1858.png" alt="Tirumakudalu Properties Logo" class="logo-img">
+                        </div>
+                    </a>
+                </div>
+                <ul class="nav-menu" id="navMenu">
+                    <li><a href="/index.html">HOME</a></li>
+                    <li><a href="/properties.html">PROPERTIES</a></li>
+                    <li class="nav-dashboard-item" id="navDashboardItem" style="display: none;">
+                        <a href="/dashboard.html">
+                            <i class="fas fa-tachometer-alt"></i> DASHBOARD
+                        </a>
+                    </li>
+                </ul>
+                <div class="nav-actions">
+                    <button class="btn-login" id="loginBtn">
+                        <i class="fas fa-user"></i>
+                        <span>LOGIN</span>
+                    </button>
+                </div>
+                <div class="nav-toggle" id="navToggle">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Blogs Hero Section -->
+    <section class="properties-hero">
+        <div class="container">
+            <div class="properties-hero-content">
+                <h1 class="properties-hero-title">Blogs</h1>
+                <p class="properties-hero-subtitle">Insights, Tips, and Updates from Tirumakudalu Properties</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Blogs Section -->
+    <section class="blogs-section">
+        <div class="container">
+            <div class="blogs-layout">
+                <!-- Main Content -->
+                <main class="blogs-main">
+                    <!-- Recent Article Section -->
+                    <div class="recent-article-section">
+                        <h2 class="section-heading">Recent Article</h2>
+                        <div class="latest-blog-section" id="latestBlogSection">
+                            <div class="latest-blog-card">
+                                <div class="latest-blog-image">
+                                    <img id="latestBlogImage" src="/images/img1.jpg" alt="Latest Blog">
+                                    <div class="latest-blog-badge">
+                                        <i class="fas fa-star"></i> Latest
+                                    </div>
+                                </div>
+                                <div class="latest-blog-content">
+                                    <div class="latest-blog-meta">
+                                        <span class="blog-category" id="latestBlogCategory">Real Estate</span>
+                                        <span class="blog-date" id="latestBlogDate">January 15, 2025</span>
+                                    </div>
+                                    <h2 class="latest-blog-title" id="latestBlogTitle">
+                                        <a href="#" id="latestBlogLink">Loading latest blog...</a>
+                                    </h2>
+                                    <p class="latest-blog-excerpt" id="latestBlogExcerpt">
+                                        Loading blog content...
+                                    </p>
+                                    <a href="#" class="btn-read-more" id="latestBlogReadMore">
+                                        Read More <i class="fas fa-arrow-right"></i>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- All Categories Section -->
+                    <div class="all-categories-section">
+                        <div class="categories-header">
+                            <h2 class="section-heading">All Categories</h2>
+                            <button class="btn-view-all" id="viewAllCategories">
+                                View All <i class="fas fa-arrow-right"></i>
+                            </button>
+                        </div>
+                        <div class="category-filters" id="categoryFilters">
+                            <button class="category-filter-btn active" data-category="all">All Blogs</button>
+                            <button class="category-filter-btn" data-category="real-estate">Real Estate</button>
+                            <button class="category-filter-btn" data-category="investment">Investment</button>
+                            <button class="category-filter-btn" data-category="property-management">Property Management</button>
+                            <button class="category-filter-btn" data-category="market-trends">Market Trends</button>
+                            <button class="category-filter-btn" data-category="tips">Tips & Advice</button>
+                            <button class="category-filter-btn" data-category="news">News & Updates</button>
+                        </div>
+                    </div>
+
+                    <!-- All Blogs Grid -->
+                    <div class="blogs-header">
+                        <div class="blogs-sort">
+                            <label for="sortBlogs">Sort by:</label>
+                            <select id="sortBlogs" class="sort-select">
+                                <option value="latest">Latest First</option>
+                                <option value="oldest">Oldest First</option>
+                                <option value="popular">Most Popular</option>
+                                <option value="title">Title A-Z</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="blogs-grid" id="blogsGrid">
+                        <!-- Blogs will be rendered here by JavaScript -->
+                    </div>
+
+                    <!-- Load More Button -->
+                    <div class="blogs-load-more">
+                        <button class="btn-load-more" id="loadMoreBlogsBtn">
+                            <span>Load More Blogs</span>
+                            <i class="fas fa-arrow-down"></i>
+                        </button>
+                    </div>
+                </main>
+
+                <!-- Sidebar -->
+                <aside class="blogs-sidebar">
+                    <!-- Quick Menu -->
+                    <div class="sidebar-widget">
+                        <h3 class="sidebar-widget-title">Quick Menu</h3>
+                        <ul class="quick-menu-list">
+                            <li><a href="/index.html">About Us</a></li>
+                            <li><a href="/properties.html">Properties</a></li>
+                            <li><a href="/blogs.html">Blogs</a></li>
+                            <li><a href="/index.html#contact">Contact</a></li>
+                        </ul>
+                    </div>
+
+                    <!-- Recent Posts -->
+                    <div class="sidebar-widget">
+                        <h3 class="sidebar-widget-title">Recent Posts</h3>
+                        <ul class="recent-posts-list" id="recentPostsList">
+                            <!-- Recent posts will be populated by JavaScript -->
+                        </ul>
+                    </div>
+
+                    <!-- Popular Tags -->
+                    <div class="sidebar-widget">
+                        <h3 class="sidebar-widget-title">Popular Tags</h3>
+                        <div class="tags-cloud" id="tagsCloud">
+                            <a href="#" class="tag-link" data-tag="bengaluru">Bengaluru</a>
+                            <a href="#" class="tag-link" data-tag="apartments">Apartments</a>
+                            <a href="#" class="tag-link" data-tag="investment">Investment</a>
+                            <a href="#" class="tag-link" data-tag="rental">Rental</a>
+                            <a href="#" class="tag-link" data-tag="property-tips">Property Tips</a>
+                            <a href="#" class="tag-link" data-tag="market-analysis">Market Analysis</a>
+                            <a href="#" class="tag-link" data-tag="buying-guide">Buying Guide</a>
+                            <a href="#" class="tag-link" data-tag="selling">Selling</a>
+                        </div>
+                    </div>
+                </aside>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-col">
+                    <div class="footer-logo">
+                        <a href="/index.html" class="logo-link">
+                            <div class="logo-graphic">
+                                <img src="/images/TirumakudaluProperties_Logo-2048x1858.png" alt="Tirumakudalu Properties Logo" class="logo-img">
+                            </div>
+                            <div class="logo-text">
+                                <span class="logo-text-line1">TIRUMAKUDALU</span>
+                                <span class="logo-text-line2">PROPERTIES</span>
+                            </div>
+                        </a>
+                    </div>
+                    <p>Tirumakudalu Properties offers Property Management & Real Estate Services in and around Bangalore City.</p>
+                    <div class="social-links">
+                        <a href="#"><i class="fab fa-facebook-f"></i></a>
+                        <a href="#"><i class="fab fa-twitter"></i></a>
+                        <a href="#"><i class="fab fa-instagram"></i></a>
+                        <a href="#"><i class="fab fa-linkedin-in"></i></a>
+                    </div>
+                </div>
+                <div class="footer-col">
+                    <h4>Quick Links</h4>
+                    <ul class="footer-links">
+                        <li><a href="/blogs.html">Blogs</a></li>
+                        <li><a href="#">Terms and Conditions</a></li>
+                        <li><a href="#">Privacy Policy</a></li>
+                        <li><a href="#">NRI Property Investment</a></li>
+                    </ul>
+                </div>
+                <div class="footer-col">
+                    <h4>Contact Information</h4>
+                    <ul class="footer-contact">
+                        <li>
+                            <i class="fas fa-phone"></i>
+                            <span>+91 97411 11756</span>
+                        </li>
+                        <li>
+                            <i class="fas fa-envelope"></i>
+                            <span>info@tirumakudaluproperties.com</span>
+                        </li>
+                        <li>
+                            <i class="fas fa-map-marker-alt"></i>
+                            <span>78, SBM COLONY, 2ND CROSS, KONANAKUNTE, BANGALORE - 560062</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>Copyright &copy; 2025 - Designed & Powered by <span class="footer-credit">Purple Hue Technosoft Pvt. Ltd.</span></p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Login Modal -->
+    <div class="login-modal" id="loginModal">
+        <div class="login-modal-overlay" id="loginModalOverlay"></div>
+        <div class="login-modal-content">
+            <button class="login-modal-close" id="loginModalClose">
+                <i class="fas fa-times"></i>
+            </button>
+            <div class="login-modal-header">
+                <div class="login-modal-icon">
+                    <i class="fas fa-user-circle"></i>
+                </div>
+                <h2>Welcome Back</h2>
+                <p>Sign in to your account to continue</p>
+            </div>
+            <form class="login-form" id="loginForm">
+                <div class="form-group">
+                    <label for="loginEmail">
+                        <i class="fas fa-envelope"></i>
+                        Email Address
+                    </label>
+                    <input type="email" id="loginEmail" name="email" placeholder="Enter your email" required>
+                </div>
+                <div class="form-group">
+                    <label for="loginPassword">
+                        <i class="fas fa-lock"></i>
+                        Password
+                    </label>
+                    <div class="password-input-wrapper">
+                        <input type="password" id="loginPassword" name="password" placeholder="Enter your password" required>
+                        <button type="button" class="password-toggle" id="passwordToggle">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="login-form-options">
+                    <a href="#" class="forgot-password">Forgot Password?</a>
+                </div>
+                <button type="submit" class="btn-login-submit">
+                    <span>Sign In</span>
+                    <i class="fas fa-arrow-right"></i>
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <script src="/js/script.js"></script>
+    <script src="/js/blogs.js"></script>
+    <script src="/js/page-tracking.js"></script>
+    <script src="/js/login.js"></script>
+</body>
+</html>
+

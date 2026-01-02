@@ -1,0 +1,13 @@
+# Minimal .htaccess for TSProperties
+# FastAPI/Passenger handles routing, so keep this minimal to avoid conflicts
+
+# Prevent directory browsing
+Options -Indexes
+
+# Protect sensitive files
+<FilesMatch "^(\.env|\.git|requirements\.txt)$">
+    Require all denied
+</FilesMatch>
+
+# Character encoding
+AddDefaultCharset UTF-8

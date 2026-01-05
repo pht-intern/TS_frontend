@@ -912,7 +912,7 @@
                     <div class="footer-logo">
                         <a href="#home" class="logo-link">
                             <div class="logo-graphic">
-                                <img src="/images/TS_LOGO_WHITE.png" alt="Tirumakudalu Properties Logo" class="logo-img">
+                                <img src="/images/TS_Logo_White.png" alt="Tirumakudalu Properties Logo" class="logo-img">
                             </div>
                         </a>
                     </div>
@@ -1073,7 +1073,7 @@
                     const isHidden = index >= displayedPartners ? 'style="display: none;"' : '';
                     
                     return `
-                        <a href="${escapeHtml(websiteUrl)}" class="${cardClass}" ${targetAttr} ${isHidden}>
+                        <a href="${escapeHtml(websiteUrl)}" class="${cardClass}" ${targetAttr} ${isHidden} data-partner-index="${index}">
                             ${partner.logo_url ? `
                             <div class="partner-compact-logo">
                                 <img src="${escapeHtml(partner.logo_url)}" 
@@ -1092,12 +1092,25 @@
                 if (loadMoreContainer && loadMoreBtn) {
                     if (partners.length > displayedPartners) {
                         loadMoreContainer.style.display = 'flex';
-                        loadMoreBtn.onclick = function() {
-                            const hiddenCards = grid.querySelectorAll('.partner-compact-card[style*="display: none"]');
-                            const cardsToShow = Math.min(partnersPerRow, hiddenCards.length);
+                        
+                        // Remove existing event listener by replacing onclick
+                        loadMoreBtn.onclick = function(e) {
+                            e.preventDefault();
+                            e.stopPropagation();
                             
-                            for (let i = 0; i < cardsToShow; i++) {
-                                hiddenCards[i].style.display = '';
+                            const allCards = grid.querySelectorAll('.partner-compact-card');
+                            const cardsToShow = Math.min(partnersPerRow, partners.length - displayedPartners);
+                            
+                            // Show the next batch of cards by removing inline display:none or setting to flex
+                            for (let i = displayedPartners; i < displayedPartners + cardsToShow && i < partners.length; i++) {
+                                const card = Array.from(allCards).find(c => {
+                                    const index = parseInt(c.getAttribute('data-partner-index'));
+                                    return index === i;
+                                });
+                                if (card) {
+                                    // Remove inline style to let CSS take over, or explicitly set to flex
+                                    card.style.display = 'flex';
+                                }
                             }
                             
                             displayedPartners += cardsToShow;

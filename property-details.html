@@ -89,8 +89,25 @@
             <div class="property-details-content" id="propertyContent" style="display: none;">
                 <div class="property-details-main">
                     <!-- Property Images Gallery -->
-                    <div class="property-gallery" id="propertyGallery">
-                        <!-- Images will be loaded by JavaScript -->
+                    <div class="property-gallery-wrapper">
+                        <!-- Image Filter Buttons -->
+                        <div class="property-image-filters" id="imageFilters">
+                            <button class="image-filter-btn active" data-filter="project">
+                                <i class="fas fa-images"></i>
+                                <span>Project Images</span>
+                            </button>
+                            <button class="image-filter-btn" data-filter="floorplan">
+                                <i class="fas fa-drafting-compass"></i>
+                                <span>Floor Plan</span>
+                            </button>
+                            <button class="image-filter-btn" data-filter="masterplan">
+                                <i class="fas fa-map"></i>
+                                <span>Master Plan</span>
+                            </button>
+                        </div>
+                        <div class="property-gallery" id="propertyGallery">
+                            <!-- Images will be loaded by JavaScript -->
+                        </div>
                     </div>
 
                     <!-- Property Description -->
@@ -376,7 +393,7 @@
                     <div class="footer-logo">
                         <a href="/index.html" class="logo-link">
                             <div class="logo-graphic">
-                                <img src="/images/TS_Logo_White.png" alt="Tirumakudalu Properties Logo" class="logo-img">
+                                <img src="/images/TS_Logo_White.png" alt="Tirumakudalu Properties Logo" width="300px" height="auto" style="margin-left: 150px;">
                             </div>
                         </a>
                     </div>

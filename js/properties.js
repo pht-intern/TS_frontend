@@ -595,6 +595,29 @@ document.addEventListener('DOMContentLoaded', async () => {
     const urlParams = new URLSearchParams(window.location.search);
     const typeParam = urlParams.get('type');
     const statusParam = urlParams.get('status');
+    const searchParam = urlParams.get('search');
+    
+    // Apply search parameter if present
+    if (searchParam) {
+        const navSearchInput = document.getElementById('navSearchInput');
+        const mainSearchInput = document.getElementById('mainSearchInput');
+        const navSearchClear = document.getElementById('navSearchClear');
+        const mainSearchClear = document.getElementById('mainSearchClear');
+        const searchValue = decodeURIComponent(searchParam);
+        
+        if (navSearchInput) {
+            navSearchInput.value = searchValue;
+            if (navSearchClear) {
+                navSearchClear.style.display = 'flex';
+            }
+        }
+        if (mainSearchInput) {
+            mainSearchInput.value = searchValue;
+            if (mainSearchClear) {
+                mainSearchClear.style.display = 'flex';
+            }
+        }
+    }
     
     // Apply status filter if present
     if (statusParam && (statusParam === 'sale' || statusParam === 'rent' || statusParam === 'all')) {
@@ -615,7 +638,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
     
     // Apply all filters if any URL parameters are present
-    if (typeParam || statusParam) {
+    if (typeParam || statusParam || searchParam) {
         applyFilters();
         // Scroll to properties section
         setTimeout(() => {

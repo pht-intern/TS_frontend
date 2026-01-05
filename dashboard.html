@@ -546,6 +546,60 @@
                             </div>
                         </div>
                     </div>
+
+                    <!-- Time Range Selector -->
+                    <div style="display: flex; justify-content: flex-end; margin-bottom: 1.5rem; align-items: center; gap: 1rem;">
+                        <label for="metricsTimeRange" style="font-size: 14px; color: var(--text-gray); font-weight: 500;">
+                            Time Range:
+                        </label>
+                        <select id="metricsTimeRange" class="dashboard-log-filter" style="padding: 0.5rem 1rem; border: 1px solid var(--border-color); border-radius: 5px; font-size: 14px; background: var(--white); cursor: pointer;">
+                            <option value="1">Last Hour</option>
+                            <option value="6">Last 6 Hours</option>
+                            <option value="12">Last 12 Hours</option>
+                            <option value="24" selected>Last 24 Hours</option>
+                            <option value="48">Last 48 Hours</option>
+                            <option value="72">Last 72 Hours</option>
+                        </select>
+                    </div>
+
+                    <!-- Metrics Graphs Container -->
+                    <div class="metrics-graphs-container">
+                        <div class="metrics-graph-card">
+                            <div class="metrics-graph-header">
+                                <h3>
+                                    <i class="fas fa-microchip" style="margin-right: 0.5rem; color: var(--yellow-bright);"></i>
+                                    CPU Usage
+                                </h3>
+                            </div>
+                            <div class="metrics-graph-body">
+                                <canvas id="cpuChart"></canvas>
+                            </div>
+                        </div>
+
+                        <div class="metrics-graph-card">
+                            <div class="metrics-graph-header">
+                                <h3>
+                                    <i class="fas fa-memory" style="margin-right: 0.5rem; color: var(--purple);"></i>
+                                    RAM Usage
+                                </h3>
+                            </div>
+                            <div class="metrics-graph-body">
+                                <canvas id="ramChart"></canvas>
+                            </div>
+                        </div>
+
+                        <div class="metrics-graph-card">
+                            <div class="metrics-graph-header">
+                                <h3>
+                                    <i class="fas fa-network-wired" style="margin-right: 0.5rem; color: var(--primary-color);"></i>
+                                    Bandwidth Usage
+                                </h3>
+                            </div>
+                            <div class="metrics-graph-body">
+                                <canvas id="bandwidthChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- Logs Section -->
@@ -556,7 +610,7 @@
                             Activity Logs
                         </h2>
                         <div style="display: flex; gap: 1rem; align-items: center;">
-                            <select id="logTypeFilter" class="dashboard-log-filter" style="padding: 0.5rem; border: 1px solid var(--border-color); border-radius: 5px; font-size: 0.9rem;">
+                            <select id="logTypeFilter" class="dashboard-log-filter" style="padding: 0.5rem; border: 1px solid var(--border-color); border-radius: 5px; font-size: 22px;">
                                 <option value="">All Types</option>
                                 <option value="info">Info</option>
                                 <option value="warning">Warning</option>
@@ -927,7 +981,7 @@
                         <i class="fas fa-check-circle"></i>
                         Amenities *
                     </label>
-                    <select id="residentialAmenities" name="amenities" multiple size="8" required style="width: 100%; padding: 0.875rem 1rem; border: 2px solid var(--border-color); border-radius: 10px; font-size: 1rem; font-family: 'Inter', sans-serif;">
+                    <select id="residentialAmenities" name="amenities" multiple size="8" required style="width: 100%; padding: 0.875rem 1rem; border: 2px solid var(--border-color); border-radius: 10px; font-size: 22px; font-family: 'Inter', sans-serif;">
                         <option value="club_house">Club House</option>
                         <option value="security">Security</option>
                         <option value="24hr_backup">24hr Backup</option>
@@ -953,7 +1007,7 @@
                         <option value="wifi_broadband">WiFi Broadband Internet</option>
                         <option value="temple">Temple</option>
                     </select>
-                    <small style="color: var(--text-gray); font-size: 0.85rem; margin-top: 0.5rem; display: block;">Hold Ctrl (Windows) or Cmd (Mac) to select multiple amenities</small>
+                    <small style="color: var(--text-gray); font-size: 22px; margin-top: 0.5rem; display: block;">Hold Ctrl (Windows) or Cmd (Mac) to select multiple amenities</small>
                 </div>
 
                 <div class="dashboard-modal-actions">
@@ -1095,7 +1149,7 @@
                         <i class="fas fa-check-circle"></i>
                         Amenities *
                     </label>
-                    <select id="plotAmenities" name="amenities" multiple size="8" required style="width: 100%; padding: 0.875rem 1rem; border: 2px solid var(--border-color); border-radius: 10px; font-size: 1rem; font-family: 'Inter', sans-serif;">
+                    <select id="plotAmenities" name="amenities" multiple size="8" required style="width: 100%; padding: 0.875rem 1rem; border: 2px solid var(--border-color); border-radius: 10px; font-size: 22px; font-family: 'Inter', sans-serif;">
                         <option value="club_house">Club House</option>
                         <option value="security">Security</option>
                         <option value="24hr_backup">24hr Backup</option>
@@ -1121,7 +1175,7 @@
                         <option value="wifi_broadband">WiFi Broadband Internet</option>
                         <option value="temple">Temple</option>
                     </select>
-                    <small style="color: var(--text-gray); font-size: 0.85rem; margin-top: 0.5rem; display: block;">Hold Ctrl (Windows) or Cmd (Mac) to select multiple amenities</small>
+                    <small style="color: var(--text-gray); font-size: 22px; margin-top: 0.5rem; display: block;">Hold Ctrl (Windows) or Cmd (Mac) to select multiple amenities</small>
                 </div>
 
                 <div class="dashboard-modal-actions">

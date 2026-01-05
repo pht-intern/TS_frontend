@@ -14,8 +14,8 @@ function showLoadingState() {
     if (blogsGrid) {
         blogsGrid.innerHTML = `
             <div class="blogs-loading" style="grid-column: 1 / -1; text-align: center; padding: 4rem 2rem;">
-                <i class="fas fa-spinner fa-spin" style="font-size: 3rem; color: var(--primary-color); margin-bottom: 1rem;"></i>
-                <p style="color: var(--text-gray); font-size: 1.1rem;">Loading blogs...</p>
+                <i class="fas fa-spinner fa-spin" style="font-size: 32px; color: var(--primary-color); margin-bottom: 1rem;"></i>
+                <p style="color: var(--text-gray); font-size: 22px;">Loading blogs...</p>
             </div>
         `;
     }
@@ -137,7 +137,7 @@ async function loadBlogsFromAPI() {
         if (blogsGrid) {
             blogsGrid.innerHTML = `
                 <div class="blogs-empty" style="grid-column: 1 / -1; text-align: center; padding: 4rem 2rem;">
-                    <i class="fas fa-exclamation-triangle" style="font-size: 3rem; color: var(--primary-color); margin-bottom: 1rem;"></i>
+                    <i class="fas fa-exclamation-triangle" style="font-size: 32px; color: var(--primary-color); margin-bottom: 1rem;"></i>
                     <h3>Unable to Load Blogs</h3>
                     <p>There was an error loading blogs from the server. Please try again later.</p>
                 </div>

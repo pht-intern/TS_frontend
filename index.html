@@ -31,7 +31,7 @@
                 <div class="logo">
                     <a href="#home" class="logo-link">
                         <div class="logo-graphic">
-                            <img src="/images/TirumakudaluProperties_Logo-2048x1858.png" alt="Tirumakudalu Properties Logo" class="logo-img">
+                            <img src="/images/TirumakudaluProperties_Logo-2048x1858.png" alt="Tirumakudalu Properties Logo" class="logo-img" >
                         </div>
                     </a>
                 </div>
@@ -113,7 +113,8 @@
             </div>
         </div>
     </section>
-
+    <hr>
+ 
     <!-- Main Search Bar -->
     <section class="properties-section">
         <div class="container">
@@ -220,6 +221,7 @@
             </div>
         </div>
     </section>
+    <hr>
 
     <!-- Property Types -->
     <section class="property-types">
@@ -267,6 +269,7 @@
             </div>
         </div>
     </section>
+    <hr>
 
     <!-- About Section -->
     <section class="about-compact" id="about">
@@ -302,6 +305,7 @@
             </div>
         </div>
     </section>
+    <hr>
 
     <!-- Partners Section -->
     <section class="partners-compact" id="partners">
@@ -328,6 +332,7 @@
             </div>
         </div>
     </section>
+    <hr>
 
     <!-- Testimonials Section -->
     <section class="testimonials-compact" id="testimonials">
@@ -353,6 +358,7 @@
             </div>
         </div>
     </section>
+    <hr>
 
     <!-- Services Section -->
     <section class="services-showcase" id="services">
@@ -625,15 +631,16 @@
             </div>
         </div>
     </section>
+    <hr>
 
     <!-- Team Highlights Section -->
     <section class="about-team-compact">
         <div class="container">
-            <h3 class="about-team-title">Our Team of Experts</h3>
+            <h3 class="about-team-title">Our Expertise</h3>
             <div class="team-compact-grid">
                 <div class="team-compact-item">
                     <i class="fas fa-chart-line"></i>
-                    <p>Thorough understanding of the Bengaluru real estate market</p>
+                    <p>Thorough understanding of the Indian Regional real estate market</p>
                 </div>
                 <div class="team-compact-item">
                     <i class="fas fa-star"></i>
@@ -641,15 +648,16 @@
                 </div>
                 <div class="team-compact-item">
                     <i class="fas fa-cog"></i>
-                    <p>Expertise to make property transactions smooth and painless</p>
+                    <p>Expertise to make property transactions smooth and Hassle-free</p>
                 </div>
                 <div class="team-compact-item">
                     <i class="fas fa-trophy"></i>
-                    <p>Dedicated to delivering the highest quality of service</p>
+                    <p>Dedicated to delivering the highest quality of Service</p>
                 </div>
             </div>
         </div>
     </section>
+    <hr>
 
     <!-- Founder Info Section -->
     <section class="about-founder-compact">
@@ -659,7 +667,7 @@
                     <img src="images/Seshadri_TS_full.png" alt="Seshadri T S">
                 </div>
                 <div class="founder-compact-info">
-                    <div class="founder-compact-label">About T. S. Seshadri</div>
+                    <div class="founder-compact-label">About Founder</div>
                     <h3>Seshadri T S</h3>
                     <div class="founder-compact-role">Proprietor | Consultant</div>
                     <p>Tirumakudalu Properties is a solely owned and operated firm promoted by Mr. Seshadri T. S. He has over 30 years of vast professional experience in finance, marketing, and sales, and 10 years in the field of property management. Mr. Seshadri is the grandson of Sri T. Rama Rao, the late founder member of The National Institute of Engineering (NIE), Mysore.</p>
@@ -667,6 +675,7 @@
             </div>
         </div>
     </section>
+    <hr>
 
     <!-- Statistics -->
     <section class="statistics">
@@ -695,6 +704,7 @@
             </div>
         </div>
     </section>
+    <hr>
 
     <!-- Contact Section -->
     <section class="contact" id="contact">
@@ -762,6 +772,7 @@
             </div>
         </div>
     </section>
+    <hr>
 
     <!-- Visitor Info Popup Modal -->
     <div class="visitor-modal" id="visitorModal">
@@ -912,7 +923,7 @@
                     <div class="footer-logo">
                         <a href="#home" class="logo-link">
                             <div class="logo-graphic">
-                                <img src="/images/TS_Logo_White.png" alt="Tirumakudalu Properties Logo" class="logo-img">
+                                <img src="/images/TS_Logo_White.png" alt="Tirumakudalu Properties Logo" width="300px" height="auto" style="margin-left: 150px;">
                             </div>
                         </a>
                     </div>
@@ -1038,10 +1049,10 @@
                 }
             }
 
-            let displayedPartners = 0;
             const partnersPerRow = 6; // Approximate number of cards per row (adjust based on your grid)
             const initialRows = 2;
             const initialPartnersCount = partnersPerRow * initialRows;
+            let isExpanded = false;
 
             function renderPartnersCompact() {
                 const grid = document.getElementById('partnersCompactGrid');
@@ -1059,10 +1070,7 @@
                 // For now, we'll use a simple check based on logo or name
                 const blackBackgroundPartners = [];
 
-                // Reset displayed count
-                displayedPartners = Math.min(initialPartnersCount, partners.length);
-
-                // Render all partners but hide those beyond initial count
+                // Render all partners - all cards are visible in DOM
                 grid.innerHTML = partners.map((partner, index) => {
                     const hasBlackBackground = blackBackgroundPartners.includes(partner.name);
                     const cardClass = hasBlackBackground ? 'partner-compact-card partner-compact-card-dark' : 'partner-compact-card';
@@ -1070,10 +1078,9 @@
                         ? partner.website_url 
                         : '#';
                     const targetAttr = websiteUrl !== '#' ? 'target="_blank" rel="noopener noreferrer"' : '';
-                    const isHidden = index >= displayedPartners ? 'style="display: none;"' : '';
                     
                     return `
-                        <a href="${escapeHtml(websiteUrl)}" class="${cardClass}" ${targetAttr} ${isHidden} data-partner-index="${index}">
+                        <a href="${escapeHtml(websiteUrl)}" class="${cardClass}" ${targetAttr} data-partner-index="${index}">
                             ${partner.logo_url ? `
                             <div class="partner-compact-logo">
                                 <img src="${escapeHtml(partner.logo_url)}" 
@@ -1088,9 +1095,14 @@
                     `;
                 }).join('');
 
+                // Set initial state - collapsed (showing only 2 rows)
+                isExpanded = false;
+                grid.classList.remove('partners-grid-expanded');
+                grid.classList.add('partners-grid-collapsed');
+
                 // Show/hide load more button
                 if (loadMoreContainer && loadMoreBtn) {
-                    if (partners.length > displayedPartners) {
+                    if (partners.length > initialPartnersCount) {
                         loadMoreContainer.style.display = 'flex';
                         
                         // Remove existing event listener by replacing onclick
@@ -1098,25 +1110,11 @@
                             e.preventDefault();
                             e.stopPropagation();
                             
-                            const allCards = grid.querySelectorAll('.partner-compact-card');
-                            const cardsToShow = Math.min(partnersPerRow, partners.length - displayedPartners);
-                            
-                            // Show the next batch of cards by removing inline display:none or setting to flex
-                            for (let i = displayedPartners; i < displayedPartners + cardsToShow && i < partners.length; i++) {
-                                const card = Array.from(allCards).find(c => {
-                                    const index = parseInt(c.getAttribute('data-partner-index'));
-                                    return index === i;
-                                });
-                                if (card) {
-                                    // Remove inline style to let CSS take over, or explicitly set to flex
-                                    card.style.display = 'flex';
-                                }
-                            }
-                            
-                            displayedPartners += cardsToShow;
-                            
-                            // Hide button if all cards are shown
-                            if (displayedPartners >= partners.length) {
+                            // Expand to show all cards
+                            if (!isExpanded) {
+                                grid.classList.remove('partners-grid-collapsed');
+                                grid.classList.add('partners-grid-expanded');
+                                isExpanded = true;
                                 loadMoreContainer.style.display = 'none';
                             }
                         };

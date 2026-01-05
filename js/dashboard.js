@@ -167,9 +167,29 @@ function checkAuthentication() {
     
     // Sync localStorage to sessionStorage for immediate access
     // This ensures both storage types are in sync
-    if (localStorage.getItem('dashboard_authenticated') === 'true' && localStorage.getItem('user')) {
-        sessionStorage.setItem('dashboard_authenticated', 'true');
-        sessionStorage.setItem('user', localStorage.getItem('user'));
+    const localAuth = localStorage.getItem('dashboard_authenticated');
+    const localUser = localStorage.getItem('user');
+    const sessionAuth = sessionStorage.getItem('dashboard_authenticated');
+    const sessionUser = sessionStorage.getItem('user');
+    
+    // If localStorage has auth but sessionStorage doesn't, sync it
+    if (localAuth === 'true' && localUser && (!sessionAuth || !sessionUser)) {
+        try {
+            sessionStorage.setItem('dashboard_authenticated', 'true');
+            sessionStorage.setItem('user', localUser);
+        } catch (e) {
+            console.error('Error syncing to sessionStorage:', e);
+        }
+    }
+    
+    // If sessionStorage has auth but localStorage doesn't, sync it (for consistency)
+    if (sessionAuth === 'true' && sessionUser && (!localAuth || !localUser)) {
+        try {
+            localStorage.setItem('dashboard_authenticated', 'true');
+            localStorage.setItem('user', sessionUser);
+        } catch (e) {
+            console.error('Error syncing to localStorage:', e);
+        }
     }
     
     // Authentication check completed

@@ -205,17 +205,50 @@
                     body: JSON.stringify({ email, password })
                 });
                 
-                const data = await response.json();
+                // Check if response is ok before parsing JSON
+                let data;
+                try {
+                    data = await response.json();
+                } catch (parseError) {
+                    console.error('Error parsing response:', parseError);
+                    alert('Server error. Please try again.');
+                    return;
+                }
                 
-                if (response.ok && data.success) {
+                if (response.ok && data.success && data.user) {
                     // SESSION CREATION: Only happens here after successful login
                     // Store user info in sessionStorage (clears when all tabs close)
                     // Also store in localStorage as backup, but session manager will clear it when last tab closes
-                    sessionStorage.setItem('user', JSON.stringify(data.user));
-                    sessionStorage.setItem('dashboard_authenticated', 'true');
-                    // Store in localStorage as well (session manager will manage clearing)
-                    localStorage.setItem('user', JSON.stringify(data.user));
-                    localStorage.setItem('dashboard_authenticated', 'true');
+                    const userData = data.user;
+                    
+                    // Ensure user data is valid before storing
+                    if (!userData || !userData.email) {
+                        console.error('Invalid user data received:', userData);
+                        alert('Server error: Invalid user data received. Please try again.');
+                        return;
+                    }
+                    
+                    // Store authentication data synchronously (localStorage/sessionStorage are synchronous)
+                    try {
+                        sessionStorage.setItem('user', JSON.stringify(userData));
+                        sessionStorage.setItem('dashboard_authenticated', 'true');
+                        // Store in localStorage as well (session manager will manage clearing)
+                        localStorage.setItem('user', JSON.stringify(userData));
+                        localStorage.setItem('dashboard_authenticated', 'true');
+                    } catch (storageError) {
+                        console.error('Error storing session data:', storageError);
+                        alert('Error saving session. Please check your browser settings and try again.');
+                        return;
+                    }
+                    
+                    // Verify storage was successful
+                    const storedUser = localStorage.getItem('user');
+                    const storedAuth = localStorage.getItem('dashboard_authenticated');
+                    if (!storedUser || storedAuth !== 'true') {
+                        console.error('Failed to verify session storage');
+                        alert('Error saving session. Please try again.');
+                        return;
+                    }
                     
                     // Initialize session manager to track tabs
                     if (window.SessionManager) {
@@ -226,26 +259,29 @@
                     checkAuthentication();
                     updateDashboardNavButton();
                     
-                    // Close modal and redirect
+                    // Close modal
                     closeModal();
                     
-                    // Redirect to dashboard if admin, otherwise show success
-                    if (data.user && data.user.role === 'admin') {
-                        window.location.href = '/dashboard.html';
-                    } else {
-                        alert('Login successful!');
-                        // Optionally redirect to user dashboard or profile
-                    }
+                    // Small delay to ensure all storage operations are complete
+                    // Then redirect to dashboard for successful login
+                    // (Only admin users can login based on backend validation)
+                    setTimeout(() => {
+                        window.location.replace('/dashboard.html');
+                    }, 100);
                 } else {
                     // Login failed - NO session created
                     // Show error message
-                    const errorMsg = data.detail || data.error || 'Invalid email or password';
+                    const errorMsg = data.detail || data.error || data.message || 'Invalid email or password';
                     alert(errorMsg);
                 }
             } catch (error) {
                 // Network error - NO session created
                 console.error('Login error:', error);
-                alert('Network error. Please check your connection and try again.');
+                if (error.name === 'TypeError' && error.message.includes('fetch')) {
+                    alert('Network error. Please check your connection and try again.');
+                } else {
+                    alert('An error occurred. Please try again.');
+                }
             } finally {
                 // Reset button
                 submitBtn.disabled = false;

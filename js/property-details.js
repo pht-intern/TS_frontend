@@ -11,6 +11,16 @@ function escapeHtml(text) {
 // Store current property ID globally
 let currentPropertyId = null;
 
+// Store categorized images for filtering
+let categorizedImages = {
+    project: [],
+    floorplan: [],
+    masterplan: []
+};
+
+// Store all images for lightbox
+let allImages = [];
+
 // Show loading state
 function showLoadingState() {
     const loadingEl = document.getElementById('propertyLoading');
@@ -559,25 +569,45 @@ function renderPropertyDetails(property) {
         </div>
     `;
     
-    // Render Gallery
-    const gallery = document.getElementById('propertyGallery');
+    // Categorize images
     const images = property.images && property.images.length > 0 ? property.images : 
                    (property.image ? [property.image] : ['/images/img1.jpg']);
-    const mainImage = images[0] || '/images/img1.jpg';
-    const propertyTitle = escapeHtml(property.title || 'Property');
     
-    gallery.innerHTML = `
-        <div class="property-main-image">
-            <img src="${escapeHtml(mainImage)}" alt="${propertyTitle}" onerror="this.src='/images/img1.jpg'">
-        </div>
-        <div class="property-thumbnails">
-            ${images.map((img, index) => `
-                <div class="property-thumbnail ${index === 0 ? 'active' : ''}">
-                    <img src="${escapeHtml(img || '/images/img1.jpg')}" alt="${propertyTitle}" onerror="this.src='/images/img1.jpg'">
-                </div>
-            `).join('')}
-        </div>
-    `;
+    // Store all images for lightbox
+    allImages = images;
+    
+    // Categorize images based on URL patterns or default to "project"
+    categorizedImages = {
+        project: [],
+        floorplan: [],
+        masterplan: []
+    };
+    
+    images.forEach(img => {
+        const imgUrl = (img || '').toLowerCase();
+        // Check if image URL contains keywords for floor plan or master plan
+        if (imgUrl.includes('floor') || imgUrl.includes('floorplan') || imgUrl.includes('floor-plan')) {
+            categorizedImages.floorplan.push(img);
+        } else if (imgUrl.includes('master') || imgUrl.includes('masterplan') || imgUrl.includes('master-plan') || imgUrl.includes('site-plan')) {
+            categorizedImages.masterplan.push(img);
+        } else {
+            // Default to project images
+            categorizedImages.project.push(img);
+        }
+    });
+    
+    // If no images in a category, ensure at least project has images
+    if (categorizedImages.project.length === 0 && images.length > 0) {
+        categorizedImages.project = images;
+    }
+    
+    // Render Gallery with default filter (project)
+    renderGallery('project', property.title || 'Property');
+    
+    // Initialize filter buttons (after gallery is rendered)
+    setTimeout(() => {
+        initImageFilters();
+    }, 100);
     
     // Render Description (clean description - remove property details section if it exists)
     const description = document.getElementById('propertyDescription');
@@ -690,12 +720,12 @@ function renderPropertyDetails(property) {
     // Note: priceContent may contain HTML (line breaks), so we don't escape it
     price.innerHTML = `
         <div style="margin-bottom: 0.5rem;">
-            <h3 style="font-size: 1.125rem; font-weight: 600; margin: 0 0 0.75rem 0; color: #1f2937; display: flex; align-items: center; gap: 0.5rem;">
-                <i class="fas fa-tag" style="font-size: 1rem;"></i>
+            <h3 style="font-size: 26px; font-weight: 600; margin: 0 0 0.75rem 0; color: #1f2937; display: flex; align-items: center; gap: 0.5rem;">
+                <i class="fas fa-tag" style="font-size: 22px;"></i>
                 <span>Price</span>
             </h3>
         </div>
-        <div style="font-size: 1rem; line-height: 1.6; color: #374151;">
+        <div style="font-size: 22px; line-height: 1.6; color: #374151;">
             ${priceContent}
         </div>
     `;
@@ -881,6 +911,43 @@ function renderPropertyDetails(property) {
     
     quickInfo.innerHTML = quickInfoHTML;
     
+}
+
+// Render Gallery with Filter
+function renderGallery(filterType, propertyTitle) {
+    const gallery = document.getElementById('propertyGallery');
+    if (!gallery) return;
+    
+    // Get images for the selected filter
+    const filteredImages = categorizedImages[filterType] || categorizedImages.project;
+    
+    // If no images in this category, show a message
+    if (filteredImages.length === 0) {
+        gallery.innerHTML = `
+            <div class="property-main-image" style="display: flex; align-items: center; justify-content: center; min-height: 300px;">
+                <p style="color: var(--text-light); font-size: 18px;">No ${filterType === 'floorplan' ? 'Floor Plan' : filterType === 'masterplan' ? 'Master Plan' : 'Project'} images available</p>
+            </div>
+            <div class="property-thumbnails"></div>
+        `;
+        return;
+    }
+    
+    const mainImage = filteredImages[0] || '/images/img1.jpg';
+    const escapedTitle = escapeHtml(propertyTitle || 'Property');
+    
+    gallery.innerHTML = `
+        <div class="property-main-image">
+            <img src="${escapeHtml(mainImage)}" alt="${escapedTitle}" onerror="this.src='/images/img1.jpg'">
+        </div>
+        <div class="property-thumbnails">
+            ${filteredImages.map((img, index) => `
+                <div class="property-thumbnail ${index === 0 ? 'active' : ''}" data-image-type="${filterType}">
+                    <img src="${escapeHtml(img || '/images/img1.jpg')}" alt="${escapedTitle}" onerror="this.src='/images/img1.jpg'">
+                </div>
+            `).join('')}
+        </div>
+    `;
+    
     // Add thumbnail click handlers
     const thumbnails = gallery.querySelectorAll('.property-thumbnail');
     const mainImageElement = gallery.querySelector('.property-main-image img');
@@ -894,12 +961,46 @@ function renderPropertyDetails(property) {
         });
     });
     
-    // Initialize image lightbox
-    initImageLightbox(images, propertyTitle);
+    // Update lightbox images for current filter
+    currentLightboxImages = filteredImages;
+    currentLightboxTitle = escapedTitle;
+    
+    // Initialize lightbox if not already done
+    if (!window.lightboxInitialized) {
+        initImageLightbox();
+        window.lightboxInitialized = true;
+    }
 }
 
-// Initialize Image Lightbox
-function initImageLightbox(images, propertyTitle) {
+// Initialize Image Filter Buttons
+function initImageFilters() {
+    const filterButtons = document.querySelectorAll('.image-filter-btn');
+    if (!filterButtons || filterButtons.length === 0) return;
+    
+    filterButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            const filterType = button.getAttribute('data-filter');
+            
+            // Update active state
+            filterButtons.forEach(btn => btn.classList.remove('active'));
+            button.classList.add('active');
+            
+            // Get property title for rendering
+            const propertyTitle = document.querySelector('.property-details-title')?.textContent || 'Property';
+            
+            // Render gallery with selected filter
+            renderGallery(filterType, propertyTitle);
+        });
+    });
+}
+
+// Store current lightbox state
+let currentLightboxImages = [];
+let currentLightboxTitle = '';
+let currentLightboxIndex = 0;
+
+// Initialize Image Lightbox (using event delegation - only called once)
+function initImageLightbox() {
     const lightbox = document.getElementById('imageLightbox');
     const lightboxImage = document.getElementById('lightboxImage');
     const lightboxCounter = document.getElementById('lightboxCounter');
@@ -910,28 +1011,33 @@ function initImageLightbox(images, propertyTitle) {
     
     if (!lightbox || !lightboxImage) return;
     
-    let currentImageIndex = 0;
-    const totalImages = images.length;
-    
     // Function to update lightbox image
-    function updateLightboxImage(index) {
-        if (index < 0 || index >= totalImages) return;
-        currentImageIndex = index;
-        const imageUrl = images[index] || '/images/img1.jpg';
+    function updateLightboxImage() {
+        const totalImages = currentLightboxImages.length;
+        if (currentLightboxIndex < 0 || currentLightboxIndex >= totalImages) return;
+        
+        const imageUrl = currentLightboxImages[currentLightboxIndex] || '/images/img1.jpg';
         lightboxImage.src = imageUrl;
-        lightboxImage.alt = `${propertyTitle} - Image ${index + 1}`;
-        lightboxCounter.textContent = `${index + 1} / ${totalImages}`;
+        lightboxImage.alt = `${currentLightboxTitle} - Image ${currentLightboxIndex + 1}`;
+        if (lightboxCounter) {
+            lightboxCounter.textContent = `${currentLightboxIndex + 1} / ${totalImages}`;
+        }
         
         // Update navigation buttons visibility
-        lightboxPrev.style.display = index === 0 ? 'none' : 'flex';
-        lightboxNext.style.display = index === totalImages - 1 ? 'none' : 'flex';
+        if (lightboxPrev) {
+            lightboxPrev.style.display = currentLightboxIndex === 0 ? 'none' : 'flex';
+        }
+        if (lightboxNext) {
+            lightboxNext.style.display = currentLightboxIndex >= totalImages - 1 ? 'none' : 'flex';
+        }
     }
     
     // Function to open lightbox
     function openLightbox(index) {
+        const totalImages = currentLightboxImages.length;
         if (index < 0 || index >= totalImages) return;
-        currentImageIndex = index;
-        updateLightboxImage(index);
+        currentLightboxIndex = index;
+        updateLightboxImage();
         lightbox.style.display = 'flex';
         document.body.style.overflow = 'hidden';
     }
@@ -944,91 +1050,104 @@ function initImageLightbox(images, propertyTitle) {
     
     // Function to go to previous image
     function prevImage() {
-        if (currentImageIndex > 0) {
-            updateLightboxImage(currentImageIndex - 1);
+        if (currentLightboxIndex > 0) {
+            currentLightboxIndex--;
+            updateLightboxImage();
         }
     }
     
     // Function to go to next image
     function nextImage() {
-        if (currentImageIndex < totalImages - 1) {
-            updateLightboxImage(currentImageIndex + 1);
+        if (currentLightboxIndex < currentLightboxImages.length - 1) {
+            currentLightboxIndex++;
+            updateLightboxImage();
         }
     }
     
-    // Add click handlers to all images (main image and thumbnails)
+    // Use event delegation on gallery container (only set up once)
     const gallery = document.getElementById('propertyGallery');
-    if (gallery) {
-        const allImages = gallery.querySelectorAll('img');
-        allImages.forEach((img, index) => {
+    if (gallery && !gallery.hasAttribute('data-lightbox-initialized')) {
+        gallery.setAttribute('data-lightbox-initialized', 'true');
+        gallery.addEventListener('click', (e) => {
+            const img = e.target.closest('img');
+            if (!img || !img.closest('.property-gallery')) return;
+            
+            e.stopPropagation();
             img.style.cursor = 'pointer';
-            img.addEventListener('click', (e) => {
-                e.stopPropagation();
-                // Find which image was clicked
-                let clickedIndex = 0;
-                if (img.closest('.property-main-image')) {
-                    // Main image clicked
-                    clickedIndex = 0;
-                } else if (img.closest('.property-thumbnail')) {
-                    // Thumbnail clicked - find its index
-                    const thumbnails = gallery.querySelectorAll('.property-thumbnail');
-                    thumbnails.forEach((thumb, idx) => {
-                        if (thumb.contains(img)) {
-                            clickedIndex = idx;
-                        }
-                    });
-                }
-                openLightbox(clickedIndex);
-            });
+            
+            // Find which image was clicked
+            let clickedIndex = 0;
+            if (img.closest('.property-main-image')) {
+                // Main image clicked
+                clickedIndex = 0;
+            } else if (img.closest('.property-thumbnail')) {
+                // Thumbnail clicked - find its index
+                const thumbnails = gallery.querySelectorAll('.property-thumbnail');
+                thumbnails.forEach((thumb, idx) => {
+                    if (thumb.contains(img)) {
+                        clickedIndex = idx;
+                    }
+                });
+            }
+            
+            openLightbox(clickedIndex);
         });
     }
     
-    // Close button
-    if (lightboxClose) {
+    // Close button (only add once)
+    if (lightboxClose && !lightboxClose.hasAttribute('data-listener-added')) {
+        lightboxClose.setAttribute('data-listener-added', 'true');
         lightboxClose.addEventListener('click', closeLightbox);
     }
     
-    // Overlay click to close
-    if (lightboxOverlay) {
+    // Overlay click to close (only add once)
+    if (lightboxOverlay && !lightboxOverlay.hasAttribute('data-listener-added')) {
+        lightboxOverlay.setAttribute('data-listener-added', 'true');
         lightboxOverlay.addEventListener('click', closeLightbox);
     }
     
-    // Navigation buttons
-    if (lightboxPrev) {
+    // Navigation buttons (only add once)
+    if (lightboxPrev && !lightboxPrev.hasAttribute('data-listener-added')) {
+        lightboxPrev.setAttribute('data-listener-added', 'true');
         lightboxPrev.addEventListener('click', (e) => {
             e.stopPropagation();
             prevImage();
         });
     }
     
-    if (lightboxNext) {
+    if (lightboxNext && !lightboxNext.hasAttribute('data-listener-added')) {
+        lightboxNext.setAttribute('data-listener-added', 'true');
         lightboxNext.addEventListener('click', (e) => {
             e.stopPropagation();
             nextImage();
         });
     }
     
-    // Keyboard navigation
-    document.addEventListener('keydown', (e) => {
-        if (lightbox.style.display === 'none' || lightbox.style.display === '') return;
-        
-        switch(e.key) {
-            case 'Escape':
-                closeLightbox();
-                break;
-            case 'ArrowLeft':
-                e.preventDefault();
-                prevImage();
-                break;
-            case 'ArrowRight':
-                e.preventDefault();
-                nextImage();
-                break;
-        }
-    });
+    // Keyboard navigation (only add once)
+    if (!window.lightboxKeyboardListenerAdded) {
+        window.lightboxKeyboardListenerAdded = true;
+        document.addEventListener('keydown', (e) => {
+            if (!lightbox || lightbox.style.display === 'none' || lightbox.style.display === '') return;
+            
+            switch(e.key) {
+                case 'Escape':
+                    closeLightbox();
+                    break;
+                case 'ArrowLeft':
+                    e.preventDefault();
+                    prevImage();
+                    break;
+                case 'ArrowRight':
+                    e.preventDefault();
+                    nextImage();
+                    break;
+            }
+        });
+    }
     
-    // Prevent lightbox content clicks from closing
-    if (lightboxImage) {
+    // Prevent lightbox content clicks from closing (only add once)
+    if (lightboxImage && !lightboxImage.hasAttribute('data-listener-added')) {
+        lightboxImage.setAttribute('data-listener-added', 'true');
         lightboxImage.addEventListener('click', (e) => {
             e.stopPropagation();
         });

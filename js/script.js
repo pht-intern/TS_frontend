@@ -941,10 +941,103 @@ function scrollToNextSection() {
     }
 }
 
+// Global Navigation Search Handler
+function initGlobalNavSearch() {
+    const navSearchInput = document.getElementById('navSearchInput');
+    const navSearchClear = document.getElementById('navSearchClear');
+    const navSearchIcon = document.querySelector('.nav-search-icon');
+    const isPropertiesPage = window.location.pathname.includes('properties.html');
+    
+    if (!navSearchInput) return;
+    
+    // Function to handle search
+    function handleSearch() {
+        const searchQuery = navSearchInput.value.trim();
+        
+        if (!searchQuery) {
+            // If empty, just focus the input
+            navSearchInput.focus();
+            return;
+        }
+        
+        // If on properties page, let properties.js handle it
+        if (isPropertiesPage) {
+            // Trigger the search by dispatching an input event
+            // This will be handled by properties.js initMainSearch()
+            navSearchInput.dispatchEvent(new Event('input', { bubbles: true }));
+            // Also trigger applyFilters if it exists
+            if (typeof applyFilters === 'function') {
+                applyFilters();
+            }
+        } else {
+            // Navigate to properties page with search query
+            window.location.href = `/properties.html?search=${encodeURIComponent(searchQuery)}`;
+        }
+    }
+    
+    // Handle Enter key
+    navSearchInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            handleSearch();
+        }
+    });
+    
+    // Handle search icon click
+    if (navSearchIcon) {
+        navSearchIcon.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            handleSearch();
+        });
+        
+        // Make search icon clickable (cursor pointer)
+        navSearchIcon.style.cursor = 'pointer';
+    }
+    
+    // Make search wrapper clickable to focus input (but don't trigger search)
+    const navSearchWrapper = document.querySelector('.nav-search-wrapper');
+    if (navSearchWrapper) {
+        navSearchWrapper.addEventListener('click', (e) => {
+            // Only focus if clicking on the wrapper itself, not on child elements
+            if (e.target === navSearchWrapper) {
+                navSearchInput.focus();
+            }
+        });
+    }
+    
+    // Handle clear button
+    if (navSearchClear) {
+        navSearchClear.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            navSearchInput.value = '';
+            navSearchClear.style.display = 'none';
+            navSearchInput.focus();
+            
+            // If on properties page, apply filters to clear search
+            if (isPropertiesPage && typeof applyFilters === 'function') {
+                applyFilters();
+            }
+        });
+        
+        // Show/hide clear button based on input
+        navSearchInput.addEventListener('input', () => {
+            if (navSearchInput.value.trim()) {
+                navSearchClear.style.display = 'flex';
+            } else {
+                navSearchClear.style.display = 'none';
+            }
+        });
+    }
+    
+}
+
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
     renderProperties();
     initServicesSection();
+    initGlobalNavSearch();
     
     // Hero scroll indicator with enhanced animation
     const scrollIndicator = document.querySelector('.hero-scroll-indicator');

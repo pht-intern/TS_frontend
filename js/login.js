@@ -121,6 +121,8 @@
                 if (loginModal) {
                     loginModal.classList.add('active');
                     document.body.style.overflow = 'hidden';
+                    // Initialize Remember Me checkbox when modal opens
+                    initializeRememberMe();
                 }
             });
             
@@ -146,8 +148,55 @@
 
     // Close modal
     function closeModal() {
-        loginModal.classList.remove('active');
-        document.body.style.overflow = '';
+        if (loginModal) {
+            loginModal.classList.remove('active');
+            document.body.style.overflow = '';
+        }
+    }
+
+    // Initialize Remember Me checkbox state when modal opens
+    function initializeRememberMe() {
+        const rememberMeCheckbox = document.getElementById('rememberMe');
+        if (!rememberMeCheckbox) return;
+        
+        // Check if user previously selected "Remember Me"
+        const rememberMe = localStorage.getItem('remember_me') === 'true';
+        rememberMeCheckbox.checked = rememberMe;
+        
+        // If Remember Me was previously set, also pre-fill email if available
+        if (rememberMe) {
+            const userStr = localStorage.getItem('user');
+            if (userStr) {
+                try {
+                    const user = JSON.parse(userStr);
+                    const emailInput = document.getElementById('loginEmail');
+                    if (emailInput && user.email) {
+                        emailInput.value = user.email;
+                    }
+                } catch (e) {
+                    // Ignore parsing errors
+                }
+            }
+        }
+    }
+
+    // Watch for modal opening via MutationObserver or event
+    if (loginModal) {
+        // Use MutationObserver to detect when modal becomes active
+        const observer = new MutationObserver((mutations) => {
+            mutations.forEach((mutation) => {
+                if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
+                    if (loginModal.classList.contains('active')) {
+                        initializeRememberMe();
+                    }
+                }
+            });
+        });
+        
+        observer.observe(loginModal, {
+            attributes: true,
+            attributeFilter: ['class']
+        });
     }
 
     if (loginModalClose) {
@@ -217,8 +266,6 @@
                 
                 if (response.ok && data.success && data.user) {
                     // SESSION CREATION: Only happens here after successful login
-                    // Store user info in sessionStorage (clears when all tabs close)
-                    // Also store in localStorage as backup, but session manager will clear it when last tab closes
                     const userData = data.user;
                     
                     // Ensure user data is valid before storing
@@ -228,13 +275,29 @@
                         return;
                     }
                     
+                    // Check if "Remember Me" is checked
+                    const rememberMeCheckbox = document.getElementById('rememberMe');
+                    const rememberMe = rememberMeCheckbox ? rememberMeCheckbox.checked : false;
+                    
                     // Store authentication data synchronously (localStorage/sessionStorage are synchronous)
                     try {
-                        sessionStorage.setItem('user', JSON.stringify(userData));
-                        sessionStorage.setItem('dashboard_authenticated', 'true');
-                        // Store in localStorage as well (session manager will manage clearing)
-                        localStorage.setItem('user', JSON.stringify(userData));
-                        localStorage.setItem('dashboard_authenticated', 'true');
+                        if (rememberMe) {
+                            // Remember Me checked: Use localStorage for persistent storage
+                            localStorage.setItem('user', JSON.stringify(userData));
+                            localStorage.setItem('dashboard_authenticated', 'true');
+                            localStorage.setItem('remember_me', 'true'); // Flag for session manager
+                            // Also store in sessionStorage for immediate access
+                            sessionStorage.setItem('user', JSON.stringify(userData));
+                            sessionStorage.setItem('dashboard_authenticated', 'true');
+                        } else {
+                            // Remember Me not checked: Use sessionStorage (clears when tab closes)
+                            sessionStorage.setItem('user', JSON.stringify(userData));
+                            sessionStorage.setItem('dashboard_authenticated', 'true');
+                            // Store in localStorage as backup, but session manager will clear it when last tab closes
+                            localStorage.setItem('user', JSON.stringify(userData));
+                            localStorage.setItem('dashboard_authenticated', 'true');
+                            localStorage.removeItem('remember_me'); // Clear flag if unchecked
+                        }
                     } catch (storageError) {
                         console.error('Error storing session data:', storageError);
                         alert('Error saving session. Please check your browser settings and try again.');
@@ -242,8 +305,8 @@
                     }
                     
                     // Verify storage was successful
-                    const storedUser = localStorage.getItem('user');
-                    const storedAuth = localStorage.getItem('dashboard_authenticated');
+                    const storedUser = rememberMe ? localStorage.getItem('user') : sessionStorage.getItem('user');
+                    const storedAuth = rememberMe ? localStorage.getItem('dashboard_authenticated') : sessionStorage.getItem('dashboard_authenticated');
                     if (!storedUser || storedAuth !== 'true') {
                         console.error('Failed to verify session storage');
                         alert('Error saving session. Please try again.');

@@ -122,6 +122,17 @@ h6 {
     overflow: visible;
 }
 
+/* HR Styling - Constrain to container width */
+hr {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 20px;
+    border: none;
+    border-top: 1px solid var(--border-color, #e0e0e0);
+    width: 100%;
+    box-sizing: border-box;
+}
+
 /* Top Bar */
 .top-bar {
     background: var(--black);
@@ -5237,6 +5248,7 @@ section:not(.hero).section-visible .section-header {
     font-size: 1.5rem;
     color: var(--accent-color);
     margin-bottom: 0.25rem;
+    align-self: center;
 }
 
 .team-compact-item p {
@@ -5278,6 +5290,7 @@ section:not(.hero).section-visible .section-header {
     height: 100%;
     max-width: 100%;
     object-fit: cover;
+    object-position: center top;
 }
 
 .founder-compact-info {
@@ -10965,7 +10978,7 @@ section:not(.hero).section-visible .section-header {
 
 .login-form-options {
     display: flex;
-    justify-content: space-between;
+    justify-content: flex-start;
     align-items: center;
     font-size: 0.9rem;
 }

@@ -233,18 +233,25 @@
      * Clear session data
      */
     function clearSession() {
-        // Clear both sessionStorage and localStorage
+        // Always clear sessionStorage
         sessionStorage.removeItem(SESSION_KEY);
         sessionStorage.removeItem('dashboard_authenticated');
         sessionStorage.removeItem('isAuthenticated');
         sessionStorage.removeItem(USER_KEY);
         sessionStorage.removeItem('user');
         
-        localStorage.removeItem(SESSION_KEY);
-        localStorage.removeItem('dashboard_authenticated');
-        localStorage.removeItem('isAuthenticated');
-        localStorage.removeItem(USER_KEY);
-        localStorage.removeItem('user');
+        // Check if "Remember Me" was set - if so, don't clear localStorage
+        const rememberMe = localStorage.getItem('remember_me') === 'true';
+        
+        if (!rememberMe) {
+            // Remember Me not set - clear localStorage
+            localStorage.removeItem(SESSION_KEY);
+            localStorage.removeItem('dashboard_authenticated');
+            localStorage.removeItem('isAuthenticated');
+            localStorage.removeItem(USER_KEY);
+            localStorage.removeItem('user');
+        }
+        // If rememberMe is true, keep localStorage intact for persistent login
         
         // Notify other tabs (if any)
         sendMessage('session-cleared', { tabId });

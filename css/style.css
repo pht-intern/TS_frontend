@@ -207,9 +207,10 @@ hr {
 
 .nav-wrapper {
     display: flex;
-    justify-content: space-between;
+    justify-content: flex-start;
     align-items: center;
     padding: 1.25rem 0;
+    gap: 3rem;
 }
 
 /* Logo Styles */
@@ -373,7 +374,7 @@ hr {
 .nav-search {
     flex: 1;
     max-width: 300px;
-    margin: 0 2rem;
+    margin: 0;
 }
 
 .nav-search-wrapper {
@@ -542,6 +543,7 @@ hr {
     display: flex;
     align-items: center;
     gap: 1rem;
+    margin-left: auto;
 }
 
 .btn-login {

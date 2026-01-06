@@ -93,7 +93,6 @@
                         <ul class="dashboard-nav-menu">
                             <li><a href="/index.html">HOME</a></li>
                             <li><a href="/properties.html">PROPERTIES</a></li>
-                            <li><a href="#contact">CONTACT</a></li>
                         </ul>
                     </nav>
                 </div>
@@ -852,6 +851,23 @@
 
                 <div class="dashboard-form-row">
                     <div class="dashboard-form-group">
+                        <label for="residentialLocationLink">
+                            <i class="fas fa-link"></i>
+                            Location Link (Google Maps)
+                        </label>
+                        <input type="url" id="residentialLocationLink" name="location_link" placeholder="e.g., https://maps.google.com/...">
+                    </div>
+                    <div class="dashboard-form-group">
+                        <label for="residentialDirections">
+                            <i class="fas fa-directions"></i>
+                            Directions
+                        </label>
+                        <input type="text" id="residentialDirections" name="directions" placeholder="e.g., Near Metro Station, Opposite Mall">
+                    </div>
+                </div>
+
+                <div class="dashboard-form-row">
+                    <div class="dashboard-form-group">
                         <label for="residentialPropertyName">
                             <i class="fas fa-building"></i>
                             Property Name *
@@ -935,6 +951,23 @@
 
                 <div class="dashboard-form-row">
                     <div class="dashboard-form-group">
+                        <label for="residentialLength">
+                            <i class="fas fa-ruler-horizontal"></i>
+                            Length (Ft.)
+                        </label>
+                        <input type="number" id="residentialLength" name="length" placeholder="e.g., 50" step="0.01">
+                    </div>
+                    <div class="dashboard-form-group">
+                        <label for="residentialBreadth">
+                            <i class="fas fa-ruler-vertical"></i>
+                            Breadth (Ft.)
+                        </label>
+                        <input type="number" id="residentialBreadth" name="breadth" placeholder="e.g., 30" step="0.01">
+                    </div>
+                </div>
+
+                <div class="dashboard-form-row">
+                    <div class="dashboard-form-group">
                         <label for="residentialPrice">
                             <i class="fas fa-dollar-sign"></i>
                             Price *
@@ -964,16 +997,48 @@
                 <div class="dashboard-form-group">
                     <label>
                         <i class="fas fa-images"></i>
-                        Property Images *
+                        Project Images *
                     </label>
-                    <div class="dashboard-image-upload-area" id="residentialImageUploadArea">
-                        <input type="file" id="residentialPropertyImages" name="images" multiple accept="image/jpeg,image/jpg,image/png,image/webp,image/svg+xml" style="display: none;">
-                        <div class="dashboard-image-upload-placeholder" id="residentialImageUploadPlaceholder">
+                    <div class="dashboard-image-upload-area" id="residentialProjectImageUploadArea">
+                        <input type="file" id="residentialProjectImages" name="project_images" multiple accept="image/jpeg,image/jpg,image/png,image/webp,image/svg+xml" style="display: none;">
+                        <div class="dashboard-image-upload-placeholder" id="residentialProjectImageUploadPlaceholder">
                             <i class="fas fa-cloud-upload-alt"></i>
-                            <p>Click to upload images or drag and drop</p>
+                            <p>Click to upload project images or drag and drop</p>
                             <span>Supports: JPG, PNG, SVG, WebP (Max 5MB per image)</span>
                         </div>
-                        <div class="dashboard-image-preview-container" id="residentialImagePreviewContainer"></div>
+                        <div class="dashboard-image-preview-container" id="residentialProjectImagePreviewContainer"></div>
+                    </div>
+                </div>
+
+                <div class="dashboard-form-group">
+                    <label>
+                        <i class="fas fa-drafting-compass"></i>
+                        Floor Plan Images
+                    </label>
+                    <div class="dashboard-image-upload-area" id="residentialFloorPlanImageUploadArea">
+                        <input type="file" id="residentialFloorPlanImages" name="floorplan_images" multiple accept="image/jpeg,image/jpg,image/png,image/webp,image/svg+xml" style="display: none;">
+                        <div class="dashboard-image-upload-placeholder" id="residentialFloorPlanImageUploadPlaceholder">
+                            <i class="fas fa-cloud-upload-alt"></i>
+                            <p>Click to upload floor plan images or drag and drop</p>
+                            <span>Supports: JPG, PNG, SVG, WebP (Max 5MB per image)</span>
+                        </div>
+                        <div class="dashboard-image-preview-container" id="residentialFloorPlanImagePreviewContainer"></div>
+                    </div>
+                </div>
+
+                <div class="dashboard-form-group">
+                    <label>
+                        <i class="fas fa-map"></i>
+                        Master Plan Images
+                    </label>
+                    <div class="dashboard-image-upload-area" id="residentialMasterPlanImageUploadArea">
+                        <input type="file" id="residentialMasterPlanImages" name="masterplan_images" multiple accept="image/jpeg,image/jpg,image/png,image/webp,image/svg+xml" style="display: none;">
+                        <div class="dashboard-image-upload-placeholder" id="residentialMasterPlanImageUploadPlaceholder">
+                            <i class="fas fa-cloud-upload-alt"></i>
+                            <p>Click to upload master plan images or drag and drop</p>
+                            <span>Supports: JPG, PNG, SVG, WebP (Max 5MB per image)</span>
+                        </div>
+                        <div class="dashboard-image-preview-container" id="residentialMasterPlanImagePreviewContainer"></div>
                     </div>
                 </div>
 
@@ -1049,6 +1114,23 @@
                             Locality *
                         </label>
                         <input type="text" id="plotLocality" name="locality" placeholder="e.g., Whitefield" required>
+                    </div>
+                </div>
+
+                <div class="dashboard-form-row">
+                    <div class="dashboard-form-group">
+                        <label for="plotLocationLink">
+                            <i class="fas fa-link"></i>
+                            Location Link (Google Maps)
+                        </label>
+                        <input type="url" id="plotLocationLink" name="location_link" placeholder="e.g., https://maps.google.com/...">
+                    </div>
+                    <div class="dashboard-form-group">
+                        <label for="plotDirections">
+                            <i class="fas fa-directions"></i>
+                            Directions
+                        </label>
+                        <input type="text" id="plotDirections" name="directions" placeholder="e.g., Near Metro Station, Opposite Mall">
                     </div>
                 </div>
 
@@ -1132,16 +1214,48 @@
                 <div class="dashboard-form-group">
                     <label>
                         <i class="fas fa-images"></i>
-                        Property Images *
+                        Project Images *
                     </label>
-                    <div class="dashboard-image-upload-area" id="plotImageUploadArea">
-                        <input type="file" id="plotPropertyImages" name="images" multiple accept="image/jpeg,image/jpg,image/png,image/webp,image/svg+xml" style="display: none;">
-                        <div class="dashboard-image-upload-placeholder" id="plotImageUploadPlaceholder">
+                    <div class="dashboard-image-upload-area" id="plotProjectImageUploadArea">
+                        <input type="file" id="plotProjectImages" name="project_images" multiple accept="image/jpeg,image/jpg,image/png,image/webp,image/svg+xml" style="display: none;">
+                        <div class="dashboard-image-upload-placeholder" id="plotProjectImageUploadPlaceholder">
                             <i class="fas fa-cloud-upload-alt"></i>
-                            <p>Click to upload images or drag and drop</p>
+                            <p>Click to upload project images or drag and drop</p>
                             <span>Supports: JPG, PNG, SVG, WebP (Max 5MB per image)</span>
                         </div>
-                        <div class="dashboard-image-preview-container" id="plotImagePreviewContainer"></div>
+                        <div class="dashboard-image-preview-container" id="plotProjectImagePreviewContainer"></div>
+                    </div>
+                </div>
+
+                <div class="dashboard-form-group">
+                    <label>
+                        <i class="fas fa-drafting-compass"></i>
+                        Floor Plan Images
+                    </label>
+                    <div class="dashboard-image-upload-area" id="plotFloorPlanImageUploadArea">
+                        <input type="file" id="plotFloorPlanImages" name="floorplan_images" multiple accept="image/jpeg,image/jpg,image/png,image/webp,image/svg+xml" style="display: none;">
+                        <div class="dashboard-image-upload-placeholder" id="plotFloorPlanImageUploadPlaceholder">
+                            <i class="fas fa-cloud-upload-alt"></i>
+                            <p>Click to upload floor plan images or drag and drop</p>
+                            <span>Supports: JPG, PNG, SVG, WebP (Max 5MB per image)</span>
+                        </div>
+                        <div class="dashboard-image-preview-container" id="plotFloorPlanImagePreviewContainer"></div>
+                    </div>
+                </div>
+
+                <div class="dashboard-form-group">
+                    <label>
+                        <i class="fas fa-map"></i>
+                        Master Plan Images
+                    </label>
+                    <div class="dashboard-image-upload-area" id="plotMasterPlanImageUploadArea">
+                        <input type="file" id="plotMasterPlanImages" name="masterplan_images" multiple accept="image/jpeg,image/jpg,image/png,image/webp,image/svg+xml" style="display: none;">
+                        <div class="dashboard-image-upload-placeholder" id="plotMasterPlanImageUploadPlaceholder">
+                            <i class="fas fa-cloud-upload-alt"></i>
+                            <p>Click to upload master plan images or drag and drop</p>
+                            <span>Supports: JPG, PNG, SVG, WebP (Max 5MB per image)</span>
+                        </div>
+                        <div class="dashboard-image-preview-container" id="plotMasterPlanImagePreviewContainer"></div>
                     </div>
                 </div>
 

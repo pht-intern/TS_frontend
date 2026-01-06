@@ -1174,6 +1174,78 @@ function applyFilters() {
         });
     }
     
+    // Length filter
+    const length = document.getElementById('searchLength')?.value.toLowerCase().trim() || '';
+    if (length) {
+        filtered = filtered.filter(p => {
+            if (p.length !== undefined) {
+                return p.length.toString().toLowerCase().includes(length);
+            }
+            // Check dimensions if length field doesn't exist
+            if (p.dimensions !== undefined) {
+                return p.dimensions.toLowerCase().includes(length);
+            }
+            return true;
+        });
+    }
+    
+    // Breadth filter
+    const breadth = document.getElementById('searchBreadth')?.value.toLowerCase().trim() || '';
+    if (breadth) {
+        filtered = filtered.filter(p => {
+            if (p.breadth !== undefined) {
+                return p.breadth.toString().toLowerCase().includes(breadth);
+            }
+            // Check dimensions if breadth field doesn't exist
+            if (p.dimensions !== undefined) {
+                return p.dimensions.toLowerCase().includes(breadth);
+            }
+            return true;
+        });
+    }
+    
+    // Carpet Area filter
+    const carpetArea = document.getElementById('searchCarpetArea')?.value.toLowerCase().trim() || '';
+    if (carpetArea) {
+        filtered = filtered.filter(p => {
+            if (p.carpet_area !== undefined) {
+                return p.carpet_area.toString().toLowerCase().includes(carpetArea);
+            }
+            if (p.carpetArea !== undefined) {
+                return p.carpetArea.toString().toLowerCase().includes(carpetArea);
+            }
+            return true;
+        });
+    }
+    
+    // Directions filter
+    const directions = document.getElementById('searchDirections')?.value.toLowerCase().trim() || '';
+    if (directions) {
+        filtered = filtered.filter(p => {
+            if (p.directions !== undefined) {
+                return p.directions.toLowerCase().includes(directions);
+            }
+            if (p.direction !== undefined) {
+                return p.direction.toLowerCase().includes(directions);
+            }
+            return true;
+        });
+    }
+    
+    // Amenities filter
+    const amenities = document.getElementById('searchAmenities')?.value.toLowerCase().trim() || '';
+    if (amenities) {
+        filtered = filtered.filter(p => {
+            if (p.amenities !== undefined) {
+                const propertyAmenities = Array.isArray(p.amenities) 
+                    ? p.amenities.join(' ').toLowerCase()
+                    : p.amenities.toString().toLowerCase();
+                return propertyAmenities.includes(amenities);
+            }
+            return true;
+        });
+    }
+    
     filteredProperties = filtered;
     displayedProperties = 8;
     renderProperties();
@@ -1314,17 +1386,72 @@ function updateFilterTags() {
     const price = document.getElementById('searchPrice')?.value || '';
     if (price) {
         const priceLabels = {
-            '0-300000': 'Under ₹300Cr',
-            '300000-500000': '₹300Cr - ₹500Cr',
-            '500000-800000': '₹500Cr - ₹800Cr',
-            '800000-1200000': '₹800Cr - ₹1.2Cr',
-            '1200000-': '₹2Cr+'
+            '0-2500000': 'Under ₹25L',
+            '2500000-5000000': '₹25L - ₹50L',
+            '5000000-10000000': '₹50L - ₹1Cr',
+            '10000000-20000000': '₹1Cr - ₹2Cr',
+            '20000000-': '₹2Cr+'
         };
         activeFilters.push({
             type: 'price',
             label: `Price: ${priceLabels[price] || price}`,
             icon: 'fa-dollar-sign',
             value: price
+        });
+    }
+    
+    // Length filter
+    const length = document.getElementById('searchLength')?.value.trim() || '';
+    if (length) {
+        activeFilters.push({
+            type: 'length',
+            label: `Length: ${length}`,
+            icon: 'fa-ruler',
+            value: length
+        });
+    }
+    
+    // Breadth filter
+    const breadth = document.getElementById('searchBreadth')?.value.trim() || '';
+    if (breadth) {
+        activeFilters.push({
+            type: 'breadth',
+            label: `Breadth: ${breadth}`,
+            icon: 'fa-ruler',
+            value: breadth
+        });
+    }
+    
+    // Carpet Area filter
+    const carpetArea = document.getElementById('searchCarpetArea')?.value.trim() || '';
+    if (carpetArea) {
+        activeFilters.push({
+            type: 'carpetArea',
+            label: `Carpet Area: ${carpetArea}`,
+            icon: 'fa-vector-square',
+            value: carpetArea
+        });
+    }
+    
+    // Directions filter
+    const directions = document.getElementById('searchDirections')?.value.trim() || '';
+    if (directions) {
+        activeFilters.push({
+            type: 'directions',
+            label: `Directions: ${directions}`,
+            icon: 'fa-compass',
+            value: directions
+        });
+    }
+    
+    // Amenities filter
+    const amenities = document.getElementById('searchAmenities')?.value.trim() || '';
+    if (amenities) {
+        activeFilters.push({
+            type: 'amenities',
+            label: `Amenities: ${amenities}`,
+            icon: 'fa-star',
+            value: amenities
         });
     }
     
@@ -1427,6 +1554,26 @@ function removeFilter(filterType) {
             const priceSelect = document.getElementById('searchPrice');
             if (priceSelect) priceSelect.value = '';
             break;
+        case 'length':
+            const lengthInput = document.getElementById('searchLength');
+            if (lengthInput) lengthInput.value = '';
+            break;
+        case 'breadth':
+            const breadthInput = document.getElementById('searchBreadth');
+            if (breadthInput) breadthInput.value = '';
+            break;
+        case 'carpetArea':
+            const carpetAreaInput = document.getElementById('searchCarpetArea');
+            if (carpetAreaInput) carpetAreaInput.value = '';
+            break;
+        case 'directions':
+            const directionsInput = document.getElementById('searchDirections');
+            if (directionsInput) directionsInput.value = '';
+            break;
+        case 'amenities':
+            const amenitiesInput = document.getElementById('searchAmenities');
+            if (amenitiesInput) amenitiesInput.value = '';
+            break;
     }
     applyFilters();
 }
@@ -1477,11 +1624,21 @@ function initFilterTags() {
             const areaInput = document.getElementById('searchArea');
             const dimensionsInput = document.getElementById('searchDimensions');
             const priceSelect = document.getElementById('searchPrice');
+            const lengthInput = document.getElementById('searchLength');
+            const breadthInput = document.getElementById('searchBreadth');
+            const carpetAreaInput = document.getElementById('searchCarpetArea');
+            const directionsInput = document.getElementById('searchDirections');
+            const amenitiesInput = document.getElementById('searchAmenities');
             
             if (cityInput) cityInput.value = '';
             if (areaInput) areaInput.value = '';
             if (dimensionsInput) dimensionsInput.value = '';
             if (priceSelect) priceSelect.value = '';
+            if (lengthInput) lengthInput.value = '';
+            if (breadthInput) breadthInput.value = '';
+            if (carpetAreaInput) carpetAreaInput.value = '';
+            if (directionsInput) directionsInput.value = '';
+            if (amenitiesInput) amenitiesInput.value = '';
             
             applyFilters();
         });

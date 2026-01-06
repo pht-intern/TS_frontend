@@ -38,6 +38,7 @@
                 <ul class="nav-menu" id="navMenu">
                     <li><a href="/index.html">HOME</a></li>
                     <li><a href="/properties.html">PROPERTIES</a></li>
+                    <li><a href="#contact">CONTACT</a></li>
                 </ul>
                 <div class="nav-actions">
                     <button class="btn-login" id="loginBtn">
@@ -57,13 +58,6 @@
     <!-- Property Details Section -->
     <section class="property-details-section">
         <div class="container">
-            <!-- Back Button -->
-            <div class="property-details-back">
-                <a href="/properties.html" class="btn-back">
-                    <i class="fas fa-arrow-left"></i> Back to Properties
-                </a>
-            </div>
-
             <!-- Loading State -->
             <div class="property-loading" id="propertyLoading" style="display: none;">
                 <div class="loading-spinner">
@@ -82,7 +76,14 @@
 
             <!-- Property Header -->
             <div class="property-details-header" id="propertyHeader" style="display: none;">
-                <!-- Content will be loaded by JavaScript -->
+                <!-- Main Image Section -->
+                <div class="property-header-image-section" id="propertyHeaderImage">
+                    <!-- Main image will be loaded by JavaScript -->
+                </div>
+                <!-- Description Section -->
+                <div class="property-header-description-section" id="propertyHeaderDescription">
+                    <!-- Description content will be loaded by JavaScript -->
+                </div>
             </div>
 
             <!-- Property Main Content -->
@@ -139,6 +140,9 @@
                         </div>
                         <div class="property-quick-info" id="propertyQuickInfo">
                             <!-- Quick info will be loaded by JavaScript -->
+                        </div>
+                        <div class="property-location-links" id="propertyLocationLinks">
+                            <!-- Location and directions links will be loaded by JavaScript -->
                         </div>
                         <div class="property-actions-sidebar">
                             <button class="btn-contact-agent" id="contactAgentBtn">

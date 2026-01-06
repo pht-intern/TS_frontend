@@ -2109,6 +2109,62 @@ section:not(.hero).section-visible .section-header {
     animation-delay: 0.55s;
 }
 
+.service-property.section-coming-into-view {
+    opacity: 0;
+}
+
+.service-property.section-visible {
+    opacity: 1;
+}
+
+.service-property.section-coming-into-view .service-header-split,
+.service-property.section-coming-into-view .service-left-content,
+.service-property.section-coming-into-view .service-right-content,
+.service-property.section-coming-into-view .value-services-grid,
+.service-property.section-coming-into-view .value-service-card {
+    opacity: 0;
+}
+
+.services-showcase.section-visible .service-property .service-header-split,
+.service-property.section-visible .service-header-split {
+    opacity: 0;
+    animation: fadeInUp 0.4s ease-out 0.1s both;
+}
+
+.services-showcase.section-visible .service-property .service-left-content,
+.service-property.section-visible .service-left-content {
+    opacity: 0;
+    animation: fadeInLeft 0.4s ease-out 0.2s both;
+}
+
+.services-showcase.section-visible .service-property .service-right-content,
+.service-property.section-visible .service-right-content {
+    opacity: 0;
+    animation: fadeInRight 0.4s ease-out 0.3s both;
+}
+
+.services-showcase.section-visible .service-property .value-services-grid,
+.service-property.section-visible .value-services-grid {
+    opacity: 0;
+    animation: fadeInUp 0.4s ease-out 0.4s both;
+}
+
+.services-showcase.section-visible .service-property .value-services-grid .value-service-card,
+.service-property.section-visible .value-services-grid .value-service-card {
+    opacity: 0;
+    animation: fadeInUp 0.3s ease-out both;
+}
+
+.services-showcase.section-visible .service-property .value-services-grid .value-service-card:nth-child(1),
+.service-property.section-visible .value-services-grid .value-service-card:nth-child(1) {
+    animation-delay: 0.45s;
+}
+
+.services-showcase.section-visible .service-property .value-services-grid .value-service-card:nth-child(2),
+.service-property.section-visible .value-services-grid .value-service-card:nth-child(2) {
+    animation-delay: 0.55s;
+}
+
 @keyframes fadeInLeft {
     from {
         opacity: 0;
@@ -3787,7 +3843,7 @@ section:not(.hero).section-visible .section-header {
 }
 
 .service-header-key h3 {
-    font-size: 2.5rem;
+    font-size: 2rem;
     font-weight: 700;
     color: var(--primary-color);
     margin-bottom: 0.75rem;
@@ -3805,7 +3861,7 @@ section:not(.hero).section-visible .section-header {
 
 .service-intro {
     text-align: center;
-    font-size: 1rem;
+    font-size: 0.9rem;
     line-height: 1.8;
     color: var(--text-gray);
     max-width: none;
@@ -3843,7 +3899,7 @@ section:not(.hero).section-visible .section-header {
     position: absolute;
     top: -10px;
     left: -10px;
-    font-size: 8rem;
+    font-size: 6.5rem;
     font-weight: 800;
     color: rgba(44, 62, 80, 0.4);
     line-height: 1;
@@ -3881,7 +3937,7 @@ section:not(.hero).section-visible .section-header {
 }
 
 .key-feature-block h4 {
-    font-size: 22px;
+    font-size: 18px;
     font-weight: 700;
     color: var(--text-dark);
     margin-bottom: 0.5rem;
@@ -3930,7 +3986,7 @@ section:not(.hero).section-visible .section-header {
 }
 
 .key-feature-block p {
-    font-size: 18px;
+    font-size: 15px;
     line-height: 1.6;
     color: var(--text-gray);
     position: relative;
@@ -4033,6 +4089,12 @@ section:not(.hero).section-visible .section-header {
 
 /* Service 4: Value Added - Clean Split Layout */
 .service-value {
+    background: var(--white);
+    padding: 5rem 4rem;
+    position: relative;
+}
+
+.service-property {
     background: var(--white);
     padding: 5rem 4rem;
     position: relative;
@@ -4169,7 +4231,7 @@ section:not(.hero).section-visible .section-header {
 }
 
 .visual-label {
-    font-size: 0.75rem;
+    font-size: 0.95rem;
     font-weight: 600;
     color: var(--text-light);
     text-transform: uppercase;
@@ -4178,7 +4240,7 @@ section:not(.hero).section-visible .section-header {
 }
 
 .visual-main-title {
-    font-size: 2rem;
+    font-size: 2.5rem;
     font-weight: 700;
     color: var(--text-dark);
     font-family: 'Inter', sans-serif;
@@ -4237,6 +4299,9 @@ section:not(.hero).section-visible .section-header {
 
 .value-service-info {
     flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
 }
 
 .info-label {
@@ -4249,15 +4314,19 @@ section:not(.hero).section-visible .section-header {
 }
 
 .info-value {
-    font-size: 1.1rem;
+    font-size: 1.4rem;
     font-weight: 600;
     color: var(--text-dark);
     margin-bottom: 0.25rem;
+    line-height: 1.4;
+    display: block;
 }
 
 .info-type {
-    font-size: 0.85rem;
+    font-size: 1.05rem;
     color: var(--text-gray);
+    line-height: 1.5;
+    display: block;
 }
 
 .visual-footer {
@@ -7350,7 +7419,8 @@ section:not(.hero).section-visible .section-header {
     .service-rental,
     .service-investment,
     .service-management,
-    .service-value {
+    .service-value,
+    .service-property {
         padding: 2.5rem 1.5rem;
     }
     
@@ -7518,7 +7588,8 @@ section:not(.hero).section-visible .section-header {
     .service-rental,
     .service-investment,
     .service-management,
-    .service-value {
+    .service-value,
+    .service-property {
         padding: 2rem 1rem;
     }
     
@@ -7698,7 +7769,7 @@ section:not(.hero).section-visible .section-header {
     }
     
     .service-header-key h3 {
-        font-size: 2rem;
+        font-size: 1.6rem;
     }
     
     .service-intro {
@@ -7723,7 +7794,7 @@ section:not(.hero).section-visible .section-header {
     }
     
     .feature-number {
-        font-size: 6rem;
+        font-size: 5rem;
         width: 90px;
     }
     
@@ -7767,10 +7838,11 @@ section:not(.hero).section-visible .section-header {
     }
     
     .visual-main-title {
-        font-size: 1.5rem;
+        font-size: 2rem;
     }
     
-    .service-value {
+    .service-value,
+    .service-property {
         padding: 3rem 2rem;
     }
     
@@ -7808,7 +7880,7 @@ section:not(.hero).section-visible .section-header {
     }
     
     .service-header-key h3 {
-        font-size: 1.75rem;
+        font-size: 1.4rem;
     }
     
     .service-intro {
@@ -7831,7 +7903,7 @@ section:not(.hero).section-visible .section-header {
     }
     
     .feature-number {
-        font-size: 5rem;
+        font-size: 4rem;
         top: -5px;
         left: -5px;
         width: 75px;
@@ -7877,6 +7949,7 @@ section:not(.hero).section-visible .section-header {
     }
     
     .service-value,
+    .service-property,
     .service-investment,
     .service-management {
         padding: 2.5rem 1.5rem;
@@ -7889,23 +7962,27 @@ section:not(.hero).section-visible .section-header {
 
 /* Properties Page Styles */
 .properties-hero {
-    background: linear-gradient(135deg, var(--text-dark) 0%, rgba(45, 58, 69, 0.95) 100%);
+    background-image: url('../images/img.jpg');
+    background-size: cover;
+    background-position: center center;
+    background-repeat: no-repeat;
     padding: 6rem 0 4rem;
     text-align: center;
     position: relative;
     overflow: hidden;
+    min-height: 250px;
 }
 
 .properties-hero::before {
     content: '';
     position: absolute;
-    top: -50%;
-    right: -50%;
-    width: 200%;
-    height: 200%;
-    background: radial-gradient(circle, rgba(171, 184, 195, 0.08) 0%, transparent 70%);
-    animation: rotate 20s linear infinite;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
     pointer-events: none;
+    z-index: 1;
 }
 
 .properties-hero-content {
@@ -10044,10 +10121,91 @@ section:not(.hero).section-visible .section-header {
 
 .property-details-header {
     background: var(--white);
-    padding: 2.5rem;
+    padding: 0;
     border-radius: 12px;
     box-shadow: var(--shadow-md);
     margin-bottom: 2rem;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.property-header-image-section {
+    width: 100%;
+    height: 500px;
+    overflow: hidden;
+    position: relative;
+}
+
+.property-header-main-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.property-header-description-section {
+    padding: 2rem 2.5rem;
+    background: var(--white);
+}
+
+.property-header-description-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 2rem;
+    flex-wrap: wrap;
+}
+
+.property-header-amenities {
+    flex: 1;
+    min-width: 200px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    align-items: flex-start;
+}
+
+.amenity-btn {
+    padding: 0.5rem 1rem;
+    background: var(--pastel-blue);
+    color: var(--white);
+    border: none;
+    border-radius: 20px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-family: 'Inter', sans-serif;
+    white-space: nowrap;
+}
+
+.amenity-btn:hover {
+    background: var(--pastel-pink);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.property-header-info {
+    flex: 1;
+    min-width: 250px;
+    text-align: right;
+}
+
+.property-header-info .property-details-title {
+    margin-bottom: 0.75rem;
+    text-align: right;
+}
+
+.property-header-info .property-details-location {
+    justify-content: flex-end;
+    margin-bottom: 0;
+}
+
+.no-amenities {
+    color: var(--text-light);
+    font-style: italic;
+    font-size: 0.9rem;
 }
 
 .property-header-content {
@@ -10558,6 +10716,56 @@ section:not(.hero).section-visible .section-header {
     border-bottom: 2px solid var(--border-color);
 }
 
+.property-location-links {
+    margin-bottom: 2rem;
+    padding-bottom: 2rem;
+    border-bottom: 2px solid var(--border-color);
+}
+
+.property-location-links-content {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.property-location-link,
+.property-directions-link {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.875rem 1rem;
+    border-radius: 8px;
+    text-decoration: none;
+    font-size: 0.95rem;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    color: var(--text-dark);
+    background: var(--primary-lightest);
+    border: 1px solid var(--border-color);
+}
+
+.property-location-link i,
+.property-directions-link i {
+    color: var(--primary-color);
+    font-size: 1.1rem;
+    width: 20px;
+    text-align: center;
+}
+
+.property-location-link:hover,
+.property-directions-link:hover {
+    background: var(--primary-color);
+    color: var(--white);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    border-color: var(--primary-color);
+}
+
+.property-location-link:hover i,
+.property-directions-link:hover i {
+    color: var(--white);
+}
+
 .quick-info-item {
     display: flex;
     align-items: center;
@@ -10728,6 +10936,49 @@ section:not(.hero).section-visible .section-header {
 @media (max-width: 768px) {
     .property-details-title {
         font-size: 2rem;
+    }
+    
+    .property-header-image-section {
+        height: 300px;
+    }
+    
+    .property-header-description-section {
+        padding: 1.5rem;
+    }
+    
+    .property-header-description-content {
+        flex-direction: column;
+        gap: 1.5rem;
+    }
+    
+    .property-header-amenities {
+        width: 100%;
+        order: 2;
+    }
+    
+    .property-header-info {
+        width: 100%;
+        text-align: left;
+        order: 1;
+    }
+    
+    .property-header-info .property-details-title {
+        text-align: left;
+    }
+    
+    .property-header-info .property-details-location {
+        justify-content: flex-start;
+    }
+    
+    .amenity-btn {
+        font-size: 0.8rem;
+        padding: 0.4rem 0.8rem;
+    }
+    
+    .property-location-link,
+    .property-directions-link {
+        font-size: 0.9rem;
+        padding: 0.75rem;
     }
     
     .property-image-filters {

@@ -534,44 +534,45 @@ function renderPropertyDetails(property) {
     // Update page title
     document.title = `${property.title} - Tirumakudalu Properties`;
     
-    // Render Header
-    const header = document.getElementById('propertyHeader');
+    // Get images first
+    const images = property.images && property.images.length > 0 ? property.images : 
+                   (property.image ? [property.image] : ['/images/img1.jpg']);
+    
+    // Get main image (first image)
+    const mainImage = images[0] || '/images/img1.jpg';
+    const normalizedMainImage = normalizeImageUrl(mainImage);
+    
+    // Render Header Image Section
+    const headerImageSection = document.getElementById('propertyHeaderImage');
+    headerImageSection.innerHTML = `
+        <img src="${normalizedMainImage}" alt="${escapeHtml(property.title || 'Property')}" class="property-header-main-image">
+    `;
+    
+    // Render Header Description Section
     const title = escapeHtml(property.title || 'Untitled Property');
     const location = escapeHtml(property.location || 'Location not specified');
-    const builder = property.builder ? escapeHtml(property.builder) : null;
-    const configuration = property.configuration ? escapeHtml(property.configuration) : null;
-    const superBuiltUpArea = property.super_built_up_area ? escapeHtml(property.super_built_up_area) : null;
+    const features = property.features && property.features.length > 0 ? property.features : [];
     
-    header.innerHTML = `
-        <div class="property-header-content">
-            <h1 class="property-details-title">${title}</h1>
-            <div class="property-details-location">
-                <i class="fas fa-map-marker-alt"></i>
-                <span>${location}</span>
+    const headerDescriptionSection = document.getElementById('propertyHeaderDescription');
+    headerDescriptionSection.innerHTML = `
+        <div class="property-header-description-content">
+            <div class="property-header-amenities">
+                ${features.length > 0 ? features.map(feature => {
+                    const featureName = escapeHtml(feature);
+                    return `<button class="amenity-btn">${featureName}</button>`;
+                }).join('') : '<p class="no-amenities">No amenities listed</p>'}
             </div>
-            <div class="property-details-meta">
-                ${builder ? `
-                <span class="property-meta-item">
-                    <i class="fas fa-building"></i> ${builder}
-                </span>
-                ` : ''}
-                ${configuration ? `
-                <span class="property-meta-item">
-                    <i class="fas fa-home"></i> ${configuration}
-                </span>
-                ` : ''}
-                ${superBuiltUpArea ? `
-                <span class="property-meta-item">
-                    <i class="fas fa-ruler-combined"></i> ${superBuiltUpArea}
-                </span>
-                ` : ''}
+            <div class="property-header-info">
+                <h1 class="property-details-title">${title}</h1>
+                <div class="property-details-location">
+                    <i class="fas fa-map-marker-alt"></i>
+                    <span>${location}</span>
+                </div>
             </div>
         </div>
     `;
     
     // Categorize images
-    const images = property.images && property.images.length > 0 ? property.images : 
-                   (property.image ? [property.image] : ['/images/img1.jpg']);
     
     // Store all images for lightbox
     allImages = images;
@@ -623,9 +624,9 @@ function renderPropertyDetails(property) {
     description.innerHTML = `<p>${escapedDescription}</p>`;
     
     // Render Features
-    const features = document.getElementById('propertyFeatures');
+    const featuresElement = document.getElementById('propertyFeatures');
     if (property.features && property.features.length > 0) {
-        features.innerHTML = property.features.map(feature => {
+        featuresElement.innerHTML = property.features.map(feature => {
             const featureName = escapeHtml(feature);
             return `
         <div class="property-feature-item">
@@ -635,7 +636,7 @@ function renderPropertyDetails(property) {
             `;
         }).join('');
     } else {
-        features.innerHTML = '<p class="no-features">No features listed for this property.</p>';
+        featuresElement.innerHTML = '<p class="no-features">No features listed for this property.</p>';
     }
     
     // Render Sidebar - Price Display
@@ -910,6 +911,28 @@ function renderPropertyDetails(property) {
     }
     
     quickInfo.innerHTML = quickInfoHTML;
+    
+    // Render Location and Directions Links
+    const locationLinks = document.getElementById('propertyLocationLinks');
+    const propertyLocation = property.location || 'Location not specified';
+    const locationEncoded = encodeURIComponent(propertyLocation);
+    
+    // Create Google Maps links
+    const mapsSearchUrl = `https://www.google.com/maps/search/?api=1&query=${locationEncoded}`;
+    const mapsDirectionsUrl = `https://www.google.com/maps/dir/?api=1&destination=${locationEncoded}`;
+    
+    locationLinks.innerHTML = `
+        <div class="property-location-links-content">
+            <a href="${mapsSearchUrl}" target="_blank" rel="noopener noreferrer" class="property-location-link">
+                <i class="fas fa-map-marker-alt"></i>
+                <span>${escapeHtml(propertyLocation)}</span>
+            </a>
+            <a href="${mapsDirectionsUrl}" target="_blank" rel="noopener noreferrer" class="property-directions-link">
+                <i class="fas fa-directions"></i>
+                <span>Get Directions</span>
+            </a>
+        </div>
+    `;
     
 }
 

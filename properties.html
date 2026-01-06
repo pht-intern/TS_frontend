@@ -40,6 +40,7 @@
                 <ul class="nav-menu" id="navMenu">
                     <li><a href="/index.html">HOME</a></li>
                     <li><a href="/properties.html" class="active">PROPERTIES</a></li>
+                    <li><a href="#contact">CONTACT</a></li>
                 </ul>
                 <div class="nav-search">
                     <div class="nav-search-wrapper">
@@ -128,11 +129,11 @@
                                 <label><i class="fas fa-dollar-sign"></i> Price Range</label>
                                 <select id="searchPrice">
                                     <option value="">Any Price</option>
-                                    <option value="0-300000">Under ₹300Cr</option>
-                                    <option value="300000-500000">₹300Cr - ₹500Cr</option>
-                                    <option value="500000-800000">₹500Cr - ₹800Cr</option>
-                                    <option value="800000-1200000">₹800Cr - ₹1.2Cr</option>
-                                    <option value="1200000-">₹2Cr+</option>
+                                    <option value="0-2500000">Under ₹25L</option>
+                                    <option value="2500000-5000000">₹25L - ₹50L</option>
+                                    <option value="5000000-10000000">₹50L - ₹1Cr</option>
+                                    <option value="10000000-20000000">₹1Cr - ₹2Cr</option>
+                                    <option value="20000000-">₹2Cr+</option>
                                 </select>
                             </div>
                             <div class="search-group">
@@ -161,6 +162,26 @@
                                     <option value="bhk" data-bhk="3">3BHK</option>
                                     <option value="4plus" data-bhk="4">4+BHK</option>
                                 </select>
+                            </div>
+                            <div class="search-group">
+                                <label><i class="fas fa-ruler"></i> Length</label>
+                                <input type="text" id="searchLength" placeholder="Enter length (ft)">
+                            </div>
+                            <div class="search-group">
+                                <label><i class="fas fa-ruler"></i> Breadth</label>
+                                <input type="text" id="searchBreadth" placeholder="Enter breadth (ft)">
+                            </div>
+                            <div class="search-group">
+                                <label><i class="fas fa-vector-square"></i> Carpet Area</label>
+                                <input type="text" id="searchCarpetArea" placeholder="Enter carpet area (sq ft)">
+                            </div>
+                            <div class="search-group">
+                                <label><i class="fas fa-compass"></i> Directions</label>
+                                <input type="text" id="searchDirections" placeholder="e.g., North, South, East, West">
+                            </div>
+                            <div class="search-group">
+                                <label><i class="fas fa-star"></i> Amenities</label>
+                                <input type="text" id="searchAmenities" placeholder="e.g., Parking, Lift, Security">
                             </div>
                             <div class="search-group">
                                 <button type="submit" class="btn-search">

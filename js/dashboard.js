@@ -398,47 +398,46 @@ function initDashboard() {
         propertyImages.addEventListener('change', handleImageSelect);
     }
 
-    // Image upload (residential property form)
-    const residentialImageUploadArea = document.getElementById('residentialImageUploadArea');
-    const residentialPropertyImages = document.getElementById('residentialPropertyImages');
-    if (residentialImageUploadArea && residentialPropertyImages) {
-        residentialImageUploadArea.addEventListener('click', () => residentialPropertyImages.click());
-        residentialImageUploadArea.addEventListener('dragover', (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            residentialImageUploadArea.classList.add('dragover');
-        });
-        residentialImageUploadArea.addEventListener('drop', (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            residentialImageUploadArea.classList.remove('dragover');
-            handleImageFiles(e.dataTransfer.files, 'residential');
-        });
-        residentialPropertyImages.addEventListener('change', (e) => {
-            handleImageFiles(e.target.files, 'residential');
-        });
+    // Helper function to initialize image upload area
+    function initImageUploadArea(uploadAreaId, fileInputId, formType, imageCategory) {
+        const uploadArea = document.getElementById(uploadAreaId);
+        const fileInput = document.getElementById(fileInputId);
+        if (uploadArea && fileInput) {
+            uploadArea.addEventListener('click', () => fileInput.click());
+            uploadArea.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                uploadArea.classList.add('dragover');
+            });
+            uploadArea.addEventListener('drop', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                uploadArea.classList.remove('dragover');
+                handleImageFiles(e.dataTransfer.files, formType, imageCategory);
+            });
+            fileInput.addEventListener('change', (e) => {
+                handleImageFiles(e.target.files, formType, imageCategory);
+            });
+        }
     }
 
-    // Image upload (plot property form)
-    const plotImageUploadArea = document.getElementById('plotImageUploadArea');
-    const plotPropertyImages = document.getElementById('plotPropertyImages');
-    if (plotImageUploadArea && plotPropertyImages) {
-        plotImageUploadArea.addEventListener('click', () => plotPropertyImages.click());
-        plotImageUploadArea.addEventListener('dragover', (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            plotImageUploadArea.classList.add('dragover');
-        });
-        plotImageUploadArea.addEventListener('drop', (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            plotImageUploadArea.classList.remove('dragover');
-            handleImageFiles(e.dataTransfer.files, 'plot');
-        });
-        plotPropertyImages.addEventListener('change', (e) => {
-            handleImageFiles(e.target.files, 'plot');
-        });
-    }
+    // Image upload (residential property form - Project Images)
+    initImageUploadArea('residentialProjectImageUploadArea', 'residentialProjectImages', 'residential', 'project');
+    
+    // Image upload (residential property form - Floor Plan)
+    initImageUploadArea('residentialFloorPlanImageUploadArea', 'residentialFloorPlanImages', 'residential', 'floorplan');
+    
+    // Image upload (residential property form - Master Plan)
+    initImageUploadArea('residentialMasterPlanImageUploadArea', 'residentialMasterPlanImages', 'residential', 'masterplan');
+
+    // Image upload (plot property form - Project Images)
+    initImageUploadArea('plotProjectImageUploadArea', 'plotProjectImages', 'plot', 'project');
+    
+    // Image upload (plot property form - Floor Plan)
+    initImageUploadArea('plotFloorPlanImageUploadArea', 'plotFloorPlanImages', 'plot', 'floorplan');
+    
+    // Image upload (plot property form - Master Plan)
+    initImageUploadArea('plotMasterPlanImageUploadArea', 'plotMasterPlanImages', 'plot', 'masterplan');
 
     // Features management
     const addFeatureBtn = document.getElementById('addFeatureBtn');
@@ -1935,6 +1934,7 @@ function openResidentialPropertyModal(propertyId = null) {
     // Reset form
     form.reset();
     document.getElementById('residentialPropertyId').value = '';
+    clearResidentialImagePreviews();
     
     // Reset unit type buttons
     const unitTypeButtons = document.querySelectorAll('#residentialPropertyForm .dashboard-unit-type-btn');
@@ -1983,12 +1983,16 @@ async function handleResidentialPropertySubmit(e) {
     const data = {
         city: formData.get('city'),
         locality: formData.get('locality'),
+        location_link: formData.get('location_link') || null,
+        directions: formData.get('directions') || null,
         property_name: formData.get('property_name'),
         type: formData.get('type'),
         unit_type: formData.get('unit_type') || 'bhk',
         bedrooms: parseInt(formData.get('bedrooms') || '1'),
         buildup_area: parseFloat(formData.get('buildup_area') || '0'),
         carpet_area: parseFloat(formData.get('carpet_area') || '0'),
+        length: formData.get('length') ? parseFloat(formData.get('length')) : null,
+        breadth: formData.get('breadth') ? parseFloat(formData.get('breadth')) : null,
         price: parseFloat(formData.get('price')?.replace(/[^\d.]/g, '') || '0'),
         price_text: formData.get('price'),
         price_negotiable: formData.get('price_negotiable') === 'on',
@@ -2018,9 +2022,17 @@ async function handleResidentialPropertySubmit(e) {
         features: []
     };
     
-    // Get images from previews
-    const imagePreviews = document.querySelectorAll('#residentialImagePreviewContainer .dashboard-image-preview img');
-    data.images = Array.from(imagePreviews).map(img => img.src);
+    // Get images from all three categories
+    const projectImages = document.querySelectorAll('#residentialProjectImagePreviewContainer .dashboard-image-preview img');
+    const floorPlanImages = document.querySelectorAll('#residentialFloorPlanImagePreviewContainer .dashboard-image-preview img');
+    const masterPlanImages = document.querySelectorAll('#residentialMasterPlanImagePreviewContainer .dashboard-image-preview img');
+    
+    // Combine all images (project images first, then floor plan, then master plan)
+    data.images = [
+        ...Array.from(projectImages).map(img => img.src),
+        ...Array.from(floorPlanImages).map(img => img.src),
+        ...Array.from(masterPlanImages).map(img => img.src)
+    ];
     
     // Get features/amenities
     const amenitiesSelect = document.getElementById('residentialAmenities');
@@ -2072,6 +2084,7 @@ function openPlotPropertyModal(propertyId = null) {
     // Reset form
     form.reset();
     document.getElementById('plotPropertyId').value = '';
+    clearPlotImagePreviews();
 
     if (propertyId) {
         modalTitle.textContent = 'Edit Plot Property';
@@ -2106,6 +2119,8 @@ async function handlePlotPropertySubmit(e) {
     const data = {
         city: formData.get('city'),
         locality: formData.get('locality'),
+        location_link: formData.get('location_link') || null,
+        directions: formData.get('directions') || null,
         project_name: formData.get('project_name'),
         plot_area: parseFloat(formData.get('plot_area') || '0'),
         plot_length: parseFloat(formData.get('plot_length') || '0'),
@@ -2139,9 +2154,17 @@ async function handlePlotPropertySubmit(e) {
         features: []
     };
     
-    // Get images from previews
-    const imagePreviews = document.querySelectorAll('#plotImagePreviewContainer .dashboard-image-preview img');
-    data.images = Array.from(imagePreviews).map(img => img.src);
+    // Get images from all three categories
+    const projectImages = document.querySelectorAll('#plotProjectImagePreviewContainer .dashboard-image-preview img');
+    const floorPlanImages = document.querySelectorAll('#plotFloorPlanImagePreviewContainer .dashboard-image-preview img');
+    const masterPlanImages = document.querySelectorAll('#plotMasterPlanImagePreviewContainer .dashboard-image-preview img');
+    
+    // Combine all images (project images first, then floor plan, then master plan)
+    data.images = [
+        ...Array.from(projectImages).map(img => img.src),
+        ...Array.from(floorPlanImages).map(img => img.src),
+        ...Array.from(masterPlanImages).map(img => img.src)
+    ];
     
     // Get features/amenities
     const amenitiesSelect = document.getElementById('plotAmenities');
@@ -2277,7 +2300,7 @@ function handleImageSelect(e) {
     handleImageFiles(files);
 }
 
-function handleImageFiles(files, formType = 'property') {
+function handleImageFiles(files, formType = 'property', imageCategory = 'project') {
     const maxFileSize = 5 * 1024 * 1024; // 5MB
     const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/svg+xml'];
     
@@ -2297,7 +2320,7 @@ function handleImageFiles(files, formType = 'property') {
         // Read and preview image
         const reader = new FileReader();
         reader.onload = (e) => {
-            addImagePreview(e.target.result, false, formType);
+            addImagePreview(e.target.result, false, formType, imageCategory);
         };
         reader.onerror = () => {
             showNotification(`Failed to read file "${file.name}".`, 'error');
@@ -2306,11 +2329,42 @@ function handleImageFiles(files, formType = 'property') {
     });
 }
 
-function addImagePreview(imageSrc, isExisting, formType = 'property') {
-    const containerId = formType === 'residential' ? 'residentialImagePreviewContainer' : 
-                       formType === 'plot' ? 'plotImagePreviewContainer' : 'imagePreviewContainer';
-    const placeholderId = formType === 'residential' ? 'residentialImageUploadPlaceholder' : 
-                         formType === 'plot' ? 'plotImageUploadPlaceholder' : 'imageUploadPlaceholder';
+function addImagePreview(imageSrc, isExisting, formType = 'property', imageCategory = 'project') {
+    // Determine container and placeholder IDs based on form type and image category
+    let containerId, placeholderId;
+    
+    if (formType === 'residential') {
+        if (imageCategory === 'project') {
+            containerId = 'residentialProjectImagePreviewContainer';
+            placeholderId = 'residentialProjectImageUploadPlaceholder';
+        } else if (imageCategory === 'floorplan') {
+            containerId = 'residentialFloorPlanImagePreviewContainer';
+            placeholderId = 'residentialFloorPlanImageUploadPlaceholder';
+        } else if (imageCategory === 'masterplan') {
+            containerId = 'residentialMasterPlanImagePreviewContainer';
+            placeholderId = 'residentialMasterPlanImageUploadPlaceholder';
+        } else {
+            containerId = 'residentialImagePreviewContainer';
+            placeholderId = 'residentialImageUploadPlaceholder';
+        }
+    } else if (formType === 'plot') {
+        if (imageCategory === 'project') {
+            containerId = 'plotProjectImagePreviewContainer';
+            placeholderId = 'plotProjectImageUploadPlaceholder';
+        } else if (imageCategory === 'floorplan') {
+            containerId = 'plotFloorPlanImagePreviewContainer';
+            placeholderId = 'plotFloorPlanImageUploadPlaceholder';
+        } else if (imageCategory === 'masterplan') {
+            containerId = 'plotMasterPlanImagePreviewContainer';
+            placeholderId = 'plotMasterPlanImageUploadPlaceholder';
+        } else {
+            containerId = 'plotImagePreviewContainer';
+            placeholderId = 'plotImageUploadPlaceholder';
+        }
+    } else {
+        containerId = 'imagePreviewContainer';
+        placeholderId = 'imageUploadPlaceholder';
+    }
     
     const container = document.getElementById(containerId);
     const placeholder = document.getElementById(placeholderId);
@@ -2323,23 +2377,39 @@ function addImagePreview(imageSrc, isExisting, formType = 'property') {
     preview.className = 'dashboard-image-preview';
     preview.innerHTML = `
         <img src="${imageSrc}" alt="Property image">
-        <button type="button" class="dashboard-image-remove" onclick="removeImagePreview(this, '${formType}')">
+        <button type="button" class="dashboard-image-remove" onclick="removeImagePreview(this, '${formType}', '${imageCategory}')">
             <i class="fas fa-times"></i>
         </button>
     `;
     container.appendChild(preview);
 }
 
-function removeImagePreview(btn, formType = 'property') {
+function removeImagePreview(btn, formType = 'property', imageCategory = 'project') {
     const preview = btn.closest('.dashboard-image-preview');
     if (preview) {
+        const container = preview.parentElement;
         preview.remove();
-        const containerId = formType === 'residential' ? 'residentialImagePreviewContainer' : 
-                           formType === 'plot' ? 'plotImagePreviewContainer' : 'imagePreviewContainer';
-        const placeholderId = formType === 'residential' ? 'residentialImageUploadPlaceholder' : 
-                             formType === 'plot' ? 'plotImageUploadPlaceholder' : 'imageUploadPlaceholder';
         
-        const container = document.getElementById(containerId);
+        // Determine placeholder ID based on container ID
+        let placeholderId;
+        if (container) {
+            const containerId = container.id;
+            if (containerId.includes('Project')) {
+                placeholderId = containerId.replace('PreviewContainer', 'UploadPlaceholder');
+            } else if (containerId.includes('FloorPlan')) {
+                placeholderId = containerId.replace('PreviewContainer', 'UploadPlaceholder');
+            } else if (containerId.includes('MasterPlan')) {
+                placeholderId = containerId.replace('PreviewContainer', 'UploadPlaceholder');
+            } else {
+                // Fallback for old containers
+                placeholderId = formType === 'residential' ? 'residentialImageUploadPlaceholder' : 
+                               formType === 'plot' ? 'plotImageUploadPlaceholder' : 'imageUploadPlaceholder';
+            }
+        } else {
+            placeholderId = formType === 'residential' ? 'residentialImageUploadPlaceholder' : 
+                           formType === 'plot' ? 'plotImageUploadPlaceholder' : 'imageUploadPlaceholder';
+        }
+        
         const placeholder = document.getElementById(placeholderId);
         if (container && container.children.length === 0 && placeholder) {
             placeholder.style.display = 'flex';
@@ -2358,6 +2428,58 @@ function clearImagePreviews() {
     }
     const fileInput = document.getElementById('propertyImages');
     if (fileInput) fileInput.value = '';
+}
+
+function clearResidentialImagePreviews() {
+    // Clear project images
+    const projectContainer = document.getElementById('residentialProjectImagePreviewContainer');
+    const projectPlaceholder = document.getElementById('residentialProjectImageUploadPlaceholder');
+    const projectInput = document.getElementById('residentialProjectImages');
+    if (projectContainer) projectContainer.innerHTML = '';
+    if (projectPlaceholder) projectPlaceholder.style.display = 'flex';
+    if (projectInput) projectInput.value = '';
+    
+    // Clear floor plan images
+    const floorPlanContainer = document.getElementById('residentialFloorPlanImagePreviewContainer');
+    const floorPlanPlaceholder = document.getElementById('residentialFloorPlanImageUploadPlaceholder');
+    const floorPlanInput = document.getElementById('residentialFloorPlanImages');
+    if (floorPlanContainer) floorPlanContainer.innerHTML = '';
+    if (floorPlanPlaceholder) floorPlanPlaceholder.style.display = 'flex';
+    if (floorPlanInput) floorPlanInput.value = '';
+    
+    // Clear master plan images
+    const masterPlanContainer = document.getElementById('residentialMasterPlanImagePreviewContainer');
+    const masterPlanPlaceholder = document.getElementById('residentialMasterPlanImageUploadPlaceholder');
+    const masterPlanInput = document.getElementById('residentialMasterPlanImages');
+    if (masterPlanContainer) masterPlanContainer.innerHTML = '';
+    if (masterPlanPlaceholder) masterPlanPlaceholder.style.display = 'flex';
+    if (masterPlanInput) masterPlanInput.value = '';
+}
+
+function clearPlotImagePreviews() {
+    // Clear project images
+    const projectContainer = document.getElementById('plotProjectImagePreviewContainer');
+    const projectPlaceholder = document.getElementById('plotProjectImageUploadPlaceholder');
+    const projectInput = document.getElementById('plotProjectImages');
+    if (projectContainer) projectContainer.innerHTML = '';
+    if (projectPlaceholder) projectPlaceholder.style.display = 'flex';
+    if (projectInput) projectInput.value = '';
+    
+    // Clear floor plan images
+    const floorPlanContainer = document.getElementById('plotFloorPlanImagePreviewContainer');
+    const floorPlanPlaceholder = document.getElementById('plotFloorPlanImageUploadPlaceholder');
+    const floorPlanInput = document.getElementById('plotFloorPlanImages');
+    if (floorPlanContainer) floorPlanContainer.innerHTML = '';
+    if (floorPlanPlaceholder) floorPlanPlaceholder.style.display = 'flex';
+    if (floorPlanInput) floorPlanInput.value = '';
+    
+    // Clear master plan images
+    const masterPlanContainer = document.getElementById('plotMasterPlanImagePreviewContainer');
+    const masterPlanPlaceholder = document.getElementById('plotMasterPlanImageUploadPlaceholder');
+    const masterPlanInput = document.getElementById('plotMasterPlanImages');
+    if (masterPlanContainer) masterPlanContainer.innerHTML = '';
+    if (masterPlanPlaceholder) masterPlanPlaceholder.style.display = 'flex';
+    if (masterPlanInput) masterPlanInput.value = '';
 }
 
 // Features Handling

@@ -99,8 +99,22 @@ function initCharts() {
     const bandwidthCtx = document.getElementById('bandwidthChart');
 
     if (!cpuCtx || !ramCtx || !bandwidthCtx) {
-        console.error('Chart canvases not found');
-        return;
+        console.warn('Chart canvases not found. Metrics section may not be visible.');
+        return false;
+    }
+
+    // Destroy existing charts if they exist
+    if (cpuChart) {
+        cpuChart.destroy();
+        cpuChart = null;
+    }
+    if (ramChart) {
+        ramChart.destroy();
+        ramChart = null;
+    }
+    if (bandwidthChart) {
+        bandwidthChart.destroy();
+        bandwidthChart = null;
     }
 
     // CPU Chart
@@ -229,14 +243,42 @@ function initCharts() {
             }
         }
     });
+    
+    return true;
 }
 
 // Format time for labels
 function formatTime(dateString) {
-    const date = new Date(dateString);
-    const hours = date.getHours().toString().padStart(2, '0');
-    const minutes = date.getMinutes().toString().padStart(2, '0');
-    return `${hours}:${minutes}`;
+    try {
+        const date = new Date(dateString);
+        if (isNaN(date.getTime())) {
+            return '';
+        }
+        const hours = date.getHours().toString().padStart(2, '0');
+        const minutes = date.getMinutes().toString().padStart(2, '0');
+        return `${hours}:${minutes}`;
+    } catch (e) {
+        console.warn('Error formatting time:', dateString, e);
+        return '';
+    }
+}
+
+// Format date and time for better display
+function formatDateTime(dateString) {
+    try {
+        const date = new Date(dateString);
+        if (isNaN(date.getTime())) {
+            return '';
+        }
+        const month = (date.getMonth() + 1).toString().padStart(2, '0');
+        const day = date.getDate().toString().padStart(2, '0');
+        const hours = date.getHours().toString().padStart(2, '0');
+        const minutes = date.getMinutes().toString().padStart(2, '0');
+        return `${month}/${day} ${hours}:${minutes}`;
+    } catch (e) {
+        console.warn('Error formatting datetime:', dateString, e);
+        return '';
+    }
 }
 
 // Update current metrics display
@@ -258,22 +300,83 @@ function updateCurrentMetrics(metrics) {
 
 // Update charts with metrics data
 function updateCharts(metricsData) {
-    if (!metricsData || metricsData.length === 0) {
-        // Silently return - no data is expected on first load or when time range has no data
+    if (!metricsData || !Array.isArray(metricsData) || metricsData.length === 0) {
+        // Show empty state - initialize charts with empty data
+        const emptyLabels = [];
+        const emptyData = [];
+        
+        if (cpuChart) {
+            cpuChart.data.labels = emptyLabels;
+            cpuChart.data.datasets[0].data = emptyData;
+            cpuChart.update('none');
+        }
+        
+        if (ramChart) {
+            ramChart.data.labels = emptyLabels;
+            ramChart.data.datasets[0].data = emptyData;
+            ramChart.update('none');
+        }
+        
+        if (bandwidthChart) {
+            bandwidthChart.data.labels = emptyLabels;
+            bandwidthChart.data.datasets[0].data = emptyData;
+            bandwidthChart.data.datasets[1].data = emptyData;
+            bandwidthChart.data.datasets[2].data = emptyData;
+            bandwidthChart.update('none');
+        }
+        
+        // Show message if no data
+        console.log('No metrics data available. Charts initialized with empty data.');
         return;
     }
 
-    const labels = metricsData.map(m => formatTime(m.created_at));
-    const cpuData = metricsData.map(m => parseFloat(m.cpu_usage));
-    const ramData = metricsData.map(m => parseFloat(m.ram_usage));
-    const bandwidthInData = metricsData.map(m => parseFloat(m.bandwidth_in_mb || 0));
-    const bandwidthOutData = metricsData.map(m => parseFloat(m.bandwidth_out_mb || 0));
-    const bandwidthTotalData = metricsData.map(m => parseFloat(m.bandwidth_total_mb || 0));
+    // Sort data by created_at to ensure chronological order
+    const sortedData = [...metricsData].sort((a, b) => {
+        const dateA = new Date(a.created_at);
+        const dateB = new Date(b.created_at);
+        return dateA - dateB;
+    });
+
+    // Extract labels and data
+    const labels = sortedData.map(m => {
+        const formatted = formatTime(m.created_at);
+        return formatted || formatDateTime(m.created_at);
+    }).filter(label => label !== '');
+
+    const cpuData = sortedData.map(m => {
+        const value = parseFloat(m.cpu_usage);
+        return isNaN(value) ? 0 : Math.max(0, Math.min(100, value));
+    });
+
+    const ramData = sortedData.map(m => {
+        const value = parseFloat(m.ram_usage);
+        return isNaN(value) ? 0 : Math.max(0, Math.min(100, value));
+    });
+
+    const bandwidthInData = sortedData.map(m => {
+        const value = parseFloat(m.bandwidth_in_mb || 0);
+        return isNaN(value) ? 0 : Math.max(0, value);
+    });
+
+    const bandwidthOutData = sortedData.map(m => {
+        const value = parseFloat(m.bandwidth_out_mb || 0);
+        return isNaN(value) ? 0 : Math.max(0, value);
+    });
+
+    const bandwidthTotalData = sortedData.map(m => {
+        const value = parseFloat(m.bandwidth_total_mb || 0);
+        return isNaN(value) ? 0 : Math.max(0, value);
+    });
 
     // Update CPU chart
     if (cpuChart) {
         cpuChart.data.labels = labels;
         cpuChart.data.datasets[0].data = cpuData;
+        // Adjust y-axis max if needed
+        const maxCpu = Math.max(...cpuData, 0);
+        if (maxCpu > 0) {
+            cpuChart.options.scales.y.max = Math.min(100, Math.ceil(maxCpu * 1.1));
+        }
         cpuChart.update('none');
     }
 
@@ -281,6 +384,11 @@ function updateCharts(metricsData) {
     if (ramChart) {
         ramChart.data.labels = labels;
         ramChart.data.datasets[0].data = ramData;
+        // Adjust y-axis max if needed
+        const maxRam = Math.max(...ramData, 0);
+        if (maxRam > 0) {
+            ramChart.options.scales.y.max = Math.min(100, Math.ceil(maxRam * 1.1));
+        }
         ramChart.update('none');
     }
 
@@ -290,6 +398,11 @@ function updateCharts(metricsData) {
         bandwidthChart.data.datasets[0].data = bandwidthInData;
         bandwidthChart.data.datasets[1].data = bandwidthOutData;
         bandwidthChart.data.datasets[2].data = bandwidthTotalData;
+        // Adjust y-axis max if needed
+        const maxBandwidth = Math.max(...bandwidthTotalData, ...bandwidthInData, ...bandwidthOutData, 0);
+        if (maxBandwidth > 0) {
+            bandwidthChart.options.scales.y.max = Math.ceil(maxBandwidth * 1.1);
+        }
         bandwidthChart.update('none');
     }
 }
@@ -299,27 +412,65 @@ async function fetchMetrics() {
     try {
         const timeRange = document.getElementById('metricsTimeRange')?.value || 24;
         
+        // Show loading state (optional - can add spinner)
+        const refreshBtn = document.getElementById('refreshMetricsBtn');
+        if (refreshBtn) {
+            const originalHTML = refreshBtn.innerHTML;
+            refreshBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Loading...';
+            refreshBtn.disabled = true;
+            
+            // Reset button after a delay
+            setTimeout(() => {
+                refreshBtn.innerHTML = originalHTML;
+                refreshBtn.disabled = false;
+            }, 2000);
+        }
+        
         // Fetch historical metrics
         const response = await authenticatedFetch(`/api/admin/metrics?hours=${timeRange}&limit=100`);
+        
         if (!response.ok) {
-            throw new Error('Failed to fetch metrics');
+            const errorData = await response.json().catch(() => ({}));
+            throw new Error(errorData.error || `Failed to fetch metrics: ${response.status}`);
         }
+        
         const data = await response.json();
         
-        if (data.success && data.metrics) {
-            updateCharts(data.metrics);
+        if (data.success) {
+            if (data.metrics && Array.isArray(data.metrics)) {
+                updateCharts(data.metrics);
+            } else {
+                console.warn('Metrics data is not an array:', data);
+                updateCharts([]);
+            }
+        } else {
+            console.error('Metrics API returned error:', data.error || 'Unknown error');
+            updateCharts([]);
         }
 
-        // Fetch current metrics
-        const currentResponse = await authenticatedFetch('/api/admin/metrics/current');
-        if (currentResponse.ok) {
-            const currentData = await currentResponse.json();
-            if (currentData.success && currentData.metrics) {
-                updateCurrentMetrics(currentData.metrics);
+        // Fetch current metrics (non-blocking)
+        try {
+            const currentResponse = await authenticatedFetch('/api/admin/metrics/current');
+            if (currentResponse.ok) {
+                const currentData = await currentResponse.json();
+                if (currentData.success && currentData.metrics) {
+                    updateCurrentMetrics(currentData.metrics);
+                }
+            } else {
+                console.warn('Failed to fetch current metrics:', currentResponse.status);
             }
+        } catch (currentError) {
+            // Don't fail the whole function if current metrics fail
+            console.warn('Error fetching current metrics:', currentError);
         }
     } catch (error) {
         console.error('Error fetching metrics:', error);
+        // Update charts with empty data on error
+        updateCharts([]);
+        
+        // Show user-friendly error message (optional)
+        const errorMsg = error.message || 'Failed to load metrics data';
+        console.error('Metrics fetch error:', errorMsg);
     }
 }
 
@@ -329,12 +480,24 @@ async function collectMetrics() {
         const response = await authenticatedFetch('/api/admin/metrics/collect', {
             method: 'POST'
         });
+        
         if (response.ok) {
-            // Refresh metrics display after collection
-            setTimeout(fetchMetrics, 500);
+            const data = await response.json();
+            if (data.success) {
+                // Refresh metrics display after collection
+                setTimeout(() => {
+                    fetchMetrics();
+                }, 500);
+            } else {
+                console.warn('Metrics collection returned error:', data.error);
+            }
+        } else {
+            const errorData = await response.json().catch(() => ({}));
+            console.warn('Failed to collect metrics:', errorData.error || `Status: ${response.status}`);
         }
     } catch (error) {
-        console.error('Error collecting metrics:', error);
+        // Don't show error to user - this is a background operation
+        console.warn('Error collecting metrics (non-critical):', error.message);
     }
 }
 
@@ -353,10 +516,18 @@ function initMetricsMonitoring() {
     }
 
     // Initialize charts
-    initCharts();
+    const chartsInitialized = initCharts();
+    
+    if (!chartsInitialized) {
+        console.warn('Charts could not be initialized. Metrics graphs will not be displayed.');
+        return;
+    }
 
     // Fetch initial metrics immediately
     fetchMetrics();
+    
+    // Also collect initial metrics to ensure we have data
+    collectMetrics();
 
     // Set up refresh button
     const refreshBtn = document.getElementById('refreshMetricsBtn');

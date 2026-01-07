@@ -453,6 +453,15 @@
                     closeContactModal();
                 }
             });
+
+            // Handle navigation contact link - intercept #contact hash links
+            const contactNavLink = document.querySelector('a[href="#contact"]');
+            if (contactNavLink) {
+                contactNavLink.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    openContactModal();
+                });
+            }
         })();
 
     </script>

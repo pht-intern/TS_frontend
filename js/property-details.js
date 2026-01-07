@@ -1241,6 +1241,15 @@ function initContactAgentModal() {
         }
     });
 
+    // Handle navigation contact link - intercept #contact hash links
+    const contactNavLink = document.querySelector('a[href="#contact"]');
+    if (contactNavLink) {
+        contactNavLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            openContactInfoModal();
+        });
+    }
+
     // Copy phone number to clipboard on click
     const contactInfoLink = document.querySelector('#contactInfoModal .contact-info-link');
     if (contactInfoLink) {

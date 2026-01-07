@@ -78,12 +78,25 @@
     --shadow-2xl: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
 }
 
+html {
+    overflow-x: hidden;
+    width: 100%;
+    max-width: 100%;
+}
+
 body {
     font-family: 'Inter', sans-serif;
     font-size: 18px;
     line-height: 1.6;
     color: var(--text-dark);
     overflow-x: hidden;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+}
+
+* {
+    box-sizing: border-box;
 }
 
 /* Base Typography - Standardized Font Sizes */
@@ -120,6 +133,22 @@ h6 {
     margin: 0 auto;
     padding: 0 20px;
     overflow: visible;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+/* Responsive container for smaller laptop screens */
+@media (max-width: 1366px) {
+    .container {
+        max-width: 100%;
+        padding: 0 15px;
+    }
+}
+
+@media (max-width: 1280px) {
+    .container {
+        padding: 0 12px;
+    }
 }
 
 /* HR Styling - Constrain to container width */
@@ -131,6 +160,13 @@ hr {
     border-top: 1px solid var(--border-color, #e0e0e0);
     width: 100%;
     box-sizing: border-box;
+}
+
+@media (max-width: 1366px) {
+    hr {
+        max-width: 100%;
+        padding: 0 15px;
+    }
 }
 
 /* Top Bar */
@@ -211,12 +247,27 @@ hr {
     align-items: center;
     padding: 1.25rem 0;
     gap: 3rem;
+    flex-wrap: wrap;
+}
+
+@media (max-width: 1366px) {
+    .nav-wrapper {
+        gap: 2rem;
+        padding: 1rem 0;
+    }
+}
+
+@media (max-width: 1280px) {
+    .nav-wrapper {
+        gap: 1.5rem;
+    }
 }
 
 /* Logo Styles */
 .logo {
     display: flex;
     align-items: center;
+    margin-right: 3.5rem;
 }
 
 .logo-link {
@@ -1816,217 +1867,175 @@ section:not(.hero).section-visible .section-header {
     animation-delay: 0.4s;
 }
 
-/* Services Section Animation */
+/* Services Section Animation - DISABLED */
+.services-showcase {
+    opacity: 1 !important;
+}
+
 .services-showcase.section-coming-into-view {
-    opacity: 0;
+    opacity: 1 !important;
 }
 
 .services-showcase.section-visible {
-    opacity: 1;
+    opacity: 1 !important;
 }
 
-.services-showcase.section-visible .services-layout {
-    animation: fadeInUp 0.4s ease-out 0.15s both;
+.services-showcase .services-layout {
+    animation: none !important;
+    opacity: 1 !important;
 }
 
-.services-showcase.section-visible .service-section {
-    opacity: 0;
-    animation: fadeInUp 0.4s ease-out both;
+.services-showcase .service-section {
+    opacity: 1 !important;
+    animation: none !important;
 }
 
-.services-showcase.section-visible .service-section:nth-child(1) {
-    animation-delay: 0.2s;
+.services-showcase .service-section:nth-child(1),
+.services-showcase .service-section:nth-child(2),
+.services-showcase .service-section:nth-child(3),
+.services-showcase .service-section:nth-child(4) {
+    animation: none !important;
+    opacity: 1 !important;
 }
 
-.services-showcase.section-visible .service-section:nth-child(2) {
-    animation-delay: 0.15s;
+/* Service Section Content Animations - DISABLED */
+.services-showcase .service-section-content {
+    animation: none !important;
+    opacity: 1 !important;
 }
 
-.services-showcase.section-visible .service-section:nth-child(3) {
-    animation-delay: 0.4s;
+.services-showcase .service-section:nth-child(1) .service-section-content,
+.services-showcase .service-section:nth-child(2) .service-section-content,
+.services-showcase .service-section:nth-child(3) .service-section-content,
+.services-showcase .service-section:nth-child(4) .service-section-content {
+    animation: none !important;
+    opacity: 1 !important;
 }
 
-.services-showcase.section-visible .service-section:nth-child(4) {
-    animation-delay: 0.25s;
+/* Service Cards and Elements Animation - DISABLED */
+.services-showcase .service-testimonial-card {
+    opacity: 1 !important;
+    animation: none !important;
 }
 
-/* Service Section Content Animations */
-.services-showcase.section-visible .service-section-content {
-    animation: fadeInUp 0.3s ease-out both;
+.services-showcase .service-section:nth-child(1) .service-testimonial-card:nth-child(1),
+.services-showcase .service-section:nth-child(1) .service-testimonial-card:nth-child(2),
+.services-showcase .service-section:nth-child(1) .service-testimonial-card:nth-child(3) {
+    animation: none !important;
+    opacity: 1 !important;
 }
 
-.services-showcase.section-visible .service-section:nth-child(1) .service-section-content {
-    animation-delay: 0.25s;
-}
-
-.services-showcase.section-visible .service-section:nth-child(2) .service-section-content {
-    animation-delay: 0.35s;
-}
-
-.services-showcase.section-visible .service-section:nth-child(3) .service-section-content {
-    animation-delay: 0.45s;
-}
-
-.services-showcase.section-visible .service-section:nth-child(4) .service-section-content {
-    animation-delay: 0.55s;
-}
-
-/* Service Cards and Elements Animation */
-.services-showcase.section-visible .service-testimonial-card {
-    opacity: 0;
-    animation: fadeInUp 0.3s ease-out both;
-}
-
-.services-showcase.section-visible .service-section:nth-child(1) .service-testimonial-card:nth-child(1) {
-    animation-delay: 0.15s;
-}
-
-.services-showcase.section-visible .service-section:nth-child(1) .service-testimonial-card:nth-child(2) {
-    animation-delay: 0.35s;
-}
-
-.services-showcase.section-visible .service-section:nth-child(1) .service-testimonial-card:nth-child(3) {
-    animation-delay: 0.4s;
-}
-
-/* Investment Section - Service 2 Animations */
+/* Investment Section - Service 2 Animations - DISABLED */
 .service-investment.section-coming-into-view {
-    opacity: 0;
+    opacity: 1 !important;
 }
 
 .service-investment.section-visible {
-    opacity: 1;
+    opacity: 1 !important;
 }
 
 .service-investment.section-coming-into-view .investment-header-layout,
 .service-investment.section-coming-into-view .investment-feature-card,
 .service-investment.section-coming-into-view .investment-properties-section-bottom,
 .service-investment.section-coming-into-view .property-tag {
-    opacity: 0;
+    opacity: 1 !important;
 }
 
-.services-showcase.section-visible .service-investment .investment-header-layout,
-.service-investment.section-visible .investment-header-layout {
-    opacity: 0;
-    animation: fadeInUp 0.4s ease-out 0.1s both;
+.services-showcase .service-investment .investment-header-layout,
+.service-investment .investment-header-layout {
+    opacity: 1 !important;
+    animation: none !important;
 }
 
-.services-showcase.section-visible .service-investment .investment-feature-cards-row .investment-feature-card,
-.service-investment.section-visible .investment-feature-cards-row .investment-feature-card {
-    opacity: 0;
-    animation: fadeInUp 0.6s ease-out both;
+.services-showcase .service-investment .investment-feature-cards-row .investment-feature-card,
+.service-investment .investment-feature-cards-row .investment-feature-card {
+    opacity: 1 !important;
+    animation: none !important;
 }
 
-.services-showcase.section-visible .service-investment .investment-feature-cards-row .investment-feature-card:nth-child(1),
-.service-investment.section-visible .investment-feature-cards-row .investment-feature-card:nth-child(1) {
-    animation-delay: 0.4s;
+.services-showcase .service-investment .investment-feature-cards-row .investment-feature-card:nth-child(1),
+.service-investment .investment-feature-cards-row .investment-feature-card:nth-child(1),
+.services-showcase .service-investment .investment-feature-cards-row .investment-feature-card:nth-child(2),
+.service-investment .investment-feature-cards-row .investment-feature-card:nth-child(2),
+.services-showcase .service-investment .investment-feature-cards-row .investment-feature-card:nth-child(3),
+.service-investment .investment-feature-cards-row .investment-feature-card:nth-child(3),
+.services-showcase .service-investment .investment-feature-cards-row .investment-feature-card:nth-child(4),
+.service-investment .investment-feature-cards-row .investment-feature-card:nth-child(4) {
+    animation: none !important;
+    opacity: 1 !important;
 }
 
-.services-showcase.section-visible .service-investment .investment-feature-cards-row .investment-feature-card:nth-child(2),
-.service-investment.section-visible .investment-feature-cards-row .investment-feature-card:nth-child(2) {
-    animation-delay: 0.25s;
+.services-showcase .service-investment .investment-properties-section-bottom,
+.service-investment .investment-properties-section-bottom {
+    opacity: 1 !important;
+    animation: none !important;
 }
 
-.services-showcase.section-visible .service-investment .investment-feature-cards-row .investment-feature-card:nth-child(3),
-.service-investment.section-visible .investment-feature-cards-row .investment-feature-card:nth-child(3) {
-    animation-delay: 0.3s;
+.services-showcase .service-investment .property-tag,
+.service-investment .property-tag {
+    opacity: 1 !important;
+    animation: none !important;
 }
 
-.services-showcase.section-visible .service-investment .investment-feature-cards-row .investment-feature-card:nth-child(4),
-.service-investment.section-visible .investment-feature-cards-row .investment-feature-card:nth-child(4) {
-    animation-delay: 0.35s;
+/* Property tag animation delays disabled */
+.services-showcase .service-investment .property-tag:nth-child(1),
+.service-investment .property-tag:nth-child(1),
+.services-showcase .service-investment .property-tag:nth-child(2),
+.service-investment .property-tag:nth-child(2),
+.services-showcase .service-investment .property-tag:nth-child(3),
+.service-investment .property-tag:nth-child(3),
+.services-showcase .service-investment .property-tag:nth-child(4),
+.service-investment .property-tag:nth-child(4),
+.services-showcase .service-investment .property-tag:nth-child(5),
+.service-investment .property-tag:nth-child(5),
+.services-showcase .service-investment .property-tag:nth-child(6),
+.service-investment .property-tag:nth-child(6),
+.services-showcase .service-investment .property-tag:nth-child(7),
+.service-investment .property-tag:nth-child(7),
+.services-showcase .service-investment .property-tag:nth-child(8),
+.service-investment .property-tag:nth-child(8) {
+    animation: none !important;
+    opacity: 1 !important;
 }
 
-.services-showcase.section-visible .service-investment .investment-properties-section-bottom,
-.service-investment.section-visible .investment-properties-section-bottom {
-    opacity: 0;
-    animation: fadeInUp 0.4s ease-out 0.4s both;
-}
-
-.services-showcase.section-visible .service-investment .property-tag,
-.service-investment.section-visible .property-tag {
-    opacity: 0;
-    animation: fadeInUp 0.25s ease-out both;
-}
-
-.services-showcase.section-visible .service-investment .property-tag:nth-child(1),
-.service-investment.section-visible .property-tag:nth-child(1) {
-    animation-delay: 0.45s;
-}
-
-.services-showcase.section-visible .service-investment .property-tag:nth-child(2),
-.service-investment.section-visible .property-tag:nth-child(2) {
-    animation-delay: 0.5s;
-}
-
-.services-showcase.section-visible .service-investment .property-tag:nth-child(3),
-.service-investment.section-visible .property-tag:nth-child(3) {
-    animation-delay: 0.55s;
-}
-
-.services-showcase.section-visible .service-investment .property-tag:nth-child(4),
-.service-investment.section-visible .property-tag:nth-child(4) {
-    animation-delay: 0.6s;
-}
-
-.services-showcase.section-visible .service-investment .property-tag:nth-child(5),
-.service-investment.section-visible .property-tag:nth-child(5) {
-    animation-delay: 0.65s;
-}
-
-.services-showcase.section-visible .service-investment .property-tag:nth-child(6),
-.service-investment.section-visible .property-tag:nth-child(6) {
-    animation-delay: 0.7s;
-}
-
-.services-showcase.section-visible .service-investment .property-tag:nth-child(7),
-.service-investment.section-visible .property-tag:nth-child(7) {
-    animation-delay: 0.75s;
-}
-
-.services-showcase.section-visible .service-investment .property-tag:nth-child(8),
-.service-investment.section-visible .property-tag:nth-child(8) {
-    animation-delay: 0.8s;
-}
-
-/* Management Section - Service 3 Animations */
+/* Management Section - Service 3 Animations - DISABLED */
 .service-management.section-coming-into-view {
-    opacity: 0;
+    opacity: 1 !important;
 }
 
 .service-management.section-visible {
-    opacity: 1;
+    opacity: 1 !important;
 }
 
 .service-management.section-coming-into-view .service-header-key,
 .service-management.section-coming-into-view .service-intro,
 .service-management.section-coming-into-view .service-features-grid-key,
 .service-management.section-coming-into-view .key-feature-block {
-    opacity: 0;
+    opacity: 1 !important;
 }
 
-.services-showcase.section-visible .service-management .service-header-key,
-.service-management.section-visible .service-header-key {
-    opacity: 0;
-    animation: fadeInUp 0.4s ease-out 0.1s both;
+.services-showcase .service-management .service-header-key,
+.service-management .service-header-key {
+    opacity: 1 !important;
+    animation: none !important;
 }
 
-.services-showcase.section-visible .service-management .service-intro,
-.service-management.section-visible .service-intro {
-    opacity: 0;
-    animation: fadeInUp 0.4s ease-out 0.2s both;
+.services-showcase .service-management .service-intro,
+.service-management .service-intro {
+    opacity: 1 !important;
+    animation: none !important;
 }
 
-.services-showcase.section-visible .service-management .service-features-grid-key,
-.service-management.section-visible .service-features-grid-key {
-    opacity: 0;
-    animation: fadeInUp 0.4s ease-out 0.3s both;
+.services-showcase .service-management .service-features-grid-key,
+.service-management .service-features-grid-key {
+    opacity: 1 !important;
+    animation: none !important;
 }
 
-.services-showcase.section-visible .service-management .service-features-grid-key .key-feature-block,
-.service-management.section-visible .service-features-grid-key .key-feature-block {
-    opacity: 0;
-    animation: fadeInUp 0.6s ease-out both;
+.services-showcase .service-management .service-features-grid-key .key-feature-block,
+.service-management .service-features-grid-key .key-feature-block {
+    opacity: 1 !important;
+    animation: none !important;
 }
 
 .services-showcase.section-visible .service-management .service-features-grid-key .key-feature-block:nth-child(1),
@@ -2054,13 +2063,13 @@ section:not(.hero).section-visible .section-header {
     animation-delay: 1.1s;
 }
 
-/* Value Added Section - Service 4 Animations */
+/* Value Added Section - Service 4 Animations - DISABLED */
 .service-value.section-coming-into-view {
-    opacity: 0;
+    opacity: 1 !important;
 }
 
 .service-value.section-visible {
-    opacity: 1;
+    opacity: 1 !important;
 }
 
 .service-value.section-coming-into-view .service-header-split,
@@ -2068,37 +2077,37 @@ section:not(.hero).section-visible .section-header {
 .service-value.section-coming-into-view .service-right-content,
 .service-value.section-coming-into-view .value-services-grid,
 .service-value.section-coming-into-view .value-service-card {
-    opacity: 0;
+    opacity: 1 !important;
 }
 
-.services-showcase.section-visible .service-value .service-header-split,
-.service-value.section-visible .service-header-split {
-    opacity: 0;
-    animation: fadeInUp 0.4s ease-out 0.1s both;
+.services-showcase .service-value .service-header-split,
+.service-value .service-header-split {
+    opacity: 1 !important;
+    animation: none !important;
 }
 
-.services-showcase.section-visible .service-value .service-left-content,
-.service-value.section-visible .service-left-content {
-    opacity: 0;
-    animation: fadeInLeft 0.4s ease-out 0.2s both;
+.services-showcase .service-value .service-left-content,
+.service-value .service-left-content {
+    opacity: 1 !important;
+    animation: none !important;
 }
 
-.services-showcase.section-visible .service-value .service-right-content,
-.service-value.section-visible .service-right-content {
-    opacity: 0;
-    animation: fadeInRight 0.4s ease-out 0.3s both;
+.services-showcase .service-value .service-right-content,
+.service-value .service-right-content {
+    opacity: 1 !important;
+    animation: none !important;
 }
 
-.services-showcase.section-visible .service-value .value-services-grid,
-.service-value.section-visible .value-services-grid {
-    opacity: 0;
-    animation: fadeInUp 0.4s ease-out 0.4s both;
+.services-showcase .service-value .value-services-grid,
+.service-value .value-services-grid {
+    opacity: 1 !important;
+    animation: none !important;
 }
 
-.services-showcase.section-visible .service-value .value-services-grid .value-service-card,
-.service-value.section-visible .value-services-grid .value-service-card {
-    opacity: 0;
-    animation: fadeInUp 0.3s ease-out both;
+.services-showcase .service-value .value-services-grid .value-service-card,
+.service-value .value-services-grid .value-service-card {
+    opacity: 1 !important;
+    animation: none !important;
 }
 
 .services-showcase.section-visible .service-value .value-services-grid .value-service-card:nth-child(1),
@@ -2112,11 +2121,11 @@ section:not(.hero).section-visible .section-header {
 }
 
 .service-property.section-coming-into-view {
-    opacity: 0;
+    opacity: 1 !important;
 }
 
 .service-property.section-visible {
-    opacity: 1;
+    opacity: 1 !important;
 }
 
 .service-property.section-coming-into-view .service-header-split,
@@ -2124,37 +2133,37 @@ section:not(.hero).section-visible .section-header {
 .service-property.section-coming-into-view .service-right-content,
 .service-property.section-coming-into-view .value-services-grid,
 .service-property.section-coming-into-view .value-service-card {
-    opacity: 0;
+    opacity: 1 !important;
 }
 
-.services-showcase.section-visible .service-property .service-header-split,
-.service-property.section-visible .service-header-split {
-    opacity: 0;
-    animation: fadeInUp 0.4s ease-out 0.1s both;
+.services-showcase .service-property .service-header-split,
+.service-property .service-header-split {
+    opacity: 1 !important;
+    animation: none !important;
 }
 
-.services-showcase.section-visible .service-property .service-left-content,
-.service-property.section-visible .service-left-content {
-    opacity: 0;
-    animation: fadeInLeft 0.4s ease-out 0.2s both;
+.services-showcase .service-property .service-left-content,
+.service-property .service-left-content {
+    opacity: 1 !important;
+    animation: none !important;
 }
 
-.services-showcase.section-visible .service-property .service-right-content,
-.service-property.section-visible .service-right-content {
-    opacity: 0;
-    animation: fadeInRight 0.4s ease-out 0.3s both;
+.services-showcase .service-property .service-right-content,
+.service-property .service-right-content {
+    opacity: 1 !important;
+    animation: none !important;
 }
 
-.services-showcase.section-visible .service-property .value-services-grid,
-.service-property.section-visible .value-services-grid {
-    opacity: 0;
-    animation: fadeInUp 0.4s ease-out 0.4s both;
+.services-showcase .service-property .value-services-grid,
+.service-property .value-services-grid {
+    opacity: 1 !important;
+    animation: none !important;
 }
 
-.services-showcase.section-visible .service-property .value-services-grid .value-service-card,
-.service-property.section-visible .value-services-grid .value-service-card {
-    opacity: 0;
-    animation: fadeInUp 0.3s ease-out both;
+.services-showcase .service-property .value-services-grid .value-service-card,
+.service-property .value-services-grid .value-service-card {
+    opacity: 1 !important;
+    animation: none !important;
 }
 
 .services-showcase.section-visible .service-property .value-services-grid .value-service-card:nth-child(1),
@@ -2165,6 +2174,50 @@ section:not(.hero).section-visible .section-header {
 .services-showcase.section-visible .service-property .value-services-grid .value-service-card:nth-child(2),
 .service-property.section-visible .value-services-grid .value-service-card:nth-child(2) {
     animation-delay: 0.55s;
+}
+
+/* Comprehensive override to disable all Services Section scroll animations */
+.services-showcase *,
+.services-showcase.section-coming-into-view *,
+.services-showcase.section-visible *,
+.service-investment *,
+.service-investment.section-coming-into-view *,
+.service-investment.section-visible *,
+.service-management *,
+.service-management.section-coming-into-view *,
+.service-management.section-visible *,
+.service-value *,
+.service-value.section-coming-into-view *,
+.service-value.section-visible *,
+.service-property *,
+.service-property.section-coming-into-view *,
+.service-property.section-visible * {
+    animation: none !important;
+    opacity: 1 !important;
+}
+
+.services-showcase,
+.service-investment,
+.service-management,
+.service-value,
+.service-property {
+    opacity: 1 !important;
+}
+
+.services-showcase.section-coming-into-view,
+.service-investment.section-coming-into-view,
+.service-management.section-coming-into-view,
+.service-value.section-coming-into-view,
+.service-property.section-coming-into-view {
+    opacity: 1 !important;
+}
+
+.services-showcase.section-visible,
+.service-investment.section-visible,
+.service-management.section-visible,
+.service-value.section-visible,
+.service-property.section-visible {
+    opacity: 1 !important;
 }
 
 @keyframes fadeInLeft {
@@ -3842,6 +3895,8 @@ section:not(.hero).section-visible .section-header {
     padding-right: 2rem;
     position: relative;
     z-index: 1;
+    max-width: 100%;
+    box-sizing: border-box;
 }
 
 .service-header-key h3 {
@@ -3873,6 +3928,8 @@ section:not(.hero).section-visible .section-header {
     padding-right: 2rem;
     position: relative;
     z-index: 1;
+    max-width: 100%;
+    box-sizing: border-box;
 }
 
 .service-features-grid-key {
@@ -3884,6 +3941,8 @@ section:not(.hero).section-visible .section-header {
     margin-left: 25%;
     padding-left: 1.5rem;
     padding-right: 2rem;
+    max-width: 100%;
+    box-sizing: border-box;
 }
 
 .key-feature-block {
@@ -4098,7 +4157,7 @@ section:not(.hero).section-visible .section-header {
 
 .service-property {
     background: var(--white);
-    padding: 5rem 4rem;
+    padding: 7rem 4rem;
     position: relative;
 }
 
@@ -7161,6 +7220,248 @@ section:not(.hero).section-visible .section-header {
     }
 }
 
+/* Responsive Design for smaller laptop screens */
+@media (max-width: 1366px) {
+    .service-property {
+        padding: 5rem 2rem;
+    }
+    
+    .service-management {
+        padding: 5rem 2rem;
+    }
+    
+    .service-section-content.split-layout {
+        gap: 3rem;
+    }
+    
+    .nav-wrapper {
+        gap: 2rem;
+    }
+    
+    .logo {
+        margin-right: 2rem;
+    }
+    
+    .service-left-content h3 {
+        font-size: 2.2rem;
+    }
+    
+    .service-visual-card {
+        padding: 2.5rem 2rem;
+    }
+    
+    .property-types {
+        padding: 4rem 0;
+    }
+    
+    .service-header-key {
+        margin-left: 20%;
+        padding-left: 1rem;
+        padding-right: 1.5rem;
+    }
+    
+    .service-intro {
+        margin-left: 20%;
+        padding-left: 1rem;
+        padding-right: 1.5rem;
+    }
+    
+    .service-features-grid-key {
+        margin-left: 20%;
+        padding-left: 1rem;
+        padding-right: 1.5rem;
+        gap: 2rem;
+    }
+    
+    .key-feature-block {
+        padding: 2rem 1.5rem;
+    }
+    
+    .feature-number {
+        font-size: 4.5rem;
+        width: 80px;
+    }
+    
+    .key-feature-block h4 {
+        margin-left: 100px;
+        max-width: calc(100% - 100px);
+    }
+    
+    .feature-underline-key {
+        margin-left: 100px;
+    }
+    
+    body {
+        font-size: 16px;
+    }
+    
+    p {
+        font-size: 16px;
+    }
+}
+
+@media (max-width: 1280px) {
+    .service-property {
+        padding: 4rem 1.5rem;
+    }
+    
+    .service-management {
+        padding: 4rem 1.5rem;
+    }
+    
+    .service-section-content.split-layout {
+        gap: 2.5rem;
+    }
+    
+    .nav-wrapper {
+        gap: 1.5rem;
+    }
+    
+    .logo-img {
+        width: 180px;
+    }
+    
+    .service-left-content h3 {
+        font-size: 2rem;
+    }
+    
+    .service-visual-card {
+        padding: 2rem 1.5rem;
+    }
+    
+    .service-value-cards {
+        gap: 1.25rem;
+    }
+    
+    .property-types {
+        padding: 3.5rem 0;
+    }
+    
+    .service-header-key {
+        margin-left: 15%;
+        padding-left: 0.75rem;
+        padding-right: 1rem;
+    }
+    
+    .service-header-key h3 {
+        font-size: 1.9rem;
+    }
+    
+    .service-intro {
+        margin-left: 15%;
+        padding-left: 0.75rem;
+        padding-right: 1rem;
+        font-size: 0.85rem;
+    }
+    
+    .service-features-grid-key {
+        margin-left: 15%;
+        padding-left: 0.75rem;
+        padding-right: 1rem;
+        gap: 1.75rem;
+    }
+    
+    .key-feature-block {
+        padding: 1.75rem 1.25rem;
+        min-width: 0;
+    }
+    
+    .feature-number {
+        font-size: 4rem;
+        width: 70px;
+    }
+    
+    .key-feature-block h4 {
+        margin-left: 90px;
+        max-width: calc(100% - 90px);
+        font-size: 1.1rem;
+    }
+    
+    .feature-underline-key {
+        margin-left: 90px;
+    }
+    
+    body {
+        font-size: 15px;
+    }
+    
+    p {
+        font-size: 15px;
+    }
+    
+    h1 {
+        font-size: 26px;
+    }
+    
+    h2 {
+        font-size: 24px;
+    }
+    
+    h3 {
+        font-size: 20px;
+    }
+}
+
+@media (max-width: 1150px) {
+    .service-section-content.split-layout {
+        grid-template-columns: 1fr;
+        gap: 3rem;
+    }
+    
+    .service-property {
+        padding: 4rem 1rem;
+    }
+    
+    .service-management {
+        padding: 4rem 1rem;
+    }
+    
+    .service-header-key {
+        margin-left: 0;
+        padding-left: 0;
+        padding-right: 0;
+    }
+    
+    .service-header-key h3 {
+        font-size: 1.75rem;
+    }
+    
+    .service-intro {
+        margin-left: 0;
+        padding-left: 0;
+        padding-right: 0;
+        font-size: 0.85rem;
+    }
+    
+    .service-features-grid-key {
+        margin-left: 0;
+        padding-left: 0;
+        padding-right: 0;
+        gap: 1.5rem;
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .key-feature-block {
+        padding: 1.5rem 1rem;
+        min-width: 0;
+    }
+    
+    .feature-number {
+        font-size: 3.5rem;
+        width: 60px;
+    }
+    
+    .key-feature-block h4 {
+        margin-left: 80px;
+        max-width: calc(100% - 80px);
+        font-size: 1rem;
+    }
+    
+    .feature-underline-key {
+        margin-left: 80px;
+    }
+}
+
 /* Responsive Design */
 @media (max-width: 1024px) {
     .search-row {
@@ -7204,6 +7505,10 @@ section:not(.hero).section-visible .section-header {
     
     .service-section-content.reverse {
         grid-template-columns: 1fr;
+    }
+    
+    .service-property {
+        padding: 4rem 1rem;
     }
     
     .service-icon-large {

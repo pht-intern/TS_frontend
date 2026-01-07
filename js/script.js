@@ -212,8 +212,15 @@ document.addEventListener('DOMContentLoaded', () => {
 // Smooth scrolling for anchor links
 document.querySelectorAll('a[href^="#"]').forEach(anchor => {
     anchor.addEventListener('click', function (e) {
+        const href = this.getAttribute('href');
+        
+        // Skip #contact links - they are handled by page-specific code to open modals
+        if (href === '#contact') {
+            return; // Let the page-specific handler take over
+        }
+        
         e.preventDefault();
-        const target = document.querySelector(this.getAttribute('href'));
+        const target = document.querySelector(href);
         if (target) {
             target.scrollIntoView({
                 behavior: 'smooth',
@@ -1036,7 +1043,7 @@ function initGlobalNavSearch() {
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
     renderProperties();
-    initServicesSection();
+    // initServicesSection(); // Disabled scroll animation for Services Section
     initGlobalNavSearch();
     
     // Hero scroll indicator with enhanced animation
@@ -1054,8 +1061,8 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
     
-    // Scroll-based animation for all sections
-    const sectionsToAnimate = document.querySelectorAll('section:not(.hero)');
+    // Scroll-based animation for all sections (excluding services section)
+    const sectionsToAnimate = document.querySelectorAll('section:not(.hero):not(.services-showcase)');
     
     if (sectionsToAnimate.length > 0) {
         // Initially hide all sections
@@ -1089,36 +1096,36 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
     
-    // Individual service section animations (Investment, Management, Value Added)
-    const serviceSubsections = document.querySelectorAll('.service-investment, .service-management, .service-value');
+    // Individual service section animations (Investment, Management, Value Added) - DISABLED
+    // const serviceSubsections = document.querySelectorAll('.service-investment, .service-management, .service-value');
     
-    if (serviceSubsections.length > 0) {
-        // Initially hide service subsections
-        serviceSubsections.forEach(subsection => {
-            subsection.classList.add('section-coming-into-view');
-        });
+    // if (serviceSubsections.length > 0) {
+    //     // Initially hide service subsections
+    //     serviceSubsections.forEach(subsection => {
+    //         subsection.classList.add('section-coming-into-view');
+    //     });
         
-        // Intersection Observer for individual service sections
-        const serviceObserverOptions = {
-            threshold: 0.2,
-            rootMargin: '0px 0px -100px 0px'
-        };
+    //     // Intersection Observer for individual service sections
+    //     const serviceObserverOptions = {
+    //         threshold: 0.2,
+    //         rootMargin: '0px 0px -100px 0px'
+    //     };
         
-        const serviceSectionObserver = new IntersectionObserver((entries) => {
-            entries.forEach(entry => {
-                if (entry.isIntersecting) {
-                    entry.target.classList.add('section-visible');
-                    entry.target.classList.remove('section-coming-into-view');
-                } else if (window.scrollY < entry.target.offsetTop) {
-                    entry.target.classList.remove('section-visible');
-                    entry.target.classList.add('section-coming-into-view');
-                }
-            });
-        }, serviceObserverOptions);
+    //     const serviceSectionObserver = new IntersectionObserver((entries) => {
+    //         entries.forEach(entry => {
+    //             if (entry.isIntersecting) {
+    //                 entry.target.classList.add('section-visible');
+    //                 entry.target.classList.remove('section-coming-into-view');
+    //             } else if (window.scrollY < entry.target.offsetTop) {
+    //                 entry.target.classList.remove('section-visible');
+    //                 entry.target.classList.add('section-coming-into-view');
+    //             }
+    //         });
+    //     }, serviceObserverOptions);
         
-        // Observe each service subsection
-        serviceSubsections.forEach(subsection => {
-            serviceSectionObserver.observe(subsection);
-        });
-    }
+    //     // Observe each service subsection
+    //     serviceSubsections.forEach(subsection => {
+    //         serviceSectionObserver.observe(subsection);
+    //     });
+    // }
 });

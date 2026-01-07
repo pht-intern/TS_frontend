@@ -90,24 +90,34 @@
                 </div>
             </div>
             
-            <!-- Right Panel - Image Collage -->
+            <!-- Right Panel - Image Slider -->
             <div class="hero-right-panel">
-                <div class="hero-image-collage">
-                    <div class="hero-image-section hero-image-top">
-                        <div class="hero-image-wrapper">
-                            <img src="/images/img1.jpg" alt="Modern Apartment">
+                <div class="hero-image-section hero-image-single">
+                    <div class="hero-image-slider">
+                        <div class="hero-slide">
+                            <div class="hero-image-wrapper">
+                                <img src="/images/img1.jpg" alt="Modern Apartment">
+                            </div>
                         </div>
-                        <div class="diagonal-separator separator-top"></div>
-                    </div>
-                    <div class="hero-image-section hero-image-middle">
-                        <div class="hero-image-wrapper">
-                            <img src="/images/img2.jpg" alt="Interior Design">
+                        <div class="hero-slide">
+                            <div class="hero-image-wrapper">
+                                <img src="/images/img2.jpg" alt="Luxury Property">
+                            </div>
                         </div>
-                        <div class="diagonal-separator separator-middle"></div>
-                    </div>
-                    <div class="hero-image-section hero-image-bottom">
-                        <div class="hero-image-wrapper">
-                            <img src="/images/img3.jpg" alt="Luxury Property">
+                        <div class="hero-slide">
+                            <div class="hero-image-wrapper">
+                                <img src="/images/img3.jpg" alt="Premium Real Estate">
+                            </div>
+                        </div>
+                        <div class="hero-slide">
+                            <div class="hero-image-wrapper">
+                                <img src="/images/img4.jpg" alt="Beautiful Home">
+                            </div>
+                        </div>
+                        <div class="hero-slide">
+                            <div class="hero-image-wrapper">
+                                <img src="/images/img5.jpg" alt="Elegant Property">
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -146,63 +156,68 @@
                 <!-- Advanced Search Form -->
                 <div class="properties-search">
                     <form class="search-form" id="propertiesSearchForm">
-                        <div class="search-row">
-                            <div class="search-group">
-                                <label><i class="fas fa-map-marker-alt"></i> City</label>
-                                <input type="text" id="searchCity" placeholder="Enter city">
+                        <div class="filters-two-column">
+                            <!-- Left Column: Filter 1 -->
+                            <div class="filter1">
+                                <div class="search-group">
+                                    <label><i class="fas fa-map-marker-alt"></i> City</label>
+                                    <input type="text" id="searchCity" placeholder="Enter city">
+                                </div>
+                                <div class="search-group">
+                                    <label><i class="fas fa-map-marker-alt"></i> Area</label>
+                                    <input type="text" id="searchArea" placeholder="Enter area">
+                                </div>
+                                <div class="search-group">
+                                    <label><i class="fas fa-star"></i> Amenities</label>
+                                    <input type="text" id="searchAmenities" placeholder="e.g., Parking, Lift, Security">
+                                </div>
+                                <div class="search-group">
+                                    <label><i class="fas fa-home"></i> Unit Type</label>
+                                    <select id="searchUnitType">
+                                        <option value="">Any Unit Type</option>
+                                        <option value="rk" data-bhk="0">1RK</option>
+                                        <option value="bhk" data-bhk="1">1BHK</option>
+                                        <option value="bhk" data-bhk="2">2BHK</option>
+                                        <option value="bhk" data-bhk="3">3BHK</option>
+                                        <option value="4plus" data-bhk="4">4+BHK</option>
+                                    </select>
+                                </div>
                             </div>
-                            <div class="search-group">
-                                <label><i class="fas fa-map-marker-alt"></i> Area</label>
-                                <input type="text" id="searchArea" placeholder="Enter area">
+                            
+                            <!-- Right Column: Filter 2 -->
+                            <div class="filter2">
+                                <div class="search-group">
+                                    <label><i class="fas fa-exchange-alt"></i> Transaction Type</label>
+                                    <select id="searchTransactionType">
+                                        <option value="all">All Properties</option>
+                                        <option value="sale">Buy</option>
+                                        <option value="rent">Rent</option>
+                                    </select>
+                                </div>
+                                <div class="search-group">
+                                    <label><i class="fas fa-check-circle"></i> Property Condition</label>
+                                    <select id="searchPropertyCondition">
+                                        <option value="">Any Condition</option>
+                                        <option value="new">New</option>
+                                        <option value="resale">Resale</option>
+                                    </select>
+                                </div>
+                                <div class="search-group">
+                                    <label><i class="fas fa-dollar-sign"></i> Price Range</label>
+                                    <button type="button" class="price-range-btn" id="priceRangeBtn">
+                                        <span class="price-range-display" id="priceRangeDisplay">Any Price</span>
+                                        <i class="fas fa-chevron-down"></i>
+                                    </button>
+                                    <input type="hidden" id="searchPrice" value="">
+                                </div>
+                                <div class="search-group">
+                                    <label><i class="fas fa-ruler-combined"></i> Dimensions</label>
+                                    <input type="text" id="searchDimensions" placeholder="e.g., 30x40, 50x80">
+                                </div>
                             </div>
-                            <div class="search-group">
-                                <label><i class="fas fa-ruler-combined"></i> Dimensions</label>
-                                <input type="text" id="searchDimensions" placeholder="e.g., 30x40, 50x80">
-                            </div>
-                            <div class="search-group">
-                                <label><i class="fas fa-dollar-sign"></i> Price Range</label>
-                                <select id="searchPrice">
-                                    <option value="">Any Price</option>
-                                    <option value="0-300000">Under ₹300K</option>
-                                    <option value="300000-500000">₹300K - ₹500K</option>
-                                    <option value="500000-800000">₹500K - ₹800K</option>
-                                    <option value="800000-1200000">₹800K - ₹1.2M</option>
-                                    <option value="1200000-">₹1.2M+</option>
-                                </select>
-                            </div>
-                            <div class="search-group">
-                                <label><i class="fas fa-check-circle"></i> Property Condition</label>
-                                <select id="searchPropertyCondition">
-                                    <option value="">Any Condition</option>
-                                    <option value="new">New</option>
-                                    <option value="resale">Resale</option>
-                                </select>
-                            </div>
-                            <div class="search-group">
-                                <label><i class="fas fa-exchange-alt"></i> Transaction Type</label>
-                                <select id="searchTransactionType">
-                                    <option value="all">All Properties</option>
-                                    <option value="sale">Buy</option>
-                                    <option value="rent">Rent</option>
-                                </select>
-                            </div>
-                            <div class="search-group">
-                                <label><i class="fas fa-home"></i> Unit Type</label>
-                                <select id="searchUnitType">
-                                    <option value="">Any Unit Type</option>
-                                    <option value="rk" data-bhk="0">1RK</option>
-                                    <option value="bhk" data-bhk="1">1BHK</option>
-                                    <option value="bhk" data-bhk="2">2BHK</option>
-                                    <option value="bhk" data-bhk="3">3BHK</option>
-                                    <option value="4plus" data-bhk="4">4+BHK</option>
-                                </select>
-                            </div>
-                            <div class="search-group">
-                                <button type="submit" class="btn-search">
-                                    <i class="fas fa-filter"></i>
-                                    <span>Filter</span>
-                                </button>
-                            </div>
+                        </div>
+                        <div class="filter-button-center">
+                            <button type="submit" class="btn-search">Filter</button>
                         </div>
                     </form>
                 </div>
@@ -222,6 +237,48 @@
             </div>
         </div>
     </section>
+
+    <!-- Price Range Modal -->
+    <div class="price-range-modal" id="priceRangeModal">
+        <div class="price-range-modal-overlay" id="priceRangeModalOverlay"></div>
+        <div class="price-range-modal-content">
+            <div class="price-range-modal-header">
+                <h3>Select Price Range</h3>
+                <button type="button" class="price-range-modal-close" id="priceRangeModalClose">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="price-range-modal-body">
+                <div class="price-range-slider-container">
+                    <div class="price-range-labels">
+                        <span class="price-range-label-min" id="priceRangeLabelMin">₹0</span>
+                        <span class="price-range-label-max" id="priceRangeLabelMax">₹100+ Cr</span>
+                    </div>
+                    <div class="price-range-slider-wrapper">
+                        <div class="price-range-track" id="priceRangeTrack">
+                            <div class="price-range-progress" id="priceRangeProgress"></div>
+                            <input type="range" class="price-range-input price-range-input-min" id="priceRangeMin" min="0" max="100" value="0" step="0.1">
+                            <input type="range" class="price-range-input price-range-input-max" id="priceRangeMax" min="0" max="100" value="100" step="0.1">
+                        </div>
+                    </div>
+                    <div class="price-range-inputs">
+                        <div class="price-range-input-group">
+                            <label>Min Price (Cr)</label>
+                            <input type="number" class="price-range-number-input" id="priceRangeMinInput" min="0" max="100" step="0.1" value="0">
+                        </div>
+                        <div class="price-range-input-group">
+                            <label>Max Price (Cr)</label>
+                            <input type="number" class="price-range-number-input" id="priceRangeMaxInput" min="0" max="100" step="0.1" value="100">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="price-range-modal-footer">
+                <button type="button" class="price-range-btn-clear" id="priceRangeBtnClear">Clear</button>
+                <button type="button" class="price-range-btn-apply" id="priceRangeBtnApply">Apply</button>
+            </div>
+        </div>
+    </div>
     <hr>
 
     <!-- Property Types -->
@@ -328,6 +385,12 @@
                     <button class="btn-load-more-partners" id="loadMorePartnersBtn">
                         <span>Load More Partners</span>
                         <i class="fas fa-chevron-down"></i>
+                    </button>
+                </div>
+                <div class="partners-show-less-container" id="partnersShowLessContainer" style="display: none;">
+                    <button class="btn-show-less-partners" id="showLessPartnersBtn">
+                        <span>Show Less</span>
+                        <i class="fas fa-chevron-up"></i>
                     </button>
                 </div>
             </div>
@@ -559,94 +622,78 @@
                     </div>
                 </div>
 
-                <!-- Service 5: Property Services - Clean Split Layout -->
-                <div class="service-section service-value service-property">
-                    <div class="service-section-content split-layout">
-                        <div class="service-left-content">
-                            <h3>PROPERTY SERVICES</h3>
-                            <div class="content-divider"></div>
-                            <p>Comprehensive property services to help you navigate the complexities of property registration, documentation, and transactions with ease and confidence. Our expert team provides end-to-end support for all your property-related needs, ensuring smooth and hassle-free transactions.</p>
-                            <p style="margin-top: 1.5rem; margin-bottom: 2rem;">We specialize in handling complex property documentation, legal verifications, and seamless transactions across major cities in Karnataka. With years of experience, we ensure your property dealings are transparent, secure, and compliant with all regulatory requirements.</p>
-                            <div class="service-info-section">
-                                <div class="service-info-group">
-                                    <h4 class="service-info-section-title">SERVICES</h4>
-                                    <div class="service-info-tags">
-                                        <span class="service-info-tag">Property Registration</span>
-                                        <span class="service-info-tag">Documentation</span>
-                                        <span class="service-info-tag">Property Transactions</span>
-                                        <span class="service-info-tag">Buying & Selling</span>
-                                        <span class="service-info-tag">Reselling</span>
-                                        <span class="service-info-tag">Legal Verification</span>
-                                        <span class="service-info-tag">Title Clearance</span>
-                                        <span class="service-info-tag">Property Valuation</span>
-                                    </div>
-                                </div>
-                                    
-                                <div class="service-info-group">
-                                    <h4 class="service-info-section-title">REGION</h4>
-                                    <div class="service-info-tags">
-                                        <span class="service-info-tag">Bengaluru</span>
-                                        <span class="service-info-tag">Mysuru</span>
-                                        <span class="service-info-tag">Mangalore</span>
-                                        <span class="service-info-tag">Hubli</span>
-                                        <span class="service-info-tag">Belagavi</span>
-                                        <span class="service-info-tag">Davangere</span>
-                                    </div>
-                                </div>
+                <!-- Service 5: Value Added Services - Blurred Background Style with Slider -->
+                <div class="service-section service-rental service-property service-property-slider">
+                    <div class="service-bg-slider">
+                        <div class="service-bg-slide" style="background-image: url('/images/img1.jpg');"></div>
+                        <div class="service-bg-slide" style="background-image: url('/images/img2.jpg');"></div>
+                        <div class="service-bg-slide" style="background-image: url('/images/img3.jpg');"></div>
+                        <div class="service-bg-slide" style="background-image: url('/images/img4.jpg');"></div>
+                        <div class="service-bg-slide" style="background-image: url('/images/img5.jpg');"></div>
+                    </div>
+                    <div class="service-content-overlay">
+                        <div class="service-section-content">
+                            <div class="service-label">
+                                <div class="label-icon"></div>
+                                <span>Our Services</span>
                             </div>
-                            <div class="service-cta">
-                            </div>
-                        </div>
-                        <div class="service-right-content">
-                            <div class="service-visual-card">
-                                <div class="visual-title">
-                                    <div class="visual-label">Our Services</div>
-                                    <h3 class="visual-main-title">Property Services</h3>
-                                </div>
-                                <div class="service-value-cards">
-                                    <div class="value-service-card">
-                                        <div class="value-service-icon">
+                            <h3 class="service-main-title">Value Added Services</h3>
+                            <p class="service-subtitle">Comprehensive Property Solutions</p>
+                            
+                            <div class="service-cards-row">
+                                <div class="service-testimonial-card">
+                                    <p class="service-card-text">We provide comprehensive property services including registration, documentation, and transactions. Our expert team ensures all property dealings are transparent, secure, and compliant with regulatory requirements across major cities in Karnataka.</p>
+                                    <div class="service-card-footer">
+                                        <div class="service-card-icon">
                                             <i class="fas fa-stamp"></i>
                                         </div>
-                                        <div class="value-service-info">
-                                            <div class="info-value">Property Registration</div>
-                                            <div class="info-type">Registration & Documentation</div>
+                                        <div class="service-card-info">
+                                            <div class="service-card-title">Registration & Documentation</div>
+                                            <div class="service-card-rating">
+                                                <i class="fas fa-star"></i>
+                                                <i class="fas fa-star"></i>
+                                                <i class="fas fa-star"></i>
+                                                <i class="fas fa-star"></i>
+                                                <i class="fas fa-star"></i>
+                                            </div>
                                         </div>
                                     </div>
-                                    <div class="value-service-card">
-                                        <div class="value-service-icon">
+                                </div>
+                                
+                                <div class="service-testimonial-card">
+                                    <p class="service-card-text">We handle property transactions including buying, selling, and reselling with complete legal verification and title clearance. Our services ensure smooth and hassle-free property transactions for all our clients.</p>
+                                    <div class="service-card-footer">
+                                        <div class="service-card-icon">
                                             <i class="fas fa-handshake"></i>
                                         </div>
-                                        <div class="value-service-info">
-                                            <div class="info-value">Property Transactions</div>
-                                            <div class="info-type">Buying, Selling & Reselling</div>
+                                        <div class="service-card-info">
+                                            <div class="service-card-title">Property Transactions</div>
+                                            <div class="service-card-rating">
+                                                <i class="fas fa-star"></i>
+                                                <i class="fas fa-star"></i>
+                                                <i class="fas fa-star"></i>
+                                                <i class="fas fa-star"></i>
+                                                <i class="fas fa-star"></i>
+                                            </div>
                                         </div>
                                     </div>
-                                    <div class="value-service-card">
-                                        <div class="value-service-icon">
-                                            <i class="fas fa-file-contract"></i>
-                                        </div>
-                                        <div class="value-service-info">
-                                            <div class="info-value">Legal Documentation</div>
-                                            <div class="info-type">Title Verification & Clearance</div>
-                                        </div>
-                                    </div>
-                                    <div class="value-service-card">
-                                        <div class="value-service-icon">
+                                </div>
+                                
+                                <div class="service-testimonial-card">
+                                    <p class="service-card-text">We offer property verification, due diligence, inspection, and valuation services. Our team provides market analysis and pricing to help you make informed decisions about your property investments.</p>
+                                    <div class="service-card-footer">
+                                        <div class="service-card-icon">
                                             <i class="fas fa-search"></i>
                                         </div>
-                                        <div class="value-service-info">
-                                            <div class="info-value">Property Verification</div>
-                                            <div class="info-type">Due Diligence & Inspection</div>
-                                        </div>
-                                    </div>
-                                    <div class="value-service-card">
-                                        <div class="value-service-icon">
-                                            <i class="fas fa-calculator"></i>
-                                        </div>
-                                        <div class="value-service-info">
-                                            <div class="info-value">Property Valuation</div>
-                                            <div class="info-type">Market Analysis & Pricing</div>
+                                        <div class="service-card-info">
+                                            <div class="service-card-title">Verification & Valuation</div>
+                                            <div class="service-card-rating">
+                                                <i class="fas fa-star"></i>
+                                                <i class="fas fa-star"></i>
+                                                <i class="fas fa-star"></i>
+                                                <i class="fas fa-star"></i>
+                                                <i class="fas fa-star"></i>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -1087,11 +1134,14 @@
                 const grid = document.getElementById('partnersCompactGrid');
                 const loadMoreContainer = document.getElementById('partnersLoadMoreContainer');
                 const loadMoreBtn = document.getElementById('loadMorePartnersBtn');
+                const showLessContainer = document.getElementById('partnersShowLessContainer');
+                const showLessBtn = document.getElementById('showLessPartnersBtn');
                 if (!grid) return;
 
                 if (partners.length === 0) {
                     // Show empty state (already in HTML or can add one)
                     if (loadMoreContainer) loadMoreContainer.style.display = 'none';
+                    if (showLessContainer) showLessContainer.style.display = 'none';
                     return;
                 }
 
@@ -1129,12 +1179,14 @@
                 grid.classList.remove('partners-grid-expanded');
                 grid.classList.add('partners-grid-collapsed');
 
-                // Show/hide load more button
-                if (loadMoreContainer && loadMoreBtn) {
+                // Show/hide load more and show less buttons
+                if (loadMoreContainer && loadMoreBtn && showLessContainer && showLessBtn) {
                     if (partners.length > initialPartnersCount) {
+                        // Initially show Load More button
                         loadMoreContainer.style.display = 'flex';
+                        showLessContainer.style.display = 'none';
                         
-                        // Remove existing event listener by replacing onclick
+                        // Load More button click handler
                         loadMoreBtn.onclick = function(e) {
                             e.preventDefault();
                             e.stopPropagation();
@@ -1145,10 +1197,33 @@
                                 grid.classList.add('partners-grid-expanded');
                                 isExpanded = true;
                                 loadMoreContainer.style.display = 'none';
+                                showLessContainer.style.display = 'flex';
+                            }
+                        };
+                        
+                        // Show Less button click handler
+                        showLessBtn.onclick = function(e) {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            
+                            // Collapse to show only initial cards
+                            if (isExpanded) {
+                                grid.classList.remove('partners-grid-expanded');
+                                grid.classList.add('partners-grid-collapsed');
+                                isExpanded = false;
+                                showLessContainer.style.display = 'none';
+                                loadMoreContainer.style.display = 'flex';
+                                
+                                // Scroll to partners section smoothly
+                                const partnersSection = document.getElementById('partners');
+                                if (partnersSection) {
+                                    partnersSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                                }
                             }
                         };
                     } else {
                         loadMoreContainer.style.display = 'none';
+                        showLessContainer.style.display = 'none';
                     }
                 }
             }

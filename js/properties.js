@@ -976,6 +976,149 @@ function initFilters() {
         // For now, clicking category button only expands/collapses
         // Users should click subcategories to filter
     });
+    
+    // Initialize Price Range Dropdown
+    initPriceRange();
+}
+
+// Initialize Price Range Dropdown
+function initPriceRange() {
+    const priceRangeBtn = document.getElementById('priceRangeBtn');
+    const priceRangeDropdown = document.getElementById('priceRangeDropdown');
+    const priceRangeDisplay = document.getElementById('priceRangeDisplay');
+    const searchPriceInput = document.getElementById('searchPrice');
+    const pricePresetBtns = document.querySelectorAll('.price-preset-btn');
+    const priceMinInput = document.getElementById('priceMin');
+    const priceMaxInput = document.getElementById('priceMax');
+    const priceApplyBtn = document.getElementById('priceApplyBtn');
+    
+    if (!priceRangeBtn || !priceRangeDropdown) return;
+    
+    // Format price for display
+    function formatPriceDisplay(value) {
+        if (!value || value === '') return 'Any Price';
+        
+        const [min, max] = value.split('-').map(v => v === '' ? null : parseInt(v));
+        
+        if (min === null && max === null) return 'Any Price';
+        
+        // Format numbers with Indian locale
+        function formatNumber(num) {
+            if (num >= 10000000) {
+                return `₹${(num / 10000000).toFixed(1)}Cr`;
+            } else if (num >= 100000) {
+                return `₹${(num / 100000).toFixed(1)}L`;
+            } else {
+                return `₹${num.toLocaleString('en-IN')}`;
+            }
+        }
+        
+        if (min !== null && max !== null) {
+            return `${formatNumber(min)} - ${formatNumber(max)}`;
+        } else if (min !== null && max === null) {
+            return `${formatNumber(min)}+`;
+        } else {
+            return `Up to ${formatNumber(max)}`;
+        }
+    }
+    
+    // Toggle dropdown
+    priceRangeBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const isActive = priceRangeDropdown.classList.contains('active');
+        
+        if (isActive) {
+            priceRangeDropdown.classList.remove('active');
+            priceRangeBtn.classList.remove('active');
+        } else {
+            priceRangeDropdown.classList.add('active');
+            priceRangeBtn.classList.add('active');
+        }
+    });
+    
+    // Close dropdown when clicking outside
+    document.addEventListener('click', (e) => {
+        if (!priceRangeBtn.contains(e.target) && !priceRangeDropdown.contains(e.target)) {
+            priceRangeDropdown.classList.remove('active');
+            priceRangeBtn.classList.remove('active');
+        }
+    });
+    
+    // Handle preset button clicks
+    pricePresetBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            const value = btn.dataset.value || '';
+            
+            // Update active state
+            pricePresetBtns.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            
+            // Update hidden input and display
+            searchPriceInput.value = value;
+            priceRangeDisplay.textContent = formatPriceDisplay(value);
+            
+            // Clear custom inputs
+            if (priceMinInput) priceMinInput.value = '';
+            if (priceMaxInput) priceMaxInput.value = '';
+            
+            // Close dropdown
+            priceRangeDropdown.classList.remove('active');
+            priceRangeBtn.classList.remove('active');
+            
+            // Apply filters
+            applyFilters();
+        });
+    });
+    
+    // Handle custom price input
+    if (priceApplyBtn) {
+        priceApplyBtn.addEventListener('click', () => {
+            const min = priceMinInput?.value ? parseInt(priceMinInput.value) : null;
+            const max = priceMaxInput?.value ? parseInt(priceMaxInput.value) : null;
+            
+            // Validate
+            if (min !== null && max !== null && min > max) {
+                alert('Minimum price cannot be greater than maximum price');
+                return;
+            }
+            
+            // Build value string
+            let value = '';
+            if (min !== null && max !== null) {
+                value = `${min}-${max}`;
+            } else if (min !== null) {
+                value = `${min}-`;
+            } else if (max !== null) {
+                value = `0-${max}`;
+            }
+            
+            // Update hidden input and display
+            searchPriceInput.value = value;
+            priceRangeDisplay.textContent = formatPriceDisplay(value);
+            
+            // Update active state
+            pricePresetBtns.forEach(b => b.classList.remove('active'));
+            
+            // Close dropdown
+            priceRangeDropdown.classList.remove('active');
+            priceRangeBtn.classList.remove('active');
+            
+            // Apply filters
+            applyFilters();
+        });
+    }
+    
+    // Update display on page load if value exists
+    if (searchPriceInput && searchPriceInput.value) {
+        priceRangeDisplay.textContent = formatPriceDisplay(searchPriceInput.value);
+        
+        // Set active preset if it matches
+        pricePresetBtns.forEach(btn => {
+            if (btn.dataset.value === searchPriceInput.value) {
+                btn.classList.add('active');
+            }
+        });
+    }
 }
 
 // Apply Filters
@@ -1385,19 +1528,42 @@ function updateFilterTags() {
     // Price filter
     const price = document.getElementById('searchPrice')?.value || '';
     if (price) {
-        const priceLabels = {
-            '0-2500000': 'Under ₹25L',
-            '2500000-5000000': '₹25L - ₹50L',
-            '5000000-10000000': '₹50L - ₹1Cr',
-            '10000000-20000000': '₹1Cr - ₹2Cr',
-            '20000000-': '₹2Cr+'
-        };
-        activeFilters.push({
-            type: 'price',
-            label: `Price: ${priceLabels[price] || price}`,
-            icon: 'fa-dollar-sign',
-            value: price
-        });
+        // Format price for display
+        function formatPriceLabel(value) {
+            if (!value || value === '') return '';
+            
+            const [min, max] = value.split('-').map(v => v === '' ? null : parseInt(v));
+            
+            if (min === null && max === null) return '';
+            
+            function formatNumber(num) {
+                if (num >= 10000000) {
+                    return `₹${(num / 10000000).toFixed(1)}Cr`;
+                } else if (num >= 100000) {
+                    return `₹${(num / 100000).toFixed(1)}L`;
+                } else {
+                    return `₹${num.toLocaleString('en-IN')}`;
+                }
+            }
+            
+            if (min !== null && max !== null) {
+                return `${formatNumber(min)} - ${formatNumber(max)}`;
+            } else if (min !== null && max === null) {
+                return `${formatNumber(min)}+`;
+            } else {
+                return `Up to ${formatNumber(max)}`;
+            }
+        }
+        
+        const priceLabel = formatPriceLabel(price);
+        if (priceLabel) {
+            activeFilters.push({
+                type: 'price',
+                label: `Price: ${priceLabel}`,
+                icon: 'fa-dollar-sign',
+                value: price
+            });
+        }
     }
     
     // Length filter
@@ -1789,4 +1955,251 @@ function initLoadMore() {
         });
     }
 }
+
+// Price Range Modal Functionality
+(function initPriceRangeModal() {
+    const priceRangeBtn = document.getElementById('priceRangeBtn');
+    const priceRangeModal = document.getElementById('priceRangeModal');
+    const priceRangeModalOverlay = document.getElementById('priceRangeModalOverlay');
+    const priceRangeModalClose = document.getElementById('priceRangeModalClose');
+    const priceRangeMin = document.getElementById('priceRangeMin');
+    const priceRangeMax = document.getElementById('priceRangeMax');
+    const priceRangeMinInput = document.getElementById('priceRangeMinInput');
+    const priceRangeMaxInput = document.getElementById('priceRangeMaxInput');
+    const priceRangeProgress = document.getElementById('priceRangeProgress');
+    const priceRangeLabelMin = document.getElementById('priceRangeLabelMin');
+    const priceRangeLabelMax = document.getElementById('priceRangeLabelMax');
+    const priceRangeDisplay = document.getElementById('priceRangeDisplay');
+    const priceRangeBtnClear = document.getElementById('priceRangeBtnClear');
+    const priceRangeBtnApply = document.getElementById('priceRangeBtnApply');
+    const searchPriceInput = document.getElementById('searchPrice');
+
+    if (!priceRangeBtn || !priceRangeModal) return;
+
+    let minValue = 0;
+    let maxValue = 100;
+
+    // Convert Cr to actual price (in rupees)
+    function crToPrice(cr) {
+        return cr * 10000000; // 1 Cr = 10,000,000
+    }
+
+    // Convert price to Cr
+    function priceToCr(price) {
+        return price / 10000000;
+    }
+
+    // Format price for display
+    function formatPriceDisplay(minCr, maxCr) {
+        if (minCr === 0 && maxCr === 100) {
+            return 'Any Price';
+        }
+        if (maxCr >= 100) {
+            return `₹${minCr > 0 ? minCr.toFixed(1) : '0'} Cr+`;
+        }
+        return `₹${minCr > 0 ? minCr.toFixed(1) : '0'} Cr - ₹${maxCr.toFixed(1)} Cr`;
+    }
+
+    // Update progress bar
+    function updateProgress() {
+        const minPercent = (minValue / 100) * 100;
+        const maxPercent = (maxValue / 100) * 100;
+        if (priceRangeProgress) {
+            priceRangeProgress.style.left = minPercent + '%';
+            priceRangeProgress.style.right = (100 - maxPercent) + '%';
+        }
+    }
+
+    // Update labels
+    function updateLabels() {
+        if (priceRangeLabelMin) {
+            priceRangeLabelMin.textContent = minValue === 0 ? '₹0' : `₹${minValue.toFixed(1)} Cr`;
+        }
+        if (priceRangeLabelMax) {
+            priceRangeLabelMax.textContent = maxValue >= 100 ? '₹100+ Cr' : `₹${maxValue.toFixed(1)} Cr`;
+        }
+    }
+
+    // Update slider from input
+    function updateSliderFromInput() {
+        if (priceRangeMin) {
+            priceRangeMin.value = minValue;
+        }
+        if (priceRangeMax) {
+            priceRangeMax.value = maxValue;
+        }
+        updateProgress();
+        updateLabels();
+    }
+
+    // Update input from slider
+    function updateInputFromSlider() {
+        if (priceRangeMinInput) {
+            priceRangeMinInput.value = minValue;
+        }
+        if (priceRangeMaxInput) {
+            priceRangeMaxInput.value = maxValue;
+        }
+        updateProgress();
+        updateLabels();
+    }
+
+    // Ensure min <= max
+    function validateRange() {
+        if (minValue > maxValue) {
+            const temp = minValue;
+            minValue = maxValue;
+            maxValue = temp;
+        }
+        if (minValue < 0) minValue = 0;
+        if (maxValue > 100) maxValue = 100;
+    }
+
+    // Open modal
+    function openModal() {
+        if (priceRangeModal) {
+            priceRangeModal.classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+    }
+
+    // Close modal
+    function closeModal() {
+        if (priceRangeModal) {
+            priceRangeModal.classList.remove('active');
+            document.body.style.overflow = '';
+        }
+    }
+
+    // Apply price range filter
+    function applyPriceRange() {
+        validateRange();
+        const minPrice = crToPrice(minValue);
+        const maxPrice = maxValue >= 100 ? '' : crToPrice(maxValue);
+        const priceValue = maxPrice === '' ? `${minPrice}-` : `${minPrice}-${maxPrice}`;
+        
+        if (searchPriceInput) {
+            if (minValue === 0 && maxValue >= 100) {
+                searchPriceInput.value = '';
+            } else {
+                searchPriceInput.value = priceValue;
+            }
+        }
+
+        if (priceRangeDisplay) {
+            priceRangeDisplay.textContent = formatPriceDisplay(minValue, maxValue);
+        }
+
+        closeModal();
+        applyFilters();
+    }
+
+    // Clear price range
+    function clearPriceRange() {
+        minValue = 0;
+        maxValue = 100;
+        updateSliderFromInput();
+        if (searchPriceInput) {
+            searchPriceInput.value = '';
+        }
+        if (priceRangeDisplay) {
+            priceRangeDisplay.textContent = 'Any Price';
+        }
+        closeModal();
+        applyFilters();
+    }
+
+    // Event listeners
+    if (priceRangeBtn) {
+        priceRangeBtn.addEventListener('click', openModal);
+    }
+
+    if (priceRangeModalOverlay) {
+        priceRangeModalOverlay.addEventListener('click', closeModal);
+    }
+
+    if (priceRangeModalClose) {
+        priceRangeModalClose.addEventListener('click', closeModal);
+    }
+
+    // Close on Escape key
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && priceRangeModal && priceRangeModal.classList.contains('active')) {
+            closeModal();
+        }
+    });
+
+    // Slider events
+    if (priceRangeMin) {
+        priceRangeMin.addEventListener('input', (e) => {
+            minValue = parseFloat(e.target.value);
+            validateRange();
+            updateInputFromSlider();
+        });
+    }
+
+    if (priceRangeMax) {
+        priceRangeMax.addEventListener('input', (e) => {
+            maxValue = parseFloat(e.target.value);
+            validateRange();
+            updateInputFromSlider();
+        });
+    }
+
+    // Number input events
+    if (priceRangeMinInput) {
+        priceRangeMinInput.addEventListener('input', (e) => {
+            minValue = parseFloat(e.target.value) || 0;
+            validateRange();
+            updateSliderFromInput();
+        });
+    }
+
+    if (priceRangeMaxInput) {
+        priceRangeMaxInput.addEventListener('input', (e) => {
+            maxValue = parseFloat(e.target.value) || 100;
+            validateRange();
+            updateSliderFromInput();
+        });
+    }
+
+    // Button events
+    if (priceRangeBtnClear) {
+        priceRangeBtnClear.addEventListener('click', clearPriceRange);
+    }
+
+    if (priceRangeBtnApply) {
+        priceRangeBtnApply.addEventListener('click', applyPriceRange);
+    }
+
+    // Initialize display from existing filter value
+    function initializeFromFilter() {
+        if (searchPriceInput && searchPriceInput.value) {
+            const priceValue = searchPriceInput.value;
+            if (priceValue.includes('-')) {
+                const [min, max] = priceValue.split('-').map(v => v === '' ? Infinity : parseFloat(v));
+                minValue = priceToCr(min || 0);
+                maxValue = max === Infinity ? 100 : priceToCr(max);
+                validateRange();
+                updateSliderFromInput();
+                if (priceRangeDisplay) {
+                    priceRangeDisplay.textContent = formatPriceDisplay(minValue, maxValue);
+                }
+            }
+        }
+    }
+
+    // Initialize on page load
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', () => {
+            initializeFromFilter();
+            updateProgress();
+            updateLabels();
+        });
+    } else {
+        initializeFromFilter();
+        updateProgress();
+        updateLabels();
+    }
+})();
 

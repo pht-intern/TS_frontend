@@ -600,6 +600,71 @@
                             </div>
                         </div>
                     </div>
+
+                    <!-- Cache Logs Table -->
+                    <div style="margin-top: 2rem;">
+                        <div class="dashboard-section-header" style="margin-bottom: 1.5rem;">
+                            <h3 style="font-size: 1.25rem; color: var(--text-dark); margin: 0;">
+                                <i class="fas fa-database" style="margin-right: 0.5rem; color: var(--primary-color);"></i>
+                                Cache Logs
+                            </h3>
+                            <div style="display: flex; gap: 1rem; align-items: center;">
+                                <select id="cacheLogOperationFilter" class="dashboard-log-filter" style="padding: 0.5rem 1rem; border: 1px solid var(--border-color); border-radius: 5px; font-size: 14px; background: var(--white); cursor: pointer;">
+                                    <option value="">All Operations</option>
+                                    <option value="hit">Cache Hit</option>
+                                    <option value="miss">Cache Miss</option>
+                                    <option value="set">Cache Set</option>
+                                    <option value="delete">Cache Delete</option>
+                                    <option value="clear">Cache Clear</option>
+                                </select>
+                                <select id="cacheLogStatusFilter" class="dashboard-log-filter" style="padding: 0.5rem 1rem; border: 1px solid var(--border-color); border-radius: 5px; font-size: 14px; background: var(--white); cursor: pointer;">
+                                    <option value="">All Status</option>
+                                    <option value="success">Success</option>
+                                    <option value="error">Error</option>
+                                </select>
+                                <div class="dashboard-search-box">
+                                    <i class="fas fa-search"></i>
+                                    <input type="text" id="cacheLogSearch" placeholder="Search cache logs...">
+                                </div>
+                                <button class="dashboard-btn-secondary" id="refreshCacheLogsBtn" style="white-space: nowrap;">
+                                    <i class="fas fa-sync-alt"></i>
+                                    Refresh
+                                </button>
+                            </div>
+                        </div>
+                        <div class="dashboard-properties-table-container" style="max-height: 500px;">
+                            <table class="dashboard-properties-table">
+                                <thead>
+                                    <tr>
+                                        <th>Operation</th>
+                                        <th>Cache Key</th>
+                                        <th>Type</th>
+                                        <th>Response Time</th>
+                                        <th>Size</th>
+                                        <th>Status</th>
+                                        <th>Date & Time</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="cacheLogsTableBody">
+                                    <tr>
+                                        <td colspan="7" style="text-align: center; padding: 2rem; color: var(--text-gray);">
+                                            <i class="fas fa-spinner fa-spin" style="margin-right: 0.5rem;"></i>
+                                            Loading cache logs...
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <div style="margin-top: 1rem; display: flex; justify-content: space-between; align-items: center; color: var(--text-gray); font-size: 0.9rem;">
+                            <span id="cacheLogsCount">0 cache logs</span>
+                            <div style="display: flex; gap: 1rem; align-items: center;">
+                                <button class="dashboard-btn-secondary" id="loadMoreCacheLogsBtn" style="display: none;">
+                                    <i class="fas fa-chevron-down"></i>
+                                    Load More
+                                </button>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- Logs Section -->

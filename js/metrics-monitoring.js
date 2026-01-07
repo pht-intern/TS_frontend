@@ -501,6 +501,213 @@ async function collectMetrics() {
     }
 }
 
+// Cache logs variables
+let cacheLogsPage = 1;
+let cacheLogsLimit = 50;
+let cacheLogsHasMore = false;
+
+// Fetch cache logs from API
+async function fetchCacheLogs(reset = false) {
+    try {
+        if (reset) {
+            cacheLogsPage = 1;
+        }
+
+        const operationFilter = document.getElementById('cacheLogOperationFilter')?.value || '';
+        const statusFilter = document.getElementById('cacheLogStatusFilter')?.value || '';
+        const searchQuery = document.getElementById('cacheLogSearch')?.value || '';
+
+        const params = new URLSearchParams({
+            page: cacheLogsPage,
+            limit: cacheLogsLimit
+        });
+
+        if (operationFilter) params.append('operation', operationFilter);
+        if (statusFilter) params.append('status', statusFilter);
+        if (searchQuery) params.append('search', searchQuery);
+
+        const response = await authenticatedFetch(`/api/admin/cache-logs?${params.toString()}`);
+        
+        if (!response.ok) {
+            throw new Error(`Failed to fetch cache logs: ${response.statusText}`);
+        }
+
+        const data = await response.json();
+        
+        if (data.success) {
+            renderCacheLogs(data.logs || [], reset);
+            cacheLogsHasMore = data.has_more || false;
+            updateCacheLogsCount(data.total || 0);
+            
+            // Show/hide load more button
+            const loadMoreBtn = document.getElementById('loadMoreCacheLogsBtn');
+            if (loadMoreBtn) {
+                loadMoreBtn.style.display = cacheLogsHasMore ? 'block' : 'none';
+            }
+        } else {
+            throw new Error(data.error || 'Failed to fetch cache logs');
+        }
+    } catch (error) {
+        console.error('Error fetching cache logs:', error);
+        const tbody = document.getElementById('cacheLogsTableBody');
+        if (tbody) {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="7" style="text-align: center; padding: 2rem; color: var(--red);">
+                        <i class="fas fa-exclamation-triangle" style="margin-right: 0.5rem;"></i>
+                        Error loading cache logs: ${error.message}
+                    </td>
+                </tr>
+            `;
+        }
+    }
+}
+
+// Render cache logs to table
+function renderCacheLogs(logs, reset = false) {
+    const tbody = document.getElementById('cacheLogsTableBody');
+    if (!tbody) return;
+
+    if (reset) {
+        tbody.innerHTML = '';
+    }
+
+    if (logs.length === 0 && reset) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="7" style="text-align: center; padding: 2rem; color: var(--text-gray);">
+                    <i class="fas fa-inbox" style="margin-right: 0.5rem;"></i>
+                    No cache logs found
+                </td>
+            </tr>
+        `;
+        return;
+    }
+
+    const rows = logs.map(log => {
+        const operation = log.operation || 'unknown';
+        const operationClass = {
+            'hit': 'success',
+            'miss': 'warning',
+            'set': 'info',
+            'delete': 'danger',
+            'clear': 'danger'
+        }[operation] || 'secondary';
+
+        const statusBadge = log.status === 'error' 
+            ? `<span class="badge badge-danger">Error</span>`
+            : `<span class="badge badge-success">Success</span>`;
+
+        const responseTime = log.response_time_ms 
+            ? `${parseFloat(log.response_time_ms).toFixed(2)} ms`
+            : 'N/A';
+
+        const cacheSize = log.cache_size_kb 
+            ? `${parseFloat(log.cache_size_kb).toFixed(2)} KB`
+            : 'N/A';
+
+        const cacheKey = log.cache_key || 'N/A';
+        const cacheKeyDisplay = cacheKey.length > 50 
+            ? `<span title="${cacheKey}">${cacheKey.substring(0, 50)}...</span>`
+            : cacheKey;
+
+        const cacheType = log.cache_type || 'N/A';
+        const createdAt = log.created_at 
+            ? new Date(log.created_at).toLocaleString()
+            : 'N/A';
+
+        return `
+            <tr>
+                <td>
+                    <span class="badge badge-${operationClass}">${operation.toUpperCase()}</span>
+                </td>
+                <td style="max-width: 300px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                    ${cacheKeyDisplay}
+                </td>
+                <td>${cacheType}</td>
+                <td>${responseTime}</td>
+                <td>${cacheSize}</td>
+                <td>${statusBadge}</td>
+                <td>${createdAt}</td>
+            </tr>
+        `;
+    }).join('');
+
+    if (reset) {
+        tbody.innerHTML = rows;
+    } else {
+        tbody.innerHTML += rows;
+    }
+}
+
+// Update cache logs count
+function updateCacheLogsCount(total) {
+    const countEl = document.getElementById('cacheLogsCount');
+    if (countEl) {
+        countEl.textContent = `${total} cache log${total !== 1 ? 's' : ''}`;
+    }
+}
+
+// Load more cache logs
+function loadMoreCacheLogs() {
+    if (cacheLogsHasMore) {
+        cacheLogsPage++;
+        fetchCacheLogs(false);
+    }
+}
+
+// Initialize cache logs functionality
+function initCacheLogs() {
+    const cacheLogsSection = document.getElementById('cacheLogsTableBody');
+    if (!cacheLogsSection) {
+        return; // Section not found, exit
+    }
+
+    // Fetch initial cache logs
+    fetchCacheLogs(true);
+
+    // Set up refresh button
+    const refreshBtn = document.getElementById('refreshCacheLogsBtn');
+    if (refreshBtn) {
+        refreshBtn.addEventListener('click', () => {
+            fetchCacheLogs(true);
+        });
+    }
+
+    // Set up load more button
+    const loadMoreBtn = document.getElementById('loadMoreCacheLogsBtn');
+    if (loadMoreBtn) {
+        loadMoreBtn.addEventListener('click', loadMoreCacheLogs);
+    }
+
+    // Set up filters
+    const operationFilter = document.getElementById('cacheLogOperationFilter');
+    const statusFilter = document.getElementById('cacheLogStatusFilter');
+    const searchInput = document.getElementById('cacheLogSearch');
+
+    if (operationFilter) {
+        operationFilter.addEventListener('change', () => {
+            fetchCacheLogs(true);
+        });
+    }
+
+    if (statusFilter) {
+        statusFilter.addEventListener('change', () => {
+            fetchCacheLogs(true);
+        });
+    }
+
+    if (searchInput) {
+        let searchTimeout;
+        searchInput.addEventListener('input', () => {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => {
+                fetchCacheLogs(true);
+            }, 500); // Debounce search
+        });
+    }
+}
+
 // Initialize metrics monitoring
 function initMetricsMonitoring() {
     // Check if monitoring section exists
@@ -546,6 +753,9 @@ function initMetricsMonitoring() {
         });
     }
 
+    // Initialize cache logs
+    initCacheLogs();
+
     // Auto-refresh metrics every 30 seconds for accurate real-time updates
     // This ensures the dashboard displays the most current system metrics
     metricsUpdateInterval = setInterval(() => {
@@ -568,4 +778,3 @@ if (document.readyState === 'loading') {
 } else {
     initMetricsMonitoring();
 }
-

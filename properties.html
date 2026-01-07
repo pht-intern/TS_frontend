@@ -17,9 +17,7 @@
         <div class="container">
             <div class="top-bar-content">
                 <div class="top-bar-left">
-                    <a href="tel:+919741111756" class="btn-call-us">
-                        <i class="fas fa-phone"></i> Call Us
-                    </a>
+                    <a href="tel:+919741111756"><i class="fas fa-phone"></i> +91 97411 11756</a>
                     <a href="mailto:info@tirumakudaluproperties.com"><i class="fas fa-envelope"></i> info@tirumakudaluproperties.com</a>
                 </div>
             </div>
@@ -112,46 +110,62 @@
                 <!-- Advanced Search Form -->
                 <div class="properties-search">
                     <form class="search-form" id="propertiesSearchForm">
-                        <div class="search-row">
-                            <div class="search-group">
-                                <label><i class="fas fa-map-marker-alt"></i> City</label>
-                                <input type="text" id="searchCity" placeholder="Enter city">
+                        <div class="filters-two-column">
+                            <!-- Left Column: Filter 1 -->
+                            <div class="filter1">
+                                <div class="search-group">
+                                    <label><i class="fas fa-map-marker-alt"></i> City</label>
+                                    <input type="text" id="searchCity" placeholder="Enter city">
+                                </div>
+                                <div class="search-group">
+                                    <label><i class="fas fa-map-marker-alt"></i> Area</label>
+                                    <input type="text" id="searchArea" placeholder="Enter area">
+                                </div>
+                                <div class="search-group">
+                                    <label><i class="fas fa-star"></i> Amenities</label>
+                                    <input type="text" id="searchAmenities" placeholder="e.g., Parking, Lift, Security">
+                                </div>
+                                <div class="search-group">
+                                    <label><i class="fas fa-compass"></i> Directions</label>
+                                    <input type="text" id="searchDirections" placeholder="e.g., North, South, East, West">
+                                </div>
                             </div>
-                            <div class="search-group">
-                                <label><i class="fas fa-map-marker-alt"></i> Area</label>
-                                <input type="text" id="searchArea" placeholder="Enter area">
+                            
+                            <!-- Right Column: Filter 2 -->
+                            <div class="filter2">
+                                <div class="search-group">
+                                    <label><i class="fas fa-exchange-alt"></i> Transaction Type</label>
+                                    <select id="searchTransactionType">
+                                        <option value="all">All Properties</option>
+                                        <option value="sale">Buy</option>
+                                        <option value="rent">Rent</option>
+                                    </select>
+                                </div>
+                                <div class="search-group">
+                                    <label><i class="fas fa-check-circle"></i> Property Condition</label>
+                                    <select id="searchPropertyCondition">
+                                        <option value="">Any Condition</option>
+                                        <option value="new">New</option>
+                                        <option value="resale">Resale</option>
+                                    </select>
+                                </div>
+                                <div class="search-group">
+                                    <label><i class="fas fa-dollar-sign"></i> Price Range</label>
+                                    <button type="button" class="price-range-btn" id="priceRangeBtn">
+                                        <span class="price-range-display" id="priceRangeDisplay">Any Price</span>
+                                        <i class="fas fa-chevron-down"></i>
+                                    </button>
+                                    <input type="hidden" id="searchPrice" value="">
+                                </div>
+                                <div class="search-group">
+                                    <label><i class="fas fa-ruler-combined"></i> Dimensions</label>
+                                    <input type="text" id="searchDimensions" placeholder="e.g., 30x40, 50x80">
+                                </div>
                             </div>
-                            <div class="search-group">
-                                <label><i class="fas fa-ruler-combined"></i> Dimensions</label>
-                                <input type="text" id="searchDimensions" placeholder="e.g., 30x40, 50x80">
-                            </div>
-                            <div class="search-group">
-                                <label><i class="fas fa-dollar-sign"></i> Price Range</label>
-                                <select id="searchPrice">
-                                    <option value="">Any Price</option>
-                                    <option value="0-2500000">Under ₹25L</option>
-                                    <option value="2500000-5000000">₹25L - ₹50L</option>
-                                    <option value="5000000-10000000">₹50L - ₹1Cr</option>
-                                    <option value="10000000-20000000">₹1Cr - ₹2Cr</option>
-                                    <option value="20000000-">₹2Cr+</option>
-                                </select>
-                            </div>
-                            <div class="search-group">
-                                <label><i class="fas fa-check-circle"></i> Property Condition</label>
-                                <select id="searchPropertyCondition">
-                                    <option value="">Any Condition</option>
-                                    <option value="new">New</option>
-                                    <option value="resale">Resale</option>
-                                </select>
-                            </div>
-                            <div class="search-group">
-                                <label><i class="fas fa-exchange-alt"></i> Transaction Type</label>
-                                <select id="searchTransactionType">
-                                    <option value="all">All Properties</option>
-                                    <option value="sale">Buy</option>
-                                    <option value="rent">Rent</option>
-                                </select>
-                            </div>
+                        </div>
+                        
+                        <!-- Additional Details Row -->
+                        <div class="filter-additional-row">
                             <div class="search-group">
                                 <label><i class="fas fa-home"></i> Unit Type</label>
                                 <select id="searchUnitType">
@@ -175,20 +189,13 @@
                                 <label><i class="fas fa-vector-square"></i> Carpet Area</label>
                                 <input type="text" id="searchCarpetArea" placeholder="Enter carpet area (sq ft)">
                             </div>
-                            <div class="search-group">
-                                <label><i class="fas fa-compass"></i> Directions</label>
-                                <input type="text" id="searchDirections" placeholder="e.g., North, South, East, West">
-                            </div>
-                            <div class="search-group">
-                                <label><i class="fas fa-star"></i> Amenities</label>
-                                <input type="text" id="searchAmenities" placeholder="e.g., Parking, Lift, Security">
-                            </div>
-                            <div class="search-group">
-                                <button type="submit" class="btn-search">
-                                    <i class="fas fa-filter"></i>
-                                    <span>Filter</span>
-                                </button>
-                            </div>
+                        </div>
+                        
+                        <div class="filter-button-center">
+                            <button type="submit" class="btn-search">
+                                <i class="fas fa-filter"></i>
+                                <span>Filter</span>
+                            </button>
                         </div>
                     </form>
                 </div>
@@ -238,51 +245,116 @@
         </div>
     </section>
 
+    <!-- Price Range Modal -->
+    <div class="price-range-modal" id="priceRangeModal">
+        <div class="price-range-modal-overlay" id="priceRangeModalOverlay"></div>
+        <div class="price-range-modal-content">
+            <div class="price-range-modal-header">
+                <h3>Select Price Range</h3>
+                <button type="button" class="price-range-modal-close" id="priceRangeModalClose">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="price-range-modal-body">
+                <div class="price-range-slider-container">
+                    <div class="price-range-labels">
+                        <span class="price-range-label-min" id="priceRangeLabelMin">₹0</span>
+                        <span class="price-range-label-max" id="priceRangeLabelMax">₹100+ Cr</span>
+                    </div>
+                    <div class="price-range-slider-wrapper">
+                        <div class="price-range-track" id="priceRangeTrack">
+                            <div class="price-range-progress" id="priceRangeProgress"></div>
+                            <input type="range" class="price-range-input price-range-input-min" id="priceRangeMin" min="0" max="100" value="0" step="0.1">
+                            <input type="range" class="price-range-input price-range-input-max" id="priceRangeMax" min="0" max="100" value="100" step="0.1">
+                        </div>
+                    </div>
+                    <div class="price-range-inputs">
+                        <div class="price-range-input-group">
+                            <label>Min Price (Cr)</label>
+                            <input type="number" class="price-range-number-input" id="priceRangeMinInput" min="0" max="100" step="0.1" value="0">
+                        </div>
+                        <div class="price-range-input-group">
+                            <label>Max Price (Cr)</label>
+                            <input type="number" class="price-range-number-input" id="priceRangeMaxInput" min="0" max="100" step="0.1" value="100">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="price-range-modal-footer">
+                <button type="button" class="price-range-btn-clear" id="priceRangeBtnClear">Clear</button>
+                <button type="button" class="price-range-btn-apply" id="priceRangeBtnApply">Apply</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Contact Information Modal -->
     <div class="login-modal" id="contactInfoModal">
         <div class="login-modal-overlay" id="contactInfoModalOverlay"></div>
-        <div class="login-modal-content">
+        <div class="login-modal-content contact-modal-content">
             <button class="login-modal-close" id="contactInfoModalClose">
                 <i class="fas fa-times"></i>
             </button>
-            <div class="login-modal-header">
-                <div class="login-modal-icon">
-                    <i class="fas fa-phone"></i>
+            <div class="container">
+                <div class="section-header">
+                    <h2>Get In Touch</h2>
+                    <p>Have questions? We'd love to hear from you</p>
                 </div>
-                <h2>Contact Us</h2>
-                <p>Get in touch with us</p>
-            </div>
-            <div class="contact-info-content">
-                <div class="contact-info-item">
-                    <div class="contact-info-icon">
-                        <i class="fas fa-phone"></i>
+                <div class="contact-content">
+                <div class="contact-info">
+                    <div class="contact-item">
+                        <div class="contact-icon">
+                            <i class="fas fa-map-marker-alt"></i>
+                        </div>
+                        <div>
+                            <h4>Address</h4>
+                            <p>78, SBM COLONY, 2ND CROSS, KONANAKUNTE<br>BANGALORE - 560062</p>
+                        </div>
                     </div>
-                    <div class="contact-info-details">
-                        <h3>Phone Number</h3>
-                        <a href="tel:+919741111756" class="contact-info-link">
-                            +91 97411 11756
-                        </a>
+                    <div class="contact-item">
+                        <div class="contact-icon">
+                            <i class="fas fa-phone"></i>
+                        </div>
+                        <div>
+                            <h4>Phone</h4>
+                            <p>+91 97411 11756</p>
+                        </div>
+                    </div>
+                    <div class="contact-item">
+                        <div class="contact-icon">
+                            <i class="fas fa-envelope"></i>
+                        </div>
+                        <div>
+                            <h4>Email</h4>
+                            <p>info@tirumakudaluproperties.com</p>
+                        </div>
                     </div>
                 </div>
-                <div class="contact-info-item">
-                    <div class="contact-info-icon">
-                        <i class="fas fa-envelope"></i>
+                <form class="contact-form" id="contactForm">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <input type="text" id="contactName" name="name" placeholder="Your Name" required>
+                        </div>
+                        <div class="form-group">
+                            <input type="email" id="contactEmail" name="email" placeholder="Your Email" required>
+                        </div>
                     </div>
-                    <div class="contact-info-details">
-                        <h3>Email Address</h3>
-                        <a href="mailto:info@tirumakudaluproperties.com" class="contact-info-link">
-                            info@tirumakudaluproperties.com
-                        </a>
+                    <div class="form-group">
+                        <input type="text" id="contactSubject" name="subject" placeholder="Subject" required>
                     </div>
-                </div>
-                <div class="contact-info-item">
-                    <div class="contact-info-icon">
-                        <i class="fas fa-map-marker-alt"></i>
+                    <div class="form-group">
+                        <textarea id="contactMessage" name="message" placeholder="Your Message" rows="5" required></textarea>
                     </div>
-                    <div class="contact-info-details">
-                        <h3>Address</h3>
-                        <p class="contact-info-text">78, SBM COLONY, 2ND CROSS, KONANAKUNTE, BANGALORE - 560062</p>
+                    <div class="form-group">
+                        <input type="tel" id="contactPhone" name="phone" placeholder="Phone Number (Optional)">
                     </div>
+                    <div class="form-message" id="contactFormMessage" style="display: none;"></div>
+                    <button type="submit" class="btn btn-primary" id="contactSubmitBtn">
+                        <span class="btn-text">Send Message</span>
+                        <span class="btn-loader" style="display: none;">
+                            <i class="fas fa-spinner fa-spin"></i> Sending...
+                        </span>
+                    </button>
+                </form>
                 </div>
             </div>
         </div>
@@ -465,6 +537,47 @@
         })();
 
     </script>
+    <script>
+        // Suppress browser extension errors that are not related to our code
+        window.addEventListener('error', function(event) {
+            // Suppress common browser extension errors
+            if (event.message && (
+                event.message.includes('message channel closed') ||
+                event.message.includes('Extension context invalidated') ||
+                event.message.includes('Receiving end does not exist') ||
+                event.message.includes('asynchronous response') ||
+                event.message.includes('message channel closed before a response')
+            )) {
+                event.preventDefault();
+                event.stopPropagation();
+                return false;
+            }
+        }, true);
+        
+        // Suppress unhandled promise rejections from browser extensions
+        window.addEventListener('unhandledrejection', function(event) {
+            if (event.reason && typeof event.reason === 'object' && event.reason.message) {
+                const message = event.reason.message;
+                if (message.includes('message channel closed') ||
+                    message.includes('Extension context invalidated') ||
+                    message.includes('Receiving end does not exist') ||
+                    message.includes('asynchronous response') ||
+                    message.includes('message channel closed before a response')) {
+                    event.preventDefault();
+                    return false;
+                }
+            }
+            // Also check string errors
+            if (typeof event.reason === 'string' && (
+                event.reason.includes('message channel closed') ||
+                event.reason.includes('Extension context invalidated') ||
+                event.reason.includes('asynchronous response') ||
+                event.reason.includes('message channel closed before a response')
+            )) {
+                event.preventDefault();
+                return false;
+            }
+        });
+    </script>
 </body>
 </html>
-

@@ -719,6 +719,9 @@ if (document.readyState === 'loading') {
     initContactForm();
 }
 
+// Expose function globally for modal initialization
+window.initContactForm = initContactForm;
+
 // Helper function to show contact form messages
 function showContactMessage(message, type) {
     const messageDiv = document.getElementById('contactFormMessage');
@@ -1129,3 +1132,147 @@ document.addEventListener('DOMContentLoaded', () => {
     //     });
     // }
 });
+
+// ============================================
+// Hero Image Sliders - Automatic Rotation
+// ============================================
+(function() {
+    'use strict';
+    
+    const SLIDER_INTERVAL = 4000; // 4 seconds per image
+    
+    /**
+     * Initialize slider for a hero image section
+     */
+    function initHeroSlider(sliderContainer) {
+        if (!sliderContainer) return;
+        
+        const slides = sliderContainer.querySelectorAll('.hero-slide');
+        if (slides.length === 0) return;
+        
+        let currentIndex = 0;
+        
+        // Set first slide as active
+        slides[currentIndex].classList.add('active');
+        
+        // Function to show next slide
+        function showNextSlide() {
+            // Remove active class from current slide
+            slides[currentIndex].classList.remove('active');
+            
+            // Move to next slide
+            currentIndex = (currentIndex + 1) % slides.length;
+            
+            // Add active class to new slide
+            slides[currentIndex].classList.add('active');
+        }
+        
+        // Start automatic sliding
+        let intervalId = setInterval(showNextSlide, SLIDER_INTERVAL);
+        
+        // Pause on hover
+        const section = sliderContainer.closest('.hero-image-section');
+        if (section) {
+            section.addEventListener('mouseenter', () => {
+                if (intervalId) {
+                    clearInterval(intervalId);
+                    intervalId = null;
+                }
+            });
+            
+            section.addEventListener('mouseleave', () => {
+                // Restart interval
+                if (!intervalId) {
+                    intervalId = setInterval(showNextSlide, SLIDER_INTERVAL);
+                }
+            });
+        }
+    }
+    
+    /**
+     * Initialize all hero sliders
+     */
+    function initAllHeroSliders() {
+        const sliders = document.querySelectorAll('.hero-image-slider');
+        sliders.forEach(slider => {
+            initHeroSlider(slider);
+        });
+    }
+    
+    // Initialize when DOM is ready
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initAllHeroSliders);
+    } else {
+        initAllHeroSliders();
+    }
+})();
+
+// ============================================
+// Automatic Cache Clearing - Every 60 seconds
+// ============================================
+(function() {
+    'use strict';
+    
+    const CACHE_CLEAR_INTERVAL = 60000; // 60 seconds in milliseconds
+    
+    /**
+     * Clear all application caches
+     */
+    async function clearApplicationCache() {
+        try {
+            // Clear Cache API caches
+            if ('caches' in window) {
+                const cacheNames = await caches.keys();
+                await Promise.all(
+                    cacheNames.map(cacheName => caches.delete(cacheName))
+                );
+                console.log(`[Cache Clear] Cleared ${cacheNames.length} cache(s) at ${new Date().toLocaleTimeString()}`);
+            }
+            
+            // Clear localStorage (optional - uncomment if needed)
+            // localStorage.clear();
+            
+            // Clear sessionStorage (optional - uncomment if needed)
+            // sessionStorage.clear();
+            
+            // Clear IndexedDB (optional - uncomment if needed)
+            // if ('indexedDB' in window) {
+            //     const databases = await indexedDB.databases();
+            //     await Promise.all(
+            //         databases.map(db => {
+            //             return new Promise((resolve, reject) => {
+            //                 const deleteReq = indexedDB.deleteDatabase(db.name);
+            //                 deleteReq.onsuccess = () => resolve();
+            //                 deleteReq.onerror = () => reject(deleteReq.error);
+            //             });
+            //         })
+            //     );
+            // }
+            
+        } catch (error) {
+            console.error('[Cache Clear] Error clearing cache:', error);
+        }
+    }
+    
+    /**
+     * Initialize automatic cache clearing
+     */
+    function initCacheClearing() {
+        // Clear cache immediately on page load
+        clearApplicationCache();
+        
+        // Set up interval to clear cache every 60 seconds
+        setInterval(() => {
+            clearApplicationCache();
+        }, CACHE_CLEAR_INTERVAL);
+        
+        console.log('[Cache Clear] Automatic cache clearing initialized (every 60 seconds)');
+    }
+    
+    // Initialize when DOM is ready
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initCacheClearing);
+    } else {
+        initCacheClearing();
+    }
+})();

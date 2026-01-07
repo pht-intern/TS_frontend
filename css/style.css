@@ -961,7 +961,7 @@ hr {
     width: 100%;
     height: 100%;
     display: grid;
-    grid-template-rows: 1fr 1fr 1fr;
+    grid-template-rows: 1.2fr 1fr 1fr;
     gap: 0;
 }
 
@@ -973,21 +973,34 @@ hr {
     animation: fadeInRight 0.5s ease-out forwards;
 }
 
+.hero-image-single {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%);
+    opacity: 0;
+    animation: fadeInRight 0.5s ease-out forwards;
+}
+
 .hero-image-top {
-    clip-path: polygon(0 0, 100% 0, 100% 85%, 0 100%);
+    clip-path: polygon(0 0, 100% 0, 100% 60%, 0 100%);
     animation-delay: 0.15s;
+    z-index: 3;
 }
 
 .hero-image-middle {
-    clip-path: polygon(0 15%, 100% 0, 100% 85%, 0 100%);
-    margin-top: -15%;
+    clip-path: polygon(0 30%, 100% 0, 100% 60%, 0 100%);
+    margin-top: -30%;
     animation-delay: 0.25s;
+    z-index: 2;
 }
 
 .hero-image-bottom {
-    clip-path: polygon(0 15%, 100% 0, 100% 100%, 0 100%);
-    margin-top: -15%;
+    clip-path: polygon(0 30%, 100% 0, 100% 100%, 0 100%);
+    margin-top: -30%;
     animation-delay: 0.35s;
+    z-index: 1;
 }
 
 @keyframes fadeInRight {
@@ -999,6 +1012,30 @@ hr {
         opacity: 1;
         transform: translateX(0);
     }
+}
+
+.hero-image-slider {
+    width: 100%;
+    height: 100%;
+    position: relative;
+    overflow: hidden;
+}
+
+.hero-slide {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    transform: translateY(30px);
+    transition: opacity 1.5s linear, transform 1.5s linear;
+}
+
+.hero-slide.active {
+    opacity: 1;
+    transform: translateY(0);
+    z-index: 1;
 }
 
 .hero-image-wrapper {
@@ -1033,8 +1070,8 @@ hr {
     transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.hero-image-section:hover .hero-image-wrapper img {
-    transform: scale(1.05);
+.hero-image-section:hover .hero-slide.active .hero-image-wrapper img {
+    transform: scale(1.05) translateY(0);
 }
 
 .diagonal-separator {
@@ -1201,18 +1238,9 @@ hr {
         margin-bottom: 2rem;
     }
     
-    .hero-image-top {
-        clip-path: polygon(0 0, 100% 0, 100% 90%, 0 100%);
-    }
-    
-    .hero-image-middle {
-        clip-path: polygon(0 10%, 100% 0, 100% 90%, 0 100%);
-        margin-top: -10%;
-    }
-    
-    .hero-image-bottom {
-        clip-path: polygon(0 10%, 100% 0, 100% 100%, 0 100%);
-        margin-top: -10%;
+    .hero-image-single {
+        width: 100%;
+        height: 100%;
     }
 }
 
@@ -2790,6 +2818,79 @@ section:not(.hero).section-visible .section-header {
     z-index: 0;
 }
 
+/* Automatic Background Slider for Property Services */
+.service-bg-slider {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 0;
+    overflow: hidden;
+}
+
+.service-bg-slide {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    opacity: 0;
+    animation: backgroundSlide 25s infinite;
+}
+
+.service-bg-slide:nth-child(1) {
+    animation-delay: 0s;
+}
+
+.service-bg-slide:nth-child(2) {
+    animation-delay: 5s;
+}
+
+.service-bg-slide:nth-child(3) {
+    animation-delay: 10s;
+}
+
+.service-bg-slide:nth-child(4) {
+    animation-delay: 15s;
+}
+
+.service-bg-slide:nth-child(5) {
+    animation-delay: 20s;
+}
+
+@keyframes backgroundSlide {
+    0% {
+        opacity: 1;
+        transform: scale(1);
+    }
+    18% {
+        opacity: 1;
+        transform: scale(1.05);
+    }
+    20% {
+        opacity: 0;
+        transform: scale(1.05);
+    }
+    98% {
+        opacity: 0;
+        transform: scale(1);
+    }
+    100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+/* Ensure overlay stays on top of slider */
+.service-property-slider .service-content-overlay {
+    position: relative;
+    z-index: 2;
+}
+
 .service-content-overlay {
     position: relative;
     z-index: 1;
@@ -4159,6 +4260,12 @@ section:not(.hero).section-visible .section-header {
     background: var(--white);
     padding: 7rem 4rem;
     position: relative;
+}
+
+/* Override for Property Services to use Rental style */
+.service-rental.service-property {
+    background: var(--light-bg);
+    padding: 0;
 }
 
 .service-section-content.split-layout {
@@ -5894,6 +6001,10 @@ section:not(.hero).section-visible .section-header {
     width: 100%;
 }
 
+.partners-compact-grid {
+    transition: max-height 0.5s ease-in-out, overflow 0.5s ease-in-out;
+}
+
 .partners-compact-grid.partners-grid-collapsed {
     /* Limit to 2 rows: card height (~180px) + gap (1.25rem) for 2 rows */
     max-height: calc(2 * 180px + 1.25rem);
@@ -5938,6 +6049,41 @@ section:not(.hero).section-visible .section-header {
 .btn-load-more-partners:hover i {
     animation: bounce 0.6s ease;
     transform: translateY(3px);
+}
+
+.partners-show-less-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-top: 2.5rem;
+}
+
+.btn-show-less-partners {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 1rem 2.5rem;
+    background: var(--primary-color);
+    color: var(--white);
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    font-family: inherit;
+}
+
+.btn-show-less-partners:hover {
+    background: var(--primary-dark);
+    transform: translateY(-3px) scale(1.05);
+    box-shadow: var(--shadow-md);
+    animation: bounce 0.5s ease;
+}
+
+.btn-show-less-partners:hover i {
+    animation: bounce 0.6s ease;
+    transform: translateY(-3px);
 }
 
 .partner-compact-card {
@@ -6751,10 +6897,74 @@ section:not(.hero).section-visible .section-header {
     margin: 0;
 }
 
-/* Contact Info Modal - Larger Size */
-#contactInfoModal .login-modal-content {
-    max-width: 600px;
-    width: 90%;
+/* Contact Info Modal - Match Contact Section Style Exactly */
+#contactInfoModal .login-modal-content.contact-modal-content {
+    max-width: 100%;
+    width: 100%;
+    padding: 5rem 0;
+    max-height: 90vh;
+    overflow-y: auto;
+    border-radius: 0;
+    box-shadow: none;
+    transform: none;
+    background: var(--white);
+    position: relative;
+}
+
+#contactInfoModal.active .login-modal-content.contact-modal-content {
+    transform: none;
+}
+
+#contactInfoModal .contact-modal-content .container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 20px;
+    width: 100%;
+}
+
+#contactInfoModal .contact-modal-content .section-header {
+    text-align: center;
+    margin-bottom: 3rem;
+}
+
+#contactInfoModal .contact-modal-content .contact-content {
+    display: grid;
+    grid-template-columns: 1fr 1.5fr;
+    gap: 4rem;
+}
+
+/* Close button styling for contact modal */
+#contactInfoModal .login-modal-close {
+    background: rgba(0, 0, 0, 0.05);
+    color: var(--text-dark);
+    top: 1.5rem;
+    right: 1.5rem;
+}
+
+#contactInfoModal .login-modal-close:hover {
+    background: rgba(139, 46, 61, 0.1);
+    color: var(--accent-color);
+}
+
+@media (max-width: 1366px) {
+    #contactInfoModal .contact-modal-content .container {
+        padding: 0 15px;
+    }
+}
+
+@media (max-width: 968px) {
+    #contactInfoModal .contact-modal-content .contact-content {
+        grid-template-columns: 1fr;
+        gap: 2.5rem;
+    }
+    
+    #contactInfoModal .login-modal-content.contact-modal-content {
+        padding: 3rem 0;
+    }
+    
+    #contactInfoModal .contact-modal-content .container {
+        padding: 0 12px;
+    }
 }
 
 /* Contact Info Horizontal Layout */
@@ -7464,6 +7674,10 @@ section:not(.hero).section-visible .section-header {
 
 /* Responsive Design */
 @media (max-width: 1024px) {
+    .filter-additional-row {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
     .search-row {
         grid-template-columns: 1fr 1fr;
     }
@@ -8031,14 +8245,24 @@ section:not(.hero).section-visible .section-header {
     }
 }
 
+/* Property Services Slider - Slightly different overlay */
+.service-property-slider .service-content-overlay::before {
+    background: rgba(0, 0, 0, 0.65);
+}
+
 @media (max-width: 768px) {
-    .service-rental {
+    .service-rental,
+    .service-rental.service-property {
         min-height: 600px;
     }
     
     .service-content-overlay {
         padding: 3rem 2rem;
         min-height: 600px;
+    }
+    
+    .service-bg-slide {
+        animation-duration: 20s;
     }
     
     .service-main-title {
@@ -8817,6 +9041,80 @@ section:not(.hero).section-visible .section-header {
     width: 100%;
 }
 
+/* Two-column filter layout */
+.filters-two-column {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+    align-items: start;
+}
+
+.filter1,
+.filter2 {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    padding: 1.5rem;
+    border: 2px solid var(--border-color);
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.filter-subsection-title {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--text-dark);
+    margin: 0 0 0.5rem 0;
+    padding-bottom: 0.75rem;
+    border-bottom: 2px solid var(--border-color);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.filter1 .search-group input,
+.filter1 .search-group select,
+.filter1 .search-group .price-range-btn,
+.filter2 .search-group input,
+.filter2 .search-group select,
+.filter2 .search-group .price-range-btn {
+    max-width: 300px;
+    width: 100%;
+}
+
+.filter-additional-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1rem;
+    margin-top: 1.5rem;
+    padding: 1.5rem;
+    border: 2px solid var(--border-color);
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.filter-additional-row .search-group input,
+.filter-additional-row .search-group select {
+    max-width: 100%;
+    width: 100%;
+}
+
+.filter-button-center {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-top: 1.5rem;
+    width: 100%;
+}
+
+.filter-button-center .btn-search {
+    width: 162px;
+    height: 49px;
+    min-width: 162px;
+}
+
 .search-row {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
@@ -8831,7 +9129,7 @@ section:not(.hero).section-visible .section-header {
 .search-group {
     display: flex;
     flex-direction: column;
-    gap: 0.5rem;
+    gap: 0.75rem;
 }
 
 .search-group label {
@@ -8870,29 +9168,348 @@ section:not(.hero).section-visible .section-header {
     animation: pulse 0.3s ease;
 }
 
-.btn-search {
-    padding: 0.875rem 1.25rem;
-    background: var(--primary-color);
-    color: var(--white);
+/* Price Range Modal Styles */
+.price-range-btn {
+    padding: 0.75rem 0.875rem;
+    border: 2px solid var(--border-color);
+    border-radius: 10px;
+    font-size: 0.875rem;
+    transition: all 0.3s ease;
+    font-family: inherit;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+    background: white;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    text-align: left;
+}
+
+.price-range-btn:hover {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(171, 184, 195, 0.2);
+}
+
+.price-range-btn:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(171, 184, 195, 0.2);
+}
+
+.price-range-display {
+    flex: 1;
+    color: var(--text-dark);
+}
+
+.price-range-btn i {
+    color: var(--text-gray);
+    transition: transform 0.3s ease;
+}
+
+.price-range-btn:hover i {
+    transform: translateY(2px);
+}
+
+.price-range-modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 10000;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.price-range-modal.active {
+    display: flex;
+    opacity: 1;
+}
+
+.price-range-modal-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(4px);
+}
+
+.price-range-modal-content {
+    position: relative;
+    background: white;
+    border-radius: 16px;
+    width: 90%;
+    max-width: 500px;
+    max-height: 90vh;
+    margin: auto;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    transform: scale(0.9);
+    transition: transform 0.3s ease;
+}
+
+.price-range-modal.active .price-range-modal-content {
+    transform: scale(1);
+}
+
+.price-range-modal-header {
+    padding: 1.5rem;
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.price-range-modal-header h3 {
+    margin: 0;
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--text-dark);
+}
+
+.price-range-modal-close {
+    background: none;
     border: none;
+    font-size: 1.25rem;
+    color: var(--text-gray);
+    cursor: pointer;
+    padding: 0.5rem;
     border-radius: 8px;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+}
+
+.price-range-modal-close:hover {
+    background: var(--grey-pale);
+    color: var(--text-dark);
+}
+
+.price-range-modal-body {
+    padding: 2rem 1.5rem;
+    flex: 1;
+    overflow-y: auto;
+}
+
+.price-range-slider-container {
+    width: 100%;
+}
+
+.price-range-labels {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 1rem;
+    font-size: 0.875rem;
+    color: var(--text-gray);
+    font-weight: 500;
+}
+
+.price-range-slider-wrapper {
+    position: relative;
+    padding: 1rem 0;
+}
+
+.price-range-track {
+    position: relative;
+    height: 6px;
+    background: var(--grey-pale);
+    border-radius: 3px;
+    margin: 1rem 0;
+}
+
+.price-range-progress {
+    position: absolute;
+    height: 100%;
+    background: var(--primary-color);
+    border-radius: 3px;
+    left: 0%;
+    right: 0%;
+    transition: all 0.1s ease;
+}
+
+.price-range-input {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 100%;
+    height: 6px;
+    background: none;
+    outline: none;
+    -webkit-appearance: none;
+    appearance: none;
+    pointer-events: none;
+    z-index: 2;
+}
+
+.price-range-input::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 20px;
+    height: 20px;
+    background: var(--primary-color);
+    border-radius: 50%;
+    cursor: pointer;
+    pointer-events: all;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+    transition: all 0.2s ease;
+    border: 3px solid white;
+}
+
+.price-range-input::-webkit-slider-thumb:hover {
+    transform: scale(1.1);
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.3);
+}
+
+.price-range-input::-moz-range-thumb {
+    width: 20px;
+    height: 20px;
+    background: var(--primary-color);
+    border-radius: 50%;
+    cursor: pointer;
+    pointer-events: all;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+    transition: all 0.2s ease;
+    border: 3px solid white;
+}
+
+.price-range-input::-moz-range-thumb:hover {
+    transform: scale(1.1);
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.3);
+}
+
+.price-range-input::-moz-range-track {
+    background: transparent;
+}
+
+.price-range-inputs {
+    display: flex;
+    gap: 1rem;
+    margin-top: 2rem;
+}
+
+.price-range-input-group {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.price-range-input-group label {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--text-dark);
+}
+
+.price-range-number-input {
+    padding: 0.75rem;
+    border: 2px solid var(--border-color);
+    border-radius: 8px;
+    font-size: 0.875rem;
+    transition: all 0.3s ease;
+    font-family: inherit;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.price-range-number-input:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(171, 184, 195, 0.2);
+}
+
+.price-range-modal-footer {
+    padding: 1.5rem;
+    border-top: 1px solid var(--border-color);
+    display: flex;
+    gap: 1rem;
+    justify-content: flex-end;
+}
+
+.price-range-btn-clear,
+.price-range-btn-apply {
+    padding: 0.75rem 1.5rem;
+    border-radius: 8px;
+    font-size: 0.875rem;
     font-weight: 600;
     cursor: pointer;
-    transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    transition: all 0.3s ease;
+    border: 2px solid transparent;
+}
+
+.price-range-btn-clear {
+    background: var(--grey-pale);
+    color: var(--text-dark);
+}
+
+.price-range-btn-clear:hover {
+    background: var(--border-color);
+}
+
+.price-range-btn-apply {
+    background: var(--primary-color);
+    color: white;
+}
+
+.price-range-btn-apply:hover {
+    background: var(--primary-color-dark, #2a3f54);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+@media (max-width: 768px) {
+    .price-range-modal-content {
+        width: 95%;
+        max-height: 85vh;
+    }
+    
+    .price-range-modal-body {
+        padding: 1.5rem 1rem;
+    }
+    
+    .price-range-inputs {
+        flex-direction: column;
+        gap: 1rem;
+    }
+}
+
+.btn-search {
+    padding: 0.75rem 2rem;
+    background: var(--light-bg);
+    border: 2px solid var(--border-color);
+    border-radius: 8px;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--text-dark);
+    cursor: pointer;
+    transition: all 0.3s ease;
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 0.5rem;
     width: auto;
-    min-width: 100px;
+    min-width: 150px;
     height: fit-content;
+    box-sizing: border-box;
+    white-space: nowrap;
+    text-decoration: none;
 }
 
 .btn-search:hover {
-    background: var(--primary-dark);
-    transform: translateY(-3px) scale(1.02);
-    box-shadow: var(--shadow-md);
-    animation: pulse 0.5s ease;
+    background: var(--primary-lighter);
+    border-color: var(--primary-color);
+    color: var(--primary-color);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(171, 184, 195, 0.2);
 }
 
 .property-footer {
@@ -9179,6 +9796,47 @@ section:not(.hero).section-visible .section-header {
     
     .properties-filters {
         padding: 1.5rem;
+    }
+    
+    .filters-two-column {
+        grid-template-columns: 1fr;
+        gap: 1.5rem;
+    }
+    
+    .filter1,
+    .filter2 {
+        padding: 1.25rem;
+    }
+    
+    .filter-subsection-title {
+        font-size: 1rem;
+        padding-bottom: 0.5rem;
+    }
+    
+    .filter-additional-row {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+        padding: 1.25rem;
+        margin-top: 1rem;
+    }
+    
+    .filter-button-center {
+        margin-top: 1rem;
+    }
+    
+    .filter-button-center .btn-search {
+        width: 162px;
+        height: 49px;
+        min-width: 162px;
+    }
+    
+    .filter1 .search-group input,
+    .filter1 .search-group select,
+    .filter1 .search-group .price-range-btn,
+    .filter2 .search-group input,
+    .filter2 .search-group select,
+    .filter2 .search-group .price-range-btn {
+        max-width: 100%;
     }
     
     .search-row {

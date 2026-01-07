@@ -163,20 +163,26 @@
         const rememberMe = localStorage.getItem('remember_me') === 'true';
         rememberMeCheckbox.checked = rememberMe;
         
-        // If Remember Me was previously set, also pre-fill email if available
+        // If Remember Me was previously set, autofill email and password
         if (rememberMe) {
-            const userStr = localStorage.getItem('user');
-            if (userStr) {
-                try {
-                    const user = JSON.parse(userStr);
-                    const emailInput = document.getElementById('loginEmail');
-                    if (emailInput && user.email) {
-                        emailInput.value = user.email;
-                    }
-                } catch (e) {
-                    // Ignore parsing errors
-                }
+            const emailInput = document.getElementById('loginEmail');
+            const passwordInput = document.getElementById('loginPassword');
+            
+            // Autofill email from saved credentials
+            const savedEmail = localStorage.getItem('saved_email');
+            if (emailInput && savedEmail) {
+                emailInput.value = savedEmail;
             }
+            
+            // Autofill password from saved credentials
+            const savedPassword = localStorage.getItem('saved_password');
+            if (passwordInput && savedPassword) {
+                passwordInput.value = savedPassword;
+            }
+        } else {
+            // Clear any saved credentials if remember me is not checked
+            localStorage.removeItem('saved_email');
+            localStorage.removeItem('saved_password');
         }
     }
 
@@ -198,6 +204,19 @@
             attributeFilter: ['class']
         });
     }
+
+    // Handle Remember Me checkbox change to clear credentials if unchecked
+    // Use event delegation to handle checkbox changes
+    document.addEventListener('change', function(e) {
+        if (e.target && e.target.id === 'rememberMe') {
+            if (!e.target.checked) {
+                // Clear saved credentials when unchecked
+                localStorage.removeItem('saved_email');
+                localStorage.removeItem('saved_password');
+                localStorage.removeItem('remember_me');
+            }
+        }
+    });
 
     if (loginModalClose) {
         loginModalClose.addEventListener('click', closeModal);
@@ -286,6 +305,9 @@
                             localStorage.setItem('user', JSON.stringify(userData));
                             localStorage.setItem('dashboard_authenticated', 'true');
                             localStorage.setItem('remember_me', 'true'); // Flag for session manager
+                            // Save email and password for autofill
+                            localStorage.setItem('saved_email', email);
+                            localStorage.setItem('saved_password', password);
                             // Also store in sessionStorage for immediate access
                             sessionStorage.setItem('user', JSON.stringify(userData));
                             sessionStorage.setItem('dashboard_authenticated', 'true');
@@ -297,6 +319,9 @@
                             localStorage.setItem('user', JSON.stringify(userData));
                             localStorage.setItem('dashboard_authenticated', 'true');
                             localStorage.removeItem('remember_me'); // Clear flag if unchecked
+                            // Clear saved credentials
+                            localStorage.removeItem('saved_email');
+                            localStorage.removeItem('saved_password');
                         }
                     } catch (storageError) {
                         console.error('Error storing session data:', storageError);

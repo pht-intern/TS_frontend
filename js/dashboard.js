@@ -1590,6 +1590,283 @@ function populateForm(property) {
     }
 }
 
+// Populate Residential Form
+function populateResidentialForm(property) {
+    // Set property ID
+    const propertyId = document.getElementById('residentialPropertyId');
+    if (propertyId) propertyId.value = property.id || '';
+    
+    // Location fields - check if city/locality exist, otherwise parse from location
+    const cityInput = document.getElementById('residentialCity');
+    const localityInput = document.getElementById('residentialLocality');
+    if (property.city && cityInput) {
+        cityInput.value = property.city;
+    } else if (property.location && cityInput) {
+        // Try to extract city from location (e.g., "Bengaluru, Whitefield" -> "Bengaluru")
+        const parts = property.location.split(',');
+        cityInput.value = parts[0]?.trim() || '';
+    }
+    if (property.locality && localityInput) {
+        localityInput.value = property.locality;
+    } else if (property.location && localityInput) {
+        // Try to extract locality from location
+        const parts = property.location.split(',');
+        localityInput.value = parts.length > 1 ? parts.slice(1).join(',').trim() : property.location;
+    }
+    
+    // Other location fields
+    const locationLinkInput = document.getElementById('residentialLocationLink');
+    if (locationLinkInput) locationLinkInput.value = property.location_link || '';
+    
+    const directionsInput = document.getElementById('residentialDirections');
+    if (directionsInput) directionsInput.value = property.directions || '';
+    
+    // Property name/title
+    const propertyNameInput = document.getElementById('residentialPropertyName');
+    if (propertyNameInput) propertyNameInput.value = property.property_name || property.title || '';
+    
+    // Property type
+    const propertyTypeSelect = document.getElementById('residentialPropertyType');
+    if (propertyTypeSelect) {
+        const typeValue = typeof property.type === 'string' ? property.type : property.type?.value || '';
+        propertyTypeSelect.value = typeValue;
+    }
+    
+    // Unit type and bedrooms
+    const bedrooms = property.bedrooms;
+    const unitTypeInput = document.getElementById('residentialUnitType');
+    const bedroomsInput = document.getElementById('residentialBedrooms');
+    const unitTypeButtons = document.querySelectorAll('#residentialPropertyForm .dashboard-unit-type-btn');
+    
+    // Reset all unit type buttons
+    unitTypeButtons.forEach(btn => btn.classList.remove('active'));
+    
+    if (bedrooms !== undefined && bedrooms !== null) {
+        let selectedButton = null;
+        
+        if (bedrooms === 0 || property.unit_type === 'rk') {
+            selectedButton = document.getElementById('residentialUnitTypeRK');
+            if (unitTypeInput) unitTypeInput.value = 'rk';
+            if (bedroomsInput) bedroomsInput.value = '0';
+        } else if (bedrooms >= 4) {
+            selectedButton = document.getElementById('residentialUnitType4PlusBHK');
+            if (unitTypeInput) unitTypeInput.value = '4plus';
+            if (bedroomsInput) bedroomsInput.value = bedrooms.toString();
+        } else if (bedrooms >= 1 && bedrooms <= 3) {
+            const buttonId = `residentialUnitType${bedrooms}BHK`;
+            selectedButton = document.getElementById(buttonId);
+            if (unitTypeInput) unitTypeInput.value = 'bhk';
+            if (bedroomsInput) bedroomsInput.value = bedrooms.toString();
+        }
+        
+        if (selectedButton) {
+            selectedButton.classList.add('active');
+        } else {
+            const defaultButton = document.getElementById('residentialUnitType1BHK');
+            if (defaultButton) {
+                defaultButton.classList.add('active');
+                if (unitTypeInput) unitTypeInput.value = 'bhk';
+                if (bedroomsInput) bedroomsInput.value = '1';
+            }
+        }
+    }
+    
+    // Status
+    const statusSelect = document.getElementById('residentialStatus');
+    if (statusSelect) {
+        const statusValue = property.property_status || property.status;
+        statusSelect.value = typeof statusValue === 'string' ? statusValue : statusValue?.value || '';
+    }
+    
+    // Area fields
+    const buildupAreaInput = document.getElementById('residentialBuildupArea');
+    if (buildupAreaInput) buildupAreaInput.value = property.buildup_area || property.area || '';
+    
+    const carpetAreaInput = document.getElementById('residentialCarpetArea');
+    if (carpetAreaInput) carpetAreaInput.value = property.carpet_area || '';
+    
+    const lengthInput = document.getElementById('residentialLength');
+    if (lengthInput) lengthInput.value = property.length || '';
+    
+    const breadthInput = document.getElementById('residentialBreadth');
+    if (breadthInput) breadthInput.value = property.breadth || '';
+    
+    // Price
+    const priceInput = document.getElementById('residentialPrice');
+    if (priceInput) priceInput.value = property.price_text || property.price || '';
+    
+    // Price checkboxes
+    const priceNegotiableCheckbox = document.getElementById('residentialPriceNegotiable');
+    if (priceNegotiableCheckbox) priceNegotiableCheckbox.checked = property.price_negotiable || false;
+    
+    const priceIncludesRegistrationCheckbox = document.getElementById('residentialPriceIncludesRegistration');
+    if (priceIncludesRegistrationCheckbox) priceIncludesRegistrationCheckbox.checked = property.price_includes_registration || false;
+    
+    // Description
+    const descriptionTextarea = document.getElementById('residentialDescription');
+    if (descriptionTextarea) descriptionTextarea.value = property.description || '';
+    
+    // Amenities
+    const amenitiesSelect = document.getElementById('residentialAmenities');
+    if (amenitiesSelect && property.amenities) {
+        // Clear previous selections
+        Array.from(amenitiesSelect.options).forEach(option => option.selected = false);
+        
+        // Handle amenities as array or string
+        let amenitiesArray = [];
+        if (Array.isArray(property.amenities)) {
+            amenitiesArray = property.amenities.map(a => typeof a === 'string' ? a : a.value || a.amenity_name || '');
+        } else if (typeof property.amenities === 'string') {
+            try {
+                amenitiesArray = JSON.parse(property.amenities);
+            } catch (e) {
+                amenitiesArray = property.amenities.split(',').map(a => a.trim());
+            }
+        }
+        
+        // Select matching options
+        amenitiesArray.forEach(amenity => {
+            const option = Array.from(amenitiesSelect.options).find(opt => opt.value === amenity);
+            if (option) option.selected = true;
+        });
+    }
+    
+    // Load images
+    if (property.images && property.images.length > 0) {
+        property.images.forEach(image => {
+            let imageUrl = null;
+            if (typeof image === 'string') {
+                imageUrl = image;
+            } else if (image && image.image_url) {
+                imageUrl = image.image_url;
+            }
+            if (imageUrl) {
+                // Normalize image URL
+                if (!imageUrl.startsWith('data:') && !imageUrl.startsWith('http://') && !imageUrl.startsWith('https://')) {
+                    if (!imageUrl.startsWith('/')) {
+                        imageUrl = '/' + imageUrl;
+                    }
+                }
+                // Add to project images preview container
+                addImagePreview(imageUrl, true, 'residential', 'project');
+            }
+        });
+    }
+}
+
+// Populate Plot Form
+function populatePlotForm(property) {
+    // Set property ID
+    const propertyId = document.getElementById('plotPropertyId');
+    if (propertyId) propertyId.value = property.id || '';
+    
+    // Location fields
+    const cityInput = document.getElementById('plotCity');
+    const localityInput = document.getElementById('plotLocality');
+    if (property.city && cityInput) {
+        cityInput.value = property.city;
+    } else if (property.location && cityInput) {
+        const parts = property.location.split(',');
+        cityInput.value = parts[0]?.trim() || '';
+    }
+    if (property.locality && localityInput) {
+        localityInput.value = property.locality;
+    } else if (property.location && localityInput) {
+        const parts = property.location.split(',');
+        localityInput.value = parts.length > 1 ? parts.slice(1).join(',').trim() : property.location;
+    }
+    
+    // Other location fields
+    const locationLinkInput = document.getElementById('plotLocationLink');
+    if (locationLinkInput) locationLinkInput.value = property.location_link || '';
+    
+    const directionsInput = document.getElementById('plotDirections');
+    if (directionsInput) directionsInput.value = property.directions || '';
+    
+    // Project name/title
+    const projectNameInput = document.getElementById('plotProjectName');
+    if (projectNameInput) projectNameInput.value = property.project_name || property.title || '';
+    
+    // Status
+    const statusSelect = document.getElementById('plotStatus');
+    if (statusSelect) {
+        const statusValue = property.property_status || property.status;
+        statusSelect.value = typeof statusValue === 'string' ? statusValue : statusValue?.value || '';
+    }
+    
+    // Area fields
+    const plotAreaInput = document.getElementById('plotArea');
+    if (plotAreaInput) plotAreaInput.value = property.plot_area || property.area || '';
+    
+    const plotLengthInput = document.getElementById('plotLength');
+    if (plotLengthInput) plotLengthInput.value = property.plot_length || property.length || '';
+    
+    const plotBreadthInput = document.getElementById('plotBreadth');
+    if (plotBreadthInput) plotBreadthInput.value = property.plot_breadth || property.breadth || '';
+    
+    // Price
+    const priceInput = document.getElementById('plotPrice');
+    if (priceInput) priceInput.value = property.price_text || property.price || '';
+    
+    // Price checkboxes
+    const priceNegotiableCheckbox = document.getElementById('plotPriceNegotiable');
+    if (priceNegotiableCheckbox) priceNegotiableCheckbox.checked = property.price_negotiable || false;
+    
+    const priceIncludesRegistrationCheckbox = document.getElementById('plotPriceIncludesRegistration');
+    if (priceIncludesRegistrationCheckbox) priceIncludesRegistrationCheckbox.checked = property.price_includes_registration || false;
+    
+    // Description
+    const descriptionTextarea = document.getElementById('plotDescription');
+    if (descriptionTextarea) descriptionTextarea.value = property.description || '';
+    
+    // Amenities
+    const amenitiesSelect = document.getElementById('plotAmenities');
+    if (amenitiesSelect && property.amenities) {
+        // Clear previous selections
+        Array.from(amenitiesSelect.options).forEach(option => option.selected = false);
+        
+        // Handle amenities as array or string
+        let amenitiesArray = [];
+        if (Array.isArray(property.amenities)) {
+            amenitiesArray = property.amenities.map(a => typeof a === 'string' ? a : a.value || a.amenity_name || '');
+        } else if (typeof property.amenities === 'string') {
+            try {
+                amenitiesArray = JSON.parse(property.amenities);
+            } catch (e) {
+                amenitiesArray = property.amenities.split(',').map(a => a.trim());
+            }
+        }
+        
+        // Select matching options
+        amenitiesArray.forEach(amenity => {
+            const option = Array.from(amenitiesSelect.options).find(opt => opt.value === amenity);
+            if (option) option.selected = true;
+        });
+    }
+    
+    // Load images
+    if (property.images && property.images.length > 0) {
+        property.images.forEach(image => {
+            let imageUrl = null;
+            if (typeof image === 'string') {
+                imageUrl = image;
+            } else if (image && image.image_url) {
+                imageUrl = image.image_url;
+            }
+            if (imageUrl) {
+                // Normalize image URL
+                if (!imageUrl.startsWith('data:') && !imageUrl.startsWith('http://') && !imageUrl.startsWith('https://')) {
+                    if (!imageUrl.startsWith('/')) {
+                        imageUrl = '/' + imageUrl;
+                    }
+                }
+                // Add to project images preview container
+                addImagePreview(imageUrl, true, 'plot', 'project');
+            }
+        });
+    }
+}
+
 // Handle Property Submit
 async function handlePropertySubmit(e) {
     e.preventDefault();
@@ -1924,7 +2201,7 @@ async function handlePropertySubmit(e) {
 }
 
 // Open Residential Property Modal
-function openResidentialPropertyModal(propertyId = null) {
+async function openResidentialPropertyModal(propertyId = null) {
     const modal = document.getElementById('residentialPropertyModal');
     const form = document.getElementById('residentialPropertyForm');
     const modalTitle = document.getElementById('residentialModalTitle');
@@ -1952,7 +2229,19 @@ function openResidentialPropertyModal(propertyId = null) {
 
     if (propertyId) {
         modalTitle.textContent = 'Edit Other Property';
-        // TODO: Fetch property data for editing
+        // Fetch property data for editing
+        try {
+            const response = await fetch(`/api/properties/${propertyId}`);
+            if (!response.ok) {
+                throw new Error('Failed to fetch property');
+            }
+            const property = await response.json();
+            populateResidentialForm(property);
+        } catch (error) {
+            console.error('Error loading property:', error);
+            showNotification('Failed to load property details.', 'error');
+            return;
+        }
     } else {
         modalTitle.textContent = 'Add Other Properties';
     }
@@ -2074,7 +2363,7 @@ async function handleResidentialPropertySubmit(e) {
 }
 
 // Open Plot Property Modal
-function openPlotPropertyModal(propertyId = null) {
+async function openPlotPropertyModal(propertyId = null) {
     const modal = document.getElementById('plotPropertyModal');
     const form = document.getElementById('plotPropertyForm');
     const modalTitle = document.getElementById('plotModalTitle');
@@ -2088,7 +2377,19 @@ function openPlotPropertyModal(propertyId = null) {
 
     if (propertyId) {
         modalTitle.textContent = 'Edit Plot Property';
-        // TODO: Fetch property data for editing
+        // Fetch property data for editing
+        try {
+            const response = await fetch(`/api/properties/${propertyId}`);
+            if (!response.ok) {
+                throw new Error('Failed to fetch property');
+            }
+            const property = await response.json();
+            populatePlotForm(property);
+        } catch (error) {
+            console.error('Error loading property:', error);
+            showNotification('Failed to load property details.', 'error');
+            return;
+        }
     } else {
         modalTitle.textContent = 'Add Plot Property';
     }
@@ -2206,8 +2507,31 @@ async function handlePlotPropertySubmit(e) {
 }
 
 // Edit Property
-function editProperty(id) {
-    openPropertyModal(id);
+async function editProperty(id) {
+    try {
+        // Fetch property to determine its type
+        const response = await fetch(`/api/properties/${id}`);
+        if (!response.ok) {
+            throw new Error('Failed to fetch property');
+        }
+        const property = await response.json();
+        
+        // Determine property type - plot properties have type 'plot' or 'plots'
+        const propertyType = typeof property.type === 'string' 
+            ? property.type.toLowerCase() 
+            : (property.type?.value || '').toLowerCase();
+        
+        // Check if it's a plot property
+        if (propertyType === 'plot' || propertyType === 'plots') {
+            openPlotPropertyModal(id);
+        } else {
+            // It's a residential property (builder_floor, house, villa, apartment)
+            openResidentialPropertyModal(id);
+        }
+    } catch (error) {
+        console.error('Error loading property:', error);
+        showNotification('Failed to load property details.', 'error');
+    }
 }
 
 // Delete Property
@@ -2608,8 +2932,17 @@ function showNotification(message, type = 'success') {
 // TESTIMONIALS MANAGEMENT
 // ============================================
 
+// Flag to prevent concurrent testimonials loading
+let isLoadingTestimonials = false;
+
 // Load Testimonials from API
 async function loadTestimonials() {
+    // Prevent concurrent calls
+    if (isLoadingTestimonials) {
+        return;
+    }
+    
+    isLoadingTestimonials = true;
     try {
         const response = await authenticatedFetch('/api/admin/testimonials');
         
@@ -2643,6 +2976,8 @@ async function loadTestimonials() {
         console.error('Error loading testimonials:', error);
         const errorMsg = error.message || 'Failed to load testimonials from server.';
         showNotification(errorMsg, 'error');
+    } finally {
+        isLoadingTestimonials = false;
     }
 }
 

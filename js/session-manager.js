@@ -119,8 +119,13 @@
                 break;
                 
             case 'tab-closed':
+            case 'tab-closing':
                 activeTabs.delete(senderTabId);
-                checkIfLastTab();
+                // When a tab closes, check if we're the last one
+                // Use a small delay to allow other tabs to respond
+                setTimeout(() => {
+                    checkIfLastTab();
+                }, 500);
                 break;
                 
             case 'heartbeat':
@@ -150,6 +155,18 @@
         heartbeatInterval = setInterval(() => {
             sendMessage('heartbeat', { tabId });
             
+            // Also update localStorage timestamp to mark this tab as active
+            try {
+                const tabData = {
+                    tabId: tabId,
+                    timestamp: Date.now(),
+                    closing: false
+                };
+                localStorage.setItem(`tab_${tabId}`, JSON.stringify(tabData));
+            } catch (e) {
+                // Ignore storage errors
+            }
+            
             // Clean up stale tabs (no heartbeat for TAB_TIMEOUT)
             const now = Date.now();
             activeTabs.forEach((lastHeartbeat, tabId) => {
@@ -158,10 +175,30 @@
                 }
             });
             
+            // Clean up stale localStorage entries
+            try {
+                for (let i = localStorage.length - 1; i >= 0; i--) {
+                    const key = localStorage.key(i);
+                    if (key && key.startsWith('tab_')) {
+                        try {
+                            const tabData = JSON.parse(localStorage.getItem(key) || '{}');
+                            if (tabData.timestamp && (now - tabData.timestamp) > TAB_TIMEOUT * 2) {
+                                localStorage.removeItem(key);
+                            }
+                        } catch (e) {
+                            // Remove invalid entries
+                            localStorage.removeItem(key);
+                        }
+                    }
+                }
+            } catch (e) {
+                // Ignore storage errors
+            }
+            
             // Check if we're the last tab after cleanup
             const otherTabsCount = Array.from(activeTabs.keys()).filter(id => id !== tabId).length;
             if (otherTabsCount === 0 && activeTabs.size > 0) {
-                // We're the only tab left
+                // We're the only tab left - double check with localStorage
                 checkIfLastTab();
             }
         }, HEARTBEAT_INTERVAL);
@@ -181,21 +218,38 @@
      * Set up unload handler to detect tab closure
      */
     function setupUnloadHandler() {
-        // Use beforeunload to send message before tab closes
+        // Use pagehide for better browser support - this fires when tab is actually closing
+        window.addEventListener('pagehide', (event) => {
+            // event.persisted is false when the page is being unloaded (tab closing)
+            // event.persisted is true when the page is being cached (e.g., back/forward navigation)
+            if (!event.persisted) {
+                // Tab is actually closing, not just navigating
+                sendMessage('tab-closing', { tabId });
+                
+                // Also update localStorage timestamp to mark this tab as closing
+                try {
+                    const tabData = {
+                        tabId: tabId,
+                        closing: true,
+                        timestamp: Date.now()
+                    };
+                    localStorage.setItem(`tab_${tabId}`, JSON.stringify(tabData));
+                    // Remove after a short delay to allow other tabs to see it
+                    setTimeout(() => {
+                        localStorage.removeItem(`tab_${tabId}`);
+                    }, 100);
+                } catch (e) {
+                    // Ignore storage errors
+                }
+            }
+        });
+
+        // Use beforeunload as backup (fires earlier than pagehide)
         window.addEventListener('beforeunload', () => {
-            sendMessage('tab-closed', { tabId });
-            
-            // Small delay to ensure message is sent
-            // Note: This is not guaranteed to work in all browsers
-            // But it's the best we can do
+            sendMessage('tab-closing', { tabId });
         });
 
-        // Also use pagehide for better browser support
-        window.addEventListener('pagehide', () => {
-            sendMessage('tab-closed', { tabId });
-        });
-
-        // Use visibilitychange to detect when tab becomes hidden
+        // Use visibilitychange to detect when tab becomes hidden/visible
         document.addEventListener('visibilitychange', () => {
             if (document.hidden) {
                 // Tab is hidden, but not closed
@@ -205,28 +259,71 @@
                 sendMessage('tab-opened', { tabId });
             }
         });
+
+        // Listen for storage events (when other tabs modify localStorage)
+        window.addEventListener('storage', (e) => {
+            // If another tab cleared the session, clear ours too
+            if (e.key && (e.key === 'session_cleared' || e.key.startsWith('tab_'))) {
+                if (e.key === 'session_cleared') {
+                    clearSession();
+                } else if (e.key.startsWith('tab_')) {
+                    // Another tab is active, update our tracking
+                    try {
+                        const tabData = JSON.parse(e.newValue || '{}');
+                        if (tabData.tabId && tabData.tabId !== tabId) {
+                            activeTabs.set(tabData.tabId, Date.now());
+                        }
+                    } catch (e) {
+                        // Ignore parse errors
+                    }
+                }
+            }
+        });
     }
 
     /**
      * Check if this is the last active tab
      */
     function checkIfLastTab() {
-        // Wait a bit to see if other tabs respond
-        setTimeout(() => {
-            // Remove stale tabs
-            const now = Date.now();
-            activeTabs.forEach((lastHeartbeat, tabIdToCheck) => {
-                if (now - lastHeartbeat > TAB_TIMEOUT) {
-                    activeTabs.delete(tabIdToCheck);
-                }
-            });
-            
-            // If no other tabs are active (or we're the only one), clear session
-            const otherTabs = Array.from(activeTabs.keys()).filter(id => id !== tabId);
-            if (otherTabs.length === 0) {
-                clearSession();
+        // Remove stale tabs first
+        const now = Date.now();
+        activeTabs.forEach((lastHeartbeat, tabIdToCheck) => {
+            if (now - lastHeartbeat > TAB_TIMEOUT) {
+                activeTabs.delete(tabIdToCheck);
             }
-        }, 1000); // 1 second delay to allow other tabs to respond
+        });
+        
+        // Check for other tabs via localStorage (more reliable than BroadcastChannel alone)
+        let otherTabsFound = false;
+        try {
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                if (key && key.startsWith('tab_') && key !== `tab_${tabId}`) {
+                    try {
+                        const tabData = JSON.parse(localStorage.getItem(key) || '{}');
+                        // Check if tab data is recent (within last 5 seconds)
+                        if (tabData.timestamp && (now - tabData.timestamp) < TAB_TIMEOUT) {
+                            if (!tabData.closing) {
+                                otherTabsFound = true;
+                                break;
+                            }
+                        }
+                    } catch (e) {
+                        // Ignore parse errors
+                    }
+                }
+            }
+        } catch (e) {
+            // Ignore storage errors
+        }
+        
+        // Count active tabs from BroadcastChannel
+        const otherTabs = Array.from(activeTabs.keys()).filter(id => id !== tabId);
+        
+        // If no other tabs found via either method, clear session
+        if (otherTabs.length === 0 && !otherTabsFound) {
+            clearSession();
+        }
     }
 
     /**
@@ -253,8 +350,39 @@
         }
         // If rememberMe is true, keep localStorage intact for persistent login
         
-        // Notify other tabs (if any)
+        // Mark session as cleared in localStorage (triggers storage event for other tabs)
+        try {
+            localStorage.setItem('session_cleared', Date.now().toString());
+            // Remove after a short delay
+            setTimeout(() => {
+                localStorage.removeItem('session_cleared');
+            }, 1000);
+        } catch (e) {
+            // Ignore storage errors
+        }
+        
+        // Notify other tabs (if any) via BroadcastChannel
         sendMessage('session-cleared', { tabId });
+        
+        // Clean up all tab tracking data
+        try {
+            for (let i = localStorage.length - 1; i >= 0; i--) {
+                const key = localStorage.key(i);
+                if (key && key.startsWith('tab_')) {
+                    localStorage.removeItem(key);
+                }
+            }
+        } catch (e) {
+            // Ignore storage errors
+        }
+        
+        // Update UI if login.js functions are available
+        if (window.checkAuthentication) {
+            window.checkAuthentication();
+        }
+        if (window.updateDashboardNavButton) {
+            window.updateDashboardNavButton();
+        }
     }
 
     /**
@@ -270,12 +398,48 @@
      * Check if session should be cleared on page load
      */
     function checkSessionOnLoad() {
+        // Check if session was already cleared by another tab
+        try {
+            const sessionCleared = localStorage.getItem('session_cleared');
+            if (sessionCleared) {
+                // Session was cleared, but check if it was recent (within last 10 seconds)
+                const clearedTime = parseInt(sessionCleared, 10);
+                if (Date.now() - clearedTime < 10000) {
+                    clearSession();
+                    return;
+                }
+            }
+        } catch (e) {
+            // Ignore storage errors
+        }
+        
         // If we're using BroadcastChannel, wait for other tabs to respond
         if (broadcastChannel) {
             setTimeout(() => {
-                // If no other tabs responded, it means all tabs were closed
-                // Clear the session since we're the first tab after all were closed
-                if (!initialCheckDone && activeTabs.size === 0) {
+                // Check for other tabs via localStorage
+                let otherTabsFound = false;
+                try {
+                    const now = Date.now();
+                    for (let i = 0; i < localStorage.length; i++) {
+                        const key = localStorage.key(i);
+                        if (key && key.startsWith('tab_') && key !== `tab_${tabId}`) {
+                            try {
+                                const tabData = JSON.parse(localStorage.getItem(key) || '{}');
+                                if (tabData.timestamp && (now - tabData.timestamp) < TAB_TIMEOUT * 2 && !tabData.closing) {
+                                    otherTabsFound = true;
+                                    break;
+                                }
+                            } catch (e) {
+                                // Ignore parse errors
+                            }
+                        }
+                    }
+                } catch (e) {
+                    // Ignore storage errors
+                }
+                
+                // If no other tabs responded and none found in localStorage, clear session
+                if (!initialCheckDone && activeTabs.size === 0 && !otherTabsFound) {
                     // No other tabs found - clear session
                     clearSession();
                 }
@@ -288,19 +452,53 @@
      */
     function cleanup() {
         stopHeartbeat();
+        
+        // Remove our tab tracking from localStorage
+        try {
+            localStorage.removeItem(`tab_${tabId}`);
+        } catch (e) {
+            // Ignore storage errors
+        }
+        
         if (broadcastChannel) {
             // Remove ourselves from active tabs
             activeTabs.delete(tabId);
             
-            // Check if we're the last tab before closing
-            const otherTabs = Array.from(activeTabs.keys()).filter(id => id !== tabId);
-            if (otherTabs.length === 0) {
-                // We're the last tab - clear session
-                clearSession();
-            } else {
-                // Notify other tabs that we're closing
-                sendMessage('tab-closed', { tabId });
-            }
+            // Notify other tabs that we're closing
+            sendMessage('tab-closing', { tabId });
+            
+            // Wait a moment to see if other tabs respond
+            setTimeout(() => {
+                // Check if we're the last tab before closing
+                const otherTabs = Array.from(activeTabs.keys()).filter(id => id !== tabId);
+                let otherTabsFound = false;
+                
+                // Also check localStorage for other active tabs
+                try {
+                    const now = Date.now();
+                    for (let i = 0; i < localStorage.length; i++) {
+                        const key = localStorage.key(i);
+                        if (key && key.startsWith('tab_') && key !== `tab_${tabId}`) {
+                            try {
+                                const tabData = JSON.parse(localStorage.getItem(key) || '{}');
+                                if (tabData.timestamp && (now - tabData.timestamp) < TAB_TIMEOUT && !tabData.closing) {
+                                    otherTabsFound = true;
+                                    break;
+                                }
+                            } catch (e) {
+                                // Ignore parse errors
+                            }
+                        }
+                    }
+                } catch (e) {
+                    // Ignore storage errors
+                }
+                
+                if (otherTabs.length === 0 && !otherTabsFound) {
+                    // We're the last tab - clear session
+                    clearSession();
+                }
+            }, 500);
             
             broadcastChannel.close();
             broadcastChannel = null;

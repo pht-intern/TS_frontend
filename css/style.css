@@ -2813,9 +2813,9 @@ section:not(.hero).section-visible .section-header {
     margin-bottom: 4rem;
     padding-bottom: 2rem;
     text-align: center;
-    margin-left: 0;
-    padding-left: 0;
-    padding-right: 0;
+    margin-left: 25%;
+    padding-left: 1.5rem;
+    padding-right: 2rem;
 }
 
 .service-header-key::after {

@@ -481,8 +481,7 @@ function renderCacheLogs(logs, reset = false) {
             'hit': '<span style="color: var(--green);">Hit</span>',
             'miss': '<span style="color: var(--yellow-bright);">Miss</span>',
             'set': '<span style="color: var(--primary-color);">Set</span>',
-            'delete': '<span style="color: var(--red);">Delete</span>',
-            'clear': '<span style="color: var(--purple);">Clear</span>'
+            'delete': '<span style="color: var(--red);">Delete</span>'
         }[log.operation] || log.operation;
 
         // Format cache size

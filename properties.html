@@ -84,50 +84,50 @@
     <section class="properties-section">
         <div class="container">
             <!-- Filters and Search -->
-            <div class="properties-filters">
+            <div class="properties-filters" id="propertiesPropertiesFilters">
                 <!-- Category Filter with Subcategories -->
-                <div class="filter-section category-section-centered">
+                <div class="filter-section category-section-centered" id="propertiesCategorySection">
                     <div class="category-main-buttons">
-                        <button type="button" class="category-text-button" data-category="residential" id="filterResidential">Residential</button>
+                        <button type="button" class="category-text-button" data-category="residential" id="propertiesFilterResidential">Residential</button>
                         <span class="category-divider">|</span>
-                        <button type="button" class="category-text-button" data-category="commercial" id="filterCommercial">Commercial</button>
+                        <button type="button" class="category-text-button" data-category="commercial" id="propertiesFilterCommercial">Commercial</button>
                     </div>
                     <div class="category-subcategories-container">
                         <div class="subcategory-buttons" data-category="residential">
-                            <button type="button" class="filter-button subcategory-button" data-property-type="plots" data-parent-category="residential" id="filterPlots">Plots</button>
-                            <button type="button" class="filter-button subcategory-button" data-property-type="house" data-parent-category="residential" id="filterIndividualHouse">Individual House</button>
-                            <button type="button" class="filter-button subcategory-button" data-property-type="villa" data-parent-category="residential" id="filterVillas">Villas</button>
-                            <button type="button" class="filter-button subcategory-button" data-property-type="row-house" data-parent-category="residential" id="filterRowHouses">Row Houses</button>
+                            <button type="button" class="filter-button subcategory-button" data-property-type="plots" data-parent-category="residential" id="propertiesFilterPlots">Plots</button>
+                            <button type="button" class="filter-button subcategory-button" data-property-type="house" data-parent-category="residential" id="propertiesFilterIndividualHouse">Individual House</button>
+                            <button type="button" class="filter-button subcategory-button" data-property-type="villa" data-parent-category="residential" id="propertiesFilterVillas">Villas</button>
+                            <button type="button" class="filter-button subcategory-button" data-property-type="row-house" data-parent-category="residential" id="propertiesFilterRowHouses">Row Houses</button>
                         </div>
                         <div class="subcategory-buttons" data-category="commercial">
-                            <button type="button" class="filter-button subcategory-button" data-property-type="office-space" data-parent-category="commercial" id="filterOfficeSpace">Office Space</button>
-                            <button type="button" class="filter-button subcategory-button" data-property-type="warehouse" data-parent-category="commercial" id="filterWarehouse">Warehouse</button>
-                            <button type="button" class="filter-button subcategory-button" data-property-type="showrooms" data-parent-category="commercial" id="filterShowrooms">Showrooms</button>
+                            <button type="button" class="filter-button subcategory-button" data-property-type="office-space" data-parent-category="commercial" id="propertiesFilterOfficeSpace">Office Space</button>
+                            <button type="button" class="filter-button subcategory-button" data-property-type="warehouse" data-parent-category="commercial" id="propertiesFilterWarehouse">Warehouse</button>
+                            <button type="button" class="filter-button subcategory-button" data-property-type="showrooms" data-parent-category="commercial" id="propertiesFilterShowrooms">Showrooms</button>
                         </div>
                     </div>
                 </div>
                 
                 <!-- Advanced Search Form -->
                 <div class="properties-search">
-                    <form class="search-form" id="propertiesSearchForm">
+                    <form class="search-form" id="propertiesPropertiesSearchForm">
                         <div class="filters-two-column">
                             <!-- Left Column: Filter 1 -->
                             <div class="filter1">
                                 <div class="search-group">
                                     <label><i class="fas fa-map-marker-alt"></i> City</label>
-                                    <input type="text" id="searchCity" placeholder="Enter city">
+                                    <input type="text" id="propertiesSearchCity" placeholder="Enter city">
                                 </div>
                                 <div class="search-group">
                                     <label><i class="fas fa-map-marker-alt"></i> Area</label>
-                                    <input type="text" id="searchArea" placeholder="Enter area">
+                                    <input type="text" id="propertiesSearchArea" placeholder="Enter area">
                                 </div>
                                 <div class="search-group">
                                     <label><i class="fas fa-star"></i> Amenities</label>
-                                    <input type="text" id="searchAmenities" placeholder="e.g., Parking, Lift, Security">
+                                    <input type="text" id="propertiesSearchAmenities" placeholder="e.g., Parking, Lift, Security">
                                 </div>
                                 <div class="search-group">
                                     <label><i class="fas fa-compass"></i> Directions</label>
-                                    <input type="text" id="searchDirections" placeholder="e.g., North, South, East, West">
+                                    <input type="text" id="propertiesSearchDirections" placeholder="e.g., North, South, East, West">
                                 </div>
                             </div>
                             
@@ -135,7 +135,7 @@
                             <div class="filter2">
                                 <div class="search-group">
                                     <label><i class="fas fa-exchange-alt"></i> Transaction Type</label>
-                                    <select id="searchTransactionType">
+                                    <select id="propertiesSearchTransactionType">
                                         <option value="all">All Properties</option>
                                         <option value="sale">Buy</option>
                                         <option value="rent">Rent</option>
@@ -143,7 +143,7 @@
                                 </div>
                                 <div class="search-group">
                                     <label><i class="fas fa-check-circle"></i> Property Condition</label>
-                                    <select id="searchPropertyCondition">
+                                    <select id="propertiesSearchPropertyCondition">
                                         <option value="">Any Condition</option>
                                         <option value="new">New</option>
                                         <option value="resale">Resale</option>
@@ -151,15 +151,15 @@
                                 </div>
                                 <div class="search-group">
                                     <label><i class="fas fa-dollar-sign"></i> Price Range</label>
-                                    <button type="button" class="price-range-btn" id="priceRangeBtn">
-                                        <span class="price-range-display" id="priceRangeDisplay">Any Price</span>
+                                    <button type="button" class="price-range-btn" id="propertiesPriceRangeBtn">
+                                        <span class="price-range-display" id="propertiesPriceRangeDisplay">Any Price</span>
                                         <i class="fas fa-chevron-down"></i>
                                     </button>
-                                    <input type="hidden" id="searchPrice" value="">
+                                    <input type="hidden" id="propertiesSearchPrice" value="">
                                 </div>
                                 <div class="search-group">
                                     <label><i class="fas fa-ruler-combined"></i> Dimensions</label>
-                                    <input type="text" id="searchDimensions" placeholder="e.g., 30x40, 50x80">
+                                    <input type="text" id="propertiesSearchDimensions" placeholder="e.g., 30x40, 50x80">
                                 </div>
                             </div>
                         </div>
@@ -168,7 +168,7 @@
                         <div class="filter-additional-row">
                             <div class="search-group">
                                 <label><i class="fas fa-home"></i> Unit Type</label>
-                                <select id="searchUnitType">
+                                <select id="propertiesSearchUnitType">
                                     <option value="">Any Unit Type</option>
                                     <option value="rk" data-bhk="0">1RK</option>
                                     <option value="bhk" data-bhk="1">1BHK</option>
@@ -179,15 +179,15 @@
                             </div>
                             <div class="search-group">
                                 <label><i class="fas fa-ruler"></i> Length</label>
-                                <input type="text" id="searchLength" placeholder="Enter length (ft)">
+                                <input type="text" id="propertiesSearchLength" placeholder="Enter length (ft)">
                             </div>
                             <div class="search-group">
                                 <label><i class="fas fa-ruler"></i> Breadth</label>
-                                <input type="text" id="searchBreadth" placeholder="Enter breadth (ft)">
+                                <input type="text" id="propertiesSearchBreadth" placeholder="Enter breadth (ft)">
                             </div>
                             <div class="search-group">
                                 <label><i class="fas fa-vector-square"></i> Carpet Area</label>
-                                <input type="text" id="searchCarpetArea" placeholder="Enter carpet area (sq ft)">
+                                <input type="text" id="propertiesSearchCarpetArea" placeholder="Enter carpet area (sq ft)">
                             </div>
                         </div>
                         
@@ -201,14 +201,14 @@
                 </div>
                 
                 <!-- Active Filter Tags -->
-                <div class="filter-tags-container" id="filterTagsContainer" style="display: none;">
+                <div class="filter-tags-container" id="propertiesFilterTagsContainer" style="display: none;">
                     <div class="filter-tags-header">
                         <span class="filter-tags-label">Active Filters:</span>
-                        <button type="button" class="clear-all-filters" id="clearAllFilters">
+                        <button type="button" class="clear-all-filters" id="propertiesClearAllFilters">
                             <i class="fas fa-times-circle"></i> Clear All
                         </button>
                     </div>
-                    <div class="filter-tags" id="filterTags">
+                    <div class="filter-tags" id="propertiesFilterTags">
                         <!-- Filter tags will be rendered here by JavaScript -->
                     </div>
                 </div>
@@ -246,43 +246,43 @@
     </section>
 
     <!-- Price Range Modal -->
-    <div class="price-range-modal" id="priceRangeModal">
-        <div class="price-range-modal-overlay" id="priceRangeModalOverlay"></div>
+    <div class="price-range-modal" id="propertiesPriceRangeModal">
+        <div class="price-range-modal-overlay" id="propertiesPriceRangeModalOverlay"></div>
         <div class="price-range-modal-content">
             <div class="price-range-modal-header">
                 <h3>Select Price Range</h3>
-                <button type="button" class="price-range-modal-close" id="priceRangeModalClose">
+                <button type="button" class="price-range-modal-close" id="propertiesPriceRangeModalClose">
                     <i class="fas fa-times"></i>
                 </button>
             </div>
             <div class="price-range-modal-body">
                 <div class="price-range-slider-container">
                     <div class="price-range-labels">
-                        <span class="price-range-label-min" id="priceRangeLabelMin">₹0</span>
-                        <span class="price-range-label-max" id="priceRangeLabelMax">₹100+ Cr</span>
+                        <span class="price-range-label-min" id="propertiesPriceRangeLabelMin">₹0</span>
+                        <span class="price-range-label-max" id="propertiesPriceRangeLabelMax">₹100+ Cr</span>
                     </div>
                     <div class="price-range-slider-wrapper">
-                        <div class="price-range-track" id="priceRangeTrack">
-                            <div class="price-range-progress" id="priceRangeProgress"></div>
-                            <input type="range" class="price-range-input price-range-input-min" id="priceRangeMin" min="0" max="100" value="0" step="0.1">
-                            <input type="range" class="price-range-input price-range-input-max" id="priceRangeMax" min="0" max="100" value="100" step="0.1">
+                        <div class="price-range-track" id="propertiesPriceRangeTrack">
+                            <div class="price-range-progress" id="propertiesPriceRangeProgress"></div>
+                            <input type="range" class="price-range-input price-range-input-min" id="propertiesPriceRangeMin" min="0" max="100" value="0" step="0.1">
+                            <input type="range" class="price-range-input price-range-input-max" id="propertiesPriceRangeMax" min="0" max="100" value="100" step="0.1">
                         </div>
                     </div>
                     <div class="price-range-inputs">
                         <div class="price-range-input-group">
                             <label>Min Price (Cr)</label>
-                            <input type="number" class="price-range-number-input" id="priceRangeMinInput" min="0" max="100" step="0.1" value="0">
+                            <input type="number" class="price-range-number-input" id="propertiesPriceRangeMinInput" min="0" max="100" step="0.1" value="0">
                         </div>
                         <div class="price-range-input-group">
                             <label>Max Price (Cr)</label>
-                            <input type="number" class="price-range-number-input" id="priceRangeMaxInput" min="0" max="100" step="0.1" value="100">
+                            <input type="number" class="price-range-number-input" id="propertiesPriceRangeMaxInput" min="0" max="100" step="0.1" value="100">
                         </div>
                     </div>
                 </div>
             </div>
             <div class="price-range-modal-footer">
-                <button type="button" class="price-range-btn-clear" id="priceRangeBtnClear">Clear</button>
-                <button type="button" class="price-range-btn-apply" id="priceRangeBtnApply">Apply</button>
+                <button type="button" class="price-range-btn-clear" id="propertiesPriceRangeBtnClear">Clear</button>
+                <button type="button" class="price-range-btn-apply" id="propertiesPriceRangeBtnApply">Apply</button>
             </div>
         </div>
     </div>
@@ -461,6 +461,82 @@
         </div>
     </footer>
 
+    <script>
+        // Properties Page Filters - Inline JavaScript Bridge (MUST RUN BEFORE properties.js)
+        // Maps old ID references to new "properties" prefixed IDs for compatibility with properties.js
+        (function() {
+            'use strict';
+            
+            // ID mapping: old ID -> new ID
+            const idMap = {
+                'searchCity': 'propertiesSearchCity',
+                'searchArea': 'propertiesSearchArea',
+                'searchAmenities': 'propertiesSearchAmenities',
+                'searchDirections': 'propertiesSearchDirections',
+                'searchDimensions': 'propertiesSearchDimensions',
+                'searchPrice': 'propertiesSearchPrice',
+                'searchTransactionType': 'propertiesSearchTransactionType',
+                'searchPropertyCondition': 'propertiesSearchPropertyCondition',
+                'searchUnitType': 'propertiesSearchUnitType',
+                'searchLength': 'propertiesSearchLength',
+                'searchBreadth': 'propertiesSearchBreadth',
+                'searchCarpetArea': 'propertiesSearchCarpetArea',
+                'propertiesSearchForm': 'propertiesPropertiesSearchForm',
+                'filterTagsContainer': 'propertiesFilterTagsContainer',
+                'filterTags': 'propertiesFilterTags',
+                'clearAllFilters': 'propertiesClearAllFilters',
+                'priceRangeBtn': 'propertiesPriceRangeBtn',
+                'priceRangeDisplay': 'propertiesPriceRangeDisplay',
+                'priceRangeModal': 'propertiesPriceRangeModal',
+                'priceRangeModalOverlay': 'propertiesPriceRangeModalOverlay',
+                'priceRangeModalClose': 'propertiesPriceRangeModalClose',
+                'priceRangeMin': 'propertiesPriceRangeMin',
+                'priceRangeMax': 'propertiesPriceRangeMax',
+                'priceRangeMinInput': 'propertiesPriceRangeMinInput',
+                'priceRangeMaxInput': 'propertiesPriceRangeMaxInput',
+                'priceRangeProgress': 'propertiesPriceRangeProgress',
+                'priceRangeLabelMin': 'propertiesPriceRangeLabelMin',
+                'priceRangeLabelMax': 'propertiesPriceRangeLabelMax',
+                'priceRangeBtnClear': 'propertiesPriceRangeBtnClear',
+                'priceRangeBtnApply': 'propertiesPriceRangeBtnApply'
+            };
+            
+            // Patch getElementById to check for new IDs first
+            const originalGetElementById = document.getElementById.bind(document);
+            document.getElementById = function(id) {
+                // Check mapped ID first
+                if (idMap[id]) {
+                    const mappedElement = originalGetElementById(idMap[id]);
+                    if (mappedElement) return mappedElement;
+                }
+                // Fallback to original ID
+                return originalGetElementById(id);
+            };
+            
+            // Patch querySelector to use new IDs
+            const originalQuerySelector = Element.prototype.querySelector;
+            Element.prototype.querySelector = function(selector) {
+                if (selector === '.category-section-centered') {
+                    const element = originalQuerySelector.call(this, '#propertiesCategorySection');
+                    if (element) return element;
+                }
+                return originalQuerySelector.call(this, selector);
+            };
+            
+            // Patch querySelectorAll for category buttons (scope to properties filters)
+            const originalQuerySelectorAll = Element.prototype.querySelectorAll;
+            Element.prototype.querySelectorAll = function(selector) {
+                // For category and subcategory buttons, scope to properties filters container
+                if (selector.includes('.category-text-button') || selector.includes('.subcategory-button')) {
+                    const container = document.getElementById('propertiesPropertiesFilters');
+                    if (container) {
+                        return container.querySelectorAll(selector);
+                    }
+                }
+                return originalQuerySelectorAll.call(this, selector);
+            };
+        })();
+    </script>
     <script src="/js/script.js"></script>
     <script src="/js/properties.js"></script>
     <script src="/js/page-tracking.js"></script>

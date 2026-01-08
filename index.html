@@ -130,50 +130,50 @@
     <section class="properties-section">
         <div class="container">
             <!-- Filters and Search -->
-            <div class="properties-filters">
+            <div class="properties-filters" id="indexPropertiesFilters">
                 <!-- Category Filter with Subcategories -->
-                <div class="filter-section category-section-centered">
+                <div class="filter-section category-section-centered" id="indexCategorySection">
                     <div class="category-main-buttons">
-                        <button type="button" class="category-text-button" data-category="residential" id="filterResidential">Residential</button>
+                        <button type="button" class="category-text-button" data-category="residential" id="indexFilterResidential">Residential</button>
                         <span class="category-divider">|</span>
-                        <button type="button" class="category-text-button" data-category="commercial" id="filterCommercial">Commercial</button>
+                        <button type="button" class="category-text-button" data-category="commercial" id="indexFilterCommercial">Commercial</button>
                     </div>
                     <div class="category-subcategories-container">
                         <div class="subcategory-buttons" data-category="residential">
-                            <button type="button" class="filter-button subcategory-button" data-property-type="plots" data-parent-category="residential" id="filterPlots">Plots</button>
-                            <button type="button" class="filter-button subcategory-button" data-property-type="house" data-parent-category="residential" id="filterIndividualHouse">Individual House</button>
-                            <button type="button" class="filter-button subcategory-button" data-property-type="villa" data-parent-category="residential" id="filterVillas">Villas</button>
-                            <button type="button" class="filter-button subcategory-button" data-property-type="row-house" data-parent-category="residential" id="filterRowHouses">Row Houses</button>
+                            <button type="button" class="filter-button subcategory-button" data-property-type="plots" data-parent-category="residential" id="indexFilterPlots">Plots</button>
+                            <button type="button" class="filter-button subcategory-button" data-property-type="house" data-parent-category="residential" id="indexFilterIndividualHouse">Individual House</button>
+                            <button type="button" class="filter-button subcategory-button" data-property-type="villa" data-parent-category="residential" id="indexFilterVillas">Villas</button>
+                            <button type="button" class="filter-button subcategory-button" data-property-type="row-house" data-parent-category="residential" id="indexFilterRowHouses">Row Houses</button>
                         </div>
                         <div class="subcategory-buttons" data-category="commercial">
-                            <button type="button" class="filter-button subcategory-button" data-property-type="office-space" data-parent-category="commercial" id="filterOfficeSpace">Office Space</button>
-                            <button type="button" class="filter-button subcategory-button" data-property-type="warehouse" data-parent-category="commercial" id="filterWarehouse">Warehouse</button>
-                            <button type="button" class="filter-button subcategory-button" data-property-type="showrooms" data-parent-category="commercial" id="filterShowrooms">Showrooms</button>
+                            <button type="button" class="filter-button subcategory-button" data-property-type="office-space" data-parent-category="commercial" id="indexFilterOfficeSpace">Office Space</button>
+                            <button type="button" class="filter-button subcategory-button" data-property-type="warehouse" data-parent-category="commercial" id="indexFilterWarehouse">Warehouse</button>
+                            <button type="button" class="filter-button subcategory-button" data-property-type="showrooms" data-parent-category="commercial" id="indexFilterShowrooms">Showrooms</button>
                         </div>
                     </div>
                 </div>
                 
                 <!-- Advanced Search Form -->
                 <div class="properties-search">
-                    <form class="search-form" id="propertiesSearchForm">
+                    <form class="search-form" id="indexPropertiesSearchForm">
                         <div class="filters-two-column">
                             <!-- Left Column: Filter 1 -->
                             <div class="filter1">
                                 <div class="search-group">
                                     <label><i class="fas fa-map-marker-alt"></i> City</label>
-                                    <input type="text" id="searchCity" placeholder="Enter city">
+                                    <input type="text" id="indexSearchCity" placeholder="Enter city">
                                 </div>
                                 <div class="search-group">
                                     <label><i class="fas fa-map-marker-alt"></i> Area</label>
-                                    <input type="text" id="searchArea" placeholder="Enter area">
+                                    <input type="text" id="indexSearchArea" placeholder="Enter area">
                                 </div>
                                 <div class="search-group">
                                     <label><i class="fas fa-star"></i> Amenities</label>
-                                    <input type="text" id="searchAmenities" placeholder="e.g., Parking, Lift, Security">
+                                    <input type="text" id="indexSearchAmenities" placeholder="e.g., Parking, Lift, Security">
                                 </div>
                                 <div class="search-group">
                                     <label><i class="fas fa-home"></i> Unit Type</label>
-                                    <select id="searchUnitType">
+                                    <select id="indexSearchUnitType">
                                         <option value="">Any Unit Type</option>
                                         <option value="rk" data-bhk="0">1RK</option>
                                         <option value="bhk" data-bhk="1">1BHK</option>
@@ -188,7 +188,7 @@
                             <div class="filter2">
                                 <div class="search-group">
                                     <label><i class="fas fa-exchange-alt"></i> Transaction Type</label>
-                                    <select id="searchTransactionType">
+                                    <select id="indexSearchTransactionType">
                                         <option value="all">All Properties</option>
                                         <option value="sale">Buy</option>
                                         <option value="rent">Rent</option>
@@ -196,7 +196,7 @@
                                 </div>
                                 <div class="search-group">
                                     <label><i class="fas fa-check-circle"></i> Property Condition</label>
-                                    <select id="searchPropertyCondition">
+                                    <select id="indexSearchPropertyCondition">
                                         <option value="">Any Condition</option>
                                         <option value="new">New</option>
                                         <option value="resale">Resale</option>
@@ -204,15 +204,15 @@
                                 </div>
                                 <div class="search-group">
                                     <label><i class="fas fa-dollar-sign"></i> Price Range</label>
-                                    <button type="button" class="price-range-btn" id="priceRangeBtn">
-                                        <span class="price-range-display" id="priceRangeDisplay">Any Price</span>
+                                    <button type="button" class="price-range-btn" id="indexPriceRangeBtn">
+                                        <span class="price-range-display" id="indexPriceRangeDisplay">Any Price</span>
                                         <i class="fas fa-chevron-down"></i>
                                     </button>
-                                    <input type="hidden" id="searchPrice" value="">
+                                    <input type="hidden" id="indexSearchPrice" value="">
                                 </div>
                                 <div class="search-group">
                                     <label><i class="fas fa-ruler-combined"></i> Dimensions</label>
-                                    <input type="text" id="searchDimensions" placeholder="e.g., 30x40, 50x80">
+                                    <input type="text" id="indexSearchDimensions" placeholder="e.g., 30x40, 50x80">
                                 </div>
                             </div>
                         </div>
@@ -223,14 +223,14 @@
                 </div>
                 
                 <!-- Active Filter Tags -->
-                <div class="filter-tags-container" id="filterTagsContainer" style="display: none;">
+                <div class="filter-tags-container" id="indexFilterTagsContainer" style="display: none;">
                     <div class="filter-tags-header">
                         <span class="filter-tags-label">Active Filters:</span>
-                        <button type="button" class="clear-all-filters" id="clearAllFilters">
+                        <button type="button" class="clear-all-filters" id="indexClearAllFilters">
                             <i class="fas fa-times-circle"></i> Clear All
                         </button>
                     </div>
-                    <div class="filter-tags" id="filterTags">
+                    <div class="filter-tags" id="indexFilterTags">
                         <!-- Filter tags will be rendered here by JavaScript -->
                     </div>
                 </div>
@@ -239,43 +239,43 @@
     </section>
 
     <!-- Price Range Modal -->
-    <div class="price-range-modal" id="priceRangeModal">
-        <div class="price-range-modal-overlay" id="priceRangeModalOverlay"></div>
+    <div class="price-range-modal" id="indexPriceRangeModal">
+        <div class="price-range-modal-overlay" id="indexPriceRangeModalOverlay"></div>
         <div class="price-range-modal-content">
             <div class="price-range-modal-header">
                 <h3>Select Price Range</h3>
-                <button type="button" class="price-range-modal-close" id="priceRangeModalClose">
+                <button type="button" class="price-range-modal-close" id="indexPriceRangeModalClose">
                     <i class="fas fa-times"></i>
                 </button>
             </div>
             <div class="price-range-modal-body">
                 <div class="price-range-slider-container">
                     <div class="price-range-labels">
-                        <span class="price-range-label-min" id="priceRangeLabelMin">₹0</span>
-                        <span class="price-range-label-max" id="priceRangeLabelMax">₹100+ Cr</span>
+                        <span class="price-range-label-min" id="indexPriceRangeLabelMin">₹0</span>
+                        <span class="price-range-label-max" id="indexPriceRangeLabelMax">₹100+ Cr</span>
                     </div>
                     <div class="price-range-slider-wrapper">
-                        <div class="price-range-track" id="priceRangeTrack">
-                            <div class="price-range-progress" id="priceRangeProgress"></div>
-                            <input type="range" class="price-range-input price-range-input-min" id="priceRangeMin" min="0" max="100" value="0" step="0.1">
-                            <input type="range" class="price-range-input price-range-input-max" id="priceRangeMax" min="0" max="100" value="100" step="0.1">
+                        <div class="price-range-track" id="indexPriceRangeTrack">
+                            <div class="price-range-progress" id="indexPriceRangeProgress"></div>
+                            <input type="range" class="price-range-input price-range-input-min" id="indexPriceRangeMin" min="0" max="100" value="0" step="0.1">
+                            <input type="range" class="price-range-input price-range-input-max" id="indexPriceRangeMax" min="0" max="100" value="100" step="0.1">
                         </div>
                     </div>
                     <div class="price-range-inputs">
                         <div class="price-range-input-group">
                             <label>Min Price (Cr)</label>
-                            <input type="number" class="price-range-number-input" id="priceRangeMinInput" min="0" max="100" step="0.1" value="0">
+                            <input type="number" class="price-range-number-input" id="indexPriceRangeMinInput" min="0" max="100" step="0.1" value="0">
                         </div>
                         <div class="price-range-input-group">
                             <label>Max Price (Cr)</label>
-                            <input type="number" class="price-range-number-input" id="priceRangeMaxInput" min="0" max="100" step="0.1" value="100">
+                            <input type="number" class="price-range-number-input" id="indexPriceRangeMaxInput" min="0" max="100" step="0.1" value="100">
                         </div>
                     </div>
                 </div>
             </div>
             <div class="price-range-modal-footer">
-                <button type="button" class="price-range-btn-clear" id="priceRangeBtnClear">Clear</button>
-                <button type="button" class="price-range-btn-apply" id="priceRangeBtnApply">Apply</button>
+                <button type="button" class="price-range-btn-clear" id="indexPriceRangeBtnClear">Clear</button>
+                <button type="button" class="price-range-btn-apply" id="indexPriceRangeBtnApply">Apply</button>
             </div>
         </div>
     </div>
@@ -1625,6 +1625,560 @@
             window.addEventListener('load', () => {
                 setTimeout(checkScrollPosition, 100);
             });
+        })();
+    </script>
+    <script>
+        // Index Page Filters - Inline JavaScript (isolated namespace)
+        (function() {
+            'use strict';
+            
+            // Filter state variables for index page
+            let indexCurrentFilter = 'all';
+            let indexSelectedCondition = null;
+            let indexSelectedBHK = null;
+            let indexSelectedPropertyType = null;
+            let indexSelectedCategory = null;
+            
+            // Initialize index filters
+            function initIndexFilters() {
+                const categorySection = document.getElementById('indexCategorySection');
+                if (categorySection) {
+                    categorySection.removeAttribute('data-active-category');
+                }
+                
+                // Transaction Type select
+                const transactionTypeSelect = document.getElementById('indexSearchTransactionType');
+                if (transactionTypeSelect) {
+                    transactionTypeSelect.addEventListener('change', (e) => {
+                        indexCurrentFilter = e.target.value === 'all' ? 'all' : e.target.value;
+                        indexApplyFilters();
+                    });
+                }
+                
+                // Property Condition select
+                const propertyConditionSelect = document.getElementById('indexSearchPropertyCondition');
+                if (propertyConditionSelect) {
+                    propertyConditionSelect.addEventListener('change', (e) => {
+                        indexSelectedCondition = e.target.value || null;
+                        indexApplyFilters();
+                    });
+                }
+                
+                // Unit Type select
+                const unitTypeSelect = document.getElementById('indexSearchUnitType');
+                if (unitTypeSelect) {
+                    unitTypeSelect.addEventListener('change', (e) => {
+                        const selectedOption = unitTypeSelect.options[unitTypeSelect.selectedIndex];
+                        if (selectedOption.value === '') {
+                            indexSelectedBHK = null;
+                        } else {
+                            const bhk = parseInt(selectedOption.dataset.bhk);
+                            indexSelectedBHK = bhk;
+                        }
+                        indexApplyFilters();
+                    });
+                }
+                
+                // Category buttons
+                const categoryButtons = document.querySelectorAll('#indexPropertiesFilters .category-text-button[data-category]');
+                categoryButtons.forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        const category = btn.dataset.category;
+                        
+                        if (!categorySection) return;
+                        
+                        const currentActiveCategory = categorySection.getAttribute('data-active-category');
+                        
+                        if (currentActiveCategory === category) {
+                            categorySection.removeAttribute('data-active-category');
+                            btn.classList.remove('active');
+                            indexSelectedCategory = null;
+                            const allSubButtons = document.querySelectorAll('#indexPropertiesFilters .subcategory-button');
+                            allSubButtons.forEach(b => b.classList.remove('active'));
+                        } else {
+                            categorySection.setAttribute('data-active-category', category);
+                            categoryButtons.forEach(b => b.classList.remove('active'));
+                            btn.classList.add('active');
+                            const allSubButtons = document.querySelectorAll('#indexPropertiesFilters .subcategory-button');
+                            allSubButtons.forEach(b => b.classList.remove('active'));
+                            indexSelectedCategory = category;
+                            indexSelectedPropertyType = null;
+                        }
+                        indexApplyFilters();
+                    });
+                });
+                
+                // Property Type subcategory buttons
+                const propertyTypeButtons = document.querySelectorAll('#indexPropertiesFilters .subcategory-button[data-property-type]');
+                propertyTypeButtons.forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        const propType = btn.dataset.propertyType;
+                        const parentCategory = btn.dataset.parentCategory;
+                        
+                        if (indexSelectedPropertyType === propType && indexSelectedCategory === parentCategory) {
+                            indexSelectedPropertyType = null;
+                            indexSelectedCategory = null;
+                            btn.classList.remove('active');
+                            const categoryBtn = document.querySelector(`#indexPropertiesFilters .category-text-button[data-category="${parentCategory}"]`);
+                            if (categoryBtn) categoryBtn.classList.remove('active');
+                            if (categorySection) categorySection.removeAttribute('data-active-category');
+                        } else {
+                            propertyTypeButtons.forEach(b => b.classList.remove('active'));
+                            categoryButtons.forEach(b => b.classList.remove('active'));
+                            indexSelectedPropertyType = propType;
+                            indexSelectedCategory = parentCategory;
+                            btn.classList.add('active');
+                            const categoryBtn = document.querySelector(`#indexPropertiesFilters .category-text-button[data-category="${parentCategory}"]`);
+                            if (categoryBtn) categoryBtn.classList.add('active');
+                            if (categorySection) categorySection.setAttribute('data-active-category', parentCategory);
+                        }
+                        indexApplyFilters();
+                    });
+                });
+                
+                // Search form submission
+                const searchForm = document.getElementById('indexPropertiesSearchForm');
+                if (searchForm) {
+                    searchForm.addEventListener('submit', (e) => {
+                        e.preventDefault();
+                        indexApplyFilters();
+                    });
+                    
+                    const searchInputs = searchForm.querySelectorAll('input, select');
+                    searchInputs.forEach(input => {
+                        input.addEventListener('change', () => {
+                            indexApplyFilters();
+                        });
+                        
+                        if (input.tagName === 'INPUT' && input.type === 'text') {
+                            let inputTimeout;
+                            input.addEventListener('input', () => {
+                                clearTimeout(inputTimeout);
+                                inputTimeout = setTimeout(() => {
+                                    indexApplyFilters();
+                                }, 300);
+                            });
+                        }
+                    });
+                }
+                
+                // Clear all filters button
+                const clearAllBtn = document.getElementById('indexClearAllFilters');
+                if (clearAllBtn) {
+                    clearAllBtn.addEventListener('click', () => {
+                        indexSelectedCondition = null;
+                        indexCurrentFilter = 'all';
+                        indexSelectedBHK = null;
+                        indexSelectedPropertyType = null;
+                        indexSelectedCategory = null;
+                        
+                        if (transactionTypeSelect) transactionTypeSelect.value = 'all';
+                        if (propertyConditionSelect) propertyConditionSelect.value = '';
+                        if (unitTypeSelect) unitTypeSelect.value = '';
+                        
+                        document.querySelectorAll('#indexPropertiesFilters .subcategory-button').forEach(btn => btn.classList.remove('active'));
+                        document.querySelectorAll('#indexPropertiesFilters .category-text-button').forEach(btn => btn.classList.remove('active'));
+                        if (categorySection) categorySection.removeAttribute('data-active-category');
+                        
+                        document.getElementById('indexSearchCity').value = '';
+                        document.getElementById('indexSearchArea').value = '';
+                        document.getElementById('indexSearchAmenities').value = '';
+                        document.getElementById('indexSearchDimensions').value = '';
+                        document.getElementById('indexSearchPrice').value = '';
+                        
+                        indexApplyFilters();
+                    });
+                }
+                
+                // Initialize price range modal
+                initIndexPriceRangeModal();
+            }
+            
+            // Apply filters (redirects to properties page with filters)
+            function indexApplyFilters() {
+                const params = new URLSearchParams();
+                
+                if (indexCurrentFilter !== 'all') {
+                    params.set('status', indexCurrentFilter);
+                }
+                
+                if (indexSelectedPropertyType) {
+                    params.set('type', indexSelectedPropertyType);
+                }
+                
+                if (indexSelectedCategory && !indexSelectedPropertyType) {
+                    params.set('category', indexSelectedCategory);
+                }
+                
+                const city = document.getElementById('indexSearchCity')?.value.trim() || '';
+                if (city) params.set('city', city);
+                
+                const area = document.getElementById('indexSearchArea')?.value.trim() || '';
+                if (area) params.set('area', area);
+                
+                const amenities = document.getElementById('indexSearchAmenities')?.value.trim() || '';
+                if (amenities) params.set('amenities', amenities);
+                
+                const dimensions = document.getElementById('indexSearchDimensions')?.value.trim() || '';
+                if (dimensions) params.set('dimensions', dimensions);
+                
+                const price = document.getElementById('indexSearchPrice')?.value || '';
+                if (price) params.set('price', price);
+                
+                if (indexSelectedCondition) {
+                    params.set('condition', indexSelectedCondition);
+                }
+                
+                if (indexSelectedBHK !== null) {
+                    params.set('bhk', indexSelectedBHK);
+                }
+                
+                // Update filter tags
+                indexUpdateFilterTags();
+                
+                // Redirect to properties page with filters
+                const queryString = params.toString();
+                if (queryString) {
+                    window.location.href = '/properties.html?' + queryString;
+                } else {
+                    window.location.href = '/properties.html';
+                }
+            }
+            
+            // Update filter tags display
+            function indexUpdateFilterTags() {
+                const filterTagsContainer = document.getElementById('indexFilterTagsContainer');
+                const filterTags = document.getElementById('indexFilterTags');
+                
+                if (!filterTagsContainer || !filterTags) return;
+                
+                const activeFilters = [];
+                
+                if (indexCurrentFilter !== 'all') {
+                    activeFilters.push({
+                        type: 'status',
+                        label: indexCurrentFilter === 'sale' ? 'Buy' : 'Rent',
+                        icon: indexCurrentFilter === 'sale' ? 'fa-shopping-cart' : 'fa-key'
+                    });
+                }
+                
+                if (indexSelectedCondition) {
+                    activeFilters.push({
+                        type: 'condition',
+                        label: indexSelectedCondition === 'new' ? 'New' : 'Resale',
+                        icon: 'fa-certificate'
+                    });
+                }
+                
+                if (indexSelectedBHK !== null) {
+                    const unitTypeSelect = document.getElementById('indexSearchUnitType');
+                    const selectedOption = unitTypeSelect?.options[unitTypeSelect.selectedIndex];
+                    const unitType = selectedOption?.value;
+                    let unitTypeLabel = '';
+                    if (unitType === 'rk') {
+                        unitTypeLabel = '1RK';
+                    } else if (unitType === '4plus') {
+                        unitTypeLabel = '4+BHK';
+                    } else {
+                        unitTypeLabel = `${indexSelectedBHK}BHK`;
+                    }
+                    activeFilters.push({
+                        type: 'bhk',
+                        label: `Unit Type: ${unitTypeLabel}`,
+                        icon: 'fa-bed'
+                    });
+                }
+                
+                if (indexSelectedPropertyType) {
+                    const typeLabels = {
+                        'plots': 'Plots',
+                        'office-space': 'Office Space',
+                        'warehouse': 'Warehouse',
+                        'showrooms': 'Showrooms',
+                        'house': 'Individual House',
+                        'villa': 'Villas',
+                        'row-house': 'Row Houses'
+                    };
+                    const categoryLabel = indexSelectedCategory === 'residential' ? 'Residential' : 
+                                         indexSelectedCategory === 'commercial' ? 'Commercial' : '';
+                    const typeLabel = typeLabels[indexSelectedPropertyType] || indexSelectedPropertyType;
+                    activeFilters.push({
+                        type: 'propertyType',
+                        label: categoryLabel ? `${categoryLabel}: ${typeLabel}` : `Type: ${typeLabel}`,
+                        icon: 'fa-building'
+                    });
+                } else if (indexSelectedCategory) {
+                    activeFilters.push({
+                        type: 'category',
+                        label: indexSelectedCategory === 'residential' ? 'Residential' : 'Commercial',
+                        icon: 'fa-home'
+                    });
+                }
+                
+                const city = document.getElementById('indexSearchCity')?.value.trim() || '';
+                if (city) {
+                    activeFilters.push({
+                        type: 'city',
+                        label: `City: ${city}`,
+                        icon: 'fa-map-marker-alt'
+                    });
+                }
+                
+                const area = document.getElementById('indexSearchArea')?.value.trim() || '';
+                if (area) {
+                    activeFilters.push({
+                        type: 'area',
+                        label: `Area: ${area}`,
+                        icon: 'fa-map-marker-alt'
+                    });
+                }
+                
+                const dimensions = document.getElementById('indexSearchDimensions')?.value.trim() || '';
+                if (dimensions) {
+                    activeFilters.push({
+                        type: 'dimensions',
+                        label: `Dimensions: ${dimensions}`,
+                        icon: 'fa-ruler-combined'
+                    });
+                }
+                
+                const price = document.getElementById('indexSearchPrice')?.value || '';
+                if (price) {
+                    activeFilters.push({
+                        type: 'price',
+                        label: `Price: Custom Range`,
+                        icon: 'fa-dollar-sign'
+                    });
+                }
+                
+                const amenities = document.getElementById('indexSearchAmenities')?.value.trim() || '';
+                if (amenities) {
+                    activeFilters.push({
+                        type: 'amenities',
+                        label: `Amenities: ${amenities}`,
+                        icon: 'fa-star'
+                    });
+                }
+                
+                if (activeFilters.length > 0) {
+                    filterTags.innerHTML = activeFilters.map(filter => `
+                        <div class="filter-tag" data-filter-type="${filter.type}">
+                            <i class="fas ${filter.icon} filter-tag-icon"></i>
+                            <span class="filter-tag-text">${filter.label}</span>
+                        </div>
+                    `).join('');
+                    filterTagsContainer.style.display = 'block';
+                } else {
+                    filterTagsContainer.style.display = 'none';
+                    filterTags.innerHTML = '';
+                }
+            }
+            
+            // Initialize Price Range Modal for Index Page
+            function initIndexPriceRangeModal() {
+                const priceRangeBtn = document.getElementById('indexPriceRangeBtn');
+                const priceRangeModal = document.getElementById('indexPriceRangeModal');
+                const priceRangeModalOverlay = document.getElementById('indexPriceRangeModalOverlay');
+                const priceRangeModalClose = document.getElementById('indexPriceRangeModalClose');
+                const priceRangeMin = document.getElementById('indexPriceRangeMin');
+                const priceRangeMax = document.getElementById('indexPriceRangeMax');
+                const priceRangeMinInput = document.getElementById('indexPriceRangeMinInput');
+                const priceRangeMaxInput = document.getElementById('indexPriceRangeMaxInput');
+                const priceRangeProgress = document.getElementById('indexPriceRangeProgress');
+                const priceRangeLabelMin = document.getElementById('indexPriceRangeLabelMin');
+                const priceRangeLabelMax = document.getElementById('indexPriceRangeLabelMax');
+                const priceRangeDisplay = document.getElementById('indexPriceRangeDisplay');
+                const priceRangeBtnClear = document.getElementById('indexPriceRangeBtnClear');
+                const priceRangeBtnApply = document.getElementById('indexPriceRangeBtnApply');
+                const searchPriceInput = document.getElementById('indexSearchPrice');
+                
+                if (!priceRangeBtn || !priceRangeModal) return;
+                
+                let minValue = 0;
+                let maxValue = 100;
+                
+                function crToPrice(cr) {
+                    return cr * 10000000;
+                }
+                
+                function priceToCr(price) {
+                    return price / 10000000;
+                }
+                
+                function formatPriceDisplay(minCr, maxCr) {
+                    if (minCr === 0 && maxCr === 100) {
+                        return 'Any Price';
+                    }
+                    if (maxCr >= 100) {
+                        return `₹${minCr > 0 ? minCr.toFixed(1) : '0'} Cr+`;
+                    }
+                    return `₹${minCr > 0 ? minCr.toFixed(1) : '0'} Cr - ₹${maxCr.toFixed(1)} Cr`;
+                }
+                
+                function updateProgress() {
+                    const minPercent = (minValue / 100) * 100;
+                    const maxPercent = (maxValue / 100) * 100;
+                    if (priceRangeProgress) {
+                        priceRangeProgress.style.left = minPercent + '%';
+                        priceRangeProgress.style.right = (100 - maxPercent) + '%';
+                    }
+                }
+                
+                function updateLabels() {
+                    if (priceRangeLabelMin) {
+                        priceRangeLabelMin.textContent = minValue === 0 ? '₹0' : `₹${minValue.toFixed(1)} Cr`;
+                    }
+                    if (priceRangeLabelMax) {
+                        priceRangeLabelMax.textContent = maxValue >= 100 ? '₹100+ Cr' : `₹${maxValue.toFixed(1)} Cr`;
+                    }
+                }
+                
+                function updateSliderFromInput() {
+                    if (priceRangeMin) priceRangeMin.value = minValue;
+                    if (priceRangeMax) priceRangeMax.value = maxValue;
+                    updateProgress();
+                    updateLabels();
+                }
+                
+                function updateInputFromSlider() {
+                    if (priceRangeMinInput) priceRangeMinInput.value = minValue;
+                    if (priceRangeMaxInput) priceRangeMaxInput.value = maxValue;
+                    updateProgress();
+                    updateLabels();
+                }
+                
+                function validateRange() {
+                    if (minValue > maxValue) {
+                        const temp = minValue;
+                        minValue = maxValue;
+                        maxValue = temp;
+                    }
+                    if (minValue < 0) minValue = 0;
+                    if (maxValue > 100) maxValue = 100;
+                }
+                
+                function openModal() {
+                    if (priceRangeModal) {
+                        priceRangeModal.classList.add('active');
+                        document.body.style.overflow = 'hidden';
+                    }
+                }
+                
+                function closeModal() {
+                    if (priceRangeModal) {
+                        priceRangeModal.classList.remove('active');
+                        document.body.style.overflow = '';
+                    }
+                }
+                
+                function applyPriceRange() {
+                    validateRange();
+                    const minPrice = crToPrice(minValue);
+                    const maxPrice = maxValue >= 100 ? '' : crToPrice(maxValue);
+                    const priceValue = maxPrice === '' ? `${minPrice}-` : `${minPrice}-${maxPrice}`;
+                    
+                    if (searchPriceInput) {
+                        if (minValue === 0 && maxValue >= 100) {
+                            searchPriceInput.value = '';
+                        } else {
+                            searchPriceInput.value = priceValue;
+                        }
+                    }
+                    
+                    if (priceRangeDisplay) {
+                        priceRangeDisplay.textContent = formatPriceDisplay(minValue, maxValue);
+                    }
+                    
+                    closeModal();
+                    indexUpdateFilterTags();
+                }
+                
+                function clearPriceRange() {
+                    minValue = 0;
+                    maxValue = 100;
+                    updateSliderFromInput();
+                    if (searchPriceInput) {
+                        searchPriceInput.value = '';
+                    }
+                    if (priceRangeDisplay) {
+                        priceRangeDisplay.textContent = 'Any Price';
+                    }
+                    closeModal();
+                    indexUpdateFilterTags();
+                }
+                
+                if (priceRangeBtn) {
+                    priceRangeBtn.addEventListener('click', openModal);
+                }
+                
+                if (priceRangeModalOverlay) {
+                    priceRangeModalOverlay.addEventListener('click', closeModal);
+                }
+                
+                if (priceRangeModalClose) {
+                    priceRangeModalClose.addEventListener('click', closeModal);
+                }
+                
+                document.addEventListener('keydown', (e) => {
+                    if (e.key === 'Escape' && priceRangeModal && priceRangeModal.classList.contains('active')) {
+                        closeModal();
+                    }
+                });
+                
+                if (priceRangeMin) {
+                    priceRangeMin.addEventListener('input', (e) => {
+                        minValue = parseFloat(e.target.value);
+                        validateRange();
+                        updateInputFromSlider();
+                    });
+                }
+                
+                if (priceRangeMax) {
+                    priceRangeMax.addEventListener('input', (e) => {
+                        maxValue = parseFloat(e.target.value);
+                        validateRange();
+                        updateInputFromSlider();
+                    });
+                }
+                
+                if (priceRangeMinInput) {
+                    priceRangeMinInput.addEventListener('input', (e) => {
+                        minValue = parseFloat(e.target.value) || 0;
+                        validateRange();
+                        updateSliderFromInput();
+                    });
+                }
+                
+                if (priceRangeMaxInput) {
+                    priceRangeMaxInput.addEventListener('input', (e) => {
+                        maxValue = parseFloat(e.target.value) || 100;
+                        validateRange();
+                        updateSliderFromInput();
+                    });
+                }
+                
+                if (priceRangeBtnClear) {
+                    priceRangeBtnClear.addEventListener('click', clearPriceRange);
+                }
+                
+                if (priceRangeBtnApply) {
+                    priceRangeBtnApply.addEventListener('click', applyPriceRange);
+                }
+                
+                updateProgress();
+                updateLabels();
+            }
+            
+            // Initialize on DOM ready
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', initIndexFilters);
+            } else {
+                initIndexFilters();
+            }
         })();
     </script>
     <script>

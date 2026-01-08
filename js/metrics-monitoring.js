@@ -485,17 +485,20 @@ function renderCacheLogs(logs, reset = false) {
             'clear': '<span style="color: var(--purple);">Clear</span>'
         }[log.operation] || log.operation;
 
+        // Format cache size
+        const cacheSize = log.cache_size_kb 
+            ? `${log.cache_size_kb.toFixed(2)} KB` 
+            : 'N/A';
+        
         return `
             <tr>
-                <td>${log.cache_key.substring(0, 50)}${log.cache_key.length > 50 ? '...' : ''}</td>
                 <td>${operationBadge}</td>
+                <td>${log.cache_key ? log.cache_key.substring(0, 50) + (log.cache_key.length > 50 ? '...' : '') : 'N/A'}</td>
                 <td>${log.cache_type || 'N/A'}</td>
                 <td>${log.response_time_ms ? log.response_time_ms.toFixed(2) + ' ms' : 'N/A'}</td>
+                <td>${cacheSize}</td>
                 <td>${statusBadge}</td>
                 <td>${timeStr}</td>
-                <td>
-                    ${log.error_message ? `<span style="color: var(--red);" title="${log.error_message}">Error</span>` : '-'}
-                </td>
             </tr>
         `;
     }).join('');
@@ -511,7 +514,7 @@ function renderCacheLogs(logs, reset = false) {
 function updateCacheLogsCount(total) {
     const countEl = document.getElementById('cacheLogsCount');
     if (countEl) {
-        countEl.textContent = `Total: ${total}`;
+        countEl.textContent = `${total} cache log${total !== 1 ? 's' : ''}`;
     }
 }
 

@@ -786,6 +786,11 @@ function initDashboard() {
     
     // Start auto-refresh for visitor info and activity logs
     startAutoRefresh();
+    
+    // Initialize Application Monitoring (metrics, charts, cache logs)
+    if (typeof initMetricsMonitoring === 'function') {
+        initMetricsMonitoring();
+    }
 }
 
 // Login is now handled in the main site login modal (index.html, properties.html, property-details.html)
@@ -3518,7 +3523,7 @@ async function handlePartnerSubmit(e) {
         let response;
         if (partnerId) {
             // Update existing partner
-            response = await fetch(`/api/partners/${partnerId}`, {
+            response = await authenticatedFetch(`/api/partners/${partnerId}`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
@@ -3527,7 +3532,7 @@ async function handlePartnerSubmit(e) {
             });
         } else {
             // Create new partner
-            response = await fetch('/api/partners', {
+            response = await authenticatedFetch('/api/partners', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -4256,7 +4261,7 @@ async function handleBlogSubmit(e) {
         let response;
         if (blogId) {
             // Update existing blog
-            response = await fetch(`/api/blogs/${blogId}`, {
+            response = await authenticatedFetch(`/api/blogs/${blogId}`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
@@ -4265,7 +4270,7 @@ async function handleBlogSubmit(e) {
             });
         } else {
             // Create new blog
-            response = await fetch('/api/blogs', {
+            response = await authenticatedFetch('/api/blogs', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

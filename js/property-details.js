@@ -1,4 +1,5 @@
 // Property Details Page JavaScript
+// Version: 2.0 - Fixed propertyType duplicate declaration issue
 
 // HTML escaping function for security
 function escapeHtml(text) {
@@ -40,9 +41,27 @@ function hideLoadingState() {
     const headerEl = document.getElementById('propertyHeader');
     const contentEl = document.getElementById('propertyContent');
     
-    if (loadingEl) loadingEl.style.display = 'none';
-    if (headerEl) headerEl.style.display = 'block';
-    if (contentEl) contentEl.style.display = 'flex';
+    console.log('[Property Details] hideLoadingState called');
+    console.log('[Property Details] Elements found:', {
+        loading: !!loadingEl,
+        header: !!headerEl,
+        content: !!contentEl
+    });
+    
+    if (loadingEl) {
+        loadingEl.style.display = 'none';
+        console.log('[Property Details] Loading element hidden');
+    }
+    if (headerEl) {
+        headerEl.style.display = 'block';
+        console.log('[Property Details] Header element shown');
+    }
+    if (contentEl) {
+        contentEl.style.display = 'flex';
+        console.log('[Property Details] Content element shown');
+    } else {
+        console.error('[Property Details] Content element not found!');
+    }
 }
 
 // Show error state
@@ -258,9 +277,9 @@ function convertPropertyFromAPI(property) {
     }
     
     // Get type - handle enum values
-    let propertyType = property.type;
-    if (typeof propertyType !== 'string') {
-        propertyType = propertyType?.value || propertyType || 'apartment';
+    let convertedPropertyType = property.type;
+    if (typeof convertedPropertyType !== 'string') {
+        convertedPropertyType = convertedPropertyType?.value || convertedPropertyType || 'apartment';
     }
     
     return {
@@ -269,7 +288,7 @@ function convertPropertyFromAPI(property) {
         location: location,
         price: property.price, // Numeric value for backend
         price_text: priceText, // Text value for display
-        type: propertyType,
+        type: convertedPropertyType,
         status: statusValue,
         bedrooms: bedrooms,
         bathrooms: bathrooms,
@@ -488,15 +507,20 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 // Load Property Details
 async function loadPropertyDetails() {
+    console.log('[Property Details] Starting to load property details...');
     const urlParams = new URLSearchParams(window.location.search);
     const propertyId = parseInt(urlParams.get('id'));
     
-    if (!propertyId) {
+    console.log('[Property Details] Property ID from URL:', propertyId);
+    
+    if (!propertyId || isNaN(propertyId)) {
+        console.error('[Property Details] Invalid property ID');
         showErrorState('Invalid property ID');
         return;
     }
     
     showLoadingState();
+    console.log('[Property Details] Loading state shown');
     
     try {
     // Try to load from API first
@@ -510,58 +534,99 @@ async function loadPropertyDetails() {
     // Store property ID for contact form
     currentPropertyId = property.id;
     
-        hideLoadingState();
+    // Hide loading and show content before rendering
+    console.log('[Property Details] Hiding loading state, showing content');
+    hideLoadingState();
+    
+    // Render property details (this will populate the content)
+    console.log('[Property Details] Rendering property details...');
     renderPropertyDetails(property);
+    console.log('[Property Details] Property details rendered successfully');
+    
+    // Initialize modals
+    console.log('[Property Details] Initializing modals...');
     initContactAgentModal();
     initScheduleVisitModal();
+    console.log('[Property Details] Modals initialized');
         
-        console.log(`Loaded property ${propertyId} from database`);
+    console.log(`[Property Details] Successfully loaded property ${propertyId} from database`);
         
     } catch (error) {
-        console.error('Error loading property details:', error);
-        hideLoadingState();
+        console.error('[Property Details] Error loading property details:', error);
         
-        if (error.message.includes('not found') || error.message.includes('404')) {
+        // Check error type
+        if (error.message && (error.message.includes('not found') || error.message.includes('404'))) {
             showErrorState('Property not found. It may have been removed.');
         } else {
-            showErrorState('Failed to load property. Please try again later.');
+            // For other errors (like rendering errors), ensure content is visible
+            // The content might be partially rendered, so show it instead of hiding everything
+            console.warn('[Property Details] Rendering error, but showing content anyway');
+            hideLoadingState();
+            // Don't call showErrorState here - let the partially rendered content show
+            // Only show error if it's a critical API error
+            if (error.message && error.message.includes('fetch')) {
+                showErrorState('Failed to load property. Please try again later.');
+            }
         }
     }
 }
 
 // Render Property Details
 function renderPropertyDetails(property) {
-    // Update page title
-    document.title = `${property.title} - Tirumakudalu Properties`;
+    try {
+        // Update page title
+        document.title = `${property.title} - Tirumakudalu Properties`;
+        
+        // Get images first
+        const images = property.images && property.images.length > 0 ? property.images : 
+                       (property.image ? [property.image] : ['/images/img1.jpg']);
+        
+        // Get main image (first image)
+        const mainImage = images[0] || '/images/img1.jpg';
+        const normalizedMainImage = normalizeImageUrl(mainImage);
+        
+        // Render Header Image Section
+        const headerImageSection = document.getElementById('propertyHeaderImage');
+        if (headerImageSection) {
+            headerImageSection.innerHTML = `
+                <img src="${normalizedMainImage}" alt="${escapeHtml(property.title || 'Property')}" class="property-header-main-image">
+            `;
+        }
+        
+        // Render Header Description Section
+        const title = escapeHtml(property.title || 'Untitled Property');
+        const location = escapeHtml(property.location || 'Location not specified');
+        const features = property.features && property.features.length > 0 ? property.features : [];
     
-    // Get images first
-    const images = property.images && property.images.length > 0 ? property.images : 
-                   (property.image ? [property.image] : ['/images/img1.jpg']);
+    // Get property details for bottom right section
+    const amenitiesCount = features.length;
+    const bhk = property.bedrooms || 0;
+    const displayPropertyType = property.type || 'N/A';
+    const direction = property.facing || property.orientation || property.direction || 'N/A';
     
-    // Get main image (first image)
-    const mainImage = images[0] || '/images/img1.jpg';
-    const normalizedMainImage = normalizeImageUrl(mainImage);
+    // Format property type
+    const formatPropertyType = (type) => {
+        if (!type) return 'N/A';
+        return type.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+    };
     
-    // Render Header Image Section
-    const headerImageSection = document.getElementById('propertyHeaderImage');
-    headerImageSection.innerHTML = `
-        <img src="${normalizedMainImage}" alt="${escapeHtml(property.title || 'Property')}" class="property-header-main-image">
-    `;
-    
-    // Render Header Description Section
-    const title = escapeHtml(property.title || 'Untitled Property');
-    const location = escapeHtml(property.location || 'Location not specified');
-    const features = property.features && property.features.length > 0 ? property.features : [];
+    // Format direction (handle all 8 directions)
+    const formatDirection = (dir) => {
+        if (!dir || dir === 'N/A') return 'N/A';
+        const directions = ['north', 'south', 'east', 'west', 'northeast', 'northwest', 'southeast', 'southwest'];
+        const dirLower = dir.toLowerCase();
+        for (const d of directions) {
+            if (dirLower.includes(d)) {
+                return d.replace(/\b\w/g, l => l.toUpperCase());
+            }
+        }
+        return dir.replace(/\b\w/g, l => l.toUpperCase());
+    };
     
     const headerDescriptionSection = document.getElementById('propertyHeaderDescription');
-    headerDescriptionSection.innerHTML = `
+    if (headerDescriptionSection) {
+        headerDescriptionSection.innerHTML = `
         <div class="property-header-description-content">
-            <div class="property-header-amenities">
-                ${features.length > 0 ? features.map(feature => {
-                    const featureName = escapeHtml(feature);
-                    return `<button class="amenity-btn">${featureName}</button>`;
-                }).join('') : '<p class="no-amenities">No amenities listed</p>'}
-            </div>
             <div class="property-header-info">
                 <h1 class="property-details-title">${title}</h1>
                 <div class="property-details-location">
@@ -569,8 +634,35 @@ function renderPropertyDetails(property) {
                     <span>${location}</span>
                 </div>
             </div>
+            ${features.length > 0 ? `
+            <div class="property-header-amenities">
+                ${features.map(feature => {
+                    const featureName = escapeHtml(feature);
+                    return `<button class="amenity-btn">${featureName}</button>`;
+                }).join('')}
+            </div>
+            ` : ''}
+            <div class="property-header-stats">
+                <div class="property-stat-item">
+                    <span class="stat-label">Amenities</span>
+                    <span class="stat-value">${amenitiesCount}</span>
+                </div>
+                <div class="property-stat-item">
+                    <span class="stat-label">BHK</span>
+                    <span class="stat-value">${bhk}</span>
+                </div>
+                <div class="property-stat-item">
+                    <span class="stat-label">Type</span>
+                    <span class="stat-value">${formatPropertyType(displayPropertyType)}</span>
+                </div>
+                <div class="property-stat-item">
+                    <span class="stat-label">Direction</span>
+                    <span class="stat-value">${formatDirection(direction)}</span>
+                </div>
+            </div>
         </div>
     `;
+    }
     
     // Categorize images
     
@@ -744,7 +836,7 @@ function renderPropertyDetails(property) {
     status.innerHTML = `<span class="status-badge ${statusClass}">${escapeHtml(statusText)}</span>`;
     
     const quickInfo = document.getElementById('propertyQuickInfo');
-    const propertyType = escapeHtml((property.type || 'apartment').charAt(0).toUpperCase() + (property.type || 'apartment').slice(1));
+    const propertyTypeFormatted = escapeHtml((property.type || 'apartment').charAt(0).toUpperCase() + (property.type || 'apartment').slice(1));
     const isPlot = property.type === 'plot' || property.property_category === 'plot';
     
     let quickInfoHTML = `
@@ -752,7 +844,7 @@ function renderPropertyDetails(property) {
             <i class="fas fa-building"></i>
             <div>
                 <span class="quick-info-label">Type</span>
-                <span class="quick-info-value">${propertyType}</span>
+                <span class="quick-info-value">${propertyTypeFormatted}</span>
             </div>
         </div>
     `;
@@ -934,6 +1026,12 @@ function renderPropertyDetails(property) {
         </div>
     `;
     
+    } catch (error) {
+        console.error('Error rendering property details:', error);
+        // Ensure content is still shown even if rendering fails
+        hideLoadingState();
+        throw error; // Re-throw to let caller handle it
+    }
 }
 
 // Render Gallery with Filter
@@ -1329,11 +1427,11 @@ function initContactAgentModal() {
         contactAgentForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             
-            const name = document.getElementById('contactName').value.trim();
-            const email = document.getElementById('contactEmail').value.trim();
-            const phone = document.getElementById('contactPhone').value.trim();
-            const subject = document.getElementById('contactSubject').value.trim();
-            const message = document.getElementById('contactMessage').value.trim();
+            const name = document.getElementById('agentContactName').value.trim();
+            const email = document.getElementById('agentContactEmail').value.trim();
+            const phone = document.getElementById('agentContactPhone').value.trim();
+            const subject = document.getElementById('agentContactSubject').value.trim();
+            const message = document.getElementById('agentContactMessage').value.trim();
             
             const submitBtn = contactAgentForm.querySelector('.btn-login-submit');
             const originalText = submitBtn.innerHTML;

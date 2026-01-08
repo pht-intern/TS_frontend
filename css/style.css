@@ -2764,6 +2764,119 @@ section:not(.hero).section-visible .section-header {
     margin-bottom: 1rem;
 }
 
+/* Apply same styling to other section headers */
+.property-types .section-header,
+.about-compact .section-header,
+.partners-compact .section-header,
+.testimonials-compact .section-header,
+.contact .section-header {
+    position: relative;
+    margin-bottom: 4rem;
+    padding-bottom: 2rem;
+}
+
+.property-types .section-header::after,
+.about-compact .section-header::after,
+.partners-compact .section-header::after,
+.testimonials-compact .section-header::after,
+.contact .section-header::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 80px;
+    height: 4px;
+    background: linear-gradient(90deg, var(--primary-color), var(--accent-color), var(--primary-color));
+    border-radius: 2px;
+}
+
+.property-types .section-header h2,
+.about-compact .section-header h2,
+.partners-compact .section-header h2,
+.testimonials-compact .section-header h2,
+.contact .section-header h2 {
+    position: relative;
+    display: inline-block;
+    font-size: clamp(2.5rem, 5vw, 3.5rem);
+    letter-spacing: -0.02em;
+    background: linear-gradient(135deg, var(--text-dark) 0%, var(--primary-color) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 1rem;
+}
+
+/* Style for Property Management Services heading */
+.service-header-key {
+    position: relative;
+    margin-bottom: 4rem;
+    padding-bottom: 2rem;
+    text-align: center;
+    margin-left: 0;
+    padding-left: 0;
+    padding-right: 0;
+}
+
+.service-header-key::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 80px;
+    height: 4px;
+    background: linear-gradient(90deg, var(--primary-color), var(--accent-color), var(--primary-color));
+    border-radius: 2px;
+}
+
+.service-header-key h3 {
+    position: relative;
+    display: inline-block;
+    font-size: clamp(2.5rem, 5vw, 3.5rem);
+    letter-spacing: -0.02em;
+    background: linear-gradient(135deg, var(--text-dark) 0%, var(--primary-color) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 1rem;
+    text-transform: none;
+    font-family: 'Playfair Display', serif;
+}
+
+/* Style for Our Expertise heading */
+.about-team-compact {
+    position: relative;
+}
+
+.about-team-title {
+    position: relative;
+    display: inline-block;
+    font-size: clamp(2.5rem, 5vw, 3.5rem);
+    letter-spacing: -0.02em;
+    background: linear-gradient(135deg, var(--text-dark) 0%, var(--primary-color) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 4rem;
+    padding-bottom: 2rem;
+    text-align: center;
+    width: 100%;
+    font-weight: 700;
+}
+
+.about-team-title::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 80px;
+    height: 4px;
+    background: linear-gradient(90deg, var(--primary-color), var(--accent-color), var(--primary-color));
+    border-radius: 2px;
+}
+
 /* Services Layout */
 .services-layout {
     display: flex;
@@ -3990,24 +4103,42 @@ section:not(.hero).section-visible .section-header {
 
 .service-header-key {
     text-align: center;
-    margin-bottom: 2rem;
-    margin-left: 25%;
-    padding-left: 1.5rem;
-    padding-right: 2rem;
+    margin-bottom: 4rem;
+    padding-bottom: 2rem;
+    margin-left: 0;
+    padding-left: 0;
+    padding-right: 0;
     position: relative;
     z-index: 1;
     max-width: 100%;
     box-sizing: border-box;
 }
 
+.service-header-key::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 80px;
+    height: 4px;
+    background: linear-gradient(90deg, var(--primary-color), var(--accent-color), var(--primary-color));
+    border-radius: 2px;
+}
+
 .service-header-key h3 {
-    font-size: 2rem;
+    position: relative;
+    display: inline-block;
+    font-size: clamp(2.5rem, 5vw, 3.5rem);
+    letter-spacing: -0.02em;
+    background: linear-gradient(135deg, var(--text-dark) 0%, var(--primary-color) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 1rem;
+    text-transform: none;
+    font-family: 'Playfair Display', serif;
     font-weight: 700;
-    color: var(--primary-color);
-    margin-bottom: 0.75rem;
-    text-transform: uppercase;
-    letter-spacing: 2px;
-    font-family: 'Inter', sans-serif;
 }
 
 .title-underline-small {
@@ -7707,6 +7838,39 @@ section:not(.hero).section-visible .section-header {
         font-size: clamp(2rem, 4vw, 2.5rem);
     }
     
+    /* Apply same responsive styling to other section headers */
+    .property-types .section-header,
+    .about-compact .section-header,
+    .partners-compact .section-header,
+    .testimonials-compact .section-header,
+    .contact .section-header {
+        margin-bottom: 3rem;
+        padding-bottom: 1.5rem;
+    }
+    
+    .property-types .section-header h2,
+    .about-compact .section-header h2,
+    .partners-compact .section-header h2,
+    .testimonials-compact .section-header h2,
+    .contact .section-header h2 {
+        font-size: clamp(2rem, 4vw, 2.5rem);
+    }
+    
+    .service-header-key {
+        margin-bottom: 3rem;
+        padding-bottom: 1.5rem;
+    }
+    
+    .service-header-key h3 {
+        font-size: clamp(2rem, 4vw, 2.5rem);
+    }
+    
+    .about-team-title {
+        margin-bottom: 3rem;
+        padding-bottom: 1.5rem;
+        font-size: clamp(2rem, 4vw, 2.5rem);
+    }
+    
     .service-section {
         padding: 3rem 0;
     }
@@ -7928,6 +8092,26 @@ section:not(.hero).section-visible .section-header {
     }
     
     .services-showcase .section-header {
+        margin-bottom: 2.5rem;
+        padding-bottom: 1rem;
+    }
+    
+    /* Apply same responsive styling to other section headers */
+    .property-types .section-header,
+    .about-compact .section-header,
+    .partners-compact .section-header,
+    .testimonials-compact .section-header,
+    .contact .section-header {
+        margin-bottom: 2.5rem;
+        padding-bottom: 1rem;
+    }
+    
+    .service-header-key {
+        margin-bottom: 2.5rem;
+        padding-bottom: 1rem;
+    }
+    
+    .about-team-title {
         margin-bottom: 2.5rem;
         padding-bottom: 1rem;
     }
@@ -11112,6 +11296,7 @@ section:not(.hero).section-visible .section-header {
 .property-header-description-section {
     padding: 2rem 2.5rem;
     background: var(--white);
+    position: relative;
 }
 
 .property-header-description-content {
@@ -11120,6 +11305,8 @@ section:not(.hero).section-visible .section-header {
     align-items: flex-start;
     gap: 2rem;
     flex-wrap: wrap;
+    position: relative;
+    min-height: 120px;
 }
 
 .property-header-amenities {
@@ -11154,16 +11341,16 @@ section:not(.hero).section-visible .section-header {
 .property-header-info {
     flex: 1;
     min-width: 250px;
-    text-align: right;
+    text-align: left;
 }
 
 .property-header-info .property-details-title {
     margin-bottom: 0.75rem;
-    text-align: right;
+    text-align: left;
 }
 
 .property-header-info .property-details-location {
-    justify-content: flex-end;
+    justify-content: flex-start;
     margin-bottom: 0;
 }
 
@@ -11171,6 +11358,39 @@ section:not(.hero).section-visible .section-header {
     color: var(--text-light);
     font-style: italic;
     font-size: 0.9rem;
+}
+
+.property-header-stats {
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    display: flex;
+    gap: 1.5rem;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.property-stat-item {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 0.25rem;
+}
+
+.property-stat-item .stat-label {
+    font-size: 0.75rem;
+    color: var(--text-light);
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-family: 'Inter', sans-serif;
+}
+
+.property-stat-item .stat-value {
+    font-size: 1rem;
+    color: var(--text-dark);
+    font-weight: 600;
+    font-family: 'Inter', sans-serif;
 }
 
 .property-header-content {
@@ -11914,11 +12134,24 @@ section:not(.hero).section-visible .section-header {
     .property-header-description-content {
         flex-direction: column;
         gap: 1.5rem;
+        min-height: auto;
     }
     
     .property-header-amenities {
         width: 100%;
         order: 2;
+    }
+    
+    .property-header-stats {
+        position: static;
+        width: 100%;
+        justify-content: flex-start;
+        margin-top: 1rem;
+        gap: 1rem;
+    }
+    
+    .property-stat-item {
+        align-items: flex-start;
     }
     
     .property-header-info {
@@ -14610,7 +14843,7 @@ section:not(.hero).section-visible .section-header {
     bottom: 2rem;
     right: 2rem;
     z-index: 1000;
-    background: var(--primary-color);
+    background: #8B2E3D;
     color: var(--white);
     border: none;
     border-radius: 50%;

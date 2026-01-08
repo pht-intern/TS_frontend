@@ -47,8 +47,8 @@ function checkAuthentication() {
     if (userStr) {
         try {
             user = JSON.parse(userStr);
-            // Ensure user has required fields (email is mandatory)
-            if (!user || !user.email || typeof user.email !== 'string' || user.email.trim() === '') {
+            // Ensure user has required fields (email is mandatory) and has admin role
+            if (!user || !user.email || typeof user.email !== 'string' || user.email.trim() === '' || user.role !== 'admin') {
                 user = null;
             }
         } catch (e) {

@@ -1264,10 +1264,10 @@ function applyFilters() {
     const mainSearch = mainSearchInput || navSearchInput;
     if (mainSearch) {
         filtered = filtered.filter(p => 
-            p.title.toLowerCase().includes(mainSearch) ||
-            p.location.toLowerCase().includes(mainSearch) ||
-            p.type.toLowerCase().includes(mainSearch) ||
-            p.status.toLowerCase().includes(mainSearch)
+            (p.title && p.title.toLowerCase().includes(mainSearch)) ||
+            (p.location && p.location.toLowerCase().includes(mainSearch)) ||
+            (p.type && p.type.toLowerCase().includes(mainSearch)) ||
+            (p.status && p.status.toLowerCase().includes(mainSearch))
         );
     }
     
@@ -1275,8 +1275,8 @@ function applyFilters() {
     const city = document.getElementById('searchCity')?.value.toLowerCase().trim() || '';
     if (city) {
         filtered = filtered.filter(p => 
-            p.location.toLowerCase().includes(city) || 
-            p.title.toLowerCase().includes(city)
+            (p.location && p.location.toLowerCase().includes(city)) || 
+            (p.title && p.title.toLowerCase().includes(city))
         );
     }
     
@@ -1284,8 +1284,8 @@ function applyFilters() {
     const area = document.getElementById('searchArea')?.value.toLowerCase().trim() || '';
     if (area) {
         filtered = filtered.filter(p => 
-            p.location.toLowerCase().includes(area) || 
-            p.title.toLowerCase().includes(area)
+            (p.location && p.location.toLowerCase().includes(area)) || 
+            (p.title && p.title.toLowerCase().includes(area))
         );
     }
     

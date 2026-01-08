@@ -1216,17 +1216,70 @@ document.addEventListener('DOMContentLoaded', () => {
     const CACHE_CLEAR_INTERVAL = 60000; // 60 seconds in milliseconds
     
     /**
+     * Log cache clear operation to backend
+     */
+    async function logCacheClear(cacheNames, cacheCount, success = true, errorMessage = null, responseTimeMs = null) {
+        try {
+            const cacheKey = cacheCount > 0 ? `all_caches_${cacheNames.join(',')}` : 'all_caches';
+            const metadata = {
+                cache_names: cacheNames,
+                cache_count: cacheCount,
+                cleared_at: new Date().toISOString(),
+                user_agent: navigator.userAgent,
+                url: window.location.href
+            };
+            
+            const logData = {
+                cache_key: cacheKey,
+                operation: 'clear',
+                cache_type: 'application',
+                response_time_ms: responseTimeMs,
+                status: success ? 'success' : 'error',
+                error_message: errorMessage,
+                metadata: metadata
+            };
+            
+            // Log to backend (fire and forget - don't block on this)
+            fetch('/api/cache-logs', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(logData)
+            }).catch(err => {
+                console.warn('[Cache Clear] Failed to log cache clear to backend:', err);
+            });
+        } catch (error) {
+            console.warn('[Cache Clear] Error logging cache clear:', error);
+        }
+    }
+    
+    /**
      * Clear all application caches
      */
     async function clearApplicationCache() {
+        const startTime = performance.now();
+        let cacheNames = [];
+        let cacheCount = 0;
+        let success = true;
+        let errorMessage = null;
+        
         try {
             // Clear Cache API caches
             if ('caches' in window) {
-                const cacheNames = await caches.keys();
-                await Promise.all(
-                    cacheNames.map(cacheName => caches.delete(cacheName))
-                );
-                console.log(`[Cache Clear] Cleared ${cacheNames.length} cache(s) at ${new Date().toLocaleTimeString()}`);
+                cacheNames = await caches.keys();
+                cacheCount = cacheNames.length;
+                
+                if (cacheCount > 0) {
+                    await Promise.all(
+                        cacheNames.map(cacheName => caches.delete(cacheName))
+                    );
+                    console.log(`[Cache Clear] Cleared ${cacheCount} cache(s) at ${new Date().toLocaleTimeString()}`);
+                } else {
+                    console.log(`[Cache Clear] No caches to clear at ${new Date().toLocaleTimeString()}`);
+                }
+            } else {
+                console.log(`[Cache Clear] Cache API not available`);
             }
             
             // Clear localStorage (optional - uncomment if needed)
@@ -1249,24 +1302,63 @@ document.addEventListener('DOMContentLoaded', () => {
             //     );
             // }
             
+            const responseTime = performance.now() - startTime;
+            
+            // Log successful cache clear operation
+            await logCacheClear(cacheNames, cacheCount, true, null, responseTime);
+            
         } catch (error) {
+            success = false;
+            errorMessage = error.message || String(error);
+            const responseTime = performance.now() - startTime;
             console.error('[Cache Clear] Error clearing cache:', error);
+            
+            // Log failed cache clear operation
+            await logCacheClear(cacheNames, cacheCount, false, errorMessage, responseTime);
         }
     }
     
     /**
      * Initialize automatic cache clearing
      */
+    let cacheClearIntervalId = null;
+    
     function initCacheClearing() {
+        // Clear any existing interval if reinitializing
+        if (cacheClearIntervalId !== null) {
+            clearInterval(cacheClearIntervalId);
+            cacheClearIntervalId = null;
+        }
+        
         // Clear cache immediately on page load
         clearApplicationCache();
         
         // Set up interval to clear cache every 60 seconds
-        setInterval(() => {
+        cacheClearIntervalId = setInterval(() => {
+            const now = new Date();
+            console.log(`[Cache Clear] Scheduled cache clear triggered at ${now.toLocaleTimeString()}`);
             clearApplicationCache();
         }, CACHE_CLEAR_INTERVAL);
         
-        console.log('[Cache Clear] Automatic cache clearing initialized (every 60 seconds)');
+        const nextClearTime = new Date(Date.now() + CACHE_CLEAR_INTERVAL);
+        console.log(`[Cache Clear] ✓ Automatic cache clearing initialized (every 60 seconds)`);
+        console.log(`[Cache Clear] Next cache clear: ${nextClearTime.toLocaleTimeString()}`);
+        
+        // Store interval ID globally for debugging (optional)
+        if (typeof window !== 'undefined') {
+            window._cacheClearIntervalId = cacheClearIntervalId;
+        }
+    }
+    
+    /**
+     * Stop automatic cache clearing (if needed for debugging)
+     */
+    function stopCacheClearing() {
+        if (cacheClearIntervalId !== null) {
+            clearInterval(cacheClearIntervalId);
+            cacheClearIntervalId = null;
+            console.log('[Cache Clear] Automatic cache clearing stopped');
+        }
     }
     
     // Initialize when DOM is ready
@@ -1274,5 +1366,19 @@ document.addEventListener('DOMContentLoaded', () => {
         document.addEventListener('DOMContentLoaded', initCacheClearing);
     } else {
         initCacheClearing();
+    }
+    
+    // Reinitialize if page becomes visible again (handles tab switching)
+    document.addEventListener('visibilitychange', function() {
+        if (!document.hidden && cacheClearIntervalId === null) {
+            console.log('[Cache Clear] Page visible again, reinitializing cache clearing');
+            initCacheClearing();
+        }
+    });
+    
+    // Expose functions globally for debugging (optional)
+    if (typeof window !== 'undefined') {
+        window.stopCacheClearing = stopCacheClearing;
+        window.restartCacheClearing = initCacheClearing;
     }
 })();

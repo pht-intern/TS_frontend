@@ -1,5 +1,5 @@
-// System Metrics Monitoring
-// Fetches and displays CPU, RAM, and Bandwidth usage with Chart.js graphs
+// Application Metrics Monitoring
+// Fetches and displays cache performance, and system metrics (CPU, RAM, Bandwidth)
 
 let cpuChart = null;
 let ramChart = null;
@@ -263,45 +263,28 @@ function formatTime(dateString) {
     }
 }
 
-// Format date and time for better display
-function formatDateTime(dateString) {
-    try {
-        const date = new Date(dateString);
-        if (isNaN(date.getTime())) {
-            return '';
-        }
-        const month = (date.getMonth() + 1).toString().padStart(2, '0');
-        const day = date.getDate().toString().padStart(2, '0');
-        const hours = date.getHours().toString().padStart(2, '0');
-        const minutes = date.getMinutes().toString().padStart(2, '0');
-        return `${month}/${day} ${hours}:${minutes}`;
-    } catch (e) {
-        console.warn('Error formatting datetime:', dateString, e);
-        return '';
-    }
-}
-
 // Update current metrics display
-function updateCurrentMetrics(metrics) {
+function updateCurrentMetrics(current, cacheStats, systemCurrent) {
     const cpuEl = document.getElementById('currentCpu');
     const ramEl = document.getElementById('currentRam');
     const bandwidthEl = document.getElementById('currentBandwidth');
 
-    if (cpuEl) {
-        cpuEl.textContent = `${metrics.cpu_usage.toFixed(1)}%`;
+    // System metrics
+    if (cpuEl && systemCurrent) {
+        cpuEl.textContent = `${(systemCurrent.cpu_usage || 0).toFixed(1)}%`;
     }
-    if (ramEl) {
-        ramEl.textContent = `${metrics.ram_usage.toFixed(1)}%`;
+    if (ramEl && systemCurrent) {
+        ramEl.textContent = `${(systemCurrent.ram_usage || 0).toFixed(1)}%`;
     }
-    if (bandwidthEl) {
-        bandwidthEl.textContent = `${metrics.bandwidth_total_mb.toFixed(2)} MB`;
+    if (bandwidthEl && systemCurrent) {
+        bandwidthEl.textContent = `${(systemCurrent.bandwidth_total_mb || 0).toFixed(2)} MB`;
     }
 }
 
 // Update charts with metrics data
-function updateCharts(metricsData) {
-    if (!metricsData || !Array.isArray(metricsData) || metricsData.length === 0) {
-        // Show empty state - initialize charts with empty data
+function updateCharts(timeSeries, systemTimeSeries) {
+    // Update system metrics charts
+    if (!systemTimeSeries || !Array.isArray(systemTimeSeries) || systemTimeSeries.length === 0) {
         const emptyLabels = [];
         const emptyData = [];
         
@@ -324,180 +307,81 @@ function updateCharts(metricsData) {
             bandwidthChart.data.datasets[2].data = emptyData;
             bandwidthChart.update('none');
         }
-        
-        // Show message if no data
-        console.log('No metrics data available. Charts initialized with empty data.');
-        return;
-    }
+    } else {
+        const systemLabels = systemTimeSeries.map(m => {
+            const formatted = formatTime(m.time);
+            return formatted || m.time;
+        }).filter(label => label !== '');
 
-    // Sort data by created_at to ensure chronological order
-    const sortedData = [...metricsData].sort((a, b) => {
-        const dateA = new Date(a.created_at);
-        const dateB = new Date(b.created_at);
-        return dateA - dateB;
-    });
+        const cpuData = systemTimeSeries.map(m => {
+            const value = parseFloat(m.cpu_usage || 0);
+            return isNaN(value) ? 0 : Math.max(0, Math.min(100, value));
+        });
 
-    // Extract labels and data
-    const labels = sortedData.map(m => {
-        const formatted = formatTime(m.created_at);
-        return formatted || formatDateTime(m.created_at);
-    }).filter(label => label !== '');
+        const ramData = systemTimeSeries.map(m => {
+            const value = parseFloat(m.ram_usage || 0);
+            return isNaN(value) ? 0 : Math.max(0, Math.min(100, value));
+        });
 
-    const cpuData = sortedData.map(m => {
-        const value = parseFloat(m.cpu_usage);
-        return isNaN(value) ? 0 : Math.max(0, Math.min(100, value));
-    });
+        const bandwidthInData = systemTimeSeries.map(m => parseFloat(m.bandwidth_in_mb || 0));
+        const bandwidthOutData = systemTimeSeries.map(m => parseFloat(m.bandwidth_out_mb || 0));
+        const bandwidthTotalData = systemTimeSeries.map(m => parseFloat(m.bandwidth_total_mb || 0));
 
-    const ramData = sortedData.map(m => {
-        const value = parseFloat(m.ram_usage);
-        return isNaN(value) ? 0 : Math.max(0, Math.min(100, value));
-    });
-
-    const bandwidthInData = sortedData.map(m => {
-        const value = parseFloat(m.bandwidth_in_mb || 0);
-        return isNaN(value) ? 0 : Math.max(0, value);
-    });
-
-    const bandwidthOutData = sortedData.map(m => {
-        const value = parseFloat(m.bandwidth_out_mb || 0);
-        return isNaN(value) ? 0 : Math.max(0, value);
-    });
-
-    const bandwidthTotalData = sortedData.map(m => {
-        const value = parseFloat(m.bandwidth_total_mb || 0);
-        return isNaN(value) ? 0 : Math.max(0, value);
-    });
-
-    // Update CPU chart
-    if (cpuChart) {
-        cpuChart.data.labels = labels;
-        cpuChart.data.datasets[0].data = cpuData;
-        // Adjust y-axis max if needed
-        const maxCpu = Math.max(...cpuData, 0);
-        if (maxCpu > 0) {
-            cpuChart.options.scales.y.max = Math.min(100, Math.ceil(maxCpu * 1.1));
+        // Update CPU chart
+        if (cpuChart) {
+            cpuChart.data.labels = systemLabels;
+            cpuChart.data.datasets[0].data = cpuData;
+            cpuChart.update('none');
         }
-        cpuChart.update('none');
-    }
 
-    // Update RAM chart
-    if (ramChart) {
-        ramChart.data.labels = labels;
-        ramChart.data.datasets[0].data = ramData;
-        // Adjust y-axis max if needed
-        const maxRam = Math.max(...ramData, 0);
-        if (maxRam > 0) {
-            ramChart.options.scales.y.max = Math.min(100, Math.ceil(maxRam * 1.1));
+        // Update RAM chart
+        if (ramChart) {
+            ramChart.data.labels = systemLabels;
+            ramChart.data.datasets[0].data = ramData;
+            ramChart.update('none');
         }
-        ramChart.update('none');
-    }
 
-    // Update Bandwidth chart
-    if (bandwidthChart) {
-        bandwidthChart.data.labels = labels;
-        bandwidthChart.data.datasets[0].data = bandwidthInData;
-        bandwidthChart.data.datasets[1].data = bandwidthOutData;
-        bandwidthChart.data.datasets[2].data = bandwidthTotalData;
-        // Adjust y-axis max if needed
-        const maxBandwidth = Math.max(...bandwidthTotalData, ...bandwidthInData, ...bandwidthOutData, 0);
-        if (maxBandwidth > 0) {
-            bandwidthChart.options.scales.y.max = Math.ceil(maxBandwidth * 1.1);
+        // Update Bandwidth chart
+        if (bandwidthChart) {
+            bandwidthChart.data.labels = systemLabels;
+            bandwidthChart.data.datasets[0].data = bandwidthInData;
+            bandwidthChart.data.datasets[1].data = bandwidthOutData;
+            bandwidthChart.data.datasets[2].data = bandwidthTotalData;
+            bandwidthChart.update('none');
         }
-        bandwidthChart.update('none');
     }
 }
 
-// Fetch metrics from API
+// Fetch application metrics from API
 async function fetchMetrics() {
     try {
-        const timeRange = document.getElementById('metricsTimeRange')?.value || 24;
-        
-        // Show loading state (optional - can add spinner)
-        const refreshBtn = document.getElementById('refreshMetricsBtn');
-        if (refreshBtn) {
-            const originalHTML = refreshBtn.innerHTML;
-            refreshBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Loading...';
-            refreshBtn.disabled = true;
-            
-            // Reset button after a delay
-            setTimeout(() => {
-                refreshBtn.innerHTML = originalHTML;
-                refreshBtn.disabled = false;
-            }, 2000);
-        }
-        
-        // Fetch historical metrics
-        const response = await authenticatedFetch(`/api/admin/metrics?hours=${timeRange}&limit=100`);
+        const timeRangeSelect = document.getElementById('metricsTimeRange');
+        const hours = timeRangeSelect ? parseInt(timeRangeSelect.value) || 24 : 24;
+
+        const response = await authenticatedFetch(`/api/admin/application-metrics?hours=${hours}`);
         
         if (!response.ok) {
-            const errorData = await response.json().catch(() => ({}));
-            throw new Error(errorData.error || `Failed to fetch metrics: ${response.status}`);
+            throw new Error(`Failed to fetch metrics: ${response.statusText}`);
         }
-        
+
         const data = await response.json();
         
         if (data.success) {
-            if (data.metrics && Array.isArray(data.metrics)) {
-                updateCharts(data.metrics);
-            } else {
-                console.warn('Metrics data is not an array:', data);
-                updateCharts([]);
-            }
+            // Update current metrics (application + system)
+            updateCurrentMetrics(data.current, data.cache_stats, data.system_metrics?.current);
+            
+            // Update charts (application + system)
+            updateCharts(data.time_series, data.system_metrics?.time_series);
         } else {
-            console.error('Metrics API returned error:', data.error || 'Unknown error');
-            updateCharts([]);
-        }
-
-        // Fetch current metrics (non-blocking)
-        try {
-            const currentResponse = await authenticatedFetch('/api/admin/metrics/current');
-            if (currentResponse.ok) {
-                const currentData = await currentResponse.json();
-                if (currentData.success && currentData.metrics) {
-                    updateCurrentMetrics(currentData.metrics);
-                }
-            } else {
-                console.warn('Failed to fetch current metrics:', currentResponse.status);
-            }
-        } catch (currentError) {
-            // Don't fail the whole function if current metrics fail
-            console.warn('Error fetching current metrics:', currentError);
+            throw new Error(data.error || 'Failed to fetch metrics');
         }
     } catch (error) {
-        console.error('Error fetching metrics:', error);
-        // Update charts with empty data on error
-        updateCharts([]);
-        
-        // Show user-friendly error message (optional)
-        const errorMsg = error.message || 'Failed to load metrics data';
-        console.error('Metrics fetch error:', errorMsg);
-    }
-}
-
-// Collect and store metrics
-async function collectMetrics() {
-    try {
-        const response = await authenticatedFetch('/api/admin/metrics/collect', {
-            method: 'POST'
-        });
-        
-        if (response.ok) {
-            const data = await response.json();
-            if (data.success) {
-                // Refresh metrics display after collection
-                setTimeout(() => {
-                    fetchMetrics();
-                }, 500);
-            } else {
-                console.warn('Metrics collection returned error:', data.error);
-            }
-        } else {
-            const errorData = await response.json().catch(() => ({}));
-            console.warn('Failed to collect metrics:', errorData.error || `Status: ${response.status}`);
+        console.error('Error fetching application metrics:', error);
+        // Show error in UI
+        const monitoringSection = document.querySelector('.metrics-graphs-container');
+        if (monitoringSection) {
+            console.warn('Error loading application metrics. Please check server logs.');
         }
-    } catch (error) {
-        // Don't show error to user - this is a background operation
-        console.warn('Error collecting metrics (non-critical):', error.message);
     }
 }
 
@@ -572,63 +456,46 @@ function renderCacheLogs(logs, reset = false) {
         tbody.innerHTML = '';
     }
 
-    if (logs.length === 0 && reset) {
-        tbody.innerHTML = `
-            <tr>
-                <td colspan="7" style="text-align: center; padding: 2rem; color: var(--text-gray);">
-                    <i class="fas fa-inbox" style="margin-right: 0.5rem;"></i>
-                    No cache logs found
-                </td>
-            </tr>
-        `;
+    if (!logs || logs.length === 0) {
+        if (reset) {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="7" style="text-align: center; padding: 2rem; color: var(--text-gray);">
+                        No cache logs found
+                    </td>
+                </tr>
+            `;
+        }
         return;
     }
 
     const rows = logs.map(log => {
-        const operation = log.operation || 'unknown';
-        const operationClass = {
-            'hit': 'success',
-            'miss': 'warning',
-            'set': 'info',
-            'delete': 'danger',
-            'clear': 'danger'
-        }[operation] || 'secondary';
-
-        const statusBadge = log.status === 'error' 
-            ? `<span class="badge badge-danger">Error</span>`
-            : `<span class="badge badge-success">Success</span>`;
-
-        const responseTime = log.response_time_ms 
-            ? `${parseFloat(log.response_time_ms).toFixed(2)} ms`
-            : 'N/A';
-
-        const cacheSize = log.cache_size_kb 
-            ? `${parseFloat(log.cache_size_kb).toFixed(2)} KB`
-            : 'N/A';
-
-        const cacheKey = log.cache_key || 'N/A';
-        const cacheKeyDisplay = cacheKey.length > 50 
-            ? `<span title="${cacheKey}">${cacheKey.substring(0, 50)}...</span>`
-            : cacheKey;
-
-        const cacheType = log.cache_type || 'N/A';
-        const createdAt = log.created_at 
-            ? new Date(log.created_at).toLocaleString()
-            : 'N/A';
+        const createdDate = new Date(log.created_at);
+        const timeStr = createdDate.toLocaleString();
+        
+        const statusBadge = log.status === 'success' 
+            ? '<span style="color: var(--green); font-weight: 600;">Success</span>'
+            : '<span style="color: var(--red); font-weight: 600;">Error</span>';
+        
+        const operationBadge = {
+            'hit': '<span style="color: var(--green);">Hit</span>',
+            'miss': '<span style="color: var(--yellow-bright);">Miss</span>',
+            'set': '<span style="color: var(--primary-color);">Set</span>',
+            'delete': '<span style="color: var(--red);">Delete</span>',
+            'clear': '<span style="color: var(--purple);">Clear</span>'
+        }[log.operation] || log.operation;
 
         return `
             <tr>
-                <td>
-                    <span class="badge badge-${operationClass}">${operation.toUpperCase()}</span>
-                </td>
-                <td style="max-width: 300px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
-                    ${cacheKeyDisplay}
-                </td>
-                <td>${cacheType}</td>
-                <td>${responseTime}</td>
-                <td>${cacheSize}</td>
+                <td>${log.cache_key.substring(0, 50)}${log.cache_key.length > 50 ? '...' : ''}</td>
+                <td>${operationBadge}</td>
+                <td>${log.cache_type || 'N/A'}</td>
+                <td>${log.response_time_ms ? log.response_time_ms.toFixed(2) + ' ms' : 'N/A'}</td>
                 <td>${statusBadge}</td>
-                <td>${createdAt}</td>
+                <td>${timeStr}</td>
+                <td>
+                    ${log.error_message ? `<span style="color: var(--red);" title="${log.error_message}">Error</span>` : '-'}
+                </td>
             </tr>
         `;
     }).join('');
@@ -644,16 +511,14 @@ function renderCacheLogs(logs, reset = false) {
 function updateCacheLogsCount(total) {
     const countEl = document.getElementById('cacheLogsCount');
     if (countEl) {
-        countEl.textContent = `${total} cache log${total !== 1 ? 's' : ''}`;
+        countEl.textContent = `Total: ${total}`;
     }
 }
 
 // Load more cache logs
 function loadMoreCacheLogs() {
-    if (cacheLogsHasMore) {
-        cacheLogsPage++;
-        fetchCacheLogs(false);
-    }
+    cacheLogsPage++;
+    fetchCacheLogs(false);
 }
 
 // Initialize cache logs functionality
@@ -733,17 +598,8 @@ function initMetricsMonitoring() {
     // Fetch initial metrics immediately
     fetchMetrics();
     
-    // Also collect initial metrics to ensure we have data
-    collectMetrics();
-
-    // Set up refresh button
-    const refreshBtn = document.getElementById('refreshMetricsBtn');
-    if (refreshBtn) {
-        refreshBtn.addEventListener('click', () => {
-            fetchMetrics();
-            collectMetrics();
-        });
-    }
+    // Also collect system metrics to ensure we have data
+    collectSystemMetrics();
 
     // Set up time range selector
     const timeRangeSelect = document.getElementById('metricsTimeRange');
@@ -757,24 +613,56 @@ function initMetricsMonitoring() {
     initCacheLogs();
 
     // Auto-refresh metrics every 30 seconds for accurate real-time updates
-    // This ensures the dashboard displays the most current system metrics
     metricsUpdateInterval = setInterval(() => {
         fetchMetrics();
-        // Also collect metrics to ensure data is being stored in the database
-        collectMetrics();
+        // Also collect system metrics periodically
+        collectSystemMetrics();
     }, 30000); // 30 seconds = 30000 milliseconds
+}
+
+// Collect system metrics from server
+async function collectSystemMetrics() {
+    try {
+        const response = await authenticatedFetch('/api/admin/metrics/collect', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        if (!response.ok) {
+            // Silently fail - system metrics collection is optional
+            return;
+        }
+        
+        const data = await response.json();
+        if (data.success) {
+            // Metrics collected successfully
+            console.log('System metrics collected');
+        }
+    } catch (error) {
+        // Silently fail - system metrics collection is optional
+        // This is expected if psutil is not available or metrics collection fails
+    }
 }
 
 // Cleanup on page unload
 window.addEventListener('beforeunload', () => {
     if (metricsUpdateInterval) {
         clearInterval(metricsUpdateInterval);
+        metricsUpdateInterval = null;
+    }
+    
+    if (cpuChart) {
+        cpuChart.destroy();
+        cpuChart = null;
+    }
+    if (ramChart) {
+        ramChart.destroy();
+        ramChart = null;
+    }
+    if (bandwidthChart) {
+        bandwidthChart.destroy();
+        bandwidthChart = null;
     }
 });
-
-// Initialize when DOM is ready
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initMetricsMonitoring);
-} else {
-    initMetricsMonitoring();
-}

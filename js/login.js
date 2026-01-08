@@ -294,6 +294,13 @@
                         return;
                     }
                     
+                    // Verify user has admin role
+                    if (userData.role !== 'admin') {
+                        console.error('User does not have admin role:', userData);
+                        alert('Access denied: Admin role required. Please contact administrator.');
+                        return;
+                    }
+                    
                     // Check if "Remember Me" is checked
                     const rememberMeCheckbox = document.getElementById('rememberMe');
                     const rememberMe = rememberMeCheckbox ? rememberMeCheckbox.checked : false;
@@ -358,8 +365,21 @@
                     }, 100);
                 } else {
                     // Login failed - NO session created
-                    // Show error message
-                    const errorMsg = data.detail || data.error || data.message || 'Invalid email or password';
+                    // Show error message based on status code
+                    let errorMsg = 'Invalid email or password';
+                    
+                    if (response.status === 401) {
+                        errorMsg = data.detail || data.error || data.message || 'Invalid email or password';
+                    } else if (response.status === 403) {
+                        errorMsg = data.detail || data.error || data.message || 'Access denied: Admin role required';
+                    } else if (response.status === 400) {
+                        errorMsg = data.detail || data.error || data.message || 'Invalid request. Please check your input.';
+                    } else if (response.status === 500) {
+                        errorMsg = data.detail || data.error || data.message || 'Server error. Please try again later.';
+                    } else {
+                        errorMsg = data.detail || data.error || data.message || 'Login failed. Please try again.';
+                    }
+                    
                     alert(errorMsg);
                 }
             } catch (error) {

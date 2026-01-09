@@ -1160,7 +1160,7 @@
                                 <img src="${escapeHtml(partner.logo_url)}" 
                                      alt="${escapeHtml(partner.name)} Logo" 
                                      class="partner-logo-img"
-                                     onerror="this.style.display='none'; this.parentElement.querySelector('.partner-compact-info').style.display='flex';">
+                                     onerror="this.style.display='none'; const fallback = this.parentElement?.querySelector('.partner-compact-info'); if (fallback) fallback.style.display='flex';">
                             </div>` : ''}
                             <div class="partner-compact-info" ${partner.logo_url ? '' : 'style="display: flex; width: 100%;"'}>
                                 <h4 class="partner-compact-name">${escapeHtml(partner.name)}</h4>

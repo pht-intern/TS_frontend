@@ -2528,10 +2528,34 @@ async function editProperty(id) {
     try {
         // Fetch property to determine its type
         const response = await fetch(`/api/properties/${id}`);
+        
         if (!response.ok) {
-            throw new Error('Failed to fetch property');
+            // Try to get error message from response
+            let errorMessage = 'Failed to fetch property';
+            try {
+                const errorData = await response.json();
+                errorMessage = errorData.message || errorData.error || errorMessage;
+            } catch (e) {
+                // If response is not JSON, use status text
+                errorMessage = response.statusText || errorMessage;
+            }
+            
+            // Provide more specific error messages based on status code
+            if (response.status === 404) {
+                errorMessage = 'Property not found. It may have been deleted.';
+            } else if (response.status === 500) {
+                errorMessage = 'Server error while loading property. Please try again.';
+            }
+            
+            throw new Error(errorMessage);
         }
+        
         const property = await response.json();
+        
+        // Validate property data
+        if (!property || !property.id) {
+            throw new Error('Invalid property data received');
+        }
         
         // Determine property type - plot properties have type 'plot' or 'plots'
         const propertyType = typeof property.type === 'string' 
@@ -2547,7 +2571,8 @@ async function editProperty(id) {
         }
     } catch (error) {
         console.error('Error loading property:', error);
-        showNotification('Failed to load property details.', 'error');
+        const errorMsg = error.message || 'Failed to load property details.';
+        showNotification(errorMsg, 'error');
     }
 }
 

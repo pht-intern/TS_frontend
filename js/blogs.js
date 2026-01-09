@@ -2,7 +2,7 @@
 
 // Blog data
 let allBlogs = [];
-let displayedBlogs = 6;
+let displayedBlogs = 100; // Show all blogs initially (increased from 6)
 let currentCategory = 'all';
 let currentTag = null;
 let currentSort = 'latest';
@@ -216,7 +216,7 @@ function attachTagListeners() {
             });
             
             // Reset displayed count
-            displayedBlogs = 6;
+            displayedBlogs = 100; // Show all blogs when filtering by tag
             
             // Re-render
             renderBlogs();
@@ -700,7 +700,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             currentTag = null; // Reset tag filter
             
             // Reset displayed count
-            displayedBlogs = 6;
+            displayedBlogs = 100; // Show all blogs when filtering by category
             
             // Re-render
             renderBlogs();
@@ -719,7 +719,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
             currentCategory = 'all';
             currentTag = null;
-            displayedBlogs = 6;
+            displayedBlogs = 100; // Show all blogs
             renderBlogs();
         });
     }
@@ -732,7 +732,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (sortSelect) {
         sortSelect.addEventListener('change', (e) => {
             currentSort = e.target.value;
-            displayedBlogs = 6;
+            displayedBlogs = 100; // Show all blogs when sorting
             renderBlogs();
         });
     }

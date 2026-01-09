@@ -264,7 +264,7 @@ function formatTime(dateString) {
 }
 
 // Update current metrics display
-function updateCurrentMetrics(current, cacheStats, systemCurrent) {
+function updateCurrentMetrics(current, systemCurrent) {
     const cpuEl = document.getElementById('currentCpu');
     const ramEl = document.getElementById('currentRam');
     const bandwidthEl = document.getElementById('currentBandwidth');
@@ -368,7 +368,7 @@ async function fetchMetrics() {
         
         if (data.success) {
             // Update current metrics (application + system)
-            updateCurrentMetrics(data.current, data.cache_stats, data.system_metrics?.current);
+            updateCurrentMetrics(data.current, data.system_metrics?.current);
             
             // Update charts (application + system)
             updateCharts(data.time_series, data.system_metrics?.time_series);
@@ -382,196 +382,6 @@ async function fetchMetrics() {
         if (monitoringSection) {
             console.warn('Error loading application metrics. Please check server logs.');
         }
-    }
-}
-
-// Cache logs variables
-let cacheLogsPage = 1;
-let cacheLogsLimit = 50;
-let cacheLogsHasMore = false;
-
-// Fetch cache logs from API
-async function fetchCacheLogs(reset = false) {
-    try {
-        if (reset) {
-            cacheLogsPage = 1;
-        }
-
-        const operationFilter = document.getElementById('cacheLogOperationFilter')?.value || '';
-        const statusFilter = document.getElementById('cacheLogStatusFilter')?.value || '';
-        const searchQuery = document.getElementById('cacheLogSearch')?.value || '';
-
-        const params = new URLSearchParams({
-            page: cacheLogsPage,
-            limit: cacheLogsLimit
-        });
-
-        if (operationFilter) params.append('operation', operationFilter);
-        if (statusFilter) params.append('status', statusFilter);
-        if (searchQuery) params.append('search', searchQuery);
-
-        const response = await authenticatedFetch(`/api/admin/cache-logs?${params.toString()}`);
-        
-        if (!response.ok) {
-            throw new Error(`Failed to fetch cache logs: ${response.statusText}`);
-        }
-
-        const data = await response.json();
-        
-        if (data.success) {
-            renderCacheLogs(data.logs || [], reset);
-            cacheLogsHasMore = data.has_more || false;
-            updateCacheLogsCount(data.total || 0);
-            
-            // Show/hide load more button
-            const loadMoreBtn = document.getElementById('loadMoreCacheLogsBtn');
-            if (loadMoreBtn) {
-                loadMoreBtn.style.display = cacheLogsHasMore ? 'block' : 'none';
-            }
-        } else {
-            throw new Error(data.error || 'Failed to fetch cache logs');
-        }
-    } catch (error) {
-        console.error('Error fetching cache logs:', error);
-        const tbody = document.getElementById('cacheLogsTableBody');
-        if (tbody) {
-            tbody.innerHTML = `
-                <tr>
-                    <td colspan="7" style="text-align: center; padding: 2rem; color: var(--red);">
-                        <i class="fas fa-exclamation-triangle" style="margin-right: 0.5rem;"></i>
-                        Error loading cache logs: ${error.message}
-                    </td>
-                </tr>
-            `;
-        }
-    }
-}
-
-// Render cache logs to table
-function renderCacheLogs(logs, reset = false) {
-    const tbody = document.getElementById('cacheLogsTableBody');
-    if (!tbody) return;
-
-    if (reset) {
-        tbody.innerHTML = '';
-    }
-
-    if (!logs || logs.length === 0) {
-        if (reset) {
-            tbody.innerHTML = `
-                <tr>
-                    <td colspan="7" style="text-align: center; padding: 2rem; color: var(--text-gray);">
-                        No cache logs found
-                    </td>
-                </tr>
-            `;
-        }
-        return;
-    }
-
-    const rows = logs.map(log => {
-        const createdDate = new Date(log.created_at);
-        const timeStr = createdDate.toLocaleString();
-        
-        const statusBadge = log.status === 'success' 
-            ? '<span style="color: var(--green); font-weight: 600;">Success</span>'
-            : '<span style="color: var(--red); font-weight: 600;">Error</span>';
-        
-        const operationBadge = {
-            'hit': '<span style="color: var(--green);">Hit</span>',
-            'miss': '<span style="color: var(--yellow-bright);">Miss</span>',
-            'set': '<span style="color: var(--primary-color);">Set</span>',
-            'delete': '<span style="color: var(--red);">Delete</span>'
-        }[log.operation] || log.operation;
-
-        // Format cache size
-        const cacheSize = log.cache_size_kb 
-            ? `${log.cache_size_kb.toFixed(2)} KB` 
-            : 'N/A';
-        
-        return `
-            <tr>
-                <td>${operationBadge}</td>
-                <td>${log.cache_key ? log.cache_key.substring(0, 50) + (log.cache_key.length > 50 ? '...' : '') : 'N/A'}</td>
-                <td>${log.cache_type || 'N/A'}</td>
-                <td>${log.response_time_ms ? log.response_time_ms.toFixed(2) + ' ms' : 'N/A'}</td>
-                <td>${cacheSize}</td>
-                <td>${statusBadge}</td>
-                <td>${timeStr}</td>
-            </tr>
-        `;
-    }).join('');
-
-    if (reset) {
-        tbody.innerHTML = rows;
-    } else {
-        tbody.innerHTML += rows;
-    }
-}
-
-// Update cache logs count
-function updateCacheLogsCount(total) {
-    const countEl = document.getElementById('cacheLogsCount');
-    if (countEl) {
-        countEl.textContent = `${total} cache log${total !== 1 ? 's' : ''}`;
-    }
-}
-
-// Load more cache logs
-function loadMoreCacheLogs() {
-    cacheLogsPage++;
-    fetchCacheLogs(false);
-}
-
-// Initialize cache logs functionality
-function initCacheLogs() {
-    const cacheLogsSection = document.getElementById('cacheLogsTableBody');
-    if (!cacheLogsSection) {
-        return; // Section not found, exit
-    }
-
-    // Fetch initial cache logs
-    fetchCacheLogs(true);
-
-    // Set up refresh button
-    const refreshBtn = document.getElementById('refreshCacheLogsBtn');
-    if (refreshBtn) {
-        refreshBtn.addEventListener('click', () => {
-            fetchCacheLogs(true);
-        });
-    }
-
-    // Set up load more button
-    const loadMoreBtn = document.getElementById('loadMoreCacheLogsBtn');
-    if (loadMoreBtn) {
-        loadMoreBtn.addEventListener('click', loadMoreCacheLogs);
-    }
-
-    // Set up filters
-    const operationFilter = document.getElementById('cacheLogOperationFilter');
-    const statusFilter = document.getElementById('cacheLogStatusFilter');
-    const searchInput = document.getElementById('cacheLogSearch');
-
-    if (operationFilter) {
-        operationFilter.addEventListener('change', () => {
-            fetchCacheLogs(true);
-        });
-    }
-
-    if (statusFilter) {
-        statusFilter.addEventListener('change', () => {
-            fetchCacheLogs(true);
-        });
-    }
-
-    if (searchInput) {
-        let searchTimeout;
-        searchInput.addEventListener('input', () => {
-            clearTimeout(searchTimeout);
-            searchTimeout = setTimeout(() => {
-                fetchCacheLogs(true);
-            }, 500); // Debounce search
-        });
     }
 }
 
@@ -610,9 +420,6 @@ function initMetricsMonitoring() {
             fetchMetrics();
         });
     }
-
-    // Initialize cache logs
-    initCacheLogs();
 
     // Auto-refresh metrics every 30 seconds for accurate real-time updates
     metricsUpdateInterval = setInterval(() => {

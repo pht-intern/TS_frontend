@@ -229,6 +229,45 @@ hr {
     animation: bounce 0.5s ease;
 }
 
+@media (max-width: 768px) {
+    .top-bar {
+        padding: 0.5rem 0;
+        font-size: 0.75rem;
+    }
+    
+    .top-bar-left {
+        gap: 1rem;
+        justify-content: center;
+        width: 100%;
+    }
+    
+    .top-bar-left a {
+        font-size: 0.7rem;
+    }
+    
+    .top-bar-left i {
+        font-size: 0.7rem;
+        margin-right: 0.25rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .top-bar {
+        padding: 0.4rem 0;
+        font-size: 0.7rem;
+    }
+    
+    .top-bar-left {
+        flex-direction: column;
+        gap: 0.5rem;
+        align-items: center;
+    }
+    
+    .top-bar-left a {
+        font-size: 0.65rem;
+    }
+}
+
 /* Navigation */
 .navbar {
     position: sticky;
@@ -247,7 +286,8 @@ hr {
     align-items: center;
     padding: 1.25rem 0;
     gap: 3rem;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
+    position: relative;
 }
 
 @media (max-width: 1366px) {
@@ -263,11 +303,32 @@ hr {
     }
 }
 
+@media (max-width: 1024px) {
+    .nav-wrapper {
+        gap: 1rem;
+        padding: 0.875rem 0;
+    }
+}
+
 /* Logo Styles */
 .logo {
     display: flex;
     align-items: center;
     margin-right: 3.5rem;
+    flex-shrink: 0;
+    z-index: 1001;
+}
+
+@media (max-width: 1024px) {
+    .logo {
+        margin-right: 1.5rem;
+    }
+}
+
+@media (max-width: 768px) {
+    .logo {
+        margin-right: auto;
+    }
 }
 
 .logo-link {
@@ -303,6 +364,31 @@ hr {
     height: auto;
     object-fit: contain;
     display: block;
+    transition: width 0.3s ease;
+}
+
+@media (max-width: 1366px) {
+    .logo-img {
+        width: 180px;
+    }
+}
+
+@media (max-width: 1024px) {
+    .logo-img {
+        width: 160px;
+    }
+}
+
+@media (max-width: 768px) {
+    .logo-img {
+        width: 140px;
+    }
+}
+
+@media (max-width: 480px) {
+    .logo-img {
+        width: 120px;
+    }
 }
 
 .logo-shape-left,
@@ -426,6 +512,19 @@ hr {
     flex: 1;
     max-width: 300px;
     margin: 0;
+    min-width: 0;
+}
+
+@media (max-width: 1024px) {
+    .nav-search {
+        max-width: 250px;
+    }
+}
+
+@media (max-width: 900px) {
+    .nav-search {
+        max-width: 200px;
+    }
 }
 
 .nav-search-wrapper {
@@ -595,6 +694,13 @@ hr {
     align-items: center;
     gap: 1rem;
     margin-left: auto;
+    flex-shrink: 0;
+}
+
+@media (max-width: 1024px) {
+    .nav-actions {
+        gap: 0.75rem;
+    }
 }
 
 .btn-login {
@@ -7950,23 +8056,92 @@ section:not(.hero).section-visible .section-header {
     }
 }
 
+@media (max-width: 1024px) {
+    .nav-wrapper {
+        flex-wrap: wrap;
+    }
+    
+    .nav-menu {
+        order: 3;
+        width: 100%;
+        margin-top: 1rem;
+        display: none;
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        background: var(--white);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        padding: 1.5rem;
+        z-index: 1000;
+    }
+    
+    .nav-menu.active {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+        align-items: flex-start;
+    }
+    
+    .nav-search {
+        order: 2;
+        flex: 0 1 auto;
+        max-width: 200px;
+    }
+    
+    .nav-actions {
+        order: 1;
+    }
+}
+
+@media (max-width: 900px) {
+    .nav-search {
+        max-width: 180px;
+    }
+    
+    .nav-menu {
+        padding: 1.25rem;
+    }
+}
+
 @media (max-width: 768px) {
+    .nav-wrapper {
+        flex-wrap: nowrap;
+    }
+    
     .nav-menu {
         position: fixed;
-        top: 70px;
+        top: 0;
         left: -100%;
         flex-direction: column;
         background: var(--white);
         width: 100%;
-        padding: 2rem;
+        max-width: 320px;
+        height: 100vh;
+        padding: 5rem 2rem 2rem;
         box-shadow: var(--shadow-lg);
         transition: left 0.3s ease;
         gap: 1rem;
         align-items: flex-start;
+        z-index: 1000;
+        overflow-y: auto;
+        order: unset;
+        margin-top: 0;
+        display: flex;
     }
 
     .nav-menu.active {
         left: 0;
+    }
+    
+    .nav-menu li {
+        width: 100%;
+    }
+    
+    .nav-menu a {
+        width: 100%;
+        padding: 0.75rem 0;
+        font-size: 1rem;
     }
     
     .nav-dropdown {
@@ -7981,12 +8156,13 @@ section:not(.hero).section-visible .section-header {
         box-shadow: none;
         background: var(--light-bg);
         margin-top: 0.5rem;
-        margin-left: 1rem;
+        margin-left: 0;
         border-radius: 6px;
         max-height: 0;
         overflow: hidden;
         transition: max-height 0.3s ease, padding 0.3s ease;
         padding: 0;
+        width: 100%;
     }
     
     .nav-dropdown.active .dropdown-menu {
@@ -8004,6 +8180,9 @@ section:not(.hero).section-visible .section-header {
 
     .nav-toggle {
         display: flex;
+        order: 2;
+        margin-left: auto;
+        z-index: 1001;
     }
 
     .nav-toggle.active span:nth-child(1) {
@@ -8017,6 +8196,69 @@ section:not(.hero).section-visible .section-header {
     .nav-toggle.active span:nth-child(3) {
         transform: rotate(-45deg) translate(7px, -7px);
     }
+    
+    .nav-search {
+        display: none;
+    }
+    
+    .nav-search.mobile-visible {
+        display: block;
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        width: 100%;
+        max-width: 100%;
+        padding: 1rem;
+        background: var(--white);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        z-index: 999;
+        order: unset;
+    }
+    
+    .nav-actions {
+        order: 1;
+    }
+    
+    /* Mobile menu overlay - using a pseudo-element on navbar */
+    .navbar::after {
+        content: '';
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 999;
+        opacity: 0;
+        visibility: hidden;
+        transition: opacity 0.3s ease, visibility 0.3s ease;
+        pointer-events: none;
+    }
+    
+    .navbar.menu-open::after {
+        opacity: 1;
+        visibility: visible;
+        pointer-events: all;
+    }
+    
+    /* Prevent body scroll when menu is open */
+    body.menu-open {
+        overflow: hidden;
+        position: fixed;
+        width: 100%;
+    }
+    
+    /* Ensure navbar stays on top when menu is open */
+    .navbar {
+        z-index: 1002;
+    }
+    
+    /* Ensure menu is above overlay */
+    .nav-menu {
+        z-index: 1000;
+    }
+}
 
     .hero {
         height: auto;
@@ -12614,19 +12856,6 @@ section:not(.hero).section-visible .section-header {
         font-size: 2rem;
     }
 
-    .nav-search {
-        max-width: 200px;
-        margin: 0 1rem;
-    }
-
-    .nav-search-wrapper {
-        padding: 0.4rem 0.75rem;
-    }
-
-    .nav-search-input {
-        font-size: 0.85rem;
-    }
-
     .nav-actions {
         gap: 0.5rem;
     }
@@ -12641,12 +12870,37 @@ section:not(.hero).section-visible .section-header {
         height: 40px;
         justify-content: center;
     }
+    
+    /* Add login button to mobile menu */
+    .nav-menu .nav-actions {
+        width: 100%;
+        margin-top: 1rem;
+        padding-top: 1rem;
+        border-top: 1px solid var(--border-color);
+    }
+    
+    .nav-menu .btn-login {
+        width: 100%;
+        justify-content: center;
+    }
+    
+    .nav-menu .btn-login span {
+        display: inline;
+    }
 }
 
 @media (max-width: 480px) {
-    .nav-search {
-        max-width: 150px;
-        margin: 0 0.5rem;
+    .logo-img {
+        width: 100px;
+    }
+    
+    .nav-menu {
+        max-width: 100%;
+        padding: 4rem 1.5rem 2rem;
+    }
+    
+    .nav-search.mobile-visible {
+        padding: 0.75rem;
     }
 
     .nav-search-wrapper {
@@ -12670,6 +12924,12 @@ section:not(.hero).section-visible .section-header {
         flex-direction: column;
         align-items: flex-start;
         gap: 0.75rem;
+    }
+    
+    .btn-login {
+        width: 35px;
+        height: 35px;
+        padding: 0.5rem;
     }
 }
 

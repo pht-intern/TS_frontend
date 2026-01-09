@@ -1064,7 +1064,7 @@ async function handleImportTable(tableName, file, importBtn) {
 }
 
 // Load Properties from API
-async function loadProperties() {
+async function loadProperties(forceRefresh = false) {
     try {
         // Fetch all properties (both active and inactive) for dashboard management
         // API limit is 100, so we need to fetch multiple pages if needed
@@ -1073,8 +1073,18 @@ async function loadProperties() {
         let hasMore = true;
         const limit = 100; // Maximum allowed by API
         
+        // Add cache-busting timestamp if force refresh is requested
+        const cacheBuster = forceRefresh ? `&_t=${Date.now()}` : '';
+        
         while (hasMore) {
-            const response = await fetch(`/api/properties?page=${page}&limit=${limit}`);
+            const fetchOptions = forceRefresh ? {
+                cache: 'no-store',
+                headers: {
+                    'Cache-Control': 'no-cache'
+                }
+            } : {};
+            
+            const response = await fetch(`/api/properties?page=${page}&limit=${limit}${cacheBuster}`, fetchOptions);
             if (!response.ok) {
                 throw new Error('Failed to fetch properties');
             }
@@ -2187,8 +2197,8 @@ async function handlePropertySubmit(e) {
             throw new Error(errorMessage);
         }
 
-        // Reload properties and stats
-        await loadProperties();
+        // Reload properties and stats with force refresh to bypass cache
+        await loadProperties(true);
         closePropertyModal();
         
         // Show success message
@@ -2353,7 +2363,8 @@ async function handleResidentialPropertySubmit(e) {
             throw new Error(errorData.detail || errorData.message || 'Failed to save property');
         }
 
-        await loadProperties();
+        // Force refresh to bypass cache and show newly added property
+        await loadProperties(true);
         closeResidentialPropertyModal();
         showNotification('Residential property added successfully!');
     } catch (error) {
@@ -2497,7 +2508,8 @@ async function handlePlotPropertySubmit(e) {
             throw new Error(errorData.detail || errorData.message || 'Failed to save property');
         }
 
-        await loadProperties();
+        // Force refresh to bypass cache and show newly added property
+        await loadProperties(true);
         closePlotPropertyModal();
         showNotification('Plot property added successfully!');
     } catch (error) {
@@ -2590,11 +2602,11 @@ async function confirmDelete() {
             throw new Error(errorData.detail || `Failed to delete ${type}`);
         }
 
-        // Reload data
+        // Reload data with force refresh to bypass cache
         if (type === 'testimonial') {
-            await loadTestimonials();
+            await loadTestimonials(true); // Force refresh after delete
         } else {
-            await loadProperties();
+            await loadProperties(true); // Force refresh after delete
         }
         closeDeleteModal();
         showNotification(`${type.charAt(0).toUpperCase() + type.slice(1)} deleted successfully!`);
@@ -2941,7 +2953,7 @@ function showNotification(message, type = 'success') {
 let isLoadingTestimonials = false;
 
 // Load Testimonials from API
-async function loadTestimonials() {
+async function loadTestimonials(forceRefresh = false) {
     // Prevent concurrent calls
     if (isLoadingTestimonials) {
         return;
@@ -2949,7 +2961,17 @@ async function loadTestimonials() {
     
     isLoadingTestimonials = true;
     try {
-        const response = await authenticatedFetch('/api/admin/testimonials');
+        // Add cache-busting timestamp if force refresh is requested
+        const cacheBuster = forceRefresh ? `?_t=${Date.now()}` : '';
+        
+        const fetchOptions = forceRefresh ? {
+            cache: 'no-store',
+            headers: {
+                'Cache-Control': 'no-cache'
+            }
+        } : {};
+        
+        const response = await authenticatedFetch(`/api/admin/testimonials${cacheBuster}`, fetchOptions);
         
         if (!response.ok) {
             // Try to get error message from response
@@ -3206,8 +3228,8 @@ async function handleTestimonialSubmit(e) {
             throw new Error(errorMessage);
         }
 
-        // Reload testimonials
-        await loadTestimonials();
+        // Reload testimonials with force refresh to bypass cache
+        await loadTestimonials(true);
         closeTestimonialModal();
         
         // Show success message
@@ -3265,7 +3287,7 @@ async function toggleTestimonialApproval(id, isApproved) {
             throw new Error('Failed to update testimonial');
         }
 
-        await loadTestimonials();
+        await loadTestimonials(true); // Force refresh after approval change
         showNotification(isApproved ? 'Testimonial approved!' : 'Testimonial unapproved!');
     } catch (error) {
         console.error('Error updating testimonial:', error);
@@ -3288,7 +3310,7 @@ async function toggleTestimonialFeatured(id, isFeatured) {
             throw new Error('Failed to update testimonial');
         }
 
-        await loadTestimonials();
+        await loadTestimonials(true); // Force refresh after featured change
         showNotification(isFeatured ? 'Testimonial featured!' : 'Testimonial unfeatured!');
     } catch (error) {
         console.error('Error updating testimonial:', error);
@@ -3355,7 +3377,7 @@ function renderPartners(partners) {
             <td>
                 <div class="dashboard-table-image">
                     ${partner.logo_url 
-                        ? `<img src="${escapeHtml(partner.logo_url)}" alt="${escapeHtml(partner.name)}" style="max-width: 80px; max-height: 60px; object-fit: contain;" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                        ? `<img src="${escapeHtml(partner.logo_url)}" alt="${escapeHtml(partner.name)}" style="max-width: 80px; max-height: 60px; object-fit: contain;" onerror="this.style.display='none'; const fallback = this.nextElementSibling; if (fallback && fallback.style) fallback.style.display='flex';">
                     <div style="width: 80px; height: 60px; background: #f3f4f6; display: none; align-items: center; justify-content: center; color: #9ca3af; border-radius: 4px;">No Logo</div>`
                         : '<div style="width: 80px; height: 60px; background: #f3f4f6; display: flex; align-items: center; justify-content: center; color: #9ca3af; border-radius: 4px;">No Logo</div>'
                     }
@@ -3787,15 +3809,15 @@ async function confirmDelete() {
             throw new Error(errorData.detail || `Failed to delete ${type}`);
         }
 
-        // Reload data
+        // Reload data with force refresh to bypass cache
         if (type === 'testimonial') {
-            await loadTestimonials();
+            await loadTestimonials(true); // Force refresh after delete
         } else if (type === 'partner') {
             await loadPartners();
         } else if (type === 'blog') {
             await loadBlogs();
         } else {
-            await loadProperties();
+            await loadProperties(true); // Force refresh after delete
         }
         closeDeleteModal();
         showNotification(`${type.charAt(0).toUpperCase() + type.slice(1)} deleted successfully!`);
@@ -3912,7 +3934,7 @@ function renderBlogs(blogs) {
             <td>
                 <div class="dashboard-table-image">
                     ${blog.image_url 
-                        ? `<img src="${escapeHtml(blog.image_url)}" alt="${escapeHtml(title)}" style="max-width: 80px; max-height: 60px; object-fit: cover; border-radius: 4px;" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                        ? `<img src="${escapeHtml(blog.image_url)}" alt="${escapeHtml(title)}" style="max-width: 80px; max-height: 60px; object-fit: cover; border-radius: 4px;" onerror="this.style.display='none'; const fallback = this.nextElementSibling; if (fallback && fallback.style) fallback.style.display='flex';">
                     <div style="width: 80px; height: 60px; background: #f3f4f6; display: none; align-items: center; justify-content: center; color: #9ca3af; border-radius: 4px; font-size: 0.75rem;">No Image</div>`
                         : '<div style="width: 80px; height: 60px; background: #f3f4f6; display: flex; align-items: center; justify-content: center; color: #9ca3af; border-radius: 4px; font-size: 0.75rem;">No Image</div>'
                     }
@@ -4497,9 +4519,19 @@ window.updateInquiryStatus = updateInquiryStatus;
 // ============================================
 
 // Load Inquiries from API
-async function loadInquiries() {
+async function loadInquiries(forceRefresh = false) {
     try {
-        const response = await authenticatedFetch('/api/admin/inquiries');
+        // Add cache-busting timestamp if force refresh is requested
+        const cacheBuster = forceRefresh ? `?_t=${Date.now()}` : '';
+        
+        const fetchOptions = forceRefresh ? {
+            cache: 'no-store',
+            headers: {
+                'Cache-Control': 'no-cache'
+            }
+        } : {};
+        
+        const response = await authenticatedFetch(`/api/admin/inquiries${cacheBuster}`, fetchOptions);
         
         if (!response.ok) {
             // Try to get error message from response
@@ -4835,14 +4867,14 @@ async function updateInquiryStatus(inquiryId, newStatus) {
             throw new Error('Failed to update inquiry status');
         }
         
-        // Reload inquiries to reflect the change
-        await loadInquiries();
+        // Reload inquiries to reflect the change with force refresh
+        await loadInquiries(true);
         showNotification('Inquiry status updated successfully.', 'success');
     } catch (error) {
         console.error('Error updating inquiry status:', error);
         showNotification('Failed to update inquiry status.', 'error');
-        // Reload to reset the select
-        await loadInquiries();
+        // Reload to reset the select with force refresh
+        await loadInquiries(true);
     }
 }
 
@@ -5431,7 +5463,7 @@ function startAutoRefresh() {
     });
 }
 
-// Refresh visitor info and activity logs
+// Refresh visitor info, activity logs, and inquiries
 async function refreshVisitorInfoAndLogs() {
     // Check if visitor info section is visible (not filtered/searched)
     const visitorSearch = document.getElementById('visitorSearch');
@@ -5463,6 +5495,22 @@ async function refreshVisitorInfoAndLogs() {
             // Silently fail - don't show errors for background refresh
             console.debug('Background refresh of logs failed:', error);
         }
+    }
+    
+    // Also refresh inquiries periodically to catch new submissions
+    try {
+        await loadInquiries(true); // Force refresh to bypass cache
+    } catch (error) {
+        // Silently fail - don't show errors for background refresh
+        console.debug('Background refresh of inquiries failed:', error);
+    }
+    
+    // Also refresh testimonials periodically to catch new submissions
+    try {
+        await loadTestimonials(true); // Force refresh to bypass cache
+    } catch (error) {
+        // Silently fail - don't show errors for background refresh
+        console.debug('Background refresh of testimonials failed:', error);
     }
 }
 

@@ -501,6 +501,11 @@ function renderBlogs() {
                     <a href="/blog-details.html?id=${blog.id}">${escapeHtml(blog.title)}</a>
                 </h3>
                 <p class="blog-card-excerpt">${escapeHtml(blog.excerpt || '')}</p>
+                <button class="blog-views-btn" data-blog-id="${blog.id}" data-views="${blog.views || 0}">
+                    <i class="fas fa-eye"></i>
+                    <span class="views-count">${blog.views || 0}</span>
+                    <span class="views-label">Views</span>
+                </button>
                 <div class="blog-card-footer">
                     <a href="/blog-details.html?id=${blog.id}" class="blog-read-more">
                         Read More <i class="fas fa-arrow-right"></i>
@@ -513,8 +518,34 @@ function renderBlogs() {
         </article>
     `).join('');
     
+    // Attach event listeners to views buttons
+    attachViewsButtonListeners();
+    
     // Update load more button
     updateLoadMoreButton(filteredBlogs.length);
+}
+
+// Attach event listeners to views buttons
+function attachViewsButtonListeners() {
+    const viewsButtons = document.querySelectorAll('.blog-views-btn');
+    viewsButtons.forEach(button => {
+        button.addEventListener('click', function(e) {
+            // Add visual feedback on click
+            this.style.transform = 'scale(0.95)';
+            setTimeout(() => {
+                this.style.transform = '';
+            }, 150);
+            
+            // Optional: Navigate to blog details page on click
+            const blogId = this.getAttribute('data-blog-id');
+            if (blogId) {
+                // Small delay for visual feedback before navigation
+                setTimeout(() => {
+                    window.location.href = `/blog-details.html?id=${blogId}`;
+                }, 150);
+            }
+        });
+    });
 }
 
 // Filter blogs

@@ -321,6 +321,45 @@ function updatePageTitle(blog) {
     document.title = `${blog.title} - Tirumakudalu Properties`;
 }
 
+// Increment blog views
+async function incrementBlogViews(blogId) {
+    try {
+        // Check if we've already incremented views for this blog in this session
+        const viewedBlogs = JSON.parse(sessionStorage.getItem('viewedBlogs') || '[]');
+        if (viewedBlogs.includes(blogId)) {
+            // Already viewed in this session, skip increment
+            return;
+        }
+        
+        // Increment views via API
+        const response = await fetch(`/api/blogs/${blogId}/increment-views`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            // Mark as viewed in this session
+            viewedBlogs.push(blogId);
+            sessionStorage.setItem('viewedBlogs', JSON.stringify(viewedBlogs));
+            
+            // Update the displayed views count if available
+            const viewsElement = document.querySelector('.blog-views');
+            if (viewsElement && data.views !== undefined) {
+                viewsElement.innerHTML = `<i class="fas fa-eye"></i> ${data.views} views`;
+            }
+            
+            return data.views;
+        }
+    } catch (error) {
+        console.error('Error incrementing blog views:', error);
+        // Don't throw error, just log it - view tracking is not critical
+    }
+    return null;
+}
+
 // Load and render blog
 async function loadAndRenderBlog() {
     // Get blog ID from URL
@@ -353,6 +392,16 @@ async function loadAndRenderBlog() {
         window.location.href = '/blogs.html';
         return;
     }
+    
+    // Increment views (async, don't wait for it)
+    incrementBlogViews(blogId).then(updatedViews => {
+        if (updatedViews !== null) {
+            // Update the blog object with new views count
+            blog.views = updatedViews;
+            // Re-render header to show updated views
+            renderBlogHeader(blog);
+        }
+    });
     
     // Render blog content
     renderBlogHeader(blog);

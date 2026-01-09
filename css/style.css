@@ -15831,6 +15831,46 @@ section:not(.hero).section-visible .section-header {
     overflow: hidden;
 }
 
+.blog-views-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    background: var(--primary-lightest);
+    color: var(--primary-color);
+    border: 1px solid var(--primary-color);
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    margin-bottom: 1rem;
+    font-family: inherit;
+}
+
+.blog-views-btn:hover {
+    background: var(--primary-color);
+    color: var(--white);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(44, 62, 80, 0.2);
+}
+
+.blog-views-btn:active {
+    transform: translateY(0);
+}
+
+.blog-views-btn i {
+    font-size: 0.9rem;
+}
+
+.blog-views-btn .views-count {
+    font-weight: 600;
+}
+
+.blog-views-btn .views-label {
+    font-size: 0.8rem;
+}
+
 .blog-card-footer {
     display: flex;
     justify-content: space-between;

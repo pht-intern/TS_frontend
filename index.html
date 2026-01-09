@@ -578,7 +578,7 @@
                 <div class="service-section service-management">
                     <div class="service-abstract-bg"></div>
                     <div class="service-section-content">
-                        <div class="service-header-key">
+                        <div class="service-header-key"  style="margin-left: 25%;">
                             <h3>Property Management Services.</h3>
                         </div>
                         <p class="service-intro">We undertake comprehensive property management to ensure your property is well-maintained, compliant, and generating optimal returns.</p>
@@ -1255,92 +1255,97 @@
                 return stars;
             }
 
-            // Load testimonials from API
+            // JSONP helper function
+            function loadJSONP(url, callback) {
+                return new Promise((resolve, reject) => {
+                    const callbackName = 'jsonp_callback_' + Math.random().toString(36).substr(2, 9);
+                    window[callbackName] = function(data) {
+                        delete window[callbackName];
+                        document.body.removeChild(script);
+                        resolve(data);
+                    };
+                    const script = document.createElement('script');
+                    script.src = url + (url.indexOf('?') >= 0 ? '&' : '?') + 'callback=' + callbackName;
+                    script.onerror = function() {
+                        delete window[callbackName];
+                        if (document.body.contains(script)) {
+                            document.body.removeChild(script);
+                        }
+                        reject(new Error('JSONP request failed'));
+                    };
+                    document.body.appendChild(script);
+                });
+            }
+
+            // Load testimonials from API using JSONP
             async function loadTestimonialsFromAPI() {
                 try {
                     let fetchedTestimonials = [];
                     
-                    // Fetch approved testimonials (API defaults to is_approved=true)
-                    // Optionally fetch featured testimonials first
+                    // Try JSONP first (preferred for cross-origin)
                     try {
-                        const response = await fetch('/api/testimonials?is_approved=true&is_featured=true', {
-                            headers: {
-                                'Accept': 'application/json',
-                                'Content-Type': 'application/json'
-                            }
-                        });
+                        // First try featured testimonials
+                        const jsonpUrl = '/api/testimonials?is_approved=true&is_featured=true';
+                        const data = await loadJSONP(jsonpUrl);
+                        if (Array.isArray(data)) {
+                            fetchedTestimonials = data;
+                        }
+                    } catch (jsonpError) {
+                        console.warn('JSONP failed, trying regular fetch:', jsonpError);
                         
-                        if (response.ok) {
-                            try {
-                                const data = await response.json();
-                                // Validate response is an array
-                                if (Array.isArray(data)) {
-                                    fetchedTestimonials = data;
-                                } else {
-                                    console.warn('Testimonials API returned non-array response');
-                                }
-                            } catch (parseError) {
-                                console.warn('Error parsing featured testimonials response:', parseError);
-                            }
-                        } else {
-                            // If featured request fails, try to get error details
-                            let errorMessage = `HTTP ${response.status}: ${response.statusText}`;
-                            try {
-                                const errorData = await response.json();
-                                errorMessage = errorData.detail || errorData.error || errorMessage;
-                            } catch (e) {
-                                // Ignore JSON parse errors
-                            }
-                            console.warn('Failed to fetch featured testimonials:', errorMessage);
-                        }
-                    } catch (fetchError) {
-                        // Handle network errors, CORS errors, or other fetch failures
-                        if (fetchError.name === 'TypeError' && fetchError.message.includes('fetch')) {
-                            console.warn('Network error fetching featured testimonials:', fetchError.message);
-                        } else {
-                            console.warn('Error fetching featured testimonials:', fetchError);
-                        }
-                    }
-                    
-                    // If no featured testimonials, get all approved
-                    if (fetchedTestimonials.length === 0) {
+                        // Fallback to regular fetch
                         try {
-                            const allResponse = await fetch('/api/testimonials?is_approved=true', {
+                            const response = await fetch('/api/testimonials?is_approved=true&is_featured=true', {
                                 headers: {
                                     'Accept': 'application/json',
                                     'Content-Type': 'application/json'
                                 }
                             });
                             
-                            if (allResponse.ok) {
-                                try {
+                            if (response.ok) {
+                                const data = await response.json();
+                                if (Array.isArray(data)) {
+                                    fetchedTestimonials = data;
+                                }
+                            }
+                        } catch (fetchError) {
+                            console.warn('Fetch also failed:', fetchError);
+                        }
+                    }
+                    
+                    // If no featured testimonials, get all approved
+                    if (fetchedTestimonials.length === 0) {
+                        try {
+                            const jsonpUrl = '/api/testimonials?is_approved=true';
+                            const data = await loadJSONP(jsonpUrl);
+                            if (Array.isArray(data)) {
+                                fetchedTestimonials = data;
+                            }
+                        } catch (jsonpError) {
+                            console.warn('JSONP failed for all testimonials, trying regular fetch:', jsonpError);
+                            
+                            // Fallback to regular fetch
+                            try {
+                                const allResponse = await fetch('/api/testimonials?is_approved=true', {
+                                    headers: {
+                                        'Accept': 'application/json',
+                                        'Content-Type': 'application/json'
+                                    }
+                                });
+                                
+                                if (allResponse.ok) {
                                     const allTestimonials = await allResponse.json();
                                     if (Array.isArray(allTestimonials)) {
                                         fetchedTestimonials = allTestimonials;
                                     }
-                                } catch (parseError) {
-                                    console.warn('Error parsing all testimonials response:', parseError);
                                 }
-                            } else {
-                                // Log but don't throw
-                                let errorMessage = `HTTP ${allResponse.status}: ${allResponse.statusText}`;
-                                try {
-                                    const errorData = await allResponse.json();
-                                    errorMessage = errorData.detail || errorData.error || errorMessage;
-                                } catch (e) {
-                                    // Ignore JSON parse errors
-                                }
-                                console.warn('Failed to fetch all testimonials:', errorMessage);
-                            }
-                        } catch (fallbackError) {
-                            // Handle network errors for fallback request
-                            if (fallbackError.name === 'TypeError' && fallbackError.message.includes('fetch')) {
-                                console.warn('Network error fetching all testimonials:', fallbackError.message);
-                            } else {
-                                console.warn('Error fetching all testimonials:', fallbackError);
+                            } catch (fallbackError) {
+                                console.warn('Fetch fallback also failed:', fallbackError);
                             }
                         }
                     }
+                    
+                    console.log('Fetched testimonials:', fetchedTestimonials.length);
                     
                     // Convert API format to display format with validation
                     testimonials = fetchedTestimonials
@@ -1354,6 +1359,7 @@
                             date: testimonial.created_at ? new Date(testimonial.created_at).toLocaleDateString() : ''
                         }));
                     
+                    console.log('Processed testimonials:', testimonials.length);
                     renderTestimonialsCompact();
                 } catch (error) {
                     // Silently handle any unexpected errors - don't break the page
@@ -1366,15 +1372,27 @@
 
             function renderTestimonialsCompact() {
                 const grid = document.getElementById('testimonialsCompactGrid');
-                if (!grid) return;
-
-                if (testimonials.length === 0) {
-                    // Show empty state (already in HTML)
-                    grid.classList.remove('scrolling');
+                if (!grid) {
+                    console.warn('Testimonials grid element not found');
                     return;
                 }
 
-                // Remove empty state and add scrolling class
+                if (testimonials.length === 0) {
+                    // Show empty state (already in HTML) - ensure it's visible
+                    grid.classList.remove('scrolling');
+                    // Make sure empty state is visible
+                    const emptyState = grid.querySelector('.testimonials-compact-empty');
+                    if (emptyState) {
+                        emptyState.style.display = 'block';
+                    }
+                    return;
+                }
+
+                // Hide empty state and add scrolling class
+                const emptyState = grid.querySelector('.testimonials-compact-empty');
+                if (emptyState) {
+                    emptyState.style.display = 'none';
+                }
                 grid.classList.add('scrolling');
 
                 // Render testimonials twice for seamless infinite scrolling

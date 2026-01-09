@@ -2534,18 +2534,25 @@ async function editProperty(id) {
             let errorMessage = 'Failed to fetch property';
             try {
                 const errorData = await response.json();
+                // Use the detailed error message from server
                 errorMessage = errorData.message || errorData.error || errorMessage;
             } catch (e) {
                 // If response is not JSON, use status text
                 errorMessage = response.statusText || errorMessage;
             }
             
-            // Provide more specific error messages based on status code
-            if (response.status === 404) {
+            // Provide more specific error messages based on status code (only if no detailed message)
+            if (response.status === 404 && errorMessage === 'Failed to fetch property') {
                 errorMessage = 'Property not found. It may have been deleted.';
-            } else if (response.status === 500) {
-                errorMessage = 'Server error while loading property. Please try again.';
+            } else if (response.status === 500 && errorMessage === 'Failed to fetch property') {
+                errorMessage = 'Server error while loading property. Please check the console for details.';
             }
+            
+            console.error('Property fetch error:', {
+                status: response.status,
+                statusText: response.statusText,
+                errorMessage: errorMessage
+            });
             
             throw new Error(errorMessage);
         }

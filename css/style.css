@@ -2918,18 +2918,17 @@ section:not(.hero).section-visible .section-header {
     position: relative;
     margin-bottom: 4rem;
     padding-bottom: 2rem;
-    text-align: center;
-    margin-left: 25%;
-    padding-left: 1.5rem;
-    padding-right: 2rem;
+    text-align: right;
+    margin-left: 0;
+    padding-left: 0;
+    padding-right: 0;
 }
 
 .service-header-key::after {
     content: '';
     position: absolute;
     bottom: 0;
-    left: 50%;
-    transform: translateX(-50%);
+    right: 0;
     width: 80px;
     height: 4px;
     background: linear-gradient(90deg, var(--primary-color), var(--accent-color), var(--primary-color));
@@ -3111,13 +3110,17 @@ section:not(.hero).section-visible .section-header {
 }
 
 .service-content-overlay {
-    position: relative;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
     z-index: 1;
     background: rgba(116, 136, 150, 0.158);
     padding: 5rem 4rem;
-    min-height: 700px;
     display: flex;
     align-items: center;
+    justify-content: center;
 }
 
 .service-content-overlay::before {
@@ -3127,6 +3130,8 @@ section:not(.hero).section-visible .section-header {
     left: 0;
     right: 0;
     bottom: 0;
+    width: 100%;
+    height: 100%;
     background: rgba(0, 0, 0, 0.6);
     z-index: 1;
 }
@@ -3134,6 +3139,13 @@ section:not(.hero).section-visible .section-header {
 .service-content-overlay > * {
     position: relative;
     z-index: 2;
+}
+
+.service-content-overlay .service-section-content {
+    width: 100%;
+    max-width: 1200px;
+    margin: 0;
+    flex-shrink: 0;
 }
 
 .service-label {
@@ -8474,7 +8486,7 @@ section:not(.hero).section-visible .section-header {
     .service-content > p {
         font-size: 0.9rem;
     }
-}
+
 
 @media (max-width: 480px) {
     .hero {
@@ -8684,7 +8696,6 @@ section:not(.hero).section-visible .section-header {
     
     .service-content-overlay {
         padding: 3rem 2rem;
-        min-height: 600px;
     }
     
     .service-bg-slide {

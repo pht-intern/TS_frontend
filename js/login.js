@@ -131,13 +131,49 @@
         }
     }
 
+    // Clear any invalid session data on page load before checking authentication
+    // This ensures sessions are only created after successful login
+    function clearInvalidSessionData() {
+        // Check if there's session data but no valid user
+        const hasSessionFlag = sessionStorage.getItem('dashboard_authenticated') === 'true' ||
+                              localStorage.getItem('dashboard_authenticated') === 'true';
+        
+        if (hasSessionFlag) {
+            const userStr = sessionStorage.getItem('user') || localStorage.getItem('user');
+            let hasValidUser = false;
+            
+            if (userStr) {
+                try {
+                    const user = JSON.parse(userStr);
+                    if (user && user.email && typeof user.email === 'string' && user.email.trim() !== '' && user.role === 'admin') {
+                        hasValidUser = true;
+                    }
+                } catch (e) {
+                    // Invalid JSON
+                }
+            }
+            
+            // If there's a session flag but no valid user, clear it
+            if (!hasValidUser) {
+                sessionStorage.removeItem('dashboard_authenticated');
+                sessionStorage.removeItem('isAuthenticated');
+                sessionStorage.removeItem('user');
+                localStorage.removeItem('dashboard_authenticated');
+                localStorage.removeItem('isAuthenticated');
+                localStorage.removeItem('user');
+            }
+        }
+    }
+    
     // Check authentication on page load
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', () => {
+            clearInvalidSessionData();
             checkAuthentication();
             updateDashboardNavButton();
         });
     } else {
+        clearInvalidSessionData();
         checkAuthentication();
         updateDashboardNavButton();
     }

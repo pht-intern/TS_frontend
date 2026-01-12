@@ -117,6 +117,18 @@
                                 </div>
                             </div>
                             <div class="dashboard-profile-divider"></div>
+                            <a href="/settings.html" class="dashboard-profile-item">
+                                <i class="fas fa-cog"></i>
+                                <span>Settings</span>
+                            </a>
+                            <a href="/app-metrics.html" class="dashboard-profile-item" id="appMetricsLink">
+                                <i class="fas fa-chart-line"></i>
+                                <span>App Metrics</span>
+                            </a>
+                            <a href="/activity-logs.html" class="dashboard-profile-item">
+                                <i class="fas fa-history"></i>
+                                <span>Activity Logs</span>
+                            </a>
                             <button class="dashboard-profile-item dashboard-profile-logout" id="dashboardLogout">
                                 <i class="fas fa-sign-out-alt"></i>
                                 <span>Logout</span>
@@ -199,14 +211,10 @@
                             </button>
                         </div>
                     </div>
-                    <div class="dashboard-actions" style="margin-bottom: 1.5rem; display: flex; gap: 1rem;">
-                        <button class="dashboard-btn-primary" id="addResidentialPropertyBtn">
+                    <div class="dashboard-actions" style="margin-bottom: 1.5rem;">
+                        <button class="dashboard-btn-primary" id="addPropertyBtn">
                             <i class="fas fa-plus"></i>
-                            Add Other Properties
-                        </button>
-                        <button class="dashboard-btn-primary" id="addPlotPropertyBtn">
-                            <i class="fas fa-plus"></i>
-                            Add Plot Property
+                            Add Property
                         </button>
                     </div>
                     <div class="dashboard-properties-table-container properties-table-scrollable">
@@ -501,147 +509,30 @@
                     </div>
                 </div>
 
-                <!-- Application Monitoring Section -->
+                <!-- Page Visit Counts Section -->
                 <div class="dashboard-properties-section">
                     <div class="dashboard-section-header">
                         <h2>
                             <i class="fas fa-chart-line" style="margin-right: 0.5rem;"></i>
-                            Application Monitoring
+                            Page Visit Counts
                         </h2>
                     </div>
-                    
-                    <!-- Current Metrics Cards -->
-                    <div class="dashboard-stats" style="margin-bottom: 2rem;">
-                        <!-- System Metrics -->
-                        <div class="dashboard-stat-card">
-                            <div class="dashboard-stat-icon" style="background: var(--yellow-pale); color: var(--yellow-bright);">
-                                <i class="fas fa-microchip"></i>
-                            </div>
-                            <div class="dashboard-stat-info">
-                                <h3 id="currentCpu">0%</h3>
-                                <p>CPU Usage</p>
-                            </div>
-                        </div>
-                        <div class="dashboard-stat-card">
-                            <div class="dashboard-stat-icon" style="background: var(--purple-pale); color: var(--purple);">
-                                <i class="fas fa-memory"></i>
-                            </div>
-                            <div class="dashboard-stat-info">
-                                <h3 id="currentRam">0%</h3>
-                                <p>RAM Usage</p>
-                            </div>
-                        </div>
-                        <div class="dashboard-stat-card">
-                            <div class="dashboard-stat-icon" style="background: var(--primary-lighter); color: var(--primary-darker);">
-                                <i class="fas fa-network-wired"></i>
-                            </div>
-                            <div class="dashboard-stat-info">
-                                <h3 id="currentBandwidth">0 MB</h3>
-                                <p>Bandwidth (Total)</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Time Range Selector -->
-                    <div style="display: flex; justify-content: flex-end; margin-bottom: 1.5rem; align-items: center; gap: 1rem;">
-                        <label for="metricsTimeRange" style="font-size: 14px; color: var(--text-gray); font-weight: 500;">
-                            Time Range:
-                        </label>
-                        <select id="metricsTimeRange" class="dashboard-log-filter" style="padding: 0.5rem 1rem; border: 1px solid var(--border-color); border-radius: 5px; font-size: 14px; background: var(--white); cursor: pointer;">
-                            <option value="1">Last Hour</option>
-                            <option value="6">Last 6 Hours</option>
-                            <option value="12">Last 12 Hours</option>
-                            <option value="24" selected>Last 24 Hours</option>
-                            <option value="48">Last 48 Hours</option>
-                            <option value="72">Last 72 Hours</option>
-                        </select>
-                    </div>
-
-                    <!-- Metrics Graphs Container -->
-                    <div class="metrics-graphs-container">
-                        <!-- System Metrics Graphs -->
-                        <div class="metrics-graph-card">
-                            <div class="metrics-graph-header">
-                                <h3>
-                                    <i class="fas fa-microchip" style="margin-right: 0.5rem; color: var(--yellow-bright);"></i>
-                                    CPU Usage
-                                </h3>
-                            </div>
-                            <div class="metrics-graph-body">
-                                <canvas id="cpuChart"></canvas>
-                            </div>
-                        </div>
-
-                        <div class="metrics-graph-card">
-                            <div class="metrics-graph-header">
-                                <h3>
-                                    <i class="fas fa-memory" style="margin-right: 0.5rem; color: var(--purple);"></i>
-                                    RAM Usage
-                                </h3>
-                            </div>
-                            <div class="metrics-graph-body">
-                                <canvas id="ramChart"></canvas>
-                            </div>
-                        </div>
-
-                        <div class="metrics-graph-card">
-                            <div class="metrics-graph-header">
-                                <h3>
-                                    <i class="fas fa-network-wired" style="margin-right: 0.5rem; color: var(--primary-color);"></i>
-                                    Bandwidth Usage
-                                </h3>
-                            </div>
-                            <div class="metrics-graph-body">
-                                <canvas id="bandwidthChart"></canvas>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Logs Section -->
-                <div class="dashboard-properties-section">
-                    <div class="dashboard-section-header">
-                        <h2>
-                            <i class="fas fa-list-alt" style="margin-right: 0.5rem;"></i>
-                            Activity Logs
-                        </h2>
-                        <div style="display: flex; gap: 1rem; align-items: center;">
-                            <select id="logTypeFilter" class="dashboard-log-filter" style="padding: 0.5rem; border: 1px solid var(--border-color); border-radius: 5px; font-size: 22px;">
-                                <option value="">All Types</option>
-                                <option value="info">Info</option>
-                                <option value="warning">Warning</option>
-                                <option value="error">Error</option>
-                                <option value="action">Action</option>
-                            </select>
-                            <div class="dashboard-search-box">
-                                <i class="fas fa-search"></i>
-                                <input type="text" id="logSearch" placeholder="Search logs...">
-                            </div>
-                            <input type="file" id="importLogsFile" accept=".csv" style="display: none;">
-                            <button class="dashboard-export dashboard-import" id="importLogsBtn" title="Import Activity Logs from CSV" style="white-space: nowrap;">
-                                <i class="fas fa-upload"></i>
-                                IMPORT CSV
-                            </button>
-                            <button class="dashboard-export" id="exportLogsBtn" title="Export Activity Logs to CSV" style="white-space: nowrap;">
-                                <i class="fas fa-download"></i>
-                                EXPORT CSV
-                            </button>
-                        </div>
-                    </div>
-                    <div class="dashboard-properties-table-container logs-table-container">
+                    <div class="dashboard-properties-table-container">
                         <table class="dashboard-properties-table">
                             <thead>
                                 <tr>
-                                    <th>Type</th>
-                                    <th>Action</th>
-                                    <th>Description</th>
-                                    <th>User</th>
-                                    <th>IP Address</th>
-                                    <th>Date & Time</th>
+                                    <th>Page Name</th>
+                                    <th>Total Visits</th>
+                                    <th>Unique Visitors</th>
+                                    <th>Authenticated Visitors</th>
                                 </tr>
                             </thead>
-                            <tbody id="logsTableBody">
-                                <!-- Logs will be loaded here -->
+                            <tbody id="pageVisitsTableBody">
+                                <tr>
+                                    <td colspan="4" style="text-align: center; padding: 2rem;">
+                                        <i class="fas fa-spinner fa-spin"></i> Loading page visit statistics...
+                                    </td>
+                                </tr>
                             </tbody>
                         </table>
                     </div>
@@ -815,486 +706,122 @@
         </div>
     </div>
 
-    <!-- Add/Edit Residential Property Modal (Builder Floor, House/Villa, Apartments) -->
-    <div class="dashboard-modal" id="residentialPropertyModal">
-        <div class="dashboard-modal-overlay" id="residentialPropertyModalOverlay"></div>
-        <div class="dashboard-modal-content">
-            <div class="dashboard-modal-header">
-                <h2 id="residentialModalTitle">Add Other Properties</h2>
-                <button class="dashboard-modal-close" id="residentialPropertyModalClose">
+    <!-- Add/Edit Property Modal - Step by Step -->
+    <div class="dashboard-modal" id="propertyModal">
+        <div class="dashboard-modal-overlay" id="propertyModalOverlay"></div>
+        <div class="dashboard-modal-content" style="max-width: 1200px; width: 90vw; max-height: 90vh; overflow-y: auto;">
+            <div class="dashboard-modal-header" style="padding: 2rem 2.5rem 1.5rem;">
+                <h2 id="propertyModalTitle" style="font-size: 1.75rem; margin: 0;">Add New Property</h2>
+                <button class="dashboard-modal-close" id="propertyModalClose">
                     <i class="fas fa-times"></i>
                 </button>
             </div>
-            <form class="dashboard-property-form" id="residentialPropertyForm">
-                <input type="hidden" id="residentialPropertyId" name="id">
-                
-                <div class="dashboard-form-row">
-                    <div class="dashboard-form-group">
-                        <label for="residentialCity">
-                            <i class="fas fa-city"></i>
-                            City *
-                        </label>
-                        <input type="text" id="residentialCity" name="city" placeholder="e.g., Bengaluru" required>
-                    </div>
-                    <div class="dashboard-form-group">
-                        <label for="residentialLocality">
-                            <i class="fas fa-map-marker-alt"></i>
-                            Locality *
-                        </label>
-                        <input type="text" id="residentialLocality" name="locality" placeholder="e.g., Whitefield" required>
-                    </div>
+            
+            <!-- Step Indicator -->
+            <div class="property-wizard-steps" style="display: flex; justify-content: center; gap: 2rem; margin: 0 2.5rem 3rem; padding: 2rem 0; border-bottom: 1px solid var(--border-color); flex-wrap: wrap;">
+                <div class="property-wizard-step active" data-step="1" style="display: flex; align-items: center; gap: 0.75rem;">
+                    <div class="property-wizard-step-number" style="width: 40px; height: 40px; border-radius: 50%; background: var(--primary-color); color: white; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 1.1rem;">1</div>
+                    <span class="property-wizard-step-label" style="font-weight: 500; font-size: 1rem;">Basic Information</span>
                 </div>
-
-                <div class="dashboard-form-row">
-                    <div class="dashboard-form-group">
-                        <label for="residentialLocationLink">
-                            <i class="fas fa-link"></i>
-                            Location Link (Google Maps)
-                        </label>
-                        <input type="url" id="residentialLocationLink" name="location_link" placeholder="e.g., https://maps.google.com/...">
-                    </div>
-                    <div class="dashboard-form-group">
-                        <label for="residentialDirections">
-                            <i class="fas fa-directions"></i>
-                            Directions
-                        </label>
-                        <input type="text" id="residentialDirections" name="directions" placeholder="e.g., Near Metro Station, Opposite Mall">
-                    </div>
+                <div class="property-wizard-step-divider" style="width: 80px; height: 2px; background: var(--border-color); margin-top: 20px;"></div>
+                <div class="property-wizard-step" data-step="2" style="display: flex; align-items: center; gap: 0.75rem;">
+                    <div class="property-wizard-step-number" style="width: 40px; height: 40px; border-radius: 50%; background: var(--border-color); color: var(--text-gray); display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 1.1rem;">2</div>
+                    <span class="property-wizard-step-label" style="font-weight: 500; color: var(--text-gray); font-size: 1rem;">Property Details</span>
                 </div>
-
-                <div class="dashboard-form-row">
-                    <div class="dashboard-form-group">
-                        <label for="residentialPropertyName">
-                            <i class="fas fa-building"></i>
-                            Property Name *
-                        </label>
-                        <input type="text" id="residentialPropertyName" name="property_name" placeholder="e.g., Luxury Apartments" required>
-                    </div>
-                    <div class="dashboard-form-group">
-                        <label for="residentialPropertyType">
-                            <i class="fas fa-home"></i>
-                            Property Type *
-                        </label>
-                        <select id="residentialPropertyType" name="type" required>
-                            <option value="">Select Type</option>
-                            <option value="builder_floor">Builder Floor</option>
-                            <option value="house">House</option>
-                            <option value="villa">Villa</option>
-                            <option value="apartment">Apartment</option>
-                        </select>
-                    </div>
+                <div class="property-wizard-step-divider" style="width: 80px; height: 2px; background: var(--border-color); margin-top: 20px;"></div>
+                <div class="property-wizard-step" data-step="3" style="display: flex; align-items: center; gap: 0.75rem;">
+                    <div class="property-wizard-step-number" style="width: 40px; height: 40px; border-radius: 50%; background: var(--border-color); color: var(--text-gray); display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 1.1rem;">3</div>
+                    <span class="property-wizard-step-label" style="font-weight: 500; color: var(--text-gray); font-size: 1rem;">Additional Details</span>
                 </div>
-
-                <div class="dashboard-form-row">
-                    <div class="dashboard-form-group">
-                        <label>
-                            <i class="fas fa-bed"></i>
-                            Unit Type *
-                        </label>
-                        <div class="dashboard-unit-type-buttons">
-                            <button type="button" class="dashboard-unit-type-btn" data-unit-type="rk" data-bedrooms="0" id="residentialUnitTypeRK">
-                                <span>1RK</span>
-                            </button>
-                            <button type="button" class="dashboard-unit-type-btn" data-unit-type="bhk" data-bedrooms="1" id="residentialUnitType1BHK">
-                                <span>1BHK</span>
-                            </button>
-                            <button type="button" class="dashboard-unit-type-btn" data-unit-type="bhk" data-bedrooms="2" id="residentialUnitType2BHK">
-                                <span>2BHK</span>
-                            </button>
-                            <button type="button" class="dashboard-unit-type-btn" data-unit-type="bhk" data-bedrooms="3" id="residentialUnitType3BHK">
-                                <span>3BHK</span>
-                            </button>
-                            <button type="button" class="dashboard-unit-type-btn" data-unit-type="4plus" data-bedrooms="4" id="residentialUnitType4PlusBHK">
-                                <span>4+BHK</span>
-                            </button>
-                        </div>
-                        <input type="hidden" id="residentialBedrooms" name="bedrooms" value="1" required>
-                        <input type="hidden" id="residentialUnitType" name="unit_type" value="">
-                    </div>
-                    <div class="dashboard-form-group">
-                        <label for="residentialStatus">
-                            <i class="fas fa-tag"></i>
-                            Status *
-                        </label>
-                        <select id="residentialStatus" name="status" required>
-                            <option value="">Select Status</option>
-                            <option value="sale">Sell</option>
-                            <option value="rent">Rent</option>
-                            <option value="resale">Resale</option>
-                            <option value="new">New</option>
-                            <option value="ready_to_move">Ready to Move</option>
-                            <option value="under_construction">Under Construction</option>
-                        </select>
-                    </div>
-                </div>
-
-                <div class="dashboard-form-row">
-                    <div class="dashboard-form-group">
-                        <label for="residentialBuildupArea">
-                            <i class="fas fa-ruler-combined"></i>
-                            Buildup Area (Sq.Ft.) *
-                        </label>
-                        <input type="number" id="residentialBuildupArea" name="buildup_area" placeholder="e.g., 1500" step="0.01" required>
-                    </div>
-                    <div class="dashboard-form-group">
-                        <label for="residentialCarpetArea">
-                            <i class="fas fa-ruler"></i>
-                            Carpet Area (Sq.Ft.) *
-                        </label>
-                        <input type="number" id="residentialCarpetArea" name="carpet_area" placeholder="e.g., 1200" step="0.01" required>
-                    </div>
-                </div>
-
-                <div class="dashboard-form-row">
-                    <div class="dashboard-form-group">
-                        <label for="residentialLength">
-                            <i class="fas fa-ruler-horizontal"></i>
-                            Length (Ft.)
-                        </label>
-                        <input type="number" id="residentialLength" name="length" placeholder="e.g., 50" step="0.01">
-                    </div>
-                    <div class="dashboard-form-group">
-                        <label for="residentialBreadth">
-                            <i class="fas fa-ruler-vertical"></i>
-                            Breadth (Ft.)
-                        </label>
-                        <input type="number" id="residentialBreadth" name="breadth" placeholder="e.g., 30" step="0.01">
-                    </div>
-                </div>
-
-                <div class="dashboard-form-row">
-                    <div class="dashboard-form-group">
-                        <label for="residentialPrice">
-                            <i class="fas fa-dollar-sign"></i>
-                            Price *
-                        </label>
-                        <input type="text" id="residentialPrice" name="price" placeholder="e.g., Rs. 1.5 Cr" required>
-                    </div>
-                    <div class="dashboard-form-group">
-                        <label style="display: flex; align-items: center; gap: 0.5rem; margin-top: 1.5rem;">
-                            <input type="checkbox" id="residentialPriceNegotiable" name="price_negotiable" style="width: auto;">
-                            <span>Price is Negotiable</span>
-                        </label>
-                        <label style="display: flex; align-items: center; gap: 0.5rem; margin-top: 0.5rem;">
-                            <input type="checkbox" id="residentialPriceIncludesRegistration" name="price_includes_registration" style="width: auto;">
-                            <span>Price Includes Registration</span>
-                        </label>
-                    </div>
-                </div>
-
-                <div class="dashboard-form-group">
-                    <label for="residentialDescription">
-                        <i class="fas fa-align-left"></i>
-                        Description *
-                    </label>
-                    <textarea id="residentialDescription" name="description" rows="5" placeholder="Enter detailed property description..." required></textarea>
-                </div>
-
-                <div class="dashboard-form-group">
-                    <label>
-                        <i class="fas fa-images"></i>
-                        Project Images *
-                    </label>
-                    <div class="dashboard-image-upload-area" id="residentialProjectImageUploadArea">
-                        <input type="file" id="residentialProjectImages" name="project_images" multiple accept="image/jpeg,image/jpg,image/png,image/webp,image/svg+xml" style="display: none;">
-                        <div class="dashboard-image-upload-placeholder" id="residentialProjectImageUploadPlaceholder">
-                            <i class="fas fa-cloud-upload-alt"></i>
-                            <p>Click to upload project images or drag and drop</p>
-                            <span>Supports: JPG, PNG, SVG, WebP (Max 5MB per image)</span>
-                        </div>
-                        <div class="dashboard-image-preview-container" id="residentialProjectImagePreviewContainer"></div>
-                    </div>
-                </div>
-
-                <div class="dashboard-form-group">
-                    <label>
-                        <i class="fas fa-drafting-compass"></i>
-                        Floor Plan Images
-                    </label>
-                    <div class="dashboard-image-upload-area" id="residentialFloorPlanImageUploadArea">
-                        <input type="file" id="residentialFloorPlanImages" name="floorplan_images" multiple accept="image/jpeg,image/jpg,image/png,image/webp,image/svg+xml" style="display: none;">
-                        <div class="dashboard-image-upload-placeholder" id="residentialFloorPlanImageUploadPlaceholder">
-                            <i class="fas fa-cloud-upload-alt"></i>
-                            <p>Click to upload floor plan images or drag and drop</p>
-                            <span>Supports: JPG, PNG, SVG, WebP (Max 5MB per image)</span>
-                        </div>
-                        <div class="dashboard-image-preview-container" id="residentialFloorPlanImagePreviewContainer"></div>
-                    </div>
-                </div>
-
-                <div class="dashboard-form-group">
-                    <label>
-                        <i class="fas fa-map"></i>
-                        Master Plan Images
-                    </label>
-                    <div class="dashboard-image-upload-area" id="residentialMasterPlanImageUploadArea">
-                        <input type="file" id="residentialMasterPlanImages" name="masterplan_images" multiple accept="image/jpeg,image/jpg,image/png,image/webp,image/svg+xml" style="display: none;">
-                        <div class="dashboard-image-upload-placeholder" id="residentialMasterPlanImageUploadPlaceholder">
-                            <i class="fas fa-cloud-upload-alt"></i>
-                            <p>Click to upload master plan images or drag and drop</p>
-                            <span>Supports: JPG, PNG, SVG, WebP (Max 5MB per image)</span>
-                        </div>
-                        <div class="dashboard-image-preview-container" id="residentialMasterPlanImagePreviewContainer"></div>
-                    </div>
-                </div>
-
-                <div class="dashboard-form-group">
-                    <label>
-                        <i class="fas fa-check-circle"></i>
-                        Amenities *
-                    </label>
-                    <select id="residentialAmenities" name="amenities" multiple size="8" required style="width: 100%; padding: 0.875rem 1rem; border: 2px solid var(--border-color); border-radius: 10px; font-size: 22px; font-family: 'Inter', sans-serif;">
-                        <option value="club_house">Club House</option>
-                        <option value="security">Security</option>
-                        <option value="24hr_backup">24hr Backup</option>
-                        <option value="rain_water_harvesting">Rain Water Harvesting</option>
-                        <option value="maintenance_staff">Maintenance Staff</option>
-                        <option value="intercom">Intercom</option>
-                        <option value="garden">Garden</option>
-                        <option value="community_hall">Community Hall</option>
-                        <option value="electricity_full">Electricity Full</option>
-                        <option value="electricity_partial">Electricity Partial</option>
-                        <option value="basketball_court">Basketball Court</option>
-                        <option value="play_area">Play Area</option>
-                        <option value="badminton_court">Badminton Court</option>
-                        <option value="swimming_pool">Swimming Pool</option>
-                        <option value="tennis_court">Tennis Court</option>
-                        <option value="gymnasium">Gymnasium</option>
-                        <option value="indoor_games">Indoor Games</option>
-                        <option value="banks_atm">Banks/ATM</option>
-                        <option value="cafeteria">Cafeteria</option>
-                        <option value="library">Library</option>
-                        <option value="health_facilities">Health Facilities</option>
-                        <option value="recreation_facilities">Recreation Facilities</option>
-                        <option value="wifi_broadband">WiFi Broadband Internet</option>
-                        <option value="temple">Temple</option>
-                    </select>
-                    <small style="color: var(--text-gray); font-size: 22px; margin-top: 0.5rem; display: block;">Hold Ctrl (Windows) or Cmd (Mac) to select multiple amenities</small>
-                </div>
-
-                <div class="dashboard-modal-actions">
-                    <button type="button" class="dashboard-btn-secondary" id="cancelResidentialPropertyBtn">Cancel</button>
-                    <button type="submit" class="dashboard-btn-primary">
-                        <i class="fas fa-save"></i>
-                        Save Property
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <!-- Add/Edit Plot Property Modal -->
-    <div class="dashboard-modal" id="plotPropertyModal">
-        <div class="dashboard-modal-overlay" id="plotPropertyModalOverlay"></div>
-        <div class="dashboard-modal-content">
-            <div class="dashboard-modal-header">
-                <h2 id="plotModalTitle">Add Plot Property</h2>
-                <button class="dashboard-modal-close" id="plotPropertyModalClose">
-                    <i class="fas fa-times"></i>
-                </button>
             </div>
-            <form class="dashboard-property-form" id="plotPropertyForm">
-                <input type="hidden" id="plotPropertyId" name="id">
+
+            <form class="dashboard-property-form" id="propertyForm" style="padding: 0 2.5rem 2.5rem;">
+                <input type="hidden" id="propertyId" name="id">
+                <input type="hidden" id="currentStep" value="1">
                 
-                <div class="dashboard-form-row">
-                    <div class="dashboard-form-group">
-                        <label for="plotCity">
-                            <i class="fas fa-city"></i>
-                            City *
-                        </label>
-                        <input type="text" id="plotCity" name="city" placeholder="e.g., Bengaluru" required>
-                    </div>
-                    <div class="dashboard-form-group">
-                        <label for="plotLocality">
-                            <i class="fas fa-map-marker-alt"></i>
-                            Locality *
-                        </label>
-                        <input type="text" id="plotLocality" name="locality" placeholder="e.g., Whitefield" required>
-                    </div>
-                </div>
-
-                <div class="dashboard-form-row">
-                    <div class="dashboard-form-group">
-                        <label for="plotLocationLink">
-                            <i class="fas fa-link"></i>
-                            Location Link (Google Maps)
-                        </label>
-                        <input type="url" id="plotLocationLink" name="location_link" placeholder="e.g., https://maps.google.com/...">
-                    </div>
-                    <div class="dashboard-form-group">
-                        <label for="plotDirections">
-                            <i class="fas fa-directions"></i>
-                            Directions
-                        </label>
-                        <input type="text" id="plotDirections" name="directions" placeholder="e.g., Near Metro Station, Opposite Mall">
-                    </div>
-                </div>
-
-                <div class="dashboard-form-row">
-                    <div class="dashboard-form-group">
-                        <label for="plotProjectName">
-                            <i class="fas fa-building"></i>
-                            Project Name *
-                        </label>
-                        <input type="text" id="plotProjectName" name="project_name" placeholder="e.g., Green Valley Plots" required>
-                    </div>
-                    <div class="dashboard-form-group">
-                        <label for="plotStatus">
-                            <i class="fas fa-tag"></i>
-                            Status *
-                        </label>
-                        <select id="plotStatus" name="status" required>
-                            <option value="">Select Status</option>
-                            <option value="sale">Sell</option>
-                            <option value="rent">Rent</option>
-                            <option value="resale">Resale</option>
-                            <option value="new">New</option>
-                            <option value="ready_to_move">Ready to Move</option>
-                            <option value="under_construction">Under Construction</option>
-                        </select>
-                    </div>
-                </div>
-
-                <div class="dashboard-form-row">
-                    <div class="dashboard-form-group">
-                        <label for="plotArea">
-                            <i class="fas fa-ruler-combined"></i>
-                            Plot Area (Sq.Ft.) *
-                        </label>
-                        <input type="number" id="plotArea" name="plot_area" placeholder="e.g., 2400" step="0.01" required>
-                    </div>
-                    <div class="dashboard-form-group">
-                        <label for="plotLength">
-                            <i class="fas fa-ruler-horizontal"></i>
-                            Plot Length (Ft.) *
-                        </label>
-                        <input type="number" id="plotLength" name="plot_length" placeholder="e.g., 60" step="0.01" required>
-                    </div>
-                    <div class="dashboard-form-group">
-                        <label for="plotBreadth">
-                            <i class="fas fa-ruler-vertical"></i>
-                            Plot Breadth (Ft.) *
-                        </label>
-                        <input type="number" id="plotBreadth" name="plot_breadth" placeholder="e.g., 40" step="0.01" required>
-                    </div>
-                </div>
-
-                <div class="dashboard-form-row">
-                    <div class="dashboard-form-group">
-                        <label for="plotPrice">
-                            <i class="fas fa-dollar-sign"></i>
-                            Price *
-                        </label>
-                        <input type="text" id="plotPrice" name="price" placeholder="e.g., Rs. 50 Lakh" required>
-                    </div>
-                    <div class="dashboard-form-group">
-                        <label style="display: flex; align-items: center; gap: 0.5rem; margin-top: 1.5rem;">
-                            <input type="checkbox" id="plotPriceNegotiable" name="price_negotiable" style="width: auto;">
-                            <span>Price is Negotiable</span>
-                        </label>
-                        <label style="display: flex; align-items: center; gap: 0.5rem; margin-top: 0.5rem;">
-                            <input type="checkbox" id="plotPriceIncludesRegistration" name="price_includes_registration" style="width: auto;">
-                            <span>Price Includes Registration</span>
-                        </label>
-                    </div>
-                </div>
-
-                <div class="dashboard-form-group">
-                    <label for="plotDescription">
-                        <i class="fas fa-align-left"></i>
-                        Description *
-                    </label>
-                    <textarea id="plotDescription" name="description" rows="5" placeholder="Enter detailed plot description..." required></textarea>
-                </div>
-
-                <div class="dashboard-form-group">
-                    <label>
-                        <i class="fas fa-images"></i>
-                        Project Images *
-                    </label>
-                    <div class="dashboard-image-upload-area" id="plotProjectImageUploadArea">
-                        <input type="file" id="plotProjectImages" name="project_images" multiple accept="image/jpeg,image/jpg,image/png,image/webp,image/svg+xml" style="display: none;">
-                        <div class="dashboard-image-upload-placeholder" id="plotProjectImageUploadPlaceholder">
-                            <i class="fas fa-cloud-upload-alt"></i>
-                            <p>Click to upload project images or drag and drop</p>
-                            <span>Supports: JPG, PNG, SVG, WebP (Max 5MB per image)</span>
+                <!-- Step 1: Basic Information -->
+                <div class="property-wizard-step-content" id="step1" data-step="1">
+                    <div class="dashboard-form-row" style="margin-bottom: 1.5rem;">
+                        <div class="dashboard-form-group" style="flex: 1; margin-right: 1.5rem;">
+                            <label for="propertyProjectName" style="font-size: 1rem; margin-bottom: 0.75rem; font-weight: 500;">
+                                <i class="fas fa-building"></i>
+                                Project Name *
+                            </label>
+                            <input type="text" id="propertyProjectName" name="project_name" placeholder="e.g., Luxury Apartments" required style="padding: 1rem 1.25rem; font-size: 1rem;">
                         </div>
-                        <div class="dashboard-image-preview-container" id="plotProjectImagePreviewContainer"></div>
-                    </div>
-                </div>
-
-                <div class="dashboard-form-group">
-                    <label>
-                        <i class="fas fa-drafting-compass"></i>
-                        Floor Plan Images
-                    </label>
-                    <div class="dashboard-image-upload-area" id="plotFloorPlanImageUploadArea">
-                        <input type="file" id="plotFloorPlanImages" name="floorplan_images" multiple accept="image/jpeg,image/jpg,image/png,image/webp,image/svg+xml" style="display: none;">
-                        <div class="dashboard-image-upload-placeholder" id="plotFloorPlanImageUploadPlaceholder">
-                            <i class="fas fa-cloud-upload-alt"></i>
-                            <p>Click to upload floor plan images or drag and drop</p>
-                            <span>Supports: JPG, PNG, SVG, WebP (Max 5MB per image)</span>
+                        <div class="dashboard-form-group" style="flex: 1;">
+                            <label for="propertyCity" style="font-size: 1rem; margin-bottom: 0.75rem; font-weight: 500;">
+                                <i class="fas fa-city"></i>
+                                City *
+                            </label>
+                            <input type="text" id="propertyCity" name="city" placeholder="e.g., Bengaluru" required style="padding: 1rem 1.25rem; font-size: 1rem;">
                         </div>
-                        <div class="dashboard-image-preview-container" id="plotFloorPlanImagePreviewContainer"></div>
                     </div>
-                </div>
 
-                <div class="dashboard-form-group">
-                    <label>
-                        <i class="fas fa-map"></i>
-                        Master Plan Images
-                    </label>
-                    <div class="dashboard-image-upload-area" id="plotMasterPlanImageUploadArea">
-                        <input type="file" id="plotMasterPlanImages" name="masterplan_images" multiple accept="image/jpeg,image/jpg,image/png,image/webp,image/svg+xml" style="display: none;">
-                        <div class="dashboard-image-upload-placeholder" id="plotMasterPlanImageUploadPlaceholder">
-                            <i class="fas fa-cloud-upload-alt"></i>
-                            <p>Click to upload master plan images or drag and drop</p>
-                            <span>Supports: JPG, PNG, SVG, WebP (Max 5MB per image)</span>
+                    <div class="dashboard-form-row" style="margin-bottom: 1.5rem;">
+                        <div class="dashboard-form-group" style="flex: 1; margin-right: 1.5rem;">
+                            <label for="propertyLocality" style="font-size: 1rem; margin-bottom: 0.75rem; font-weight: 500;">
+                                <i class="fas fa-map-marker-alt"></i>
+                                Locality / Area *
+                            </label>
+                            <input type="text" id="propertyLocality" name="locality" placeholder="e.g., Whitefield" required style="padding: 1rem 1.25rem; font-size: 1rem;">
                         </div>
-                        <div class="dashboard-image-preview-container" id="plotMasterPlanImagePreviewContainer"></div>
+                        <div class="dashboard-form-group" style="flex: 1;">
+                            <label for="propertyLocationLink" style="font-size: 1rem; margin-bottom: 0.75rem; font-weight: 500;">
+                                <i class="fas fa-link"></i>
+                                Location Link (Google Maps)
+                            </label>
+                            <input type="url" id="propertyLocationLink" name="location_link" placeholder="e.g., https://maps.google.com/..." style="padding: 1rem 1.25rem; font-size: 1rem;">
+                        </div>
+                    </div>
+
+                    <div class="dashboard-form-row" style="margin-bottom: 0;">
+                        <div class="dashboard-form-group" style="flex: 1;">
+                            <label for="propertyType" style="font-size: 1rem; margin-bottom: 0.75rem; font-weight: 500;">
+                                <i class="fas fa-home"></i>
+                                Property Type *
+                            </label>
+                            <select id="propertyType" name="type" required style="padding: 1rem 1.25rem; font-size: 1rem;">
+                                <option value="">Select Property Type</option>
+                                <option value="apartments">Apartments</option>
+                                <option value="villas">Villas</option>
+                                <option value="plot_properties">Plot Properties</option>
+                                <option value="individual_house">Individual House</option>
+                            </select>
+                        </div>
                     </div>
                 </div>
 
-                <div class="dashboard-form-group">
-                    <label>
-                        <i class="fas fa-check-circle"></i>
-                        Amenities *
-                    </label>
-                    <select id="plotAmenities" name="amenities" multiple size="8" required style="width: 100%; padding: 0.875rem 1rem; border: 2px solid var(--border-color); border-radius: 10px; font-size: 22px; font-family: 'Inter', sans-serif;">
-                        <option value="club_house">Club House</option>
-                        <option value="security">Security</option>
-                        <option value="24hr_backup">24hr Backup</option>
-                        <option value="rain_water_harvesting">Rain Water Harvesting</option>
-                        <option value="maintenance_staff">Maintenance Staff</option>
-                        <option value="intercom">Intercom</option>
-                        <option value="garden">Garden</option>
-                        <option value="community_hall">Community Hall</option>
-                        <option value="electricity_full">Electricity Full</option>
-                        <option value="electricity_partial">Electricity Partial</option>
-                        <option value="basketball_court">Basketball Court</option>
-                        <option value="play_area">Play Area</option>
-                        <option value="badminton_court">Badminton Court</option>
-                        <option value="swimming_pool">Swimming Pool</option>
-                        <option value="tennis_court">Tennis Court</option>
-                        <option value="gymnasium">Gymnasium</option>
-                        <option value="indoor_games">Indoor Games</option>
-                        <option value="banks_atm">Banks/ATM</option>
-                        <option value="cafeteria">Cafeteria</option>
-                        <option value="library">Library</option>
-                        <option value="health_facilities">Health Facilities</option>
-                        <option value="recreation_facilities">Recreation Facilities</option>
-                        <option value="wifi_broadband">WiFi Broadband Internet</option>
-                        <option value="temple">Temple</option>
-                    </select>
-                    <small style="color: var(--text-gray); font-size: 22px; margin-top: 0.5rem; display: block;">Hold Ctrl (Windows) or Cmd (Mac) to select multiple amenities</small>
+                <!-- Step 2: Property Details (Dynamic based on property type) -->
+                <div class="property-wizard-step-content" id="step2" data-step="2" style="display: none;">
+                    <div id="step2Content">
+                        <!-- Content will be dynamically populated based on property type -->
+                    </div>
                 </div>
 
-                <div class="dashboard-modal-actions">
-                    <button type="button" class="dashboard-btn-secondary" id="cancelPlotPropertyBtn">Cancel</button>
-                    <button type="submit" class="dashboard-btn-primary">
-                        <i class="fas fa-save"></i>
-                        Save Property
-                    </button>
+                <!-- Step 3: Additional Details (Will be configured in next prompt) -->
+                <div class="property-wizard-step-content" id="step3" data-step="3" style="display: none;">
+                    <div id="step3Content">
+                        <!-- Content will be configured in next prompt -->
+                    </div>
+                </div>
+
+                <!-- Navigation Buttons -->
+                <div class="dashboard-modal-actions" style="display: flex; justify-content: flex-end; margin-top: 3rem; padding-top: 2rem; border-top: 1px solid var(--border-color);">
+                    <div style="display: flex; gap: 1rem;">
+                        <button type="button" class="dashboard-btn-secondary" id="prevStepBtn" style="display: none; padding: 0.875rem 2rem; font-size: 1rem;">
+                            <i class="fas fa-arrow-left"></i>
+                            Previous
+                        </button>
+                        <button type="button" class="dashboard-btn-primary" id="nextStepBtn" style="padding: 0.875rem 2rem; font-size: 1rem;">
+                            Next
+                            <i class="fas fa-arrow-right"></i>
+                        </button>
+                        <button type="submit" class="dashboard-btn-primary" id="submitPropertyBtn" style="display: none; padding: 0.875rem 2rem; font-size: 1rem;">
+                            <i class="fas fa-save"></i>
+                            Save Property
+                        </button>
+                    </div>
                 </div>
             </form>
         </div>
@@ -1636,8 +1163,60 @@
     <script src="/js/session-manager.js"></script>
     <script src="/js/dashboard.js?v=20250120120000"></script>
     <script src="/js/page-tracking.js"></script>
-    <script src="/js/metrics-monitoring.js"></script>
-    <script src="/js/app-metrics-tracker.js"></script>
+    <script>
+        // App Metrics Password Protection
+        document.addEventListener('DOMContentLoaded', function() {
+            const appMetricsLink = document.getElementById('appMetricsLink');
+            if (appMetricsLink) {
+                appMetricsLink.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    
+                    // Check if password is already verified in this session
+                    const isVerified = sessionStorage.getItem('app_metrics_verified') === 'true';
+                    if (isVerified) {
+                        window.location.href = '/app-metrics.html';
+                        return;
+                    }
+                    
+                    // Show password prompt
+                    const password = prompt('Enter password to access App Metrics:');
+                    if (password === null) {
+                        // User cancelled
+                        return;
+                    }
+                    
+                    if (!password || password.trim() === '') {
+                        alert('Password is required');
+                        return;
+                    }
+                    
+                    // Verify password with backend
+                    fetch('/api/admin/app-metrics/verify-password', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ password: password })
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            // Store verification in sessionStorage
+                            sessionStorage.setItem('app_metrics_verified', 'true');
+                            // Redirect to app-metrics page
+                            window.location.href = '/app-metrics.html';
+                        } else {
+                            alert(data.message || 'Invalid password');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error verifying password:', error);
+                        alert('Error verifying password. Please try again.');
+                    });
+                });
+            }
+        });
+    </script>
 </body>
 </html>
 

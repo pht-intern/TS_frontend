@@ -1,0 +1,1433 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <title>Application Metrics - Tirumakudalu Properties</title>
+    <link rel="icon" type="image/png" href="/images/TirumakudaluProperties_Logo-2048x1858.png">
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        /* Hide all content by default - only show after authentication check passes */
+        body {
+            display: none !important;
+            visibility: hidden !important;
+        }
+        body.authenticated {
+            display: block !important;
+            visibility: visible !important;
+        }
+        
+        .metrics-container {
+            padding: 2rem;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        .metrics-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+        
+        .metrics-title {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--primary-color);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .time-range-selector {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+        }
+        
+        .time-range-btn {
+            padding: 0.5rem 1rem;
+            border: 2px solid var(--primary-color);
+            background: var(--white);
+            color: var(--primary-color);
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+        
+        .time-range-btn:hover {
+            background: var(--primary-color);
+            color: var(--white);
+        }
+        
+        .time-range-btn.active {
+            background: var(--primary-color);
+            color: var(--white);
+        }
+        
+        .refresh-btn {
+            padding: 0.5rem 1rem;
+            background: var(--accent-color);
+            color: var(--white);
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all 0.3s ease;
+        }
+        
+        .refresh-btn:hover {
+            background: var(--primary-color);
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        
+        .stat-card {
+            background: var(--white);
+            padding: 1.5rem;
+            border-radius: 8px;
+            box-shadow: var(--shadow-md);
+            border-left: 4px solid var(--primary-color);
+        }
+        
+        .stat-card.error {
+            border-left-color: #e74c3c;
+        }
+        
+        .stat-card.success {
+            border-left-color: #27ae60;
+        }
+        
+        .stat-card.warning {
+            border-left-color: #f39c12;
+        }
+        
+        .stat-label {
+            font-size: 0.9rem;
+            color: var(--text-gray);
+            margin-bottom: 0.5rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--primary-color);
+            margin-bottom: 0.25rem;
+        }
+        
+        .stat-unit {
+            font-size: 0.85rem;
+            color: var(--text-light);
+        }
+        
+        .chart-container {
+            background: var(--white);
+            padding: 1.5rem;
+            border-radius: 8px;
+            box-shadow: var(--shadow-md);
+            margin-bottom: 2rem;
+        }
+        
+        .chart-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--primary-color);
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .chart-wrapper {
+            position: relative;
+            height: 300px;
+        }
+        
+        .table-container {
+            background: var(--white);
+            padding: 1.5rem;
+            border-radius: 8px;
+            box-shadow: var(--shadow-md);
+            margin-bottom: 2rem;
+            overflow-x: auto;
+        }
+        
+        .metrics-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+        }
+        
+        .metrics-table th {
+            background: var(--primary-color);
+            color: var(--white);
+            padding: 1rem;
+            text-align: left;
+            font-weight: 600;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .metrics-table td {
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid #e0e0e0;
+            color: var(--text-gray);
+        }
+        
+        .metrics-table tr:hover {
+            background: #f8f9fa;
+        }
+        
+        .badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        
+        .badge-success {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .badge-error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        
+        .badge-warning {
+            background: #fff3cd;
+            color: #856404;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 3rem;
+            color: var(--text-gray);
+        }
+        
+        .error-message {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 1rem;
+            border-radius: 6px;
+            margin: 1rem 0;
+            border-left: 4px solid #e74c3c;
+        }
+        
+        .no-data {
+            text-align: center;
+            padding: 3rem;
+            color: var(--text-light);
+            font-style: italic;
+        }
+        
+        .stat-card {
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        
+        .stat-card.updating {
+            transform: scale(1.02);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+        
+        .realtime-off {
+            opacity: 0.6;
+        }
+        
+        .realtime-off #realtimeIcon {
+            color: #95a5a6 !important;
+        }
+    </style>
+</head>
+<body>
+    <!-- Authentication Check - Must run immediately before any content -->
+    <script>
+        (function() {
+            // Clear any stale or invalid authentication data first
+            function clearAllAuthData() {
+                sessionStorage.removeItem('dashboard_authenticated');
+                sessionStorage.removeItem('isAuthenticated');
+                sessionStorage.removeItem('user');
+                localStorage.removeItem('dashboard_authenticated');
+                localStorage.removeItem('isAuthenticated');
+                localStorage.removeItem('user');
+            }
+            
+            // Check authentication immediately before page renders
+            const isAuthenticated = localStorage.getItem('dashboard_authenticated') === 'true' ||
+                                   sessionStorage.getItem('dashboard_authenticated') === 'true';
+            const userStr = localStorage.getItem('user') || sessionStorage.getItem('user');
+            
+            // Validate user data exists and is valid JSON
+            let user = null;
+            if (userStr) {
+                try {
+                    user = JSON.parse(userStr);
+                    // Ensure user has required fields (email is mandatory) and has admin role
+                    if (!user || !user.email || typeof user.email !== 'string' || user.email.trim() === '' || user.role !== 'admin') {
+                        user = null;
+                    }
+                } catch (e) {
+                    // Invalid JSON, treat as not authenticated
+                    user = null;
+                }
+            }
+            
+            // If not authenticated or user data is invalid, redirect immediately
+            if (!isAuthenticated || !user) {
+                // Clear all authentication data
+                clearAllAuthData();
+                // Redirect to index page immediately
+                window.location.replace('/index.html');
+                // Prevent page from rendering
+                document.body.innerHTML = '<div style="display: flex; justify-content: center; align-items: center; height: 100vh; font-family: Inter, sans-serif;"><p>Redirecting to login...</p></div>';
+                // Stop script execution
+                throw new Error('Unauthorized access - redirecting to login');
+            }
+            
+            // Check app-metrics password verification
+            const appMetricsVerified = sessionStorage.getItem('app_metrics_verified') === 'true';
+            if (!appMetricsVerified) {
+                // Password not verified - prompt for password
+                const password = prompt('Enter password to access App Metrics:');
+                if (password === null) {
+                    // User cancelled - redirect to dashboard
+                    window.location.replace('/dashboard.html');
+                    throw new Error('Password entry cancelled');
+                }
+                
+                if (!password || password.trim() === '') {
+                    alert('Password is required');
+                    window.location.replace('/dashboard.html');
+                    throw new Error('Password required');
+                }
+                
+                // Verify password synchronously (blocking)
+                // Note: In production, you might want to use a more sophisticated approach
+                const xhr = new XMLHttpRequest();
+                xhr.open('POST', '/api/admin/app-metrics/verify-password', false); // false = synchronous
+                xhr.setRequestHeader('Content-Type', 'application/json');
+                xhr.send(JSON.stringify({ password: password }));
+                
+                if (xhr.status === 200) {
+                    const response = JSON.parse(xhr.responseText);
+                    if (response.success) {
+                        // Store verification in sessionStorage
+                        sessionStorage.setItem('app_metrics_verified', 'true');
+                    } else {
+                        alert(response.message || 'Invalid password');
+                        window.location.replace('/dashboard.html');
+                        throw new Error('Invalid password');
+                    }
+                } else {
+                    alert('Error verifying password. Please try again.');
+                    window.location.replace('/dashboard.html');
+                    throw new Error('Password verification failed');
+                }
+            }
+            
+            // Authentication and password verification passed - show the page
+            document.body.classList.add('authenticated');
+        })();
+    </script>
+    
+    <!-- Application Metrics Dashboard -->
+    <div class="dashboard-container" id="metricsContainer">
+        <!-- Dashboard Header -->
+        <header class="dashboard-header">
+            <div class="dashboard-header-content">
+                <div class="dashboard-header-left">
+                    <a href="/" class="dashboard-logo-link">
+                        <div class="logo-graphic">
+                            <img src="/images/TirumakudaluProperties_Logo-2048x1858.png" alt="Tirumakudalu Properties Logo" class="logo-img">
+                        </div>
+                    </a>
+                    <!-- Dashboard Navigation -->
+                    <nav class="dashboard-nav">
+                        <ul class="dashboard-nav-menu">
+                            <li><a href="/index.html">HOME</a></li>
+                            <li><a href="/properties.html">PROPERTIES</a></li>
+                            <li><a href="/dashboard.html">DASHBOARD</a></li>
+                        </ul>
+                    </nav>
+                </div>
+                <div class="dashboard-header-right">
+                    <!-- User Profile Dropdown -->
+                    <div class="dashboard-user-profile" id="dashboardUserProfile">
+                        <button class="dashboard-profile-btn" id="dashboardProfileBtn">
+                            <div class="dashboard-profile-avatar">
+                                <i class="fas fa-user"></i>
+                            </div>
+                            <span class="dashboard-profile-name" id="dashboardProfileName">Admin</span>
+                            <i class="fas fa-chevron-down dashboard-profile-chevron"></i>
+                        </button>
+                        <div class="dashboard-profile-dropdown" id="dashboardProfileDropdown">
+                            <div class="dashboard-profile-header">
+                                <div class="dashboard-profile-avatar-large">
+                                    <i class="fas fa-user"></i>
+                                </div>
+                                <div class="dashboard-profile-info">
+                                    <div class="dashboard-profile-fullname" id="dashboardProfileFullname">Admin User</div>
+                                    <div class="dashboard-profile-email" id="dashboardProfileEmail">admin@example.com</div>
+                                </div>
+                            </div>
+                            <div class="dashboard-profile-divider"></div>
+                            <a href="/settings.html" class="dashboard-profile-item">
+                                <i class="fas fa-cog"></i>
+                                <span>Settings</span>
+                            </a>
+                            <a href="/app-metrics.html" class="dashboard-profile-item">
+                                <i class="fas fa-chart-line"></i>
+                                <span>App Metrics</span>
+                            </a>
+                            <a href="/activity-logs.html" class="dashboard-profile-item">
+                                <i class="fas fa-history"></i>
+                                <span>Activity Logs</span>
+                            </a>
+                            <button class="dashboard-profile-item dashboard-profile-logout" id="dashboardLogout">
+                                <i class="fas fa-sign-out-alt"></i>
+                                <span>Logout</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Metrics Main Content -->
+        <main class="dashboard-main">
+            <div class="metrics-container">
+                <div class="metrics-header">
+                    <h1 class="metrics-title">
+                        <i class="fas fa-chart-line"></i>
+                        Application Metrics
+                    </h1>
+                    <div style="display: flex; gap: 1rem; align-items: center; flex-wrap: wrap;">
+                        <div class="time-range-selector">
+                            <button class="time-range-btn" data-hours="24">24H</button>
+                            <button class="time-range-btn active" data-hours="48">48H</button>
+                            <button class="time-range-btn" data-hours="72">72H</button>
+                            <button class="time-range-btn" data-hours="168">7D</button>
+                        </div>
+                        <button class="refresh-btn" id="realtimeToggle" title="Toggle Real-time Updates">
+                            <i class="fas fa-circle" id="realtimeIcon" style="color: #27ae60; font-size: 0.7rem;"></i>
+                            <span id="realtimeText">Real-time ON</span>
+                        </button>
+                        <button class="refresh-btn" id="refreshBtn">
+                            <i class="fas fa-sync-alt"></i>
+                            Refresh
+                        </button>
+                    </div>
+                </div>
+
+                <div id="statusBar" style="background: var(--white); padding: 0.75rem 1.5rem; border-radius: 8px; box-shadow: var(--shadow-md); margin-bottom: 1rem; display: none; justify-content: space-between; align-items: center;">
+                    <div style="display: flex; align-items: center; gap: 0.5rem; color: var(--text-gray); font-size: 0.9rem;">
+                        <i class="fas fa-clock"></i>
+                        <span>Last updated: <span id="lastUpdatedTime">Never</span></span>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 0.5rem; color: var(--text-gray); font-size: 0.9rem;">
+                        <i class="fas fa-database"></i>
+                        <span>Live from database</span>
+                    </div>
+                </div>
+
+                <div id="errorContainer"></div>
+                <div id="loadingIndicator" class="loading">
+                    <i class="fas fa-spinner fa-spin" style="font-size: 2rem; margin-bottom: 1rem;"></i>
+                    <p>Loading metrics...</p>
+                </div>
+
+                <div id="metricsContent" style="display: none;">
+                    <!-- Current Stats -->
+                    <div class="stats-grid" id="currentStatsGrid"></div>
+
+                    <!-- Request Metrics Chart -->
+                    <div class="chart-container">
+                        <h3 class="chart-title">
+                            <i class="fas fa-chart-area"></i>
+                            Request Metrics Over Time
+                        </h3>
+                        <div class="chart-wrapper">
+                            <canvas id="requestMetricsChart"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Response Time Chart -->
+                    <div class="chart-container">
+                        <h3 class="chart-title">
+                            <i class="fas fa-tachometer-alt"></i>
+                            Response Time Over Time
+                        </h3>
+                        <div class="chart-wrapper">
+                            <canvas id="responseTimeChart"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Application Metrics Charts -->
+                    <div class="chart-container">
+                        <h3 class="chart-title">
+                            <i class="fas fa-microchip" style="margin-right: 0.5rem; color: #ffc107;"></i>
+                            Application CPU Usage
+                            <small style="font-size: 0.7rem; font-weight: normal; color: var(--text-gray); margin-left: 0.5rem;">(Application process only)</small>
+                        </h3>
+                        <div class="chart-wrapper">
+                            <canvas id="cpuChart"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="chart-container">
+                        <h3 class="chart-title">
+                            <i class="fas fa-memory" style="margin-right: 0.5rem; color: #9c27b0;"></i>
+                            Application RAM Usage
+                            <small style="font-size: 0.7rem; font-weight: normal; color: var(--text-gray); margin-left: 0.5rem;">(Application process only)</small>
+                        </h3>
+                        <div class="chart-wrapper">
+                            <canvas id="ramChart"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="chart-container">
+                        <h3 class="chart-title">
+                            <i class="fas fa-network-wired" style="margin-right: 0.5rem; color: var(--primary-color);"></i>
+                            Application Bandwidth Usage
+                            <small style="font-size: 0.7rem; font-weight: normal; color: var(--text-gray); margin-left: 0.5rem;">(Application traffic only)</small>
+                        </h3>
+                        <div class="chart-wrapper">
+                            <canvas id="bandwidthChart"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Top Endpoints Table -->
+                    <div class="table-container">
+                        <h3 class="chart-title">
+                            <i class="fas fa-list"></i>
+                            Top Endpoints by Request Count
+                        </h3>
+                        <table class="metrics-table" id="topEndpointsTable">
+                            <thead>
+                                <tr>
+                                    <th>Endpoint</th>
+                                    <th>Method</th>
+                                    <th>Request Count</th>
+                                    <th>Avg Response Time</th>
+                                    <th>Errors</th>
+                                </tr>
+                            </thead>
+                            <tbody id="topEndpointsBody"></tbody>
+                        </table>
+                    </div>
+
+                    <!-- Cache Statistics -->
+                    <div class="stats-grid" id="cacheStatsGrid"></div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="/js/session-manager.js"></script>
+    <script>
+        let currentHours = 48;
+        let requestMetricsChart = null;
+        let responseTimeChart = null;
+        let cpuChart = null;
+        let ramChart = null;
+        let bandwidthChart = null;
+        let realtimeEnabled = true;
+        let refreshInterval = null;
+        let isUpdating = false;
+        let updateInterval = 5000; // 5 seconds for real-time updates
+
+        // Get authentication headers
+        function getAuthHeaders() {
+            const userStr = localStorage.getItem('user') || sessionStorage.getItem('user');
+            let user = null;
+            if (userStr) {
+                try {
+                    user = JSON.parse(userStr);
+                } catch (e) {
+                    console.error('Error parsing user data:', e);
+                }
+            }
+            return {
+                'Content-Type': 'application/json',
+                'X-Admin-Email': user ? user.email : ''
+            };
+        }
+
+        // Fetch metrics data from database
+        async function fetchMetrics(hours = 48) {
+            try {
+                // Add timestamp to prevent caching
+                const timestamp = new Date().getTime();
+                const response = await fetch(`/api/admin/application-metrics?hours=${hours}&_t=${timestamp}`, {
+                    method: 'GET',
+                    headers: getAuthHeaders(),
+                    cache: 'no-cache'
+                });
+
+                if (!response.ok) {
+                    let errorMessage = `HTTP error! status: ${response.status}`;
+                    try {
+                        const errorData = await response.json();
+                        errorMessage = errorData.message || errorData.error || errorMessage;
+                    } catch (e) {
+                        // If response is not JSON, use status text
+                        errorMessage = response.statusText || errorMessage;
+                    }
+                    throw new Error(errorMessage);
+                }
+
+                const data = await response.json();
+                
+                // Validate data structure
+                if (!data || typeof data !== 'object') {
+                    throw new Error('Invalid response format from server');
+                }
+                
+                // Ensure required fields exist with defaults
+                if (data.success !== false) {
+                    // Normalize data structure
+                    return {
+                        success: true,
+                        time_series: data.time_series || [],
+                        current: data.current || {},
+                        top_endpoints: data.top_endpoints || [],
+                        cache_stats: data.cache_stats || {},
+                        system_metrics: data.system_metrics || {
+                            time_series: [],
+                            current: {}
+                        }
+                    };
+                } else {
+                    throw new Error(data.error || data.message || 'Failed to fetch metrics');
+                }
+            } catch (error) {
+                console.error('Error fetching metrics:', error);
+                // Re-throw with a more user-friendly message if it's a network error
+                if (error.name === 'TypeError' && error.message.includes('fetch')) {
+                    throw new Error('Network error: Unable to connect to server. Please check your connection.');
+                }
+                throw error;
+            }
+        }
+
+        // Format number with commas
+        function formatNumber(num) {
+            return new Intl.NumberFormat('en-US').format(num);
+        }
+
+        // Format time
+        function formatTime(timeStr) {
+            if (!timeStr) return '';
+            try {
+                // Handle MySQL datetime format: 'YYYY-MM-DD HH:00:00'
+                let date;
+                if (timeStr.includes('T')) {
+                    date = new Date(timeStr);
+                } else {
+                    // MySQL format: 'YYYY-MM-DD HH:00:00'
+                    date = new Date(timeStr.replace(' ', 'T'));
+                }
+                
+                if (isNaN(date.getTime())) {
+                    return timeStr; // Return original if parsing fails
+                }
+                
+                return date.toLocaleString('en-US', { 
+                    month: 'short', 
+                    day: 'numeric', 
+                    hour: '2-digit', 
+                    minute: '2-digit' 
+                });
+            } catch (e) {
+                console.error('Error formatting time:', timeStr, e);
+                return timeStr;
+            }
+        }
+
+        // Update current stats with animation
+        function updateCurrentStats(data) {
+            const current = data.current || {};
+            const system = data.system_metrics?.current || {};
+            const cache = data.cache_stats || {};
+
+            const statsGrid = document.getElementById('currentStatsGrid');
+            
+            // Add updating class for visual feedback
+            const statCards = statsGrid.querySelectorAll('.stat-card');
+            statCards.forEach(card => {
+                card.classList.add('updating');
+                setTimeout(() => card.classList.remove('updating'), 300);
+            });
+            
+            statsGrid.innerHTML = `
+                <div class="stat-card success">
+                    <div class="stat-label">Total Requests (Last Hour)</div>
+                    <div class="stat-value">${formatNumber(current.request_count || 0)}</div>
+                </div>
+                <div class="stat-card success">
+                    <div class="stat-label">Successful Requests</div>
+                    <div class="stat-value">${formatNumber(current.success_count || 0)}</div>
+                </div>
+                <div class="stat-card error">
+                    <div class="stat-label">Errors</div>
+                    <div class="stat-value">${formatNumber(current.error_count || 0)}</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Avg Response Time</div>
+                    <div class="stat-value">${(current.avg_response_time || 0).toFixed(2)}<span class="stat-unit">ms</span></div>
+                </div>
+                <div class="stat-card warning">
+                    <div class="stat-label">Application CPU Usage</div>
+                    <div class="stat-value">${(system.cpu_usage || 0).toFixed(1)}<span class="stat-unit">%</span></div>
+                </div>
+                <div class="stat-card warning">
+                    <div class="stat-label">Application RAM Usage</div>
+                    <div class="stat-value">${(system.ram_usage || 0).toFixed(1)}<span class="stat-unit">%</span></div>
+                </div>
+            `;
+        }
+
+        // Update cache stats
+        function updateCacheStats(data) {
+            const cache = data.cache_stats || {};
+            const cacheStatsGrid = document.getElementById('cacheStatsGrid');
+            if (!cacheStatsGrid) return;
+            
+            if (cache.total_operations > 0) {
+                cacheStatsGrid.innerHTML = `
+                    <div class="stat-card success">
+                        <div class="stat-label">Cache Hit Rate</div>
+                        <div class="stat-value">${(cache.cache_hit_rate || 0).toFixed(2)}<span class="stat-unit">%</span></div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Cache Hits</div>
+                        <div class="stat-value">${formatNumber(cache.cache_hits || 0)}</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Cache Misses</div>
+                        <div class="stat-value">${formatNumber(cache.cache_misses || 0)}</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Total Operations</div>
+                        <div class="stat-value">${formatNumber(cache.total_operations || 0)}</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Avg Cache Time</div>
+                        <div class="stat-value">${(cache.avg_cache_time || 0).toFixed(2)}<span class="stat-unit">ms</span></div>
+                    </div>
+                `;
+            } else {
+                cacheStatsGrid.innerHTML = '';
+            }
+        }
+
+        // Update request metrics chart
+        function updateRequestMetricsChart(data) {
+            const timeSeries = data.time_series || [];
+            const labels = timeSeries.map(m => formatTime(m.time));
+            const requestCounts = timeSeries.map(m => m.request_count || 0);
+            const successCounts = timeSeries.map(m => m.success_count || 0);
+            const errorCounts = timeSeries.map(m => m.error_count || 0);
+
+            const chartElement = document.getElementById('requestMetricsChart');
+            if (!chartElement) return;
+            
+            const ctx = chartElement.getContext('2d');
+            
+            // If chart exists, update data instead of recreating
+            if (requestMetricsChart) {
+                requestMetricsChart.data.labels = labels;
+                requestMetricsChart.data.datasets[0].data = requestCounts;
+                requestMetricsChart.data.datasets[1].data = successCounts;
+                requestMetricsChart.data.datasets[2].data = errorCounts;
+                requestMetricsChart.update('none'); // 'none' mode for smooth updates
+            } else {
+                requestMetricsChart = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: labels,
+                        datasets: [
+                            {
+                                label: 'Total Requests',
+                                data: requestCounts,
+                                borderColor: 'rgb(75, 192, 192)',
+                                backgroundColor: 'rgba(75, 192, 192, 0.1)',
+                                tension: 0.4,
+                                fill: true
+                            },
+                            {
+                                label: 'Successful Requests',
+                                data: successCounts,
+                                borderColor: 'rgb(40, 167, 69)',
+                                backgroundColor: 'rgba(40, 167, 69, 0.1)',
+                                tension: 0.4,
+                                fill: true
+                            },
+                            {
+                                label: 'Errors',
+                                data: errorCounts,
+                                borderColor: 'rgb(220, 53, 69)',
+                                backgroundColor: 'rgba(220, 53, 69, 0.1)',
+                                tension: 0.4,
+                                fill: true
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'top',
+                            },
+                            tooltip: {
+                                mode: 'index',
+                                intersect: false,
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                ticks: {
+                                    precision: 0
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+        }
+
+        // Update response time chart
+        function updateResponseTimeChart(data) {
+            const timeSeries = data.time_series || [];
+            const labels = timeSeries.map(m => formatTime(m.time));
+            const avgResponseTimes = timeSeries.map(m => m.avg_response_time || 0);
+            const maxResponseTimes = timeSeries.map(m => m.max_response_time || 0);
+            const minResponseTimes = timeSeries.map(m => m.min_response_time || 0);
+
+            const chartElement = document.getElementById('responseTimeChart');
+            if (!chartElement) return;
+            
+            const ctx = chartElement.getContext('2d');
+            
+            // If chart exists, update data instead of recreating
+            if (responseTimeChart) {
+                responseTimeChart.data.labels = labels;
+                responseTimeChart.data.datasets[0].data = avgResponseTimes;
+                responseTimeChart.data.datasets[1].data = maxResponseTimes;
+                responseTimeChart.data.datasets[2].data = minResponseTimes;
+                responseTimeChart.update('none'); // 'none' mode for smooth updates
+            } else {
+                responseTimeChart = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: labels,
+                        datasets: [
+                            {
+                                label: 'Average Response Time',
+                                data: avgResponseTimes,
+                                borderColor: 'rgb(54, 162, 235)',
+                                backgroundColor: 'rgba(54, 162, 235, 0.1)',
+                                tension: 0.4,
+                                fill: true
+                            },
+                            {
+                                label: 'Max Response Time',
+                                data: maxResponseTimes,
+                                borderColor: 'rgb(255, 99, 132)',
+                                backgroundColor: 'rgba(255, 99, 132, 0.1)',
+                                tension: 0.4,
+                                fill: false,
+                                borderDash: [5, 5]
+                            },
+                            {
+                                label: 'Min Response Time',
+                                data: minResponseTimes,
+                                borderColor: 'rgb(75, 192, 192)',
+                                backgroundColor: 'rgba(75, 192, 192, 0.1)',
+                                tension: 0.4,
+                                fill: false,
+                                borderDash: [5, 5]
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'top',
+                            },
+                            tooltip: {
+                                mode: 'index',
+                                intersect: false,
+                                callbacks: {
+                                    label: function(context) {
+                                        return context.dataset.label + ': ' + context.parsed.y.toFixed(2) + ' ms';
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                ticks: {
+                                    callback: function(value) {
+                                        return value.toFixed(0) + ' ms';
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+        }
+
+        // Update CPU chart
+        function updateCpuChart(data) {
+            const systemTimeSeries = data.system_metrics?.time_series || [];
+            if (systemTimeSeries.length === 0) {
+                const ctx = document.getElementById('cpuChart');
+                if (ctx && cpuChart) {
+                    cpuChart.destroy();
+                    cpuChart = null;
+                }
+                return;
+            }
+
+            const labels = systemTimeSeries.map(m => formatTime(m.time));
+            const cpuUsage = systemTimeSeries.map(m => m.cpu_usage || 0);
+
+            const chartElement = document.getElementById('cpuChart');
+            if (!chartElement) return;
+            
+            const ctx = chartElement.getContext('2d');
+            
+            if (cpuChart) {
+                cpuChart.data.labels = labels;
+                cpuChart.data.datasets[0].data = cpuUsage;
+                cpuChart.update('none');
+            } else {
+                cpuChart = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: 'Application CPU Usage (%)',
+                            data: cpuUsage,
+                            borderColor: 'rgb(255, 193, 7)',
+                            backgroundColor: 'rgba(255, 193, 7, 0.2)',
+                            tension: 0.4,
+                            fill: true
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'top',
+                            },
+                            tooltip: {
+                                mode: 'index',
+                                intersect: false,
+                                callbacks: {
+                                    label: function(context) {
+                                        return context.dataset.label + ': ' + context.parsed.y.toFixed(2) + '%';
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                max: 100,
+                                ticks: {
+                                    callback: function(value) {
+                                        return value.toFixed(0) + '%';
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+        }
+
+        // Update RAM chart
+        function updateRamChart(data) {
+            const systemTimeSeries = data.system_metrics?.time_series || [];
+            if (systemTimeSeries.length === 0) {
+                const ctx = document.getElementById('ramChart');
+                if (ctx && ramChart) {
+                    ramChart.destroy();
+                    ramChart = null;
+                }
+                return;
+            }
+
+            const labels = systemTimeSeries.map(m => formatTime(m.time));
+            const ramUsage = systemTimeSeries.map(m => m.ram_usage || 0);
+
+            const chartElement = document.getElementById('ramChart');
+            if (!chartElement) return;
+            
+            const ctx = chartElement.getContext('2d');
+            
+            if (ramChart) {
+                ramChart.data.labels = labels;
+                ramChart.data.datasets[0].data = ramUsage;
+                ramChart.update('none');
+            } else {
+                ramChart = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: 'Application RAM Usage (%)',
+                            data: ramUsage,
+                            borderColor: 'rgb(156, 39, 176)',
+                            backgroundColor: 'rgba(156, 39, 176, 0.2)',
+                            tension: 0.4,
+                            fill: true
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'top',
+                            },
+                            tooltip: {
+                                mode: 'index',
+                                intersect: false,
+                                callbacks: {
+                                    label: function(context) {
+                                        return context.dataset.label + ': ' + context.parsed.y.toFixed(2) + '%';
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                max: 100,
+                                ticks: {
+                                    callback: function(value) {
+                                        return value.toFixed(0) + '%';
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+        }
+
+        // Update Bandwidth chart
+        function updateBandwidthChart(data) {
+            const systemTimeSeries = data.system_metrics?.time_series || [];
+            if (systemTimeSeries.length === 0) {
+                const ctx = document.getElementById('bandwidthChart');
+                if (ctx && bandwidthChart) {
+                    bandwidthChart.destroy();
+                    bandwidthChart = null;
+                }
+                return;
+            }
+
+            const labels = systemTimeSeries.map(m => formatTime(m.time));
+            const bandwidthIn = systemTimeSeries.map(m => m.bandwidth_in_mb || 0);
+            const bandwidthOut = systemTimeSeries.map(m => m.bandwidth_out_mb || 0);
+            const bandwidthTotal = systemTimeSeries.map(m => m.bandwidth_total_mb || 0);
+
+            const chartElement = document.getElementById('bandwidthChart');
+            if (!chartElement) return;
+            
+            const ctx = chartElement.getContext('2d');
+            
+            if (bandwidthChart) {
+                bandwidthChart.data.labels = labels;
+                bandwidthChart.data.datasets[0].data = bandwidthIn;
+                bandwidthChart.data.datasets[1].data = bandwidthOut;
+                bandwidthChart.data.datasets[2].data = bandwidthTotal;
+                bandwidthChart.update('none');
+            } else {
+                bandwidthChart = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: labels,
+                        datasets: [
+                            {
+                                label: 'Application Bandwidth In (MB)',
+                                data: bandwidthIn,
+                                borderColor: 'rgb(76, 175, 80)',
+                                backgroundColor: 'rgba(76, 175, 80, 0.2)',
+                                tension: 0.4,
+                                fill: true
+                            },
+                            {
+                                label: 'Application Bandwidth Out (MB)',
+                                data: bandwidthOut,
+                                borderColor: 'rgb(244, 67, 54)',
+                                backgroundColor: 'rgba(244, 67, 54, 0.2)',
+                                tension: 0.4,
+                                fill: true
+                            },
+                            {
+                                label: 'Total Application Bandwidth (MB)',
+                                data: bandwidthTotal,
+                                borderColor: 'rgb(116, 136, 150)',
+                                backgroundColor: 'rgba(116, 136, 150, 0.2)',
+                                tension: 0.4,
+                                fill: false,
+                                borderDash: [5, 5]
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'top',
+                            },
+                            tooltip: {
+                                mode: 'index',
+                                intersect: false,
+                                callbacks: {
+                                    label: function(context) {
+                                        return context.dataset.label + ': ' + context.parsed.y.toFixed(2) + ' MB';
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                ticks: {
+                                    callback: function(value) {
+                                        return value.toFixed(2) + ' MB';
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+        }
+
+        // Update top endpoints table
+        function updateTopEndpointsTable(data) {
+            const topEndpoints = data.top_endpoints || [];
+            const tbody = document.getElementById('topEndpointsBody');
+            
+            if (topEndpoints.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" class="no-data">No endpoint data available</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = topEndpoints.map(endpoint => `
+                <tr>
+                    <td><code style="background: #f4f4f4; padding: 0.25rem 0.5rem; border-radius: 4px;">${endpoint.endpoint}</code></td>
+                    <td><span class="badge badge-success">${endpoint.method}</span></td>
+                    <td>${formatNumber(endpoint.request_count || 0)}</td>
+                    <td>${(endpoint.avg_response_time || 0).toFixed(2)} ms</td>
+                    <td>
+                        ${endpoint.error_count > 0 ? '<span class="badge badge-error">' + endpoint.error_count + '</span>' : '<span class="badge badge-success">0</span>'}
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        // Update last updated time
+        function updateLastUpdatedTime() {
+            const now = new Date();
+            const timeStr = now.toLocaleTimeString('en-US', { 
+                hour: '2-digit', 
+                minute: '2-digit', 
+                second: '2-digit',
+                hour12: true 
+            });
+            const lastUpdatedEl = document.getElementById('lastUpdatedTime');
+            if (lastUpdatedEl) {
+                lastUpdatedEl.textContent = timeStr;
+            }
+        }
+
+        // Load metrics
+        async function loadMetrics(hours, showLoading = false) {
+            if (isUpdating) return; // Prevent concurrent updates
+            isUpdating = true;
+            
+            const loadingIndicator = document.getElementById('loadingIndicator');
+            const metricsContent = document.getElementById('metricsContent');
+            const errorContainer = document.getElementById('errorContainer');
+            const statusBar = document.getElementById('statusBar');
+            
+            if (showLoading) {
+                loadingIndicator.style.display = 'block';
+                metricsContent.style.display = 'none';
+            }
+            errorContainer.innerHTML = '';
+
+            try {
+                const data = await fetchMetrics(hours);
+                
+                updateCurrentStats(data);
+                updateCacheStats(data);
+                updateRequestMetricsChart(data);
+                updateResponseTimeChart(data);
+                updateCpuChart(data);
+                updateRamChart(data);
+                updateBandwidthChart(data);
+                updateTopEndpointsTable(data);
+                updateLastUpdatedTime();
+
+                if (showLoading) {
+                    loadingIndicator.style.display = 'none';
+                    metricsContent.style.display = 'block';
+                }
+                if (statusBar) {
+                    statusBar.style.display = 'flex';
+                }
+                
+                // Log successful update for debugging
+                console.log('Metrics updated successfully at', new Date().toLocaleTimeString());
+            } catch (error) {
+                if (showLoading) {
+                    loadingIndicator.style.display = 'none';
+                }
+                errorContainer.innerHTML = `
+                    <div class="error-message">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        Error loading metrics: ${error.message}
+                        <br><small>Retrying in 5 seconds...</small>
+                    </div>
+                `;
+                console.error('Error loading metrics:', error);
+                
+                // Retry after 5 seconds if real-time is enabled
+                if (realtimeEnabled) {
+                    setTimeout(() => {
+                        if (realtimeEnabled) {
+                            loadMetrics(hours, false);
+                        }
+                    }, 5000);
+                }
+            } finally {
+                isUpdating = false;
+            }
+        }
+        
+        // Start/Stop real-time updates
+        function toggleRealtime() {
+            realtimeEnabled = !realtimeEnabled;
+            const toggleBtn = document.getElementById('realtimeToggle');
+            const realtimeIcon = document.getElementById('realtimeIcon');
+            const realtimeText = document.getElementById('realtimeText');
+            
+            if (realtimeEnabled) {
+                toggleBtn.classList.remove('realtime-off');
+                realtimeIcon.style.color = '#27ae60';
+                realtimeText.textContent = 'Real-time ON';
+                startRealtimeUpdates();
+            } else {
+                toggleBtn.classList.add('realtime-off');
+                realtimeIcon.style.color = '#95a5a6';
+                realtimeText.textContent = 'Real-time OFF';
+                stopRealtimeUpdates();
+            }
+        }
+        
+        function startRealtimeUpdates() {
+            stopRealtimeUpdates(); // Clear any existing interval
+            
+            // Only start if real-time is enabled
+            if (!realtimeEnabled) {
+                return;
+            }
+            
+            refreshInterval = setInterval(() => {
+                if (realtimeEnabled && !isUpdating) {
+                    // Silently update metrics without showing loading indicator
+                    loadMetrics(currentHours, false).catch(error => {
+                        console.error('Background metrics update failed:', error);
+                        // Don't show error to user for background updates
+                        // The error will be shown on next manual refresh
+                    });
+                }
+            }, updateInterval);
+            
+            console.log(`Real-time updates started (every ${updateInterval / 1000} seconds)`);
+        }
+        
+        function stopRealtimeUpdates() {
+            if (refreshInterval) {
+                clearInterval(refreshInterval);
+                refreshInterval = null;
+            }
+        }
+
+        // Event listeners
+        document.addEventListener('DOMContentLoaded', function() {
+            // Get user data and populate profile
+            const userStr = localStorage.getItem('user') || sessionStorage.getItem('user');
+            let user = null;
+            if (userStr) {
+                try {
+                    user = JSON.parse(userStr);
+                    if (user && user.name) {
+                        const profileNameEl = document.getElementById('dashboardProfileName');
+                        if (profileNameEl) profileNameEl.textContent = user.name;
+                    }
+                    if (user && user.full_name) {
+                        const profileFullnameEl = document.getElementById('dashboardProfileFullname');
+                        if (profileFullnameEl) profileFullnameEl.textContent = user.full_name;
+                    }
+                    if (user && user.email) {
+                        const profileEmailEl = document.getElementById('dashboardProfileEmail');
+                        if (profileEmailEl) profileEmailEl.textContent = user.email;
+                    }
+                } catch (e) {
+                    console.error('Error parsing user data:', e);
+                }
+            }
+
+            // Time range buttons
+            document.querySelectorAll('.time-range-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    // Update active state
+                    document.querySelectorAll('.time-range-btn').forEach(b => b.classList.remove('active'));
+                    this.classList.add('active');
+                    
+                    // Update current hours and reload metrics
+                    const newHours = parseInt(this.dataset.hours);
+                    if (newHours !== currentHours) {
+                        currentHours = newHours;
+                        // Reload metrics with new time range
+                        loadMetrics(currentHours, true);
+                    }
+                });
+            });
+
+            // Real-time toggle button
+            const realtimeToggle = document.getElementById('realtimeToggle');
+            if (realtimeToggle) {
+                realtimeToggle.addEventListener('click', toggleRealtime);
+            }
+
+            // Refresh button
+            const refreshBtn = document.getElementById('refreshBtn');
+            if (refreshBtn) {
+                refreshBtn.addEventListener('click', function() {
+                    const icon = this.querySelector('i');
+                    if (icon) {
+                        icon.classList.add('fa-spin');
+                    }
+                    loadMetrics(currentHours, false).finally(() => {
+                        if (icon) {
+                            icon.classList.remove('fa-spin');
+                        }
+                    });
+                });
+            }
+
+            // Profile Dropdown Toggle
+            const profileBtn = document.getElementById('dashboardProfileBtn');
+            const profileDropdown = document.getElementById('dashboardProfileDropdown');
+            
+            if (profileBtn && profileDropdown) {
+                profileBtn.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    profileDropdown.classList.toggle('show');
+                });
+
+                document.addEventListener('click', function(e) {
+                    if (!profileBtn.contains(e.target) && !profileDropdown.contains(e.target)) {
+                        profileDropdown.classList.remove('show');
+                    }
+                });
+            }
+
+            // Logout functionality
+            const logoutBtn = document.getElementById('dashboardLogout');
+            if (logoutBtn) {
+                logoutBtn.addEventListener('click', function() {
+                    if (confirm('Are you sure you want to logout?')) {
+                        stopRealtimeUpdates();
+                        localStorage.removeItem('dashboard_authenticated');
+                        localStorage.removeItem('isAuthenticated');
+                        localStorage.removeItem('user');
+                        sessionStorage.removeItem('dashboard_authenticated');
+                        sessionStorage.removeItem('isAuthenticated');
+                        sessionStorage.removeItem('user');
+                        window.location.replace('/index.html');
+                    }
+                });
+            }
+
+            // Initial load
+            loadMetrics(currentHours, true).then(() => {
+                // Start real-time updates after initial load completes
+                if (realtimeEnabled) {
+                    startRealtimeUpdates();
+                }
+            }).catch(error => {
+                console.error('Error during initial metrics load:', error);
+                // Still start real-time updates even if initial load fails
+                if (realtimeEnabled) {
+                    startRealtimeUpdates();
+                }
+            });
+            
+            // Cleanup on page unload
+            window.addEventListener('beforeunload', () => {
+                stopRealtimeUpdates();
+            });
+            
+            // Also handle page visibility changes to pause/resume updates
+            document.addEventListener('visibilitychange', () => {
+                if (document.hidden) {
+                    // Page is hidden, can pause updates to save resources
+                    // But we'll keep them running for real-time data
+                } else {
+                    // Page is visible again, ensure updates are running
+                    if (realtimeEnabled && !refreshInterval) {
+                        startRealtimeUpdates();
+                    }
+                }
+            });
+        });
+    </script>
+    <script src="/js/page-tracking.js"></script>
+</body>
+</html>

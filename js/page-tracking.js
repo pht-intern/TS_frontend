@@ -15,8 +15,13 @@
             'property-details.html': 'Property Details Page',
             'dashboard.html': 'Dashboard',
             'database.html': 'Database Export',
+            'activity-logs.html': 'Activity Logs',
+            'settings.html': 'Settings',
             'blogs.html': 'Blogs Page',
-            'blog-details.html': 'Blog Details Page'
+            'blog-details.html': 'Blog Details Page',
+            'nri-property-investment.html': 'NRI Property Investment',
+            'privacy-policy.html': 'Privacy Policy',
+            'terms-and-conditions.html': 'Terms and Conditions'
         };
         
         return pageNames[page] || page.replace('.html', '').replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase());
@@ -52,15 +57,12 @@
     
     // Generic function to track events
     async function trackEvent(action, description, metadata = {}) {
-        // Only track events if user is authenticated
-        if (!isUserAuthenticated()) {
-            return;
-        }
-        
+        // Track all events (both authenticated and unauthenticated)
+        // For unauthenticated users, user_email will be null
         try {
             const pageName = getPageName();
             const pageUrl = window.location.href;
-            const userEmail = getUserEmail();
+            const userEmail = getUserEmail(); // Returns null if not authenticated
             
             const logData = {
                 log_type: 'action',
@@ -103,22 +105,20 @@
     
     // Track page view
     async function trackPageView() {
-        // Only track page views if user is authenticated
-        if (!isUserAuthenticated()) {
-            return;
-        }
-        
+        // Track all page views (both authenticated and unauthenticated)
         const pageName = getPageName();
         const pageUrl = window.location.href;
         const referrer = document.referrer || 'Direct';
+        const userEmail = getUserEmail();
         
         // Get property ID from URL if on property details page
         const urlParams = new URLSearchParams(window.location.search);
         const propertyId = urlParams.get('id');
         
-        await trackEvent('page_view', `Page viewed: ${pageName}`, {
+        await trackEvent('page_view', userEmail ? `User ${userEmail} viewed: ${pageName}` : `Page viewed: ${pageName}`, {
             referrer: referrer,
-            property_id: propertyId || null
+            property_id: propertyId || null,
+            is_authenticated: !!userEmail
         });
     }
     
@@ -135,8 +135,27 @@
         trackEvent(buttonType, `Button clicked: ${buttonText}`, metadata);
     }
     
-    // Initialize click tracking for property cards
+    // Initialize click tracking for property cards and navigation
     function initPropertyClickTracking() {
+        // Track navigation link clicks
+        document.addEventListener('click', (e) => {
+            const link = e.target.closest('a');
+            if (link && link.href) {
+                const href = link.getAttribute('href');
+                // Only track internal links (same domain)
+                if (href && !href.startsWith('http') && !href.startsWith('mailto:') && !href.startsWith('tel:')) {
+                    const linkText = link.textContent?.trim() || link.getAttribute('title') || 'Link';
+                    const targetPage = href.split('/').pop() || href;
+                    trackEvent('navigation_click', `User clicked navigation link: ${linkText}`, {
+                        link_text: linkText,
+                        link_href: href,
+                        target_page: targetPage,
+                        link_url: link.href
+                    });
+                }
+            }
+        });
+        
         // Track property card clicks on properties page
         document.addEventListener('click', (e) => {
             // Skip if clicking on buttons or links (they have their own tracking)

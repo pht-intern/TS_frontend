@@ -313,7 +313,12 @@ function convertPropertyFromAPI(property) {
         carpet_area: property.carpet_area || '',
         plot_length: property.plot_length || '',
         plot_breadth: property.plot_breadth || '',
-        property_category: property.property_category || ''
+        property_category: property.property_category || '',
+        listing_type: property.listing_type || '',
+        price_negotiable: property.price_negotiable || false,
+        video_link: property.video_link || '',
+        location_link: property.location_link || '',
+        direction: property.direction || property.facing || property.orientation || ''
     };
 }
 
@@ -715,6 +720,74 @@ function renderPropertyDetails(property) {
     const escapedDescription = escapeHtml(cleanDescription).replace(/\n/g, '<br>');
     description.innerHTML = `<p>${escapedDescription}</p>`;
     
+    // Render Video Preview if available
+    const videoSection = document.getElementById('propertyVideoSection');
+    const videoContainer = document.getElementById('propertyVideoContainer');
+    if (videoSection && videoContainer && property.video_link) {
+        const videoLink = escapeHtml(property.video_link);
+        let videoEmbedHtml = '';
+        
+        // Check if it's a YouTube link
+        if (videoLink.includes('youtube.com') || videoLink.includes('youtu.be')) {
+            let videoId = '';
+            if (videoLink.includes('youtube.com/watch?v=')) {
+                videoId = videoLink.split('v=')[1]?.split('&')[0];
+            } else if (videoLink.includes('youtu.be/')) {
+                videoId = videoLink.split('youtu.be/')[1]?.split('?')[0];
+            }
+            if (videoId) {
+                videoEmbedHtml = `
+                    <div class="property-video-embed" style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; max-width: 100%; background: #000; border-radius: 8px;">
+                        <iframe 
+                            style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;" 
+                            src="https://www.youtube.com/embed/${videoId}" 
+                            frameborder="0" 
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                            allowfullscreen>
+                        </iframe>
+                    </div>
+                `;
+            }
+        } else if (videoLink.includes('vimeo.com')) {
+            // Handle Vimeo links
+            let videoId = '';
+            const vimeoMatch = videoLink.match(/vimeo.com\/(\d+)/);
+            if (vimeoMatch) {
+                videoId = vimeoMatch[1];
+            }
+            if (videoId) {
+                videoEmbedHtml = `
+                    <div class="property-video-embed" style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; max-width: 100%; background: #000; border-radius: 8px;">
+                        <iframe 
+                            style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;" 
+                            src="https://player.vimeo.com/video/${videoId}" 
+                            frameborder="0" 
+                            allow="autoplay; fullscreen; picture-in-picture" 
+                            allowfullscreen>
+                        </iframe>
+                    </div>
+                `;
+            }
+        }
+        
+        // If we couldn't embed, show a link
+        if (!videoEmbedHtml) {
+            videoEmbedHtml = `
+                <div class="property-video-link" style="padding: 1.5rem; background: var(--bg-light, #f9fafb); border-radius: 8px; text-align: center;">
+                    <i class="fas fa-video" style="font-size: 2rem; color: var(--primary-color, #3b82f6); margin-bottom: 1rem;"></i>
+                    <p style="margin-bottom: 1rem; color: var(--text-color, #1f2937);">Video preview available</p>
+                    <a href="${videoLink}" target="_blank" rel="noopener noreferrer" class="btn btn-primary" style="display: inline-block; padding: 0.75rem 1.5rem; background: var(--primary-color, #3b82f6); color: white; text-decoration: none; border-radius: 6px; font-weight: 500;">
+                        <i class="fas fa-external-link-alt" style="margin-right: 0.5rem;"></i>
+                        Watch Video
+                    </a>
+                </div>
+            `;
+        }
+        
+        videoContainer.innerHTML = videoEmbedHtml;
+        videoSection.style.display = 'block';
+    }
+    
     // Render Features
     const featuresElement = document.getElementById('propertyFeatures');
     if (property.features && property.features.length > 0) {
@@ -832,8 +905,38 @@ function renderPropertyDetails(property) {
     } else if (property.status === 'ready_to_move') {
         statusText = 'Ready to Move';
         statusClass = 'ready-to-move';
+    } else if (property.status === 'under_construction') {
+        statusText = 'Under Construction';
+        statusClass = 'under-construction';
     }
     status.innerHTML = `<span class="status-badge ${statusClass}">${escapeHtml(statusText)}</span>`;
+    
+    // Display Listing Type if available
+    const listingType = document.getElementById('propertyListingType');
+    if (listingType && property.listing_type) {
+        const listingTypeText = property.listing_type === 'new' ? 'New' : 
+                               property.listing_type === 'resell' ? 'Resell' : 
+                               property.listing_type;
+        listingType.innerHTML = `
+            <div style="margin-top: 1rem; padding: 0.75rem; background: var(--bg-light, #f9fafb); border-radius: 8px; border-left: 3px solid var(--primary-color, #3b82f6);">
+                <span style="font-size: 0.9rem; color: var(--text-gray, #6b7280);">Listing Type:</span>
+                <span style="font-weight: 600; color: var(--text-color, #1f2937); margin-left: 0.5rem;">${escapeHtml(listingTypeText)}</span>
+            </div>
+        `;
+        listingType.style.display = 'block';
+    }
+    
+    // Display Price Negotiable if applicable
+    const priceNegotiable = document.getElementById('propertyPriceNegotiable');
+    if (priceNegotiable && property.price_negotiable) {
+        priceNegotiable.innerHTML = `
+            <div style="margin-top: 1rem; padding: 0.75rem; background: #fef3c7; border-radius: 8px; border-left: 3px solid #f59e0b;">
+                <i class="fas fa-handshake" style="color: #f59e0b; margin-right: 0.5rem;"></i>
+                <span style="font-weight: 600; color: #92400e;">Price is Negotiable</span>
+            </div>
+        `;
+        priceNegotiable.style.display = 'block';
+    }
     
     const quickInfo = document.getElementById('propertyQuickInfo');
     const propertyTypeFormatted = escapeHtml((property.type || 'apartment').charAt(0).toUpperCase() + (property.type || 'apartment').slice(1));
@@ -910,6 +1013,31 @@ function renderPropertyDetails(property) {
             <div>
                 <span class="quick-info-label">Carpet Area</span>
                 <span class="quick-info-value">${escapeHtml(String(property.carpet_area))} sq.ft.</span>
+            </div>
+        </div>
+        `;
+    }
+    
+    // Show direction if available
+    if (property.direction || property.facing || property.orientation) {
+        const direction = property.direction || property.facing || property.orientation;
+        const formatDirection = (dir) => {
+            if (!dir) return 'N/A';
+            const dirLower = dir.toLowerCase();
+            const directions = ['north', 'south', 'east', 'west', 'northeast', 'northwest', 'southeast', 'southwest'];
+            for (const d of directions) {
+                if (dirLower.includes(d)) {
+                    return d.replace(/\b\w/g, l => l.toUpperCase());
+                }
+            }
+            return dir.replace(/\b\w/g, l => l.toUpperCase());
+        };
+        quickInfoHTML += `
+        <div class="quick-info-item">
+            <i class="fas fa-compass"></i>
+            <div>
+                <span class="quick-info-label">Direction</span>
+                <span class="quick-info-value">${escapeHtml(formatDirection(direction))}</span>
             </div>
         </div>
         `;
@@ -1009,17 +1137,27 @@ function renderPropertyDetails(property) {
     const propertyLocation = property.location || 'Location not specified';
     const locationEncoded = encodeURIComponent(propertyLocation);
     
-    // Create Google Maps links
-    const mapsSearchUrl = `https://www.google.com/maps/search/?api=1&query=${locationEncoded}`;
-    const mapsDirectionsUrl = `https://www.google.com/maps/dir/?api=1&destination=${locationEncoded}`;
+    // Use location_link if available, otherwise create Google Maps links
+    let mapsSearchUrl = '';
+    let mapsDirectionsUrl = '';
+    
+    if (property.location_link) {
+        // Use the provided location link
+        mapsSearchUrl = property.location_link;
+        mapsDirectionsUrl = property.location_link;
+    } else {
+        // Create Google Maps links from location text
+        mapsSearchUrl = `https://www.google.com/maps/search/?api=1&query=${locationEncoded}`;
+        mapsDirectionsUrl = `https://www.google.com/maps/dir/?api=1&destination=${locationEncoded}`;
+    }
     
     locationLinks.innerHTML = `
         <div class="property-location-links-content">
-            <a href="${mapsSearchUrl}" target="_blank" rel="noopener noreferrer" class="property-location-link">
+            <a href="${escapeHtml(mapsSearchUrl)}" target="_blank" rel="noopener noreferrer" class="property-location-link">
                 <i class="fas fa-map-marker-alt"></i>
                 <span>${escapeHtml(propertyLocation)}</span>
             </a>
-            <a href="${mapsDirectionsUrl}" target="_blank" rel="noopener noreferrer" class="property-directions-link">
+            <a href="${escapeHtml(mapsDirectionsUrl)}" target="_blank" rel="noopener noreferrer" class="property-directions-link">
                 <i class="fas fa-directions"></i>
                 <span>Get Directions</span>
             </a>

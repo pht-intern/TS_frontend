@@ -87,7 +87,6 @@ let currentInquiries = [];
 // Store currently loaded visitors
 let currentVisitors = [];
 // Store currently loaded logs
-let currentLogs = [];
 
 // Suppress Quill.js deprecation warnings
 if (typeof console !== 'undefined') {
@@ -297,11 +296,6 @@ function initDashboard() {
         exportVisitorsBtn.addEventListener('click', () => handleExportTable('visitor_info', exportVisitorsBtn));
     }
 
-    const exportLogsBtn = document.getElementById('exportLogsBtn');
-    if (exportLogsBtn) {
-        exportLogsBtn.addEventListener('click', () => handleExportTable('logs', exportLogsBtn));
-    }
-
     // Import buttons for individual tables
     const importPropertiesBtn = document.getElementById('importPropertiesBtn');
     const importPropertiesFile = document.getElementById('importPropertiesFile');
@@ -345,41 +339,37 @@ function initDashboard() {
         importVisitorsFile.addEventListener('change', (e) => handleImportTable('visitor_info', e.target.files[0], importVisitorsBtn));
     }
 
-    const importLogsBtn = document.getElementById('importLogsBtn');
-    const importLogsFile = document.getElementById('importLogsFile');
-    if (importLogsBtn && importLogsFile) {
-        importLogsBtn.addEventListener('click', () => importLogsFile.click());
-        importLogsFile.addEventListener('change', (e) => handleImportTable('logs', e.target.files[0], importLogsBtn));
-    }
-
     // Property management
     const addPropertyBtn = document.getElementById('addPropertyBtn');
     if (addPropertyBtn) {
         addPropertyBtn.addEventListener('click', () => openPropertyModal());
     }
 
-    // Residential Property management
-    const addResidentialPropertyBtn = document.getElementById('addResidentialPropertyBtn');
-    if (addResidentialPropertyBtn) {
-        addResidentialPropertyBtn.addEventListener('click', () => openResidentialPropertyModal());
-    }
-
-    // Plot Property management
-    const addPlotPropertyBtn = document.getElementById('addPlotPropertyBtn');
-    if (addPlotPropertyBtn) {
-        addPlotPropertyBtn.addEventListener('click', () => openPlotPropertyModal());
-    }
-
     // Property form
     const propertyForm = document.getElementById('propertyForm');
     if (propertyForm) {
-        propertyForm.addEventListener('submit', handlePropertySubmit);
+        propertyForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            // Validate step 3 before submitting
+            if (validateStep3()) {
+                handlePropertySubmit(e);
+            }
+        });
     }
 
-    // Residential Property form
-    const residentialPropertyForm = document.getElementById('residentialPropertyForm');
-    if (residentialPropertyForm) {
-        residentialPropertyForm.addEventListener('submit', handleResidentialPropertySubmit);
+    // Step navigation
+    const nextStepBtn = document.getElementById('nextStepBtn');
+    const prevStepBtn = document.getElementById('prevStepBtn');
+    const propertyTypeSelect = document.getElementById('propertyType');
+    
+    if (nextStepBtn) {
+        nextStepBtn.addEventListener('click', handleNextStep);
+    }
+    if (prevStepBtn) {
+        prevStepBtn.addEventListener('click', handlePrevStep);
+    }
+    if (propertyTypeSelect) {
+        propertyTypeSelect.addEventListener('change', handlePropertyTypeChange);
     }
 
     // Plot Property form
@@ -500,46 +490,12 @@ function initDashboard() {
     const propertyModal = document.getElementById('propertyModal');
     const propertyModalOverlay = document.getElementById('propertyModalOverlay');
     const propertyModalClose = document.getElementById('propertyModalClose');
-    const cancelPropertyBtn = document.getElementById('cancelPropertyBtn');
     
     if (propertyModalOverlay) {
         propertyModalOverlay.addEventListener('click', closePropertyModal);
     }
     if (propertyModalClose) {
         propertyModalClose.addEventListener('click', closePropertyModal);
-    }
-    if (cancelPropertyBtn) {
-        cancelPropertyBtn.addEventListener('click', closePropertyModal);
-    }
-
-    // Residential Property Modal controls
-    const residentialPropertyModalOverlay = document.getElementById('residentialPropertyModalOverlay');
-    const residentialPropertyModalClose = document.getElementById('residentialPropertyModalClose');
-    const cancelResidentialPropertyBtn = document.getElementById('cancelResidentialPropertyBtn');
-    
-    if (residentialPropertyModalOverlay) {
-        residentialPropertyModalOverlay.addEventListener('click', closeResidentialPropertyModal);
-    }
-    if (residentialPropertyModalClose) {
-        residentialPropertyModalClose.addEventListener('click', closeResidentialPropertyModal);
-    }
-    if (cancelResidentialPropertyBtn) {
-        cancelResidentialPropertyBtn.addEventListener('click', closeResidentialPropertyModal);
-    }
-
-    // Plot Property Modal controls
-    const plotPropertyModalOverlay = document.getElementById('plotPropertyModalOverlay');
-    const plotPropertyModalClose = document.getElementById('plotPropertyModalClose');
-    const cancelPlotPropertyBtn = document.getElementById('cancelPlotPropertyBtn');
-    
-    if (plotPropertyModalOverlay) {
-        plotPropertyModalOverlay.addEventListener('click', closePlotPropertyModal);
-    }
-    if (plotPropertyModalClose) {
-        plotPropertyModalClose.addEventListener('click', closePlotPropertyModal);
-    }
-    if (cancelPlotPropertyBtn) {
-        cancelPlotPropertyBtn.addEventListener('click', closePlotPropertyModal);
     }
 
     // Delete modal
@@ -761,17 +717,6 @@ function initDashboard() {
         visitorSearch.addEventListener('input', handleVisitorSearch);
     }
 
-    // Log search and filter
-    const logSearch = document.getElementById('logSearch');
-    if (logSearch) {
-        logSearch.addEventListener('input', handleLogSearch);
-    }
-
-    const logTypeFilter = document.getElementById('logTypeFilter');
-    if (logTypeFilter) {
-        logTypeFilter.addEventListener('change', handleLogFilter);
-    }
-
     // Load properties, testimonials, partners, and blogs
     loadProperties();
     loadTestimonials();
@@ -779,7 +724,6 @@ function initDashboard() {
     loadBlogs();
     loadInquiries();
     loadVisitorInfo();
-    loadLogs();
     
     // Initialize stat card click tracking
     initStatCardTracking();
@@ -872,6 +816,26 @@ function handleLogout() {
     }
     
     if (confirm('Are you sure you want to logout?')) {
+        // Get user email before clearing session
+        const userStr = sessionStorage.getItem('user') || localStorage.getItem('user');
+        let userEmail = null;
+        if (userStr) {
+            try {
+                const user = JSON.parse(userStr);
+                userEmail = user.email || null;
+            } catch (e) {
+                // Ignore parse errors
+            }
+        }
+        
+        // Track logout event before clearing session
+        if (userEmail && window.trackEvent) {
+            window.trackEvent('user_logout', `User logged out: ${userEmail}`, {
+                logout_timestamp: new Date().toISOString(),
+                logout_page: window.location.pathname
+            });
+        }
+        
         // Cleanup session manager
         if (window.SessionManager) {
             window.SessionManager.cleanup();
@@ -1032,8 +996,7 @@ async function handleImportTable(tableName, file, importBtn) {
             'testimonials': loadTestimonials,
             'partners': loadPartners,
             'contact_inquiries': loadInquiries,
-            'visitor_info': loadVisitorInfo,
-            'logs': loadLogs
+            'visitor_info': loadVisitorInfo
         };
         
         if (tableLoaders[tableName]) {
@@ -1102,6 +1065,7 @@ async function loadProperties(forceRefresh = false) {
         renderProperties(allProperties);
         // Stats are now loaded separately from API
         loadStats();
+        loadPageVisitStats();
     } catch (error) {
         console.error('Error loading properties:', error);
         // Fallback to localStorage if API fails
@@ -1109,6 +1073,7 @@ async function loadProperties(forceRefresh = false) {
         currentProperties = properties;
         renderProperties(properties);
         loadStats();
+        loadPageVisitStats();
         showNotification('Failed to load properties from server. Showing cached data.', 'warning');
     }
 }
@@ -1353,33 +1318,71 @@ function animateCounter(element, target, duration = 1500) {
     }, 16);
 }
 
+// Load and display page visit counts
+async function loadPageVisitStats() {
+    try {
+        const response = await authenticatedFetch('/api/admin/stats/page-visits');
+        if (!response.ok) {
+            throw new Error('Failed to fetch page visit statistics');
+        }
+        const data = await response.json();
+        
+        const tableBody = document.getElementById('pageVisitsTableBody');
+        if (!tableBody) return;
+        
+        if (!data.page_visits || data.page_visits.length === 0) {
+            tableBody.innerHTML = `
+                <tr>
+                    <td colspan="4" style="text-align: center; padding: 2rem; color: var(--text-gray);">
+                        <i class="fas fa-info-circle"></i> No page visit data available yet.
+                    </td>
+                </tr>
+            `;
+            return;
+        }
+        
+        // Render page visits table
+        tableBody.innerHTML = data.page_visits.map(page => `
+            <tr>
+                <td><strong>${escapeHtml(page.page_name)}</strong></td>
+                <td>${page.visit_count.toLocaleString()}</td>
+                <td>${page.unique_visitors.toLocaleString()}</td>
+                <td>${page.authenticated_visitors.toLocaleString()}</td>
+            </tr>
+        `).join('');
+        
+    } catch (error) {
+        console.error('Error loading page visit statistics:', error);
+        const tableBody = document.getElementById('pageVisitsTableBody');
+        if (tableBody) {
+            tableBody.innerHTML = `
+                <tr>
+                    <td colspan="4" style="text-align: center; padding: 2rem; color: var(--danger-color);">
+                        <i class="fas fa-exclamation-triangle"></i> Failed to load page visit statistics.
+                    </td>
+                </tr>
+            `;
+        }
+    }
+}
+
 // Open Property Modal
 async function openPropertyModal(propertyId = null) {
     const modal = document.getElementById('propertyModal');
     const form = document.getElementById('propertyForm');
-    const modalTitle = document.getElementById('modalTitle');
+    const modalTitle = document.getElementById('propertyModalTitle');
     
     if (!modal || !form) return;
 
-    // Reset form
+    // Reset form and steps
     form.reset();
-    document.getElementById('propertyId').value = '';
-    clearImagePreviews();
-    clearFeatures();
+    const propertyIdInput = document.getElementById('propertyId');
+    if (propertyIdInput) propertyIdInput.value = '';
+    const currentStepInput = document.getElementById('currentStep');
+    if (currentStepInput) currentStepInput.value = '1';
     
-    // Reset unit type buttons
-    const unitTypeButtons = document.querySelectorAll('.dashboard-unit-type-btn');
-    unitTypeButtons.forEach(btn => btn.classList.remove('active'));
-    
-    // Set default to 1BHK
-    const defaultButton = document.getElementById('dashboardUnitType1BHK');
-    const bedroomsInput = document.getElementById('propertyBedrooms');
-    const unitTypeInput = document.getElementById('propertyUnitType');
-    if (defaultButton) {
-        defaultButton.classList.add('active');
-        if (bedroomsInput) bedroomsInput.value = '1';
-        if (unitTypeInput) unitTypeInput.value = 'bhk';
-    }
+    // Reset to step 1
+    showStep(1);
 
     if (propertyId) {
         // Edit mode - fetch property from API
@@ -1389,8 +1392,8 @@ async function openPropertyModal(propertyId = null) {
                 throw new Error('Failed to fetch property');
             }
             const property = await response.json();
-            populateForm(property);
-            modalTitle.textContent = 'Edit Property';
+            populatePropertyForm(property);
+            if (modalTitle) modalTitle.textContent = 'Edit Property';
         } catch (error) {
             console.error('Error loading property:', error);
             showNotification('Failed to load property details.', 'error');
@@ -1398,11 +1401,45 @@ async function openPropertyModal(propertyId = null) {
         }
     } else {
         // Add mode
-        modalTitle.textContent = 'Add New Property';
+        if (modalTitle) modalTitle.textContent = 'Add New Property';
     }
 
     modal.classList.add('active');
     document.body.style.overflow = 'hidden';
+}
+
+// Populate property form with data
+function populatePropertyForm(property) {
+    const propertyIdInput = document.getElementById('propertyId');
+    const projectNameInput = document.getElementById('propertyProjectName');
+    const cityInput = document.getElementById('propertyCity');
+    const localityInput = document.getElementById('propertyLocality');
+    const locationLinkInput = document.getElementById('propertyLocationLink');
+    const propertyTypeSelect = document.getElementById('propertyType');
+    
+    if (propertyIdInput) propertyIdInput.value = property.id || '';
+    if (projectNameInput) projectNameInput.value = property.project_name || property.property_name || property.title || '';
+    if (cityInput) cityInput.value = property.city || '';
+    if (localityInput) localityInput.value = property.locality || '';
+    if (locationLinkInput) locationLinkInput.value = property.location_link || '';
+    
+    // Map property type to the new format
+    if (propertyTypeSelect) {
+        let typeValue = '';
+        if (property.type) {
+            const typeStr = typeof property.type === 'string' ? property.type.toLowerCase() : (property.type.value || '').toLowerCase();
+            if (typeStr === 'plot' || typeStr === 'plots') {
+                typeValue = 'plot_properties';
+            } else if (typeStr === 'apartment' || typeStr === 'apartments') {
+                typeValue = 'apartments';
+            } else if (typeStr === 'villa' || typeStr === 'villas') {
+                typeValue = 'villas';
+            } else if (typeStr === 'house') {
+                typeValue = 'individual_house';
+            }
+        }
+        propertyTypeSelect.value = typeValue;
+    }
 }
 
 // Close Property Modal
@@ -1411,6 +1448,1160 @@ function closePropertyModal() {
     if (modal) {
         modal.classList.remove('active');
         document.body.style.overflow = '';
+        // Reset to step 1
+        showStep(1);
+    }
+}
+
+// Show specific step
+function showStep(stepNumber) {
+    const step1 = document.getElementById('step1');
+    const step2 = document.getElementById('step2');
+    const step3 = document.getElementById('step3');
+    const nextBtn = document.getElementById('nextStepBtn');
+    const prevBtn = document.getElementById('prevStepBtn');
+    const submitBtn = document.getElementById('submitPropertyBtn');
+    const currentStepInput = document.getElementById('currentStep');
+    
+    // Update step indicators
+    const stepIndicators = document.querySelectorAll('.property-wizard-step');
+    stepIndicators.forEach((indicator, index) => {
+        const stepNum = parseInt(indicator.dataset.step);
+        if (stepNum <= stepNumber) {
+            indicator.classList.add('active');
+            const numberDiv = indicator.querySelector('.property-wizard-step-number');
+            const labelSpan = indicator.querySelector('.property-wizard-step-label');
+            if (numberDiv) {
+                numberDiv.style.background = 'var(--primary-color)';
+                numberDiv.style.color = 'white';
+                numberDiv.style.width = '40px';
+                numberDiv.style.height = '40px';
+                numberDiv.style.fontSize = '1.1rem';
+            }
+            if (labelSpan) {
+                labelSpan.style.color = 'var(--text-color)';
+                labelSpan.style.fontSize = '1rem';
+            }
+        } else {
+            indicator.classList.remove('active');
+            const numberDiv = indicator.querySelector('.property-wizard-step-number');
+            const labelSpan = indicator.querySelector('.property-wizard-step-label');
+            if (numberDiv) {
+                numberDiv.style.background = 'var(--border-color)';
+                numberDiv.style.color = 'var(--text-gray)';
+                numberDiv.style.width = '40px';
+                numberDiv.style.height = '40px';
+                numberDiv.style.fontSize = '1.1rem';
+            }
+            if (labelSpan) {
+                labelSpan.style.color = 'var(--text-gray)';
+                labelSpan.style.fontSize = '1rem';
+            }
+        }
+    });
+    
+    if (stepNumber === 1) {
+        if (step1) step1.style.display = 'block';
+        if (step2) step2.style.display = 'none';
+        if (step3) step3.style.display = 'none';
+        if (nextBtn) nextBtn.style.display = 'inline-flex';
+        if (prevBtn) prevBtn.style.display = 'none';
+        if (submitBtn) submitBtn.style.display = 'none';
+    } else if (stepNumber === 2) {
+        if (step1) step1.style.display = 'none';
+        if (step2) step2.style.display = 'block';
+        if (step3) step3.style.display = 'none';
+        if (nextBtn) nextBtn.style.display = 'inline-flex';
+        if (prevBtn) prevBtn.style.display = 'inline-flex';
+        if (submitBtn) submitBtn.style.display = 'none';
+        
+        // Load step 2 content based on property type
+        loadStep2Content();
+    } else if (stepNumber === 3) {
+        if (step1) step1.style.display = 'none';
+        if (step2) step2.style.display = 'none';
+        if (step3) step3.style.display = 'block';
+        if (nextBtn) nextBtn.style.display = 'none';
+        if (prevBtn) prevBtn.style.display = 'inline-flex';
+        if (submitBtn) submitBtn.style.display = 'inline-flex';
+        
+        // Load step 3 content (will be configured in next prompt)
+        loadStep3Content();
+    }
+    
+    if (currentStepInput) {
+        currentStepInput.value = stepNumber.toString();
+    }
+}
+
+// Handle next step
+function handleNextStep() {
+    const currentStepInput = document.getElementById('currentStep');
+    const currentStep = currentStepInput ? parseInt(currentStepInput.value) : 1;
+    
+    if (currentStep === 1) {
+        // Validate step 1
+        const projectName = document.getElementById('propertyProjectName');
+        const city = document.getElementById('propertyCity');
+        const locality = document.getElementById('propertyLocality');
+        const propertyType = document.getElementById('propertyType');
+        
+        if (!projectName || !projectName.value.trim()) {
+            showNotification('Please enter project name.', 'error');
+            projectName.focus();
+            return;
+        }
+        if (!city || !city.value.trim()) {
+            showNotification('Please enter city.', 'error');
+            city.focus();
+            return;
+        }
+        if (!locality || !locality.value.trim()) {
+            showNotification('Please enter locality/area.', 'error');
+            locality.focus();
+            return;
+        }
+        if (!propertyType || !propertyType.value) {
+            showNotification('Please select property type.', 'error');
+            propertyType.focus();
+            return;
+        }
+        
+        showStep(2);
+    } else if (currentStep === 2) {
+        // Validate step 2 based on property type
+        if (validateStep2()) {
+            showStep(3);
+        }
+    }
+}
+
+// Validate step 2 based on property type
+function validateStep2() {
+    const propertyType = document.getElementById('propertyType');
+    if (!propertyType || !propertyType.value) {
+        showNotification('Please select property type.', 'error');
+        return false;
+    }
+    
+    const selectedType = propertyType.value;
+    
+    // Validate based on property type
+    if (selectedType === 'apartments') {
+        const status = document.getElementById('propertyStatus');
+        const listingType = document.getElementById('propertyListingType');
+        const superBuiltupArea = document.getElementById('propertySuperBuiltupArea');
+        const carpetArea = document.getElementById('propertyCarpetArea');
+        const direction = document.getElementById('propertyDirection');
+        const price = document.getElementById('propertyPrice');
+        const amenities = document.getElementById('propertyAmenities');
+        
+        if (!status || !status.value) {
+            showNotification('Please select status.', 'error');
+            status?.focus();
+            return false;
+        }
+        if (!listingType || !listingType.value) {
+            showNotification('Please select listing type.', 'error');
+            listingType?.focus();
+            return false;
+        }
+        if (!superBuiltupArea || !superBuiltupArea.value) {
+            showNotification('Please enter super builtup area.', 'error');
+            superBuiltupArea?.focus();
+            return false;
+        }
+        if (!carpetArea || !carpetArea.value) {
+            showNotification('Please enter carpet area.', 'error');
+            carpetArea?.focus();
+            return false;
+        }
+        if (!direction || !direction.value) {
+            showNotification('Please select direction.', 'error');
+            direction?.focus();
+            return false;
+        }
+        if (!price || !price.value.trim()) {
+            showNotification('Please enter price.', 'error');
+            price?.focus();
+            return false;
+        }
+        if (!amenities || !amenities.selectedOptions || amenities.selectedOptions.length === 0) {
+            showNotification('Please select at least one amenity.', 'error');
+            amenities?.focus();
+            return false;
+        }
+    } else if (selectedType === 'villas') {
+        const villaType = document.getElementById('propertyVillaType');
+        const listingType = document.getElementById('propertyListingType');
+        const status = document.getElementById('propertyStatus');
+        const buildupArea = document.getElementById('propertyBuildupArea');
+        const carpetArea = document.getElementById('propertyCarpetArea');
+        const bedrooms = document.getElementById('propertyBedroomsCount');
+        const bathrooms = document.getElementById('propertyBathrooms');
+        const amenities = document.getElementById('propertyAmenities');
+        
+        if (!villaType || !villaType.value) {
+            showNotification('Please select villa type.', 'error');
+            villaType?.focus();
+            return false;
+        }
+        if (villaType.value === 'independent_villa') {
+            const plotArea = document.getElementById('propertyPlotArea');
+            if (!plotArea || !plotArea.value) {
+                showNotification('Please enter plot area for independent villa.', 'error');
+                plotArea?.focus();
+                return false;
+            }
+        }
+        if (!listingType || !listingType.value) {
+            showNotification('Please select listing type.', 'error');
+            listingType?.focus();
+            return false;
+        }
+        if (!status || !status.value) {
+            showNotification('Please select status.', 'error');
+            status?.focus();
+            return false;
+        }
+        if (!buildupArea || !buildupArea.value) {
+            showNotification('Please enter builtup area.', 'error');
+            buildupArea?.focus();
+            return false;
+        }
+        if (!carpetArea || !carpetArea.value) {
+            showNotification('Please enter carpet area.', 'error');
+            carpetArea?.focus();
+            return false;
+        }
+        if (!bedrooms || !bedrooms.value) {
+            showNotification('Please enter number of bedrooms.', 'error');
+            bedrooms?.focus();
+            return false;
+        }
+        if (!bathrooms || !bathrooms.value) {
+            showNotification('Please enter number of bathrooms.', 'error');
+            bathrooms?.focus();
+            return false;
+        }
+        if (!amenities || !amenities.selectedOptions || amenities.selectedOptions.length === 0) {
+            showNotification('Please select at least one amenity.', 'error');
+            amenities?.focus();
+            return false;
+        }
+    } else if (selectedType === 'individual_house') {
+        const houseType = document.getElementById('propertyVillaType');
+        const listingType = document.getElementById('propertyListingType');
+        const status = document.getElementById('propertyStatus');
+        const buildupArea = document.getElementById('propertyBuildupArea');
+        const carpetArea = document.getElementById('propertyCarpetArea');
+        const bedrooms = document.getElementById('propertyBedroomsCount');
+        const bathrooms = document.getElementById('propertyBathrooms');
+        
+        if (!houseType || !houseType.value) {
+            showNotification('Please select house type.', 'error');
+            houseType?.focus();
+            return false;
+        }
+        if (houseType.value === 'independent_villa') {
+            const plotArea = document.getElementById('propertyPlotArea');
+            if (!plotArea || !plotArea.value) {
+                showNotification('Please enter plot area for independent house.', 'error');
+                plotArea?.focus();
+                return false;
+            }
+        }
+        if (!listingType || !listingType.value) {
+            showNotification('Please select listing type.', 'error');
+            listingType?.focus();
+            return false;
+        }
+        if (!status || !status.value) {
+            showNotification('Please select status.', 'error');
+            status?.focus();
+            return false;
+        }
+        if (!buildupArea || !buildupArea.value) {
+            showNotification('Please enter builtup area.', 'error');
+            buildupArea?.focus();
+            return false;
+        }
+        if (!carpetArea || !carpetArea.value) {
+            showNotification('Please enter carpet area.', 'error');
+            carpetArea?.focus();
+            return false;
+        }
+        if (!bedrooms || !bedrooms.value) {
+            showNotification('Please enter number of bedrooms.', 'error');
+            bedrooms?.focus();
+            return false;
+        }
+        if (!bathrooms || !bathrooms.value) {
+            showNotification('Please enter number of bathrooms.', 'error');
+            bathrooms?.focus();
+            return false;
+        }
+    } else if (selectedType === 'plot_properties') {
+        const plotSection = document.getElementById('propertyPlotSection');
+        const status = document.getElementById('propertyStatus');
+        
+        if (!plotSection || !plotSection.value.trim()) {
+            showNotification('Please enter plot section.', 'error');
+            plotSection?.focus();
+            return false;
+        }
+        if (!status || !status.value) {
+            showNotification('Please select status.', 'error');
+            status?.focus();
+            return false;
+        }
+    }
+    
+    return true;
+}
+
+// Load step 3 content
+function loadStep3Content() {
+    const step3Content = document.getElementById('step3Content');
+    if (!step3Content) return;
+    
+    step3Content.innerHTML = `
+        <div class="dashboard-form-group" style="margin-bottom: 1.5rem;">
+            <label style="font-size: 1rem; margin-bottom: 0.75rem; font-weight: 500;">
+                <i class="fas fa-video"></i>
+                Video Preview Link
+            </label>
+            <input type="url" id="propertyVideoLink" name="video_link" placeholder="e.g., https://youtube.com/watch?v=... or https://vimeo.com/..." style="padding: 1rem 1.25rem; font-size: 1rem;">
+        </div>
+
+        <div class="dashboard-form-group" style="margin-bottom: 1.5rem;">
+            <label style="font-size: 1rem; margin-bottom: 0.75rem; font-weight: 500;">
+                <i class="fas fa-images"></i>
+                Gallery Images *
+            </label>
+            <div id="galleryImagesContainer">
+                <!-- Image upload rows will be added here -->
+            </div>
+            <button type="button" class="dashboard-btn-secondary" id="addImageRowBtn" style="margin-top: 1rem; padding: 0.75rem 1.5rem; font-size: 1rem;">
+                <i class="fas fa-plus"></i>
+                Add Image
+            </button>
+        </div>
+
+        <div class="dashboard-form-group" style="margin-bottom: 0;">
+            <label for="propertyDescription" style="font-size: 1rem; margin-bottom: 0.75rem; font-weight: 500;">
+                <i class="fas fa-align-left"></i>
+                Description *
+            </label>
+            <textarea id="propertyDescription" name="description" rows="8" placeholder="Enter detailed property description..." required style="padding: 1rem 1.25rem; font-size: 1rem; line-height: 1.6;"></textarea>
+        </div>
+    `;
+    
+    // Initialize gallery - add first image row
+    addImageUploadRow();
+    
+    // Add event listener for add image button
+    const addImageBtn = document.getElementById('addImageRowBtn');
+    if (addImageBtn) {
+        addImageBtn.addEventListener('click', addImageUploadRow);
+    }
+}
+
+// Add a new image upload row
+function addImageUploadRow() {
+    const container = document.getElementById('galleryImagesContainer');
+    if (!container) return;
+    
+    const imageCount = container.children.length;
+    const rowId = `imageRow_${imageCount}`;
+    
+    const imageRow = document.createElement('div');
+    imageRow.className = 'gallery-image-row';
+    imageRow.id = rowId;
+    imageRow.style.cssText = 'border: 1px solid var(--border-color); border-radius: 8px; padding: 1rem; margin-bottom: 1rem; background: var(--bg-light);';
+    
+    imageRow.innerHTML = `
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+            <span style="color: var(--text-color); font-size: 0.95rem; font-weight: 500;">
+                <i class="fas fa-image" style="margin-right: 0.4rem; font-size: 0.85rem;"></i>
+                Image ${imageCount + 1}
+            </span>
+            ${imageCount > 0 ? `
+                <button type="button" class="remove-image-row-btn" data-row-id="${rowId}" style="background: var(--danger-color); color: white; border: none; border-radius: 4px; padding: 0.35rem 0.75rem; cursor: pointer; font-size: 0.85rem; display: flex; align-items: center; gap: 0.3rem;">
+                    <i class="fas fa-trash" style="font-size: 0.75rem;"></i> Remove
+                </button>
+            ` : ''}
+        </div>
+        
+        <div class="dashboard-form-row" style="margin-bottom: 0.75rem;">
+            <div class="dashboard-form-group" style="margin-bottom: 0;">
+                <label for="imageTitle_${imageCount}" style="font-size: 0.9rem; margin-bottom: 0.4rem;">
+                    <i class="fas fa-heading" style="font-size: 0.85rem;"></i>
+                    Title
+                </label>
+                <input type="text" id="imageTitle_${imageCount}" name="image_titles[]" placeholder="e.g., Living Room" class="image-title-input" style="padding: 0.6rem 0.75rem; font-size: 0.9rem;">
+            </div>
+            <div class="dashboard-form-group" style="margin-bottom: 0;">
+                <label for="imageCategory_${imageCount}" style="font-size: 0.9rem; margin-bottom: 0.4rem;">
+                    <i class="fas fa-folder" style="font-size: 0.85rem;"></i>
+                    Category *
+                </label>
+                <select id="imageCategory_${imageCount}" name="image_categories[]" class="image-category-select" required style="padding: 0.6rem 0.75rem; font-size: 0.9rem;">
+                    <option value="">Select</option>
+                    <option value="project_image">Project Image</option>
+                    <option value="floor_plan">Floor Plan</option>
+                    <option value="master_plan">Master Plan</option>
+                </select>
+            </div>
+        </div>
+        
+        <div class="dashboard-form-group" style="margin-bottom: 0;">
+            <label style="font-size: 0.9rem; margin-bottom: 0.4rem;">
+                <i class="fas fa-upload" style="font-size: 0.85rem;"></i>
+                Upload Image *
+            </label>
+            <div class="dashboard-image-upload-area gallery-image-upload" data-row-id="${rowId}" style="min-height: 100px; padding: 0.75rem;">
+                <input type="file" id="imageFile_${imageCount}" name="gallery_images[]" accept="image/jpeg,image/jpg,image/png,image/webp,image/svg+xml" class="gallery-image-input" style="display: none;" required>
+                <div class="dashboard-image-upload-placeholder gallery-image-placeholder" id="imagePlaceholder_${imageCount}" style="padding: 0.5rem;">
+                    <i class="fas fa-cloud-upload-alt" style="font-size: 1.5rem; margin-bottom: 0.4rem;"></i>
+                    <p style="font-size: 0.85rem; margin: 0.3rem 0;">Click to upload or drag & drop</p>
+                    <span style="font-size: 0.75rem; color: var(--text-gray);">JPG, PNG, WebP, SVG (Max 5MB)</span>
+                </div>
+                <div class="dashboard-image-preview-container gallery-image-preview" id="imagePreview_${imageCount}" style="display: none; padding: 0.5rem;"></div>
+            </div>
+        </div>
+    `;
+    
+    container.appendChild(imageRow);
+    
+    // Initialize image upload handlers for this row
+    initializeImageUploadRow(rowId, imageCount);
+    
+    // Add remove button handler
+    const removeBtn = imageRow.querySelector('.remove-image-row-btn');
+    if (removeBtn) {
+        removeBtn.addEventListener('click', function() {
+            const rowIdToRemove = this.dataset.rowId;
+            const rowToRemove = document.getElementById(rowIdToRemove);
+            if (rowToRemove) {
+                rowToRemove.remove();
+                // Renumber remaining images
+                renumberImageRows();
+            }
+        });
+    }
+}
+
+// Initialize image upload handlers for a specific row
+function initializeImageUploadRow(rowId, index) {
+    const uploadArea = document.querySelector(`[data-row-id="${rowId}"]`);
+    const fileInput = document.getElementById(`imageFile_${index}`);
+    const placeholder = document.getElementById(`imagePlaceholder_${index}`);
+    const preview = document.getElementById(`imagePreview_${index}`);
+    
+    if (!uploadArea || !fileInput || !placeholder || !preview) return;
+    
+    // Click to upload
+    placeholder.addEventListener('click', () => fileInput.click());
+    uploadArea.addEventListener('click', (e) => {
+        if (e.target === uploadArea || e.target === placeholder || placeholder.contains(e.target)) {
+            fileInput.click();
+        }
+    });
+    
+    // File input change
+    fileInput.addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (file) {
+            // Validate file size (5MB)
+            if (file.size > 5 * 1024 * 1024) {
+                showNotification('Image size must be less than 5MB.', 'error');
+                this.value = '';
+                return;
+            }
+            
+            // Validate file type
+            const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/svg+xml'];
+            if (!validTypes.includes(file.type)) {
+                showNotification('Invalid file type. Please upload JPG, PNG, SVG, or WebP images.', 'error');
+                this.value = '';
+                return;
+            }
+            
+            // Show preview
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                preview.innerHTML = `
+                    <div style="position: relative; display: inline-block;">
+                        <img src="${e.target.result}" alt="Preview" style="max-width: 150px; max-height: 150px; border-radius: 6px; object-fit: cover; border: 2px solid var(--border-color);">
+                        <button type="button" class="remove-preview-btn" style="position: absolute; top: -8px; right: -8px; background: var(--danger-color); color: white; border: none; border-radius: 50%; width: 20px; height: 20px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                `;
+                preview.style.display = 'block';
+                placeholder.style.display = 'none';
+                
+                // Remove preview button handler
+                const removePreviewBtn = preview.querySelector('.remove-preview-btn');
+                if (removePreviewBtn) {
+                    removePreviewBtn.addEventListener('click', function(e) {
+                        e.stopPropagation();
+                        fileInput.value = '';
+                        preview.innerHTML = '';
+                        preview.style.display = 'none';
+                        placeholder.style.display = 'block';
+                    });
+                }
+            };
+            reader.readAsDataURL(file);
+        }
+    });
+    
+    // Drag and drop
+    uploadArea.addEventListener('dragover', function(e) {
+        e.preventDefault();
+        uploadArea.style.borderColor = 'var(--primary-color)';
+    });
+    
+    uploadArea.addEventListener('dragleave', function(e) {
+        e.preventDefault();
+        uploadArea.style.borderColor = 'var(--border-color)';
+    });
+    
+    uploadArea.addEventListener('drop', function(e) {
+        e.preventDefault();
+        uploadArea.style.borderColor = 'var(--border-color)';
+        
+        const file = e.dataTransfer.files[0];
+        if (file) {
+            fileInput.files = e.dataTransfer.files;
+            fileInput.dispatchEvent(new Event('change'));
+        }
+    });
+}
+
+// Renumber image rows after removal
+function renumberImageRows() {
+    const container = document.getElementById('galleryImagesContainer');
+    if (!container) return;
+    
+    const rows = container.querySelectorAll('.gallery-image-row');
+    rows.forEach((row, index) => {
+        const title = row.querySelector('h4');
+        if (title) {
+            title.innerHTML = `<i class="fas fa-image" style="margin-right: 0.5rem;"></i>Image ${index + 1}`;
+        }
+        
+        // Update IDs and names
+        const inputs = row.querySelectorAll('input, select');
+        inputs.forEach(input => {
+            const oldId = input.id;
+            if (oldId) {
+                const baseId = oldId.split('_')[0] + '_' + oldId.split('_')[1];
+                input.id = `${baseId}_${index}`;
+            }
+        });
+    });
+}
+
+// Validate step 3 before form submission
+function validateStep3() {
+    const description = document.getElementById('propertyDescription');
+    if (!description || !description.value.trim()) {
+        showNotification('Please enter property description.', 'error');
+        description?.focus();
+        return false;
+    }
+    
+    // Check if at least one image is uploaded
+    const imageInputs = document.querySelectorAll('.gallery-image-input');
+    let hasAtLeastOneImage = false;
+    
+    imageInputs.forEach(input => {
+        if (input.files && input.files.length > 0) {
+            hasAtLeastOneImage = true;
+        }
+    });
+    
+    if (!hasAtLeastOneImage) {
+        showNotification('Please upload at least one gallery image.', 'error');
+        return false;
+    }
+    
+    // Validate that all uploaded images have categories
+    const categorySelects = document.querySelectorAll('.image-category-select');
+    let allCategoriesValid = true;
+    
+    categorySelects.forEach((select, index) => {
+        const correspondingInput = document.getElementById(`imageFile_${index}`);
+        if (correspondingInput && correspondingInput.files && correspondingInput.files.length > 0) {
+            if (!select.value) {
+                allCategoriesValid = false;
+                select.focus();
+            }
+        }
+    });
+    
+    if (!allCategoriesValid) {
+        showNotification('Please select category for all uploaded images.', 'error');
+        return false;
+    }
+    
+    return true;
+}
+
+// Handle previous step
+function handlePrevStep() {
+    const currentStepInput = document.getElementById('currentStep');
+    const currentStep = currentStepInput ? parseInt(currentStepInput.value) : 1;
+    
+    if (currentStep === 3) {
+        showStep(2);
+    } else if (currentStep === 2) {
+        showStep(1);
+    }
+}
+
+// Handle property type change
+function handlePropertyTypeChange() {
+    const propertyType = document.getElementById('propertyType');
+    if (propertyType && propertyType.value) {
+        // Step 2 content will be loaded when user navigates to step 2
+        // This is just a placeholder for future implementation
+    }
+}
+
+// Load step 2 content based on property type
+function loadStep2Content() {
+    const propertyType = document.getElementById('propertyType');
+    const step2Content = document.getElementById('step2Content');
+    
+    if (!propertyType || !step2Content) return;
+    
+    const selectedType = propertyType.value;
+    
+    // Clear existing content
+    step2Content.innerHTML = '';
+    
+    let content = '';
+    
+    switch(selectedType) {
+        case 'apartments':
+            content = generateApartmentsStep2();
+            break;
+        case 'villas':
+            content = generateVillasStep2();
+            break;
+        case 'individual_house':
+            content = generateIndividualHouseStep2();
+            break;
+        case 'plot_properties':
+            content = generatePlotPropertiesStep2();
+            break;
+        default:
+            content = '<div style="text-align: center; padding: 2rem; color: var(--text-gray);">Please select a property type in step 1.</div>';
+    }
+    
+    step2Content.innerHTML = content;
+    
+    // Initialize any dynamic handlers after content is loaded
+    initializeStep2Handlers(selectedType);
+}
+
+// Generate Step 2 content for Apartments
+function generateApartmentsStep2() {
+    return `
+        <div class="dashboard-form-row" style="margin-bottom: 1.5rem;">
+            <div class="dashboard-form-group" style="flex: 1; margin-right: 1.5rem;">
+                <label style="font-size: 1rem; margin-bottom: 0.75rem; font-weight: 500;">
+                    <i class="fas fa-bed"></i>
+                    Unit Type *
+                </label>
+                <div class="dashboard-unit-type-buttons" style="gap: 0.75rem;">
+                    <button type="button" class="dashboard-unit-type-btn" data-unit-type="bhk" data-bedrooms="1" id="unitType1BHK" style="padding: 0.875rem 1.5rem; font-size: 1rem;">
+                        <span>1BHK</span>
+                    </button>
+                    <button type="button" class="dashboard-unit-type-btn" data-unit-type="bhk" data-bedrooms="2" id="unitType2BHK" style="padding: 0.875rem 1.5rem; font-size: 1rem;">
+                        <span>2BHK</span>
+                    </button>
+                    <button type="button" class="dashboard-unit-type-btn" data-unit-type="bhk" data-bedrooms="3" id="unitType3BHK" style="padding: 0.875rem 1.5rem; font-size: 1rem;">
+                        <span>3BHK</span>
+                    </button>
+                    <button type="button" class="dashboard-unit-type-btn" data-unit-type="bhk" data-bedrooms="4" id="unitType4BHK" style="padding: 0.875rem 1.5rem; font-size: 1rem;">
+                        <span>4BHK</span>
+                    </button>
+                </div>
+                <input type="hidden" id="propertyBedrooms" name="bedrooms" value="1" required>
+                <input type="hidden" id="propertyUnitType" name="unit_type" value="bhk">
+            </div>
+            <div class="dashboard-form-group" style="flex: 1;">
+                <label for="propertyStatus" style="font-size: 1rem; margin-bottom: 0.75rem; font-weight: 500;">
+                    <i class="fas fa-tag"></i>
+                    Status *
+                </label>
+                <select id="propertyStatus" name="status" required style="padding: 1rem 1.25rem; font-size: 1rem;">
+                    <option value="">Select Status</option>
+                    <option value="sale">Sale</option>
+                    <option value="rent">Rent</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="dashboard-form-row" style="margin-bottom: 1.5rem;">
+            <div class="dashboard-form-group" style="flex: 1; margin-right: 1.5rem;">
+                <label for="propertyListingType" style="font-size: 1rem; margin-bottom: 0.75rem; font-weight: 500;">
+                    <i class="fas fa-list"></i>
+                    Listing Type *
+                </label>
+                <select id="propertyListingType" name="listing_type" required style="padding: 1rem 1.25rem; font-size: 1rem;">
+                    <option value="">Select Listing Type</option>
+                    <option value="new">New</option>
+                    <option value="resell">Resell</option>
+                </select>
+            </div>
+            <div class="dashboard-form-group" style="flex: 1;">
+                <label for="propertySuperBuiltupArea" style="font-size: 1rem; margin-bottom: 0.75rem; font-weight: 500;">
+                    <i class="fas fa-ruler-combined"></i>
+                    Super Builtup Area (SBA) *
+                </label>
+                <input type="number" id="propertySuperBuiltupArea" name="super_builtup_area" placeholder="e.g., 1500" step="0.01" required style="padding: 1rem 1.25rem; font-size: 1rem;">
+            </div>
+        </div>
+
+        <div class="dashboard-form-row" style="margin-bottom: 1.5rem;">
+            <div class="dashboard-form-group" style="flex: 1; margin-right: 1.5rem;">
+                <label for="propertyCarpetArea" style="font-size: 1rem; margin-bottom: 0.75rem; font-weight: 500;">
+                    <i class="fas fa-ruler"></i>
+                    Carpet Area *
+                </label>
+                <input type="number" id="propertyCarpetArea" name="carpet_area" placeholder="e.g., 1200" step="0.01" required style="padding: 1rem 1.25rem; font-size: 1rem;">
+            </div>
+            <div class="dashboard-form-group" style="flex: 1;">
+                <label for="propertyDirection" style="font-size: 1rem; margin-bottom: 0.75rem; font-weight: 500;">
+                    <i class="fas fa-compass"></i>
+                    Direction *
+                </label>
+                <select id="propertyDirection" name="direction" required style="padding: 1rem 1.25rem; font-size: 1rem;">
+                    <option value="">Select Direction</option>
+                    <option value="east">East</option>
+                    <option value="west">West</option>
+                    <option value="north">North</option>
+                    <option value="south">South</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="dashboard-form-row" style="margin-bottom: 1.5rem;">
+            <div class="dashboard-form-group" style="flex: 1; margin-right: 1.5rem;">
+                <label for="propertyPrice" style="font-size: 1rem; margin-bottom: 0.75rem; font-weight: 500;">
+                    <i class="fas fa-dollar-sign"></i>
+                    Price *
+                </label>
+                <input type="text" id="propertyPrice" name="price" placeholder="e.g., Rs. 1.5 Cr" required style="padding: 1rem 1.25rem; font-size: 1rem;">
+            </div>
+            <div class="dashboard-form-group" style="flex: 1; display: flex; align-items: flex-end;">
+                <label style="display: flex; align-items: center; gap: 0.75rem; font-size: 1rem; font-weight: 500; margin-bottom: 0;">
+                    <input type="checkbox" id="propertyPriceNegotiable" name="price_negotiable" style="width: 20px; height: 20px; cursor: pointer;">
+                    <span>Price is Negotiable</span>
+                </label>
+            </div>
+        </div>
+
+        <div class="dashboard-form-group" style="margin-bottom: 0;">
+            <label style="font-size: 1rem; margin-bottom: 0.75rem; font-weight: 500;">
+                <i class="fas fa-check-circle"></i>
+                Amenities *
+            </label>
+            <select id="propertyAmenities" name="amenities" multiple size="8" required style="width: 100%; padding: 1rem 1.25rem; border: 2px solid var(--border-color); border-radius: 10px; font-size: 1rem; font-family: 'Inter', sans-serif; min-height: 200px;">
+                <option value="club_house">Club House</option>
+                <option value="security">Security</option>
+                <option value="24hr_backup">24hr Backup</option>
+                <option value="rain_water_harvesting">Rain Water Harvesting</option>
+                <option value="maintenance_staff">Maintenance Staff</option>
+                <option value="intercom">Intercom</option>
+                <option value="garden">Garden</option>
+                <option value="community_hall">Community Hall</option>
+                <option value="electricity_full">Electricity Full</option>
+                <option value="electricity_partial">Electricity Partial</option>
+                <option value="basketball_court">Basketball Court</option>
+                <option value="play_area">Play Area</option>
+                <option value="badminton_court">Badminton Court</option>
+                <option value="swimming_pool">Swimming Pool</option>
+                <option value="tennis_court">Tennis Court</option>
+                <option value="gymnasium">Gymnasium</option>
+                <option value="indoor_games">Indoor Games</option>
+                <option value="banks_atm">Banks/ATM</option>
+                <option value="cafeteria">Cafeteria</option>
+                <option value="library">Library</option>
+                <option value="health_facilities">Health Facilities</option>
+                <option value="recreation_facilities">Recreation Facilities</option>
+                <option value="wifi_broadband">WiFi Broadband Internet</option>
+                <option value="temple">Temple</option>
+            </select>
+            <small style="color: var(--text-gray); font-size: 0.9rem; margin-top: 0.75rem; display: block;">Hold Ctrl (Windows) or Cmd (Mac) to select multiple amenities</small>
+        </div>
+    `;
+}
+
+// Generate Step 2 content for Villas
+function generateVillasStep2() {
+    return `
+        <div class="dashboard-form-row" style="margin-bottom: 1.5rem;">
+            <div class="dashboard-form-group" style="flex: 1; margin-right: 1.5rem;">
+                <label for="propertyVillaType" style="font-size: 1rem; margin-bottom: 0.75rem; font-weight: 500;">
+                    <i class="fas fa-home"></i>
+                    Villa Type *
+                </label>
+                <select id="propertyVillaType" name="villa_type" required style="padding: 1rem 1.25rem; font-size: 1rem;">
+                    <option value="">Select Villa Type</option>
+                    <option value="independent_villa">Independent Villa</option>
+                    <option value="row_villa">Row Villa</option>
+                    <option value="villament">Villament</option>
+                </select>
+            </div>
+            <div class="dashboard-form-group" style="flex: 1;">
+                <label style="font-size: 1rem; margin-bottom: 0.75rem; font-weight: 500;">
+                    <i class="fas fa-bed"></i>
+                    Unit Type *
+                </label>
+                <div class="dashboard-unit-type-buttons" style="gap: 0.75rem;">
+                    <button type="button" class="dashboard-unit-type-btn" data-unit-type="bhk" data-bedrooms="3" id="villaUnitType3BHK" style="padding: 0.875rem 1.5rem; font-size: 1rem;">
+                        <span>3BHK</span>
+                    </button>
+                    <button type="button" class="dashboard-unit-type-btn" data-unit-type="bhk" data-bedrooms="4" id="villaUnitType4BHK" style="padding: 0.875rem 1.5rem; font-size: 1rem;">
+                        <span>4BHK</span>
+                    </button>
+                    <button type="button" class="dashboard-unit-type-btn" data-unit-type="4plus" data-bedrooms="5" id="villaUnitType5PlusBHK" style="padding: 0.875rem 1.5rem; font-size: 1rem;">
+                        <span>5+BHK</span>
+                    </button>
+                </div>
+                <input type="hidden" id="propertyBedrooms" name="bedrooms" value="3" required>
+                <input type="hidden" id="propertyUnitType" name="unit_type" value="bhk">
+            </div>
+        </div>
+
+        <div class="dashboard-form-row" style="margin-bottom: 1.5rem;">
+            <div class="dashboard-form-group" style="flex: 1; margin-right: 1.5rem;">
+                <label for="propertyListingType" style="font-size: 1rem; margin-bottom: 0.75rem; font-weight: 500;">
+                    <i class="fas fa-list"></i>
+                    Listing Type *
+                </label>
+                <select id="propertyListingType" name="listing_type" required style="padding: 1rem 1.25rem; font-size: 1rem;">
+                    <option value="">Select Listing Type</option>
+                    <option value="new">New</option>
+                    <option value="resell">Resell</option>
+                </select>
+            </div>
+            <div class="dashboard-form-group" style="flex: 1;">
+                <label for="propertyStatus" style="font-size: 1rem; margin-bottom: 0.75rem; font-weight: 500;">
+                    <i class="fas fa-tag"></i>
+                    Status *
+                </label>
+                <select id="propertyStatus" name="status" required style="padding: 1rem 1.25rem; font-size: 1rem;">
+                    <option value="">Select Status</option>
+                    <option value="under_construction">Under Construction</option>
+                    <option value="ready_to_move">Ready to Move</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="dashboard-form-row" id="villaPlotAreaRow" style="display: none; margin-bottom: 1.5rem;">
+            <div class="dashboard-form-group" style="flex: 1;">
+                <label for="propertyPlotArea" style="font-size: 1rem; margin-bottom: 0.75rem; font-weight: 500;">
+                    <i class="fas fa-ruler-combined"></i>
+                    Plot Area (Sq.Ft.) *
+                </label>
+                <input type="number" id="propertyPlotArea" name="plot_area" placeholder="e.g., 2400" step="0.01" style="padding: 1rem 1.25rem; font-size: 1rem;">
+            </div>
+        </div>
+
+        <div class="dashboard-form-row" style="margin-bottom: 1.5rem;">
+            <div class="dashboard-form-group" style="flex: 1; margin-right: 1.5rem;">
+                <label for="propertyLength" style="font-size: 1rem; margin-bottom: 0.75rem; font-weight: 500;">
+                    <i class="fas fa-ruler-horizontal"></i>
+                    Length (Ft.)
+                </label>
+                <input type="number" id="propertyLength" name="length" placeholder="e.g., 50" step="0.01" style="padding: 1rem 1.25rem; font-size: 1rem;">
+            </div>
+            <div class="dashboard-form-group" style="flex: 1;">
+                <label for="propertyBreadth" style="font-size: 1rem; margin-bottom: 0.75rem; font-weight: 500;">
+                    <i class="fas fa-ruler-vertical"></i>
+                    Breadth (Ft.)
+                </label>
+                <input type="number" id="propertyBreadth" name="breadth" placeholder="e.g., 30" step="0.01" style="padding: 1rem 1.25rem; font-size: 1rem;">
+            </div>
+        </div>
+
+        <div class="dashboard-form-row" style="margin-bottom: 1.5rem;">
+            <div class="dashboard-form-group" style="flex: 1; margin-right: 1.5rem;">
+                <label for="propertyBuildupArea" style="font-size: 1rem; margin-bottom: 0.75rem; font-weight: 500;">
+                    <i class="fas fa-ruler-combined"></i>
+                    Builtup Area (Sq.Ft.) *
+                </label>
+                <input type="number" id="propertyBuildupArea" name="buildup_area" placeholder="e.g., 2000" step="0.01" required style="padding: 1rem 1.25rem; font-size: 1rem;">
+            </div>
+            <div class="dashboard-form-group" style="flex: 1;">
+                <label for="propertyCarpetArea" style="font-size: 1rem; margin-bottom: 0.75rem; font-weight: 500;">
+                    <i class="fas fa-ruler"></i>
+                    Carpet Area (Sq.Ft.) *
+                </label>
+                <input type="number" id="propertyCarpetArea" name="carpet_area" placeholder="e.g., 1800" step="0.01" required style="padding: 1rem 1.25rem; font-size: 1rem;">
+            </div>
+        </div>
+
+        <div class="dashboard-form-row" style="margin-bottom: 1.5rem;">
+            <div class="dashboard-form-group" style="flex: 1; margin-right: 1.5rem;">
+                <label for="propertyBedroomsCount" style="font-size: 1rem; margin-bottom: 0.75rem; font-weight: 500;">
+                    <i class="fas fa-bed"></i>
+                    Bedrooms *
+                </label>
+                <input type="number" id="propertyBedroomsCount" name="bedrooms_count" placeholder="e.g., 3" min="1" required style="padding: 1rem 1.25rem; font-size: 1rem;">
+            </div>
+            <div class="dashboard-form-group" style="flex: 1;">
+                <label for="propertyBathrooms" style="font-size: 1rem; margin-bottom: 0.75rem; font-weight: 500;">
+                    <i class="fas fa-bath"></i>
+                    Bathrooms *
+                </label>
+                <input type="number" id="propertyBathrooms" name="bathrooms" placeholder="e.g., 2" min="1" required style="padding: 1rem 1.25rem; font-size: 1rem;">
+            </div>
+        </div>
+
+        <div class="dashboard-form-group" style="margin-bottom: 0;">
+            <label style="font-size: 1rem; margin-bottom: 0.75rem; font-weight: 500;">
+                <i class="fas fa-check-circle"></i>
+                Amenities *
+            </label>
+            <select id="propertyAmenities" name="amenities" multiple size="8" required style="width: 100%; padding: 1rem 1.25rem; border: 2px solid var(--border-color); border-radius: 10px; font-size: 1rem; font-family: 'Inter', sans-serif; min-height: 200px;">
+                <option value="club_house">Club House</option>
+                <option value="security">Security</option>
+                <option value="24hr_backup">24hr Backup</option>
+                <option value="rain_water_harvesting">Rain Water Harvesting</option>
+                <option value="maintenance_staff">Maintenance Staff</option>
+                <option value="intercom">Intercom</option>
+                <option value="garden">Garden</option>
+                <option value="community_hall">Community Hall</option>
+                <option value="electricity_full">Electricity Full</option>
+                <option value="electricity_partial">Electricity Partial</option>
+                <option value="basketball_court">Basketball Court</option>
+                <option value="play_area">Play Area</option>
+                <option value="badminton_court">Badminton Court</option>
+                <option value="swimming_pool">Swimming Pool</option>
+                <option value="tennis_court">Tennis Court</option>
+                <option value="gymnasium">Gymnasium</option>
+                <option value="indoor_games">Indoor Games</option>
+                <option value="banks_atm">Banks/ATM</option>
+                <option value="cafeteria">Cafeteria</option>
+                <option value="library">Library</option>
+                <option value="health_facilities">Health Facilities</option>
+                <option value="recreation_facilities">Recreation Facilities</option>
+                <option value="wifi_broadband">WiFi Broadband Internet</option>
+                <option value="temple">Temple</option>
+            </select>
+            <small style="color: var(--text-gray); font-size: 0.9rem; margin-top: 0.75rem; display: block;">Hold Ctrl (Windows) or Cmd (Mac) to select multiple amenities</small>
+        </div>
+    `;
+}
+
+// Generate Step 2 content for Individual House
+function generateIndividualHouseStep2() {
+    return `
+        <div class="dashboard-form-row" style="margin-bottom: 1.5rem;">
+            <div class="dashboard-form-group" style="flex: 1; margin-right: 1.5rem;">
+                <label for="propertyVillaType" style="font-size: 1rem; margin-bottom: 0.75rem; font-weight: 500;">
+                    <i class="fas fa-home"></i>
+                    House Type *
+                </label>
+                <select id="propertyVillaType" name="villa_type" required style="padding: 1rem 1.25rem; font-size: 1rem;">
+                    <option value="">Select House Type</option>
+                    <option value="independent_villa">Independent House</option>
+                    <option value="row_villa">Row House</option>
+                    <option value="villament">Villament</option>
+                </select>
+            </div>
+            <div class="dashboard-form-group" style="flex: 1;">
+                <label style="font-size: 1rem; margin-bottom: 0.75rem; font-weight: 500;">
+                    <i class="fas fa-bed"></i>
+                    Unit Type *
+                </label>
+                <div class="dashboard-unit-type-buttons" style="gap: 0.75rem;">
+                    <button type="button" class="dashboard-unit-type-btn" data-unit-type="bhk" data-bedrooms="3" id="houseUnitType3BHK" style="padding: 0.875rem 1.5rem; font-size: 1rem;">
+                        <span>3BHK</span>
+                    </button>
+                    <button type="button" class="dashboard-unit-type-btn" data-unit-type="bhk" data-bedrooms="4" id="houseUnitType4BHK" style="padding: 0.875rem 1.5rem; font-size: 1rem;">
+                        <span>4BHK</span>
+                    </button>
+                    <button type="button" class="dashboard-unit-type-btn" data-unit-type="4plus" data-bedrooms="5" id="houseUnitType5PlusBHK" style="padding: 0.875rem 1.5rem; font-size: 1rem;">
+                        <span>5+BHK</span>
+                    </button>
+                </div>
+                <input type="hidden" id="propertyBedrooms" name="bedrooms" value="3" required>
+                <input type="hidden" id="propertyUnitType" name="unit_type" value="bhk">
+            </div>
+        </div>
+
+        <div class="dashboard-form-row" style="margin-bottom: 1.5rem;">
+            <div class="dashboard-form-group" style="flex: 1; margin-right: 1.5rem;">
+                <label for="propertyListingType" style="font-size: 1rem; margin-bottom: 0.75rem; font-weight: 500;">
+                    <i class="fas fa-list"></i>
+                    Listing Type *
+                </label>
+                <select id="propertyListingType" name="listing_type" required style="padding: 1rem 1.25rem; font-size: 1rem;">
+                    <option value="">Select Listing Type</option>
+                    <option value="new">New</option>
+                    <option value="resell">Resell</option>
+                </select>
+            </div>
+            <div class="dashboard-form-group" style="flex: 1;">
+                <label for="propertyStatus" style="font-size: 1rem; margin-bottom: 0.75rem; font-weight: 500;">
+                    <i class="fas fa-tag"></i>
+                    Status *
+                </label>
+                <select id="propertyStatus" name="status" required style="padding: 1rem 1.25rem; font-size: 1rem;">
+                    <option value="">Select Status</option>
+                    <option value="under_construction">Under Construction</option>
+                    <option value="ready_to_move">Ready to Move</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="dashboard-form-row" id="housePlotAreaRow" style="display: none; margin-bottom: 1.5rem;">
+            <div class="dashboard-form-group" style="flex: 1;">
+                <label for="propertyPlotArea" style="font-size: 1rem; margin-bottom: 0.75rem; font-weight: 500;">
+                    <i class="fas fa-ruler-combined"></i>
+                    Plot Area (Sq.Ft.) *
+                </label>
+                <input type="number" id="propertyPlotArea" name="plot_area" placeholder="e.g., 2400" step="0.01" style="padding: 1rem 1.25rem; font-size: 1rem;">
+            </div>
+        </div>
+
+        <div class="dashboard-form-row" style="margin-bottom: 1.5rem;">
+            <div class="dashboard-form-group" style="flex: 1; margin-right: 1.5rem;">
+                <label for="propertyLength" style="font-size: 1rem; margin-bottom: 0.75rem; font-weight: 500;">
+                    <i class="fas fa-ruler-horizontal"></i>
+                    Length (Ft.)
+                </label>
+                <input type="number" id="propertyLength" name="length" placeholder="e.g., 50" step="0.01" style="padding: 1rem 1.25rem; font-size: 1rem;">
+            </div>
+            <div class="dashboard-form-group" style="flex: 1;">
+                <label for="propertyBreadth" style="font-size: 1rem; margin-bottom: 0.75rem; font-weight: 500;">
+                    <i class="fas fa-ruler-vertical"></i>
+                    Breadth (Ft.)
+                </label>
+                <input type="number" id="propertyBreadth" name="breadth" placeholder="e.g., 30" step="0.01" style="padding: 1rem 1.25rem; font-size: 1rem;">
+            </div>
+        </div>
+
+        <div class="dashboard-form-row" style="margin-bottom: 1.5rem;">
+            <div class="dashboard-form-group" style="flex: 1; margin-right: 1.5rem;">
+                <label for="propertyBuildupArea" style="font-size: 1rem; margin-bottom: 0.75rem; font-weight: 500;">
+                    <i class="fas fa-ruler-combined"></i>
+                    Builtup Area (Sq.Ft.) *
+                </label>
+                <input type="number" id="propertyBuildupArea" name="buildup_area" placeholder="e.g., 2000" step="0.01" required style="padding: 1rem 1.25rem; font-size: 1rem;">
+            </div>
+            <div class="dashboard-form-group" style="flex: 1;">
+                <label for="propertyCarpetArea" style="font-size: 1rem; margin-bottom: 0.75rem; font-weight: 500;">
+                    <i class="fas fa-ruler"></i>
+                    Carpet Area (Sq.Ft.) *
+                </label>
+                <input type="number" id="propertyCarpetArea" name="carpet_area" placeholder="e.g., 1800" step="0.01" required style="padding: 1rem 1.25rem; font-size: 1rem;">
+            </div>
+        </div>
+
+        <div class="dashboard-form-row" style="margin-bottom: 0;">
+            <div class="dashboard-form-group" style="flex: 1; margin-right: 1.5rem;">
+                <label for="propertyBedroomsCount" style="font-size: 1rem; margin-bottom: 0.75rem; font-weight: 500;">
+                    <i class="fas fa-bed"></i>
+                    Bedrooms *
+                </label>
+                <input type="number" id="propertyBedroomsCount" name="bedrooms_count" placeholder="e.g., 3" min="1" required style="padding: 1rem 1.25rem; font-size: 1rem;">
+            </div>
+            <div class="dashboard-form-group" style="flex: 1;">
+                <label for="propertyBathrooms" style="font-size: 1rem; margin-bottom: 0.75rem; font-weight: 500;">
+                    <i class="fas fa-bath"></i>
+                    Bathrooms *
+                </label>
+                <input type="number" id="propertyBathrooms" name="bathrooms" placeholder="e.g., 2" min="1" required style="padding: 1rem 1.25rem; font-size: 1rem;">
+            </div>
+        </div>
+    `;
+}
+
+// Generate Step 2 content for Plot Properties
+function generatePlotPropertiesStep2() {
+    return `
+        <div class="dashboard-form-row" style="margin-bottom: 0;">
+            <div class="dashboard-form-group" style="flex: 1; margin-right: 1.5rem;">
+                <label for="propertyPlotSection" style="font-size: 1rem; margin-bottom: 0.75rem; font-weight: 500;">
+                    <i class="fas fa-map"></i>
+                    Plot Section *
+                </label>
+                <input type="text" id="propertyPlotSection" name="plot_section" placeholder="e.g., Section A, Block 5" required style="padding: 1rem 1.25rem; font-size: 1rem;">
+            </div>
+            <div class="dashboard-form-group" style="flex: 1;">
+                <label for="propertyStatus" style="font-size: 1rem; margin-bottom: 0.75rem; font-weight: 500;">
+                    <i class="fas fa-tag"></i>
+                    Status *
+                </label>
+                <select id="propertyStatus" name="status" required style="padding: 1rem 1.25rem; font-size: 1rem;">
+                    <option value="">Select Status</option>
+                    <option value="ready_to_move">Ready to Move</option>
+                    <option value="under_development">Under Development</option>
+                </select>
+            </div>
+        </div>
+    `;
+}
+
+// Initialize step 2 handlers based on property type
+function initializeStep2Handlers(propertyType) {
+    // Initialize unit type buttons
+    const unitTypeButtons = document.querySelectorAll('#step2 .dashboard-unit-type-btn');
+    unitTypeButtons.forEach(btn => {
+        btn.addEventListener('click', function() {
+            // Remove active class from all buttons in this group
+            const parent = this.closest('.dashboard-form-group');
+            if (parent) {
+                const allButtons = parent.querySelectorAll('.dashboard-unit-type-btn');
+                allButtons.forEach(b => b.classList.remove('active'));
+            }
+            // Add active class to clicked button
+            this.classList.add('active');
+            
+            // Update hidden inputs
+            const bedroomsInput = document.getElementById('propertyBedrooms');
+            const unitTypeInput = document.getElementById('propertyUnitType');
+            if (bedroomsInput) bedroomsInput.value = this.dataset.bedrooms || '';
+            if (unitTypeInput) unitTypeInput.value = this.dataset.unitType || '';
+        });
+        
+        // Set first button as active by default
+        if (btn === unitTypeButtons[0]) {
+            btn.classList.add('active');
+        }
+    });
+    
+    // Handle villa type change for conditional plot area field
+    if (propertyType === 'villas' || propertyType === 'individual_house') {
+        const villaTypeSelect = document.getElementById('propertyVillaType');
+        if (villaTypeSelect) {
+            villaTypeSelect.addEventListener('change', function() {
+                const plotAreaRow = document.getElementById(propertyType === 'villas' ? 'villaPlotAreaRow' : 'housePlotAreaRow');
+                const plotAreaInput = document.getElementById('propertyPlotArea');
+                
+                if (this.value === 'independent_villa') {
+                    if (plotAreaRow) plotAreaRow.style.display = 'flex';
+                    if (plotAreaInput) plotAreaInput.required = true;
+                } else {
+                    if (plotAreaRow) plotAreaRow.style.display = 'none';
+                    if (plotAreaInput) {
+                        plotAreaInput.required = false;
+                        plotAreaInput.value = '';
+                    }
+                }
+            });
+        }
     }
 }
 
@@ -2557,18 +3748,8 @@ async function editProperty(id) {
             throw new Error('Invalid property data received');
         }
         
-        // Determine property type - plot properties have type 'plot' or 'plots'
-        const propertyType = typeof property.type === 'string' 
-            ? property.type.toLowerCase() 
-            : (property.type?.value || '').toLowerCase();
-        
-        // Check if it's a plot property
-        if (propertyType === 'plot' || propertyType === 'plots') {
-            openPlotPropertyModal(id);
-        } else {
-            // It's a residential property (builder_floor, house, villa, apartment)
-            openResidentialPropertyModal(id);
-        }
+        // Use unified property modal for editing
+        openPropertyModal(id);
     } catch (error) {
         console.error('Error loading property:', error);
         const errorMsg = error.message || 'Failed to load property details.';
@@ -5200,159 +6381,6 @@ function handleVisitorSearch(e) {
 }
 
 // ============================================
-// LOGS MANAGEMENT
-// ============================================
-
-// Load Logs from API
-async function loadLogs(logType = null) {
-    try {
-        let url = '/api/admin/logs?limit=500';
-        if (logType) {
-            url += `&log_type=${encodeURIComponent(logType)}`;
-        }
-        
-        const response = await authenticatedFetch(url);
-        
-        if (!response.ok) {
-            // Try to get error message from response
-            let errorMessage = `HTTP ${response.status}: ${response.statusText}`;
-            try {
-                const contentType = response.headers.get('content-type');
-                if (contentType && contentType.includes('application/json')) {
-                    const errorData = await response.json();
-                    errorMessage = errorData.detail || errorData.error || errorData.message || errorMessage;
-                } else {
-                    const text = await response.text();
-                    if (text) {
-                        errorMessage = `${errorMessage} - ${text.substring(0, 100)}`;
-                    }
-                }
-            } catch (parseError) {
-                console.warn('Could not parse error response:', parseError);
-            }
-            
-            console.error('Failed to fetch logs:', errorMessage);
-            throw new Error(errorMessage);
-        }
-        
-        const logs = await response.json();
-        
-        // Store logs for search
-        currentLogs = logs;
-        
-        // Render logs
-        renderLogs(logs);
-    } catch (error) {
-        console.error('Error loading logs:', error);
-        const errorMsg = error.message || 'Failed to load logs from server.';
-        showNotification(errorMsg, 'error');
-    }
-}
-
-// Render Logs
-function renderLogs(logs) {
-    const tbody = document.getElementById('logsTableBody');
-    if (!tbody) return;
-    
-    if (logs.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 2rem;">No logs found.</td></tr>';
-        return;
-    }
-    
-    tbody.innerHTML = logs.map(log => {
-        const date = new Date(log.created_at).toLocaleDateString('en-US', {
-            year: 'numeric',
-            month: 'short',
-            day: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit',
-            second: '2-digit'
-        });
-        
-        // Determine log type badge color
-        let typeClass = 'log-type-info';
-        if (log.log_type === 'error') {
-            typeClass = 'log-type-error';
-        } else if (log.log_type === 'warning') {
-            typeClass = 'log-type-warning';
-        } else if (log.log_type === 'action') {
-            typeClass = 'log-type-action';
-        }
-        
-        const description = log.description 
-            ? (log.description.length > 100 
-                ? log.description.substring(0, 100) + '...' 
-                : log.description)
-            : '<span style="color: var(--text-light); font-style: italic;">No description</span>';
-        
-        return `
-            <tr>
-                <td>
-                    <span class="log-type-badge ${typeClass}">${escapeHtml(log.log_type || 'info')}</span>
-                </td>
-                <td><strong>${escapeHtml(log.action)}</strong></td>
-                <td>${description}</td>
-                <td>${log.user_email ? `<a href="mailto:${escapeHtml(log.user_email)}" style="color: var(--primary-color); text-decoration: none;">${escapeHtml(log.user_email)}</a>` : '<span style="color: var(--text-light);">-</span>'}</td>
-                <td>${log.ip_address || '<span style="color: var(--text-light);">-</span>'}</td>
-                <td>${date}</td>
-            </tr>
-        `;
-    }).join('');
-}
-
-// Log Search
-function handleLogSearch(e) {
-    const searchTerm = e.target.value.toLowerCase();
-    const logTypeFilter = document.getElementById('logTypeFilter');
-    const selectedType = logTypeFilter ? logTypeFilter.value : '';
-    
-    let filtered = currentLogs;
-    
-    // Filter by type if selected
-    if (selectedType) {
-        filtered = filtered.filter(log => log.log_type === selectedType);
-    }
-    
-    // Filter by search term
-    if (searchTerm) {
-        filtered = filtered.filter(log => 
-            log.action.toLowerCase().includes(searchTerm) ||
-            (log.description && log.description.toLowerCase().includes(searchTerm)) ||
-            (log.user_email && log.user_email.toLowerCase().includes(searchTerm)) ||
-            (log.ip_address && log.ip_address.toLowerCase().includes(searchTerm))
-        );
-    }
-    
-    renderLogs(filtered);
-}
-
-// Log Filter by Type
-function handleLogFilter(e) {
-    const selectedType = e.target.value;
-    const logSearch = document.getElementById('logSearch');
-    const searchTerm = logSearch ? logSearch.value.toLowerCase() : '';
-    
-    let filtered = currentLogs;
-    
-    // Filter by type if selected
-    if (selectedType) {
-        filtered = filtered.filter(log => log.log_type === selectedType);
-    }
-    
-    // Apply search term if exists
-    if (searchTerm) {
-        filtered = filtered.filter(log => 
-            log.action.toLowerCase().includes(searchTerm) ||
-            (log.description && log.description.toLowerCase().includes(searchTerm)) ||
-            (log.user_email && log.user_email.toLowerCase().includes(searchTerm)) ||
-            (log.ip_address && log.ip_address.toLowerCase().includes(searchTerm))
-        );
-    }
-    
-    renderLogs(filtered);
-}
-
-// ============================================
 // STAT CARD CLICK TRACKING
 // ============================================
 
@@ -5494,12 +6522,6 @@ async function refreshVisitorInfoAndLogs() {
     const visitorSearch = document.getElementById('visitorSearch');
     const isVisitorSearchActive = visitorSearch && visitorSearch.value.trim() !== '';
     
-    // Check if logs section is filtered/searched
-    const logSearch = document.getElementById('logSearch');
-    const logTypeFilter = document.getElementById('logTypeFilter');
-    const isLogSearchActive = (logSearch && logSearch.value.trim() !== '') || 
-                              (logTypeFilter && logTypeFilter.value !== '');
-    
     // Only refresh if not actively searching/filtering
     // This prevents interrupting user interactions
     if (!isVisitorSearchActive) {
@@ -5508,17 +6530,6 @@ async function refreshVisitorInfoAndLogs() {
         } catch (error) {
             // Silently fail - don't show errors for background refresh
             console.debug('Background refresh of visitor info failed:', error);
-        }
-    }
-    
-    if (!isLogSearchActive) {
-        try {
-            // Get current log type filter value if any
-            const currentLogType = logTypeFilter ? logTypeFilter.value : null;
-            await loadLogs(currentLogType || null);
-        } catch (error) {
-            // Silently fail - don't show errors for background refresh
-            console.debug('Background refresh of logs failed:', error);
         }
     }
     

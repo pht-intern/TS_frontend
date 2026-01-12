@@ -1,0 +1,1716 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <title>Settings - Tirumakudalu Properties</title>
+    <link rel="icon" type="image/png" href="/images/TirumakudaluProperties_Logo-2048x1858.png">
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* Hide all content by default - only show after authentication check passes */
+        body {
+            display: none !important;
+            visibility: hidden !important;
+        }
+        body.authenticated {
+            display: block !important;
+            visibility: visible !important;
+        }
+    </style>
+</head>
+<body>
+    <!-- Authentication Check - Must run immediately before any content -->
+    <script>
+        (function() {
+            // Clear any stale or invalid authentication data first
+            function clearAllAuthData() {
+                sessionStorage.removeItem('dashboard_authenticated');
+                sessionStorage.removeItem('isAuthenticated');
+                sessionStorage.removeItem('user');
+                localStorage.removeItem('dashboard_authenticated');
+                localStorage.removeItem('isAuthenticated');
+                localStorage.removeItem('user');
+            }
+            
+            // Check authentication immediately before page renders
+            const isAuthenticated = localStorage.getItem('dashboard_authenticated') === 'true' ||
+                                   sessionStorage.getItem('dashboard_authenticated') === 'true';
+            const userStr = localStorage.getItem('user') || sessionStorage.getItem('user');
+            
+            // Validate user data exists and is valid JSON
+            let user = null;
+            if (userStr) {
+                try {
+                    user = JSON.parse(userStr);
+                    // Ensure user has required fields (email is mandatory) and has admin role
+                    if (!user || !user.email || typeof user.email !== 'string' || user.email.trim() === '' || user.role !== 'admin') {
+                        user = null;
+                    }
+                } catch (e) {
+                    // Invalid JSON, treat as not authenticated
+                    user = null;
+                }
+            }
+            
+            // If not authenticated or user data is invalid, redirect immediately
+            if (!isAuthenticated || !user) {
+                // Clear all authentication data
+                clearAllAuthData();
+                // Redirect to index page immediately
+                window.location.replace('/index.html');
+                // Prevent page from rendering
+                document.body.innerHTML = '<div style="display: flex; justify-content: center; align-items: center; height: 100vh; font-family: Inter, sans-serif;"><p>Redirecting to login...</p></div>';
+                // Stop script execution
+                throw new Error('Unauthorized access - redirecting to login');
+            }
+            
+            // Authentication passed - show the page
+            document.body.classList.add('authenticated');
+        })();
+    </script>
+    
+    <!-- Settings Page (shown when authenticated) -->
+    <div class="dashboard-container" id="settingsContainer">
+        <!-- Dashboard Header -->
+        <header class="dashboard-header">
+            <div class="dashboard-header-content">
+                <div class="dashboard-header-left">
+                    <a href="/" class="dashboard-logo-link">
+                        <div class="logo-graphic">
+                            <img src="/images/TirumakudaluProperties_Logo-2048x1858.png" alt="Tirumakudalu Properties Logo" class="logo-img">
+                        </div>
+                    </a>
+                    <!-- Dashboard Navigation -->
+                    <nav class="dashboard-nav">
+                        <ul class="dashboard-nav-menu">
+                            <li><a href="/index.html">HOME</a></li>
+                            <li><a href="/properties.html">PROPERTIES</a></li>
+                            <li><a href="/dashboard.html">DASHBOARD</a></li>
+                        </ul>
+                    </nav>
+                </div>
+                <div class="dashboard-header-right">
+                    <!-- User Profile Dropdown -->
+                    <div class="dashboard-user-profile" id="dashboardUserProfile">
+                        <button class="dashboard-profile-btn" id="dashboardProfileBtn">
+                            <div class="dashboard-profile-avatar">
+                                <i class="fas fa-user"></i>
+                            </div>
+                            <span class="dashboard-profile-name" id="dashboardProfileName">Admin</span>
+                            <i class="fas fa-chevron-down dashboard-profile-chevron"></i>
+                        </button>
+                        <div class="dashboard-profile-dropdown" id="dashboardProfileDropdown">
+                            <div class="dashboard-profile-header">
+                                <div class="dashboard-profile-avatar-large">
+                                    <i class="fas fa-user"></i>
+                                </div>
+                                <div class="dashboard-profile-info">
+                                    <div class="dashboard-profile-fullname" id="dashboardProfileFullname">Admin User</div>
+                                    <div class="dashboard-profile-email" id="dashboardProfileEmail">admin@example.com</div>
+                                </div>
+                            </div>
+                            <div class="dashboard-profile-divider"></div>
+                            <a href="/settings.html" class="dashboard-profile-item">
+                                <i class="fas fa-cog"></i>
+                                <span>Settings</span>
+                            </a>
+                            <a href="/app-metrics.html" class="dashboard-profile-item" id="appMetricsLink">
+                                <i class="fas fa-chart-line"></i>
+                                <span>App Metrics</span>
+                            </a>
+                            <a href="/activity-logs.html" class="dashboard-profile-item">
+                                <i class="fas fa-history"></i>
+                                <span>Activity Logs</span>
+                            </a>
+                            <button class="dashboard-profile-item dashboard-profile-logout" id="dashboardLogout">
+                                <i class="fas fa-sign-out-alt"></i>
+                                <span>Logout</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Settings Main Content -->
+        <main class="dashboard-main">
+            <div class="dashboard-content">
+                <!-- Page Header -->
+                <div class="dashboard-welcome">
+                    <h1 class="dashboard-welcome-title">
+                        <i class="fas fa-cog"></i>
+                        Settings
+                    </h1>
+                    <p class="dashboard-welcome-subtitle">Manage city activation, categories, and unit types</p>
+                </div>
+
+                <!-- City Activation Section -->
+                <div class="dashboard-properties-section">
+                    <div class="dashboard-section-header">
+                        <h2>
+                            <i class="fas fa-city" style="margin-right: 0.5rem;"></i>
+                            City Activation
+                        </h2>
+                        <div style="display: flex; gap: 1rem; align-items: center;">
+                            <div class="dashboard-search-box">
+                                <i class="fas fa-search"></i>
+                                <input type="text" id="citySearch" placeholder="Search cities...">
+                            </div>
+                            <button class="dashboard-btn-secondary" id="selectAllCitiesBtn">
+                                <i class="fas fa-check-square"></i>
+                                Select All
+                            </button>
+                            <button class="dashboard-btn-secondary" id="deselectAllCitiesBtn">
+                                <i class="fas fa-square"></i>
+                                Deselect All
+                            </button>
+                            <button class="dashboard-btn-primary" id="saveCitiesBtn">
+                                <i class="fas fa-save"></i>
+                                Save Changes
+                            </button>
+                        </div>
+                    </div>
+                    <div class="dashboard-properties-table-container" style="max-height: 600px; overflow-y: auto;">
+                        <table class="dashboard-properties-table">
+                            <thead>
+                                <tr>
+                                    <th style="width: 50px;">
+                                        <input type="checkbox" id="selectAllCitiesCheckbox" style="width: auto;">
+                                    </th>
+                                    <th>City Name</th>
+                                    <th>State</th>
+                                    <th>Status</th>
+                                    <th>Properties Count</th>
+                                </tr>
+                            </thead>
+                            <tbody id="citiesTableBody">
+                                <!-- Cities will be loaded here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Category Section -->
+                <div class="dashboard-properties-section">
+                    <div class="dashboard-section-header">
+                        <h2>
+                            <i class="fas fa-tags" style="margin-right: 0.5rem;"></i>
+                            Category Settings
+                        </h2>
+                        <button class="dashboard-btn-primary" id="addCategoryBtn">
+                            <i class="fas fa-plus"></i>
+                            Add Category
+                        </button>
+                    </div>
+                    <div class="dashboard-properties-table-container">
+                        <table class="dashboard-properties-table">
+                            <thead>
+                                <tr>
+                                    <th>Category Name</th>
+                                    <th>Display Name</th>
+                                    <th>Status</th>
+                                    <th>Properties Count</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="categoriesTableBody">
+                                <!-- Categories will be loaded here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Unit Type Section -->
+                <div class="dashboard-properties-section">
+                    <div class="dashboard-section-header">
+                        <h2>
+                            <i class="fas fa-home" style="margin-right: 0.5rem;"></i>
+                            Unit Type Settings
+                        </h2>
+                        <button class="dashboard-btn-primary" id="addUnitTypeBtn">
+                            <i class="fas fa-plus"></i>
+                            Add Unit Type
+                        </button>
+                    </div>
+                    <div class="dashboard-properties-table-container">
+                        <table class="dashboard-properties-table">
+                            <thead>
+                                <tr>
+                                    <th>Unit Type</th>
+                                    <th>Display Name</th>
+                                    <th>Bedrooms</th>
+                                    <th>Status</th>
+                                    <th>Properties Count</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="unitTypesTableBody">
+                                <!-- Unit types will be loaded here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Notifications will be dynamically created -->
+
+    <!-- Add/Edit Category Modal -->
+    <div class="dashboard-modal" id="categoryModal">
+        <div class="dashboard-modal-overlay" id="categoryModalOverlay"></div>
+        <div class="dashboard-modal-content">
+            <div class="dashboard-modal-header">
+                <h2 id="categoryModalTitle">Add Category</h2>
+                <button class="dashboard-modal-close" id="categoryModalClose">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <form class="dashboard-property-form" id="categoryForm">
+                <input type="hidden" id="categoryId" name="id">
+                <div class="dashboard-form-group">
+                    <label for="categoryName">
+                        <i class="fas fa-tag"></i>
+                        Category Name *
+                    </label>
+                    <input type="text" id="categoryName" name="name" placeholder="e.g., residential" required>
+                </div>
+                <div class="dashboard-form-group">
+                    <label for="categoryDisplayName">
+                        <i class="fas fa-eye"></i>
+                        Display Name *
+                    </label>
+                    <input type="text" id="categoryDisplayName" name="display_name" placeholder="e.g., Residential" required>
+                </div>
+                <div class="dashboard-form-group">
+                    <label style="display: flex; align-items: center; gap: 0.5rem;">
+                        <input type="checkbox" id="categoryIsActive" name="is_active" style="width: auto;" checked>
+                        <span>Active</span>
+                    </label>
+                </div>
+                <div class="dashboard-modal-actions">
+                    <button type="button" class="dashboard-btn-secondary" id="cancelCategoryBtn">Cancel</button>
+                    <button type="submit" class="dashboard-btn-primary">
+                        <i class="fas fa-save"></i>
+                        Save Category
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Add/Edit Unit Type Modal -->
+    <div class="dashboard-modal" id="unitTypeModal">
+        <div class="dashboard-modal-overlay" id="unitTypeModalOverlay"></div>
+        <div class="dashboard-modal-content">
+            <div class="dashboard-modal-header">
+                <h2 id="unitTypeModalTitle">Add Unit Type</h2>
+                <button class="dashboard-modal-close" id="unitTypeModalClose">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <form class="dashboard-property-form" id="unitTypeForm">
+                <input type="hidden" id="unitTypeId" name="id">
+                <div class="dashboard-form-group">
+                    <label for="unitTypeName">
+                        <i class="fas fa-home"></i>
+                        Unit Type *
+                    </label>
+                    <input type="text" id="unitTypeName" name="name" placeholder="e.g., 1BHK" required>
+                </div>
+                <div class="dashboard-form-group">
+                    <label for="unitTypeDisplayName">
+                        <i class="fas fa-eye"></i>
+                        Display Name *
+                    </label>
+                    <input type="text" id="unitTypeDisplayName" name="display_name" placeholder="e.g., 1 BHK" required>
+                </div>
+                <div class="dashboard-form-group">
+                    <label for="unitTypeBedrooms">
+                        <i class="fas fa-bed"></i>
+                        Bedrooms *
+                    </label>
+                    <input type="number" id="unitTypeBedrooms" name="bedrooms" placeholder="e.g., 1" min="0" required>
+                </div>
+                <div class="dashboard-form-group">
+                    <label style="display: flex; align-items: center; gap: 0.5rem;">
+                        <input type="checkbox" id="unitTypeIsActive" name="is_active" style="width: auto;" checked>
+                        <span>Active</span>
+                    </label>
+                </div>
+                <div class="dashboard-modal-actions">
+                    <button type="button" class="dashboard-btn-secondary" id="cancelUnitTypeBtn">Cancel</button>
+                    <button type="submit" class="dashboard-btn-primary">
+                        <i class="fas fa-save"></i>
+                        Save Unit Type
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Suppress browser extension errors that are not related to our code
+        window.addEventListener('error', function(event) {
+            // Suppress common browser extension errors
+            if (event.message && (
+                event.message.includes('message channel closed') ||
+                event.message.includes('Extension context invalidated') ||
+                event.message.includes('Receiving end does not exist') ||
+                event.message.includes('asynchronous response') ||
+                event.message.includes('message channel closed before a response')
+            )) {
+                event.preventDefault();
+                event.stopPropagation();
+                return false;
+            }
+        }, true);
+        
+        // Suppress unhandled promise rejections from browser extensions
+        window.addEventListener('unhandledrejection', function(event) {
+            if (event.reason && typeof event.reason === 'object' && event.reason.message) {
+                const message = event.reason.message;
+                if (message.includes('message channel closed') ||
+                    message.includes('Extension context invalidated') ||
+                    message.includes('Receiving end does not exist') ||
+                    message.includes('asynchronous response') ||
+                    message.includes('message channel closed before a response')) {
+                    event.preventDefault();
+                    return false;
+                }
+            }
+            // Also check string errors
+            if (typeof event.reason === 'string' && (
+                event.reason.includes('message channel closed') ||
+                event.reason.includes('Extension context invalidated') ||
+                event.reason.includes('asynchronous response') ||
+                event.reason.includes('message channel closed before a response')
+            )) {
+                event.preventDefault();
+                return false;
+            }
+        });
+    </script>
+    <script src="/js/session-manager.js"></script>
+    <script>
+        // Settings Page JavaScript
+        (function() {
+            // Get user data
+            const userStr = localStorage.getItem('user') || sessionStorage.getItem('user');
+            let user = null;
+            if (userStr) {
+                try {
+                    user = JSON.parse(userStr);
+                    if (user && user.name) {
+                        document.getElementById('dashboardProfileName').textContent = user.name;
+                    }
+                    if (user && user.full_name) {
+                        document.getElementById('dashboardProfileFullname').textContent = user.full_name;
+                    }
+                    if (user && user.email) {
+                        document.getElementById('dashboardProfileEmail').textContent = user.email;
+                    }
+                } catch (e) {
+                    console.error('Error parsing user data:', e);
+                }
+            }
+
+            // Notification function (matching dashboard style)
+            function showNotification(message, type = 'success') {
+                const notification = document.createElement('div');
+                notification.className = `dashboard-notification ${type}`;
+                notification.textContent = message;
+                document.body.appendChild(notification);
+                
+                setTimeout(() => {
+                    notification.classList.add('show');
+                }, 10);
+                
+                setTimeout(() => {
+                    notification.classList.remove('show');
+                    setTimeout(() => notification.remove(), 300);
+                }, 3000);
+            }
+
+            // Get auth headers
+            function getAuthHeaders() {
+                const userStr = localStorage.getItem('user') || sessionStorage.getItem('user');
+                let user = null;
+                if (userStr) {
+                    try {
+                        user = JSON.parse(userStr);
+                    } catch (e) {
+                        console.error('Error parsing user data:', e);
+                    }
+                }
+                return {
+                    'Content-Type': 'application/json',
+                    'X-Admin-Email': user ? user.email : ''
+                };
+            }
+
+            // Comprehensive list of Indian cities with states
+            const indianCities = [
+                // Karnataka
+                { name: 'Bengaluru', state: 'Karnataka' },
+                { name: 'Mysuru', state: 'Karnataka' },
+                { name: 'Mangaluru', state: 'Karnataka' },
+                { name: 'Hubballi', state: 'Karnataka' },
+                { name: 'Belagavi', state: 'Karnataka' },
+                { name: 'Kalaburagi', state: 'Karnataka' },
+                { name: 'Davangere', state: 'Karnataka' },
+                { name: 'Vijayapura', state: 'Karnataka' },
+                { name: 'Ballari', state: 'Karnataka' },
+                { name: 'Tumakuru', state: 'Karnataka' },
+                { name: 'Shivamogga', state: 'Karnataka' },
+                { name: 'Raichur', state: 'Karnataka' },
+                { name: 'Bidar', state: 'Karnataka' },
+                { name: 'Hospet', state: 'Karnataka' },
+                { name: 'Udupi', state: 'Karnataka' },
+                { name: 'Chitradurga', state: 'Karnataka' },
+                { name: 'Gadag', state: 'Karnataka' },
+                { name: 'Hassan', state: 'Karnataka' },
+                { name: 'Mandya', state: 'Karnataka' },
+                { name: 'Chikkamagaluru', state: 'Karnataka' },
+                { name: 'Kolar', state: 'Karnataka' },
+                { name: 'Bagalkot', state: 'Karnataka' },
+                { name: 'Koppal', state: 'Karnataka' },
+                { name: 'Yadgir', state: 'Karnataka' },
+                { name: 'Chamrajnagar', state: 'Karnataka' },
+                { name: 'Kodagu', state: 'Karnataka' },
+                { name: 'Ramanagara', state: 'Karnataka' },
+                { name: 'Vijayanagara', state: 'Karnataka' },
+                // Maharashtra
+                { name: 'Mumbai', state: 'Maharashtra' },
+                { name: 'Pune', state: 'Maharashtra' },
+                { name: 'Nagpur', state: 'Maharashtra' },
+                { name: 'Nashik', state: 'Maharashtra' },
+                { name: 'Aurangabad', state: 'Maharashtra' },
+                { name: 'Solapur', state: 'Maharashtra' },
+                { name: 'Thane', state: 'Maharashtra' },
+                { name: 'Pimpri-Chinchwad', state: 'Maharashtra' },
+                { name: 'Kalyan-Dombivli', state: 'Maharashtra' },
+                { name: 'Vasai-Virar', state: 'Maharashtra' },
+                { name: 'Navi Mumbai', state: 'Maharashtra' },
+                { name: 'Amravati', state: 'Maharashtra' },
+                { name: 'Kolhapur', state: 'Maharashtra' },
+                { name: 'Sangli', state: 'Maharashtra' },
+                { name: 'Jalgaon', state: 'Maharashtra' },
+                { name: 'Akola', state: 'Maharashtra' },
+                { name: 'Latur', state: 'Maharashtra' },
+                { name: 'Dhule', state: 'Maharashtra' },
+                { name: 'Ahmednagar', state: 'Maharashtra' },
+                { name: 'Ichalkaranji', state: 'Maharashtra' },
+                { name: 'Nanded', state: 'Maharashtra' },
+                { name: 'Satara', state: 'Maharashtra' },
+                { name: 'Beed', state: 'Maharashtra' },
+                { name: 'Yavatmal', state: 'Maharashtra' },
+                { name: 'Kamptee', state: 'Maharashtra' },
+                { name: 'Gondia', state: 'Maharashtra' },
+                { name: 'Barshi', state: 'Maharashtra' },
+                { name: 'Achalpur', state: 'Maharashtra' },
+                { name: 'Osmanabad', state: 'Maharashtra' },
+                { name: 'Nandurbar', state: 'Maharashtra' },
+                { name: 'Wardha', state: 'Maharashtra' },
+                { name: 'Udgir', state: 'Maharashtra' },
+                { name: 'Hinganghat', state: 'Maharashtra' },
+                // Tamil Nadu
+                { name: 'Chennai', state: 'Tamil Nadu' },
+                { name: 'Coimbatore', state: 'Tamil Nadu' },
+                { name: 'Madurai', state: 'Tamil Nadu' },
+                { name: 'Tiruchirappalli', state: 'Tamil Nadu' },
+                { name: 'Salem', state: 'Tamil Nadu' },
+                { name: 'Tirunelveli', state: 'Tamil Nadu' },
+                { name: 'Erode', state: 'Tamil Nadu' },
+                { name: 'Vellore', state: 'Tamil Nadu' },
+                { name: 'Dindigul', state: 'Tamil Nadu' },
+                { name: 'Thanjavur', state: 'Tamil Nadu' },
+                { name: 'Tuticorin', state: 'Tamil Nadu' },
+                { name: 'Hosur', state: 'Tamil Nadu' },
+                { name: 'Nagercoil', state: 'Tamil Nadu' },
+                { name: 'Kanchipuram', state: 'Tamil Nadu' },
+                { name: 'Karaikudi', state: 'Tamil Nadu' },
+                { name: 'Neyveli', state: 'Tamil Nadu' },
+                { name: 'Cuddalore', state: 'Tamil Nadu' },
+                { name: 'Sivakasi', state: 'Tamil Nadu' },
+                { name: 'Kumbakonam', state: 'Tamil Nadu' },
+                { name: 'Ooty', state: 'Tamil Nadu' },
+                { name: 'Pollachi', state: 'Tamil Nadu' },
+                { name: 'Rajapalayam', state: 'Tamil Nadu' },
+                { name: 'Sivaganga', state: 'Tamil Nadu' },
+                { name: 'Pudukkottai', state: 'Tamil Nadu' },
+                { name: 'Nagapattinam', state: 'Tamil Nadu' },
+                { name: 'Gudiyatham', state: 'Tamil Nadu' },
+                { name: 'Vaniyambadi', state: 'Tamil Nadu' },
+                { name: 'Theni', state: 'Tamil Nadu' },
+                { name: 'Valparai', state: 'Tamil Nadu' },
+                // Delhi NCR
+                { name: 'New Delhi', state: 'Delhi' },
+                { name: 'Delhi', state: 'Delhi' },
+                { name: 'Gurgaon', state: 'Haryana' },
+                { name: 'Gurugram', state: 'Haryana' },
+                { name: 'Noida', state: 'Uttar Pradesh' },
+                { name: 'Faridabad', state: 'Haryana' },
+                { name: 'Ghaziabad', state: 'Uttar Pradesh' },
+                { name: 'Greater Noida', state: 'Uttar Pradesh' },
+                { name: 'Sahibabad', state: 'Uttar Pradesh' },
+                { name: 'Meerut', state: 'Uttar Pradesh' },
+                { name: 'Bulandshahr', state: 'Uttar Pradesh' },
+                // Telangana
+                { name: 'Hyderabad', state: 'Telangana' },
+                { name: 'Warangal', state: 'Telangana' },
+                { name: 'Nizamabad', state: 'Telangana' },
+                { name: 'Karimnagar', state: 'Telangana' },
+                { name: 'Ramagundam', state: 'Telangana' },
+                { name: 'Khammam', state: 'Telangana' },
+                { name: 'Mahbubnagar', state: 'Telangana' },
+                { name: 'Mancherial', state: 'Telangana' },
+                { name: 'Adilabad', state: 'Telangana' },
+                { name: 'Siddipet', state: 'Telangana' },
+                { name: 'Nalgonda', state: 'Telangana' },
+                { name: 'Suryapet', state: 'Telangana' },
+                { name: 'Miryalaguda', state: 'Telangana' },
+                { name: 'Jagtial', state: 'Telangana' },
+                { name: 'Peddapalli', state: 'Telangana' },
+                { name: 'Bhongir', state: 'Telangana' },
+                { name: 'Medak', state: 'Telangana' },
+                { name: 'Sangareddy', state: 'Telangana' },
+                // Andhra Pradesh
+                { name: 'Visakhapatnam', state: 'Andhra Pradesh' },
+                { name: 'Vijayawada', state: 'Andhra Pradesh' },
+                { name: 'Guntur', state: 'Andhra Pradesh' },
+                { name: 'Nellore', state: 'Andhra Pradesh' },
+                { name: 'Kurnool', state: 'Andhra Pradesh' },
+                { name: 'Rajahmundry', state: 'Andhra Pradesh' },
+                { name: 'Kakinada', state: 'Andhra Pradesh' },
+                { name: 'Tirupati', state: 'Andhra Pradesh' },
+                { name: 'Anantapur', state: 'Andhra Pradesh' },
+                { name: 'Kadapa', state: 'Andhra Pradesh' },
+                { name: 'Ongole', state: 'Andhra Pradesh' },
+                { name: 'Eluru', state: 'Andhra Pradesh' },
+                { name: 'Chittoor', state: 'Andhra Pradesh' },
+                { name: 'Machilipatnam', state: 'Andhra Pradesh' },
+                { name: 'Tenali', state: 'Andhra Pradesh' },
+                { name: 'Proddatur', state: 'Andhra Pradesh' },
+                { name: 'Chilakaluripet', state: 'Andhra Pradesh' },
+                { name: 'Bhimavaram', state: 'Andhra Pradesh' },
+                { name: 'Narasaraopet', state: 'Andhra Pradesh' },
+                { name: 'Srikakulam', state: 'Andhra Pradesh' },
+                { name: 'Gudivada', state: 'Andhra Pradesh' },
+                { name: 'Vizianagaram', state: 'Andhra Pradesh' },
+                // Gujarat
+                { name: 'Ahmedabad', state: 'Gujarat' },
+                { name: 'Surat', state: 'Gujarat' },
+                { name: 'Vadodara', state: 'Gujarat' },
+                { name: 'Rajkot', state: 'Gujarat' },
+                { name: 'Bhavnagar', state: 'Gujarat' },
+                { name: 'Jamnagar', state: 'Gujarat' },
+                { name: 'Gandhinagar', state: 'Gujarat' },
+                { name: 'Anand', state: 'Gujarat' },
+                { name: 'Bharuch', state: 'Gujarat' },
+                { name: 'Junagadh', state: 'Gujarat' },
+                { name: 'Mehsana', state: 'Gujarat' },
+                { name: 'Nadiad', state: 'Gujarat' },
+                { name: 'Surendranagar', state: 'Gujarat' },
+                { name: 'Gandhidham', state: 'Gujarat' },
+                { name: 'Veraval', state: 'Gujarat' },
+                { name: 'Navsari', state: 'Gujarat' },
+                { name: 'Morbi', state: 'Gujarat' },
+                { name: 'Palanpur', state: 'Gujarat' },
+                { name: 'Patan', state: 'Gujarat' },
+                { name: 'Valsad', state: 'Gujarat' },
+                { name: 'Bhuj', state: 'Gujarat' },
+                { name: 'Porbandar', state: 'Gujarat' },
+                // West Bengal
+                { name: 'Kolkata', state: 'West Bengal' },
+                { name: 'Howrah', state: 'West Bengal' },
+                { name: 'Durgapur', state: 'West Bengal' },
+                { name: 'Asansol', state: 'West Bengal' },
+                { name: 'Siliguri', state: 'West Bengal' },
+                { name: 'Bardhaman', state: 'West Bengal' },
+                { name: 'Malda', state: 'West Bengal' },
+                { name: 'Kharagpur', state: 'West Bengal' },
+                { name: 'Jalpaiguri', state: 'West Bengal' },
+                { name: 'Darjeeling', state: 'West Bengal' },
+                { name: 'Krishnanagar', state: 'West Bengal' },
+                { name: 'Berhampore', state: 'West Bengal' },
+                { name: 'Raiganj', state: 'West Bengal' },
+                { name: 'Haldia', state: 'West Bengal' },
+                { name: 'Kalyani', state: 'West Bengal' },
+                { name: 'Baharampur', state: 'West Bengal' },
+                { name: 'Santipur', state: 'West Bengal' },
+                { name: 'Balurghat', state: 'West Bengal' },
+                { name: 'Habra', state: 'West Bengal' },
+                { name: 'Kanchrapara', state: 'West Bengal' },
+                // Rajasthan
+                { name: 'Jaipur', state: 'Rajasthan' },
+                { name: 'Jodhpur', state: 'Rajasthan' },
+                { name: 'Kota', state: 'Rajasthan' },
+                { name: 'Bikaner', state: 'Rajasthan' },
+                { name: 'Ajmer', state: 'Rajasthan' },
+                { name: 'Udaipur', state: 'Rajasthan' },
+                { name: 'Bhilwara', state: 'Rajasthan' },
+                { name: 'Alwar', state: 'Rajasthan' },
+                { name: 'Bharatpur', state: 'Rajasthan' },
+                { name: 'Sikar', state: 'Rajasthan' },
+                { name: 'Pali', state: 'Rajasthan' },
+                { name: 'Tonk', state: 'Rajasthan' },
+                { name: 'Sri Ganganagar', state: 'Rajasthan' },
+                { name: 'Hanumangarh', state: 'Rajasthan' },
+                { name: 'Beawar', state: 'Rajasthan' },
+                { name: 'Chittorgarh', state: 'Rajasthan' },
+                { name: 'Banswara', state: 'Rajasthan' },
+                { name: 'Dungarpur', state: 'Rajasthan' },
+                { name: 'Jhunjhunu', state: 'Rajasthan' },
+                { name: 'Churu', state: 'Rajasthan' },
+                { name: 'Nagaur', state: 'Rajasthan' },
+                { name: 'Barmer', state: 'Rajasthan' },
+                // Uttar Pradesh
+                { name: 'Lucknow', state: 'Uttar Pradesh' },
+                { name: 'Kanpur', state: 'Uttar Pradesh' },
+                { name: 'Agra', state: 'Uttar Pradesh' },
+                { name: 'Varanasi', state: 'Uttar Pradesh' },
+                { name: 'Allahabad', state: 'Uttar Pradesh' },
+                { name: 'Prayagraj', state: 'Uttar Pradesh' },
+                { name: 'Meerut', state: 'Uttar Pradesh' },
+                { name: 'Bareilly', state: 'Uttar Pradesh' },
+                { name: 'Aligarh', state: 'Uttar Pradesh' },
+                { name: 'Moradabad', state: 'Uttar Pradesh' },
+                { name: 'Saharanpur', state: 'Uttar Pradesh' },
+                { name: 'Gorakhpur', state: 'Uttar Pradesh' },
+                { name: 'Faizabad', state: 'Uttar Pradesh' },
+                { name: 'Ayodhya', state: 'Uttar Pradesh' },
+                { name: 'Jhansi', state: 'Uttar Pradesh' },
+                { name: 'Muzaffarnagar', state: 'Uttar Pradesh' },
+                { name: 'Mathura', state: 'Uttar Pradesh' },
+                { name: 'Firozabad', state: 'Uttar Pradesh' },
+                { name: 'Shahjahanpur', state: 'Uttar Pradesh' },
+                { name: 'Rampur', state: 'Uttar Pradesh' },
+                { name: 'Modinagar', state: 'Uttar Pradesh' },
+                { name: 'Hapur', state: 'Uttar Pradesh' },
+                { name: 'Etawah', state: 'Uttar Pradesh' },
+                { name: 'Sambhal', state: 'Uttar Pradesh' },
+                { name: 'Orai', state: 'Uttar Pradesh' },
+                { name: 'Bijnor', state: 'Uttar Pradesh' },
+                { name: 'Sitapur', state: 'Uttar Pradesh' },
+                { name: 'Budaun', state: 'Uttar Pradesh' },
+                { name: 'Pilibhit', state: 'Uttar Pradesh' },
+                { name: 'Lakhimpur', state: 'Uttar Pradesh' },
+                { name: 'Hardoi', state: 'Uttar Pradesh' },
+                { name: 'Unnao', state: 'Uttar Pradesh' },
+                { name: 'Raebareli', state: 'Uttar Pradesh' },
+                { name: 'Sultanpur', state: 'Uttar Pradesh' },
+                { name: 'Bahraich', state: 'Uttar Pradesh' },
+                { name: 'Shamli', state: 'Uttar Pradesh' },
+                // Kerala
+                { name: 'Kochi', state: 'Kerala' },
+                { name: 'Thiruvananthapuram', state: 'Kerala' },
+                { name: 'Kozhikode', state: 'Kerala' },
+                { name: 'Thrissur', state: 'Kerala' },
+                { name: 'Kollam', state: 'Kerala' },
+                { name: 'Kannur', state: 'Kerala' },
+                { name: 'Alappuzha', state: 'Kerala' },
+                { name: 'Kottayam', state: 'Kerala' },
+                { name: 'Palakkad', state: 'Kerala' },
+                { name: 'Malappuram', state: 'Kerala' },
+                { name: 'Manjeri', state: 'Kerala' },
+                { name: 'Thalassery', state: 'Kerala' },
+                { name: 'Ponnani', state: 'Kerala' },
+                { name: 'Vatakara', state: 'Kerala' },
+                { name: 'Kanhangad', state: 'Kerala' },
+                { name: 'Koyilandy', state: 'Kerala' },
+                { name: 'Neyyattinkara', state: 'Kerala' },
+                { name: 'Kayamkulam', state: 'Kerala' },
+                { name: 'Nedumangad', state: 'Kerala' },
+                { name: 'Kunnamkulam', state: 'Kerala' },
+                // Madhya Pradesh
+                { name: 'Bhopal', state: 'Madhya Pradesh' },
+                { name: 'Indore', state: 'Madhya Pradesh' },
+                { name: 'Gwalior', state: 'Madhya Pradesh' },
+                { name: 'Jabalpur', state: 'Madhya Pradesh' },
+                { name: 'Ujjain', state: 'Madhya Pradesh' },
+                { name: 'Sagar', state: 'Madhya Pradesh' },
+                { name: 'Ratlam', state: 'Madhya Pradesh' },
+                { name: 'Satna', state: 'Madhya Pradesh' },
+                { name: 'Rewa', state: 'Madhya Pradesh' },
+                { name: 'Burhanpur', state: 'Madhya Pradesh' },
+                { name: 'Dewas', state: 'Madhya Pradesh' },
+                { name: 'Mandsaur', state: 'Madhya Pradesh' },
+                { name: 'Neemuch', state: 'Madhya Pradesh' },
+                { name: 'Chhindwara', state: 'Madhya Pradesh' },
+                { name: 'Hoshangabad', state: 'Madhya Pradesh' },
+                { name: 'Katni', state: 'Madhya Pradesh' },
+                { name: 'Khandwa', state: 'Madhya Pradesh' },
+                { name: 'Morena', state: 'Madhya Pradesh' },
+                { name: 'Bhind', state: 'Madhya Pradesh' },
+                { name: 'Guna', state: 'Madhya Pradesh' },
+                { name: 'Shivpuri', state: 'Madhya Pradesh' },
+                { name: 'Vidisha', state: 'Madhya Pradesh' },
+                { name: 'Chhatarpur', state: 'Madhya Pradesh' },
+                { name: 'Damoh', state: 'Madhya Pradesh' },
+                { name: 'Sehore', state: 'Madhya Pradesh' },
+                // Punjab
+                { name: 'Ludhiana', state: 'Punjab' },
+                { name: 'Amritsar', state: 'Punjab' },
+                { name: 'Jalandhar', state: 'Punjab' },
+                { name: 'Patiala', state: 'Punjab' },
+                { name: 'Bathinda', state: 'Punjab' },
+                { name: 'Pathankot', state: 'Punjab' },
+                { name: 'Hoshiarpur', state: 'Punjab' },
+                { name: 'Mohali', state: 'Punjab' },
+                { name: 'SAS Nagar', state: 'Punjab' },
+                { name: 'Moga', state: 'Punjab' },
+                { name: 'Firozpur', state: 'Punjab' },
+                { name: 'Batala', state: 'Punjab' },
+                { name: 'Abohar', state: 'Punjab' },
+                { name: 'Malerkotla', state: 'Punjab' },
+                { name: 'Khanna', state: 'Punjab' },
+                { name: 'Muktsar', state: 'Punjab' },
+                { name: 'Barnala', state: 'Punjab' },
+                { name: 'Rajpura', state: 'Punjab' },
+                { name: 'Sangrur', state: 'Punjab' },
+                { name: 'Fazilka', state: 'Punjab' },
+                { name: 'Gurdaspur', state: 'Punjab' },
+                { name: 'Faridkot', state: 'Punjab' },
+                // Haryana
+                { name: 'Chandigarh', state: 'Chandigarh' },
+                { name: 'Panipat', state: 'Haryana' },
+                { name: 'Karnal', state: 'Haryana' },
+                { name: 'Hisar', state: 'Haryana' },
+                { name: 'Rohtak', state: 'Haryana' },
+                { name: 'Ambala', state: 'Haryana' },
+                { name: 'Yamunanagar', state: 'Haryana' },
+                { name: 'Sonipat', state: 'Haryana' },
+                { name: 'Bhiwani', state: 'Haryana' },
+                { name: 'Sirsa', state: 'Haryana' },
+                { name: 'Palwal', state: 'Haryana' },
+                { name: 'Rewari', state: 'Haryana' },
+                { name: 'Jind', state: 'Haryana' },
+                { name: 'Kaithal', state: 'Haryana' },
+                { name: 'Bahadurgarh', state: 'Haryana' },
+                { name: 'Jhajjar', state: 'Haryana' },
+                { name: 'Narnaul', state: 'Haryana' },
+                { name: 'Fatehabad', state: 'Haryana' },
+                { name: 'Kurukshetra', state: 'Haryana' },
+                { name: 'Mahendragarh', state: 'Haryana' },
+                { name: 'Nuh', state: 'Haryana' },
+                { name: 'Panchkula', state: 'Haryana' },
+                // Odisha
+                { name: 'Bhubaneswar', state: 'Odisha' },
+                { name: 'Cuttack', state: 'Odisha' },
+                { name: 'Rourkela', state: 'Odisha' },
+                { name: 'Berhampur', state: 'Odisha' },
+                { name: 'Sambalpur', state: 'Odisha' },
+                { name: 'Puri', state: 'Odisha' },
+                { name: 'Balasore', state: 'Odisha' },
+                { name: 'Bhadrak', state: 'Odisha' },
+                { name: 'Baripada', state: 'Odisha' },
+                { name: 'Jharsuguda', state: 'Odisha' },
+                { name: 'Brahmapur', state: 'Odisha' },
+                { name: 'Jajpur', state: 'Odisha' },
+                { name: 'Paradip', state: 'Odisha' },
+                { name: 'Angul', state: 'Odisha' },
+                { name: 'Bargarh', state: 'Odisha' },
+                { name: 'Dhenkanal', state: 'Odisha' },
+                { name: 'Kendujhar', state: 'Odisha' },
+                { name: 'Rayagada', state: 'Odisha' },
+                { name: 'Jagatsinghpur', state: 'Odisha' },
+                { name: 'Koraput', state: 'Odisha' },
+                { name: 'Phulbani', state: 'Odisha' },
+                { name: 'Sundargarh', state: 'Odisha' },
+                // Bihar
+                { name: 'Patna', state: 'Bihar' },
+                { name: 'Gaya', state: 'Bihar' },
+                { name: 'Bhagalpur', state: 'Bihar' },
+                { name: 'Muzaffarpur', state: 'Bihar' },
+                { name: 'Purnia', state: 'Bihar' },
+                { name: 'Darbhanga', state: 'Bihar' },
+                { name: 'Bihar Sharif', state: 'Bihar' },
+                { name: 'Arrah', state: 'Bihar' },
+                { name: 'Katihar', state: 'Bihar' },
+                { name: 'Munger', state: 'Bihar' },
+                { name: 'Chapra', state: 'Bihar' },
+                { name: 'Sasaram', state: 'Bihar' },
+                { name: 'Hajipur', state: 'Bihar' },
+                { name: 'Siwan', state: 'Bihar' },
+                { name: 'Motihari', state: 'Bihar' },
+                { name: 'Bettiah', state: 'Bihar' },
+                { name: 'Dehri', state: 'Bihar' },
+                { name: 'Jehanabad', state: 'Bihar' },
+                { name: 'Aurangabad', state: 'Bihar' },
+                { name: 'Buxar', state: 'Bihar' },
+                { name: 'Kishanganj', state: 'Bihar' },
+                { name: 'Jamalpur', state: 'Bihar' },
+                { name: 'Saharsa', state: 'Bihar' },
+                { name: 'Madhepura', state: 'Bihar' },
+                { name: 'Samastipur', state: 'Bihar' },
+                // Assam
+                { name: 'Guwahati', state: 'Assam' },
+                { name: 'Silchar', state: 'Assam' },
+                { name: 'Dibrugarh', state: 'Assam' },
+                { name: 'Jorhat', state: 'Assam' },
+                { name: 'Nagaon', state: 'Assam' },
+                { name: 'Tinsukia', state: 'Assam' },
+                { name: 'Tezpur', state: 'Assam' },
+                { name: 'Barpeta', state: 'Assam' },
+                { name: 'Sivasagar', state: 'Assam' },
+                { name: 'Goalpara', state: 'Assam' },
+                { name: 'Bongaigaon', state: 'Assam' },
+                { name: 'Dhubri', state: 'Assam' },
+                { name: 'Karimganj', state: 'Assam' },
+                { name: 'Hailakandi', state: 'Assam' },
+                { name: 'Mangaldai', state: 'Assam' },
+                { name: 'Diphu', state: 'Assam' },
+                { name: 'North Lakhimpur', state: 'Assam' },
+                { name: 'Golaghat', state: 'Assam' },
+                { name: 'Morigaon', state: 'Assam' },
+                { name: 'Nalbari', state: 'Assam' },
+                { name: 'Kokrajhar', state: 'Assam' },
+                { name: 'Sibsagar', state: 'Assam' },
+                // Jharkhand
+                { name: 'Ranchi', state: 'Jharkhand' },
+                { name: 'Jamshedpur', state: 'Jharkhand' },
+                { name: 'Dhanbad', state: 'Jharkhand' },
+                { name: 'Bokaro', state: 'Jharkhand' },
+                { name: 'Hazaribagh', state: 'Jharkhand' },
+                { name: 'Deoghar', state: 'Jharkhand' },
+                { name: 'Giridih', state: 'Jharkhand' },
+                { name: 'Ramgarh', state: 'Jharkhand' },
+                { name: 'Medininagar', state: 'Jharkhand' },
+                { name: 'Chaibasa', state: 'Jharkhand' },
+                { name: 'Dumka', state: 'Jharkhand' },
+                { name: 'Phusro', state: 'Jharkhand' },
+                { name: 'Adityapur', state: 'Jharkhand' },
+                { name: 'Chatra', state: 'Jharkhand' },
+                { name: 'Gumla', state: 'Jharkhand' },
+                { name: 'Lohardaga', state: 'Jharkhand' },
+                { name: 'Pakur', state: 'Jharkhand' },
+                { name: 'Simdega', state: 'Jharkhand' },
+                { name: 'Koderma', state: 'Jharkhand' },
+                { name: 'Sahibganj', state: 'Jharkhand' },
+                { name: 'Godda', state: 'Jharkhand' },
+                { name: 'Latehar', state: 'Jharkhand' },
+                // Chhattisgarh
+                { name: 'Raipur', state: 'Chhattisgarh' },
+                { name: 'Bhilai', state: 'Chhattisgarh' },
+                { name: 'Bilaspur', state: 'Chhattisgarh' },
+                { name: 'Korba', state: 'Chhattisgarh' },
+                { name: 'Raigarh', state: 'Chhattisgarh' },
+                { name: 'Jagdalpur', state: 'Chhattisgarh' },
+                { name: 'Ambikapur', state: 'Chhattisgarh' },
+                { name: 'Durg', state: 'Chhattisgarh' },
+                { name: 'Rajnandgaon', state: 'Chhattisgarh' },
+                { name: 'Dhamtari', state: 'Chhattisgarh' },
+                { name: 'Janjgir', state: 'Chhattisgarh' },
+                { name: 'Kanker', state: 'Chhattisgarh' },
+                { name: 'Kawardha', state: 'Chhattisgarh' },
+                { name: 'Mahasamund', state: 'Chhattisgarh' },
+                { name: 'Dantewada', state: 'Chhattisgarh' },
+                { name: 'Bijapur', state: 'Chhattisgarh' },
+                { name: 'Narayanpur', state: 'Chhattisgarh' },
+                { name: 'Kondagaon', state: 'Chhattisgarh' },
+                { name: 'Sukma', state: 'Chhattisgarh' },
+                { name: 'Baloda Bazar', state: 'Chhattisgarh' },
+                { name: 'Gariaband', state: 'Chhattisgarh' },
+                { name: 'Mungeli', state: 'Chhattisgarh' },
+                // Uttarakhand
+                { name: 'Dehradun', state: 'Uttarakhand' },
+                { name: 'Haridwar', state: 'Uttarakhand' },
+                { name: 'Roorkee', state: 'Uttarakhand' },
+                { name: 'Haldwani', state: 'Uttarakhand' },
+                { name: 'Rudrapur', state: 'Uttarakhand' },
+                { name: 'Kashipur', state: 'Uttarakhand' },
+                { name: 'Rishikesh', state: 'Uttarakhand' },
+                { name: 'Nainital', state: 'Uttarakhand' },
+                { name: 'Mussoorie', state: 'Uttarakhand' },
+                { name: 'Almora', state: 'Uttarakhand' },
+                { name: 'Pithoragarh', state: 'Uttarakhand' },
+                { name: 'Srinagar', state: 'Uttarakhand' },
+                { name: 'Kotdwara', state: 'Uttarakhand' },
+                { name: 'Ramnagar', state: 'Uttarakhand' },
+                { name: 'Champawat', state: 'Uttarakhand' },
+                { name: 'Bageshwar', state: 'Uttarakhand' },
+                { name: 'Uttarkashi', state: 'Uttarakhand' },
+                { name: 'Tehri', state: 'Uttarakhand' },
+                { name: 'Pauri', state: 'Uttarakhand' },
+                { name: 'Chamoli', state: 'Uttarakhand' },
+                { name: 'Ranikhet', state: 'Uttarakhand' },
+                { name: 'Lansdowne', state: 'Uttarakhand' },
+                // Himachal Pradesh
+                { name: 'Shimla', state: 'Himachal Pradesh' },
+                { name: 'Dharamshala', state: 'Himachal Pradesh' },
+                { name: 'Solan', state: 'Himachal Pradesh' },
+                { name: 'Mandi', state: 'Himachal Pradesh' },
+                { name: 'Kullu', state: 'Himachal Pradesh' },
+                { name: 'Manali', state: 'Himachal Pradesh' },
+                { name: 'Palampur', state: 'Himachal Pradesh' },
+                { name: 'Chamba', state: 'Himachal Pradesh' },
+                { name: 'Bilaspur', state: 'Himachal Pradesh' },
+                { name: 'Una', state: 'Himachal Pradesh' },
+                { name: 'Hamirpur', state: 'Himachal Pradesh' },
+                { name: 'Kangra', state: 'Himachal Pradesh' },
+                { name: 'Nahan', state: 'Himachal Pradesh' },
+                { name: 'Baddi', state: 'Himachal Pradesh' },
+                { name: 'Parwanoo', state: 'Himachal Pradesh' },
+                { name: 'Kasauli', state: 'Himachal Pradesh' },
+                { name: 'Dalhousie', state: 'Himachal Pradesh' },
+                { name: 'Keylong', state: 'Himachal Pradesh' },
+                { name: 'Reckong Peo', state: 'Himachal Pradesh' },
+                { name: 'Nurpur', state: 'Himachal Pradesh' },
+                { name: 'Rampur', state: 'Himachal Pradesh' },
+                { name: 'Theog', state: 'Himachal Pradesh' },
+                // Goa
+                { name: 'Panaji', state: 'Goa' },
+                { name: 'Vasco da Gama', state: 'Goa' },
+                { name: 'Margao', state: 'Goa' },
+                { name: 'Mapusa', state: 'Goa' },
+                { name: 'Ponda', state: 'Goa' },
+                { name: 'Calangute', state: 'Goa' },
+                { name: 'Bicholim', state: 'Goa' },
+                { name: 'Curchorem', state: 'Goa' },
+                { name: 'Canacona', state: 'Goa' },
+                { name: 'Sanguem', state: 'Goa' },
+                // Puducherry
+                { name: 'Puducherry', state: 'Puducherry' },
+                { name: 'Karaikal', state: 'Puducherry' },
+                { name: 'Mahe', state: 'Puducherry' },
+                { name: 'Yanam', state: 'Puducherry' },
+                // Andaman and Nicobar Islands
+                { name: 'Port Blair', state: 'Andaman and Nicobar Islands' },
+                { name: 'Diglipur', state: 'Andaman and Nicobar Islands' },
+                { name: 'Mayabunder', state: 'Andaman and Nicobar Islands' },
+                { name: 'Rangat', state: 'Andaman and Nicobar Islands' },
+                // Lakshadweep
+                { name: 'Kavaratti', state: 'Lakshadweep' },
+                { name: 'Agatti', state: 'Lakshadweep' },
+                { name: 'Amini', state: 'Lakshadweep' },
+                // Mizoram
+                { name: 'Aizawl', state: 'Mizoram' },
+                { name: 'Lunglei', state: 'Mizoram' },
+                { name: 'Champhai', state: 'Mizoram' },
+                { name: 'Serchhip', state: 'Mizoram' },
+                { name: 'Kolasib', state: 'Mizoram' },
+                { name: 'Mamit', state: 'Mizoram' },
+                { name: 'Lawngtlai', state: 'Mizoram' },
+                { name: 'Saiha', state: 'Mizoram' },
+                // Manipur
+                { name: 'Imphal', state: 'Manipur' },
+                { name: 'Thoubal', state: 'Manipur' },
+                { name: 'Bishnupur', state: 'Manipur' },
+                { name: 'Churachandpur', state: 'Manipur' },
+                { name: 'Ukhrul', state: 'Manipur' },
+                { name: 'Senapati', state: 'Manipur' },
+                { name: 'Tamenglong', state: 'Manipur' },
+                { name: 'Chandel', state: 'Manipur' },
+                // Meghalaya
+                { name: 'Shillong', state: 'Meghalaya' },
+                { name: 'Tura', state: 'Meghalaya' },
+                { name: 'Jowai', state: 'Meghalaya' },
+                { name: 'Nongpoh', state: 'Meghalaya' },
+                { name: 'Nongstoin', state: 'Meghalaya' },
+                { name: 'Williamnagar', state: 'Meghalaya' },
+                { name: 'Baghmara', state: 'Meghalaya' },
+                { name: 'Resubelpara', state: 'Meghalaya' },
+                // Tripura
+                { name: 'Agartala', state: 'Tripura' },
+                { name: 'Udaipur', state: 'Tripura' },
+                { name: 'Dharmanagar', state: 'Tripura' },
+                { name: 'Kailasahar', state: 'Tripura' },
+                { name: 'Belonia', state: 'Tripura' },
+                { name: 'Khowai', state: 'Tripura' },
+                { name: 'Ambassa', state: 'Tripura' },
+                { name: 'Sabroom', state: 'Tripura' },
+                // Nagaland
+                { name: 'Kohima', state: 'Nagaland' },
+                { name: 'Dimapur', state: 'Nagaland' },
+                { name: 'Mokokchung', state: 'Nagaland' },
+                { name: 'Tuensang', state: 'Nagaland' },
+                { name: 'Wokha', state: 'Nagaland' },
+                { name: 'Zunheboto', state: 'Nagaland' },
+                { name: 'Phek', state: 'Nagaland' },
+                { name: 'Mon', state: 'Nagaland' },
+                { name: 'Kiphire', state: 'Nagaland' },
+                { name: 'Longleng', state: 'Nagaland' },
+                { name: 'Peren', state: 'Nagaland' },
+                // Arunachal Pradesh
+                { name: 'Itanagar', state: 'Arunachal Pradesh' },
+                { name: 'Naharlagun', state: 'Arunachal Pradesh' },
+                { name: 'Tawang', state: 'Arunachal Pradesh' },
+                { name: 'Bomdila', state: 'Arunachal Pradesh' },
+                { name: 'Ziro', state: 'Arunachal Pradesh' },
+                { name: 'Daporijo', state: 'Arunachal Pradesh' },
+                { name: 'Along', state: 'Arunachal Pradesh' },
+                { name: 'Pasighat', state: 'Arunachal Pradesh' },
+                { name: 'Tezu', state: 'Arunachal Pradesh' },
+                { name: 'Changlang', state: 'Arunachal Pradesh' },
+                { name: 'Khonsa', state: 'Arunachal Pradesh' },
+                { name: 'Yingkiong', state: 'Arunachal Pradesh' },
+                // Sikkim
+                { name: 'Gangtok', state: 'Sikkim' },
+                { name: 'Namchi', state: 'Sikkim' },
+                { name: 'Mangan', state: 'Sikkim' },
+                { name: 'Gyalshing', state: 'Sikkim' },
+                // Dadra and Nagar Haveli and Daman and Diu
+                { name: 'Daman', state: 'Dadra and Nagar Haveli and Daman and Diu' },
+                { name: 'Diu', state: 'Dadra and Nagar Haveli and Daman and Diu' },
+                { name: 'Silvassa', state: 'Dadra and Nagar Haveli and Daman and Diu' },
+                // Ladakh
+                { name: 'Leh', state: 'Ladakh' },
+                { name: 'Kargil', state: 'Ladakh' }
+            ];
+
+            let allCities = [];
+            let activeCities = new Set();
+
+            // Load Cities from backend and merge with comprehensive list
+            async function loadCities() {
+                try {
+                    // Try to load active cities from backend
+                    const response = await fetch('/api/admin/cities', {
+                        method: 'GET',
+                        headers: getAuthHeaders()
+                    });
+
+                    if (response.ok) {
+                        const data = await response.json();
+                        if (data.cities && Array.isArray(data.cities)) {
+                            // Store active city names
+                            data.cities.forEach(city => {
+                                if (city.is_active) {
+                                    activeCities.add(city.name.toLowerCase());
+                                }
+                            });
+                        }
+                    }
+                } catch (error) {
+                    console.log('No existing cities found, starting fresh');
+                }
+
+                // Merge backend cities with comprehensive list
+                const cityMap = new Map();
+                
+                // Add all cities from comprehensive list
+                indianCities.forEach(city => {
+                    const key = city.name.toLowerCase();
+                    cityMap.set(key, {
+                        name: city.name,
+                        state: city.state,
+                        is_active: activeCities.has(key),
+                        properties_count: 0
+                    });
+                });
+
+                // Update with backend data if available
+                try {
+                    const response = await fetch('/api/admin/cities', {
+                        method: 'GET',
+                        headers: getAuthHeaders()
+                    });
+                    if (response.ok) {
+                        const data = await response.json();
+                        if (data.cities && Array.isArray(data.cities)) {
+                            data.cities.forEach(city => {
+                                const key = city.name.toLowerCase();
+                                if (cityMap.has(key)) {
+                                    cityMap.get(key).is_active = city.is_active;
+                                    cityMap.get(key).properties_count = city.properties_count || 0;
+                                }
+                            });
+                        }
+                    }
+                } catch (error) {
+                    console.log('Error loading city data from backend');
+                }
+
+                allCities = Array.from(cityMap.values()).sort((a, b) => {
+                    if (a.state !== b.state) return a.state.localeCompare(b.state);
+                    return a.name.localeCompare(b.name);
+                });
+
+                renderCities();
+            }
+
+            // Render cities in table
+            function renderCities(filterText = '') {
+                const tbody = document.getElementById('citiesTableBody');
+                tbody.innerHTML = '';
+
+                const filtered = filterText 
+                    ? allCities.filter(city => 
+                        city.name.toLowerCase().includes(filterText.toLowerCase()) ||
+                        city.state.toLowerCase().includes(filterText.toLowerCase())
+                      )
+                    : allCities;
+
+                if (filtered.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="5" style="text-align: center;">No cities found</td></tr>';
+                    return;
+                }
+
+                filtered.forEach(city => {
+                    const row = document.createElement('tr');
+                    const cityKey = city.name.toLowerCase();
+                    row.innerHTML = `
+                        <td>
+                            <input type="checkbox" class="city-checkbox" data-city="${cityKey}" ${city.is_active ? 'checked' : ''}>
+                        </td>
+                        <td>${city.name || '-'}</td>
+                        <td>${city.state || '-'}</td>
+                        <td><span class="status-badge ${city.is_active ? 'sale' : 'rent'}">${city.is_active ? 'Active' : 'Inactive'}</span></td>
+                        <td>${city.properties_count || 0}</td>
+                    `;
+                    tbody.appendChild(row);
+                });
+
+                // Update select all checkbox
+                updateSelectAllCheckbox();
+            }
+
+            // Update select all checkbox state
+            function updateSelectAllCheckbox() {
+                const checkboxes = document.querySelectorAll('.city-checkbox');
+                const selectAllCheckbox = document.getElementById('selectAllCitiesCheckbox');
+                if (checkboxes.length === 0) return;
+
+                const checkedCount = Array.from(checkboxes).filter(cb => cb.checked).length;
+                selectAllCheckbox.checked = checkedCount === checkboxes.length;
+                selectAllCheckbox.indeterminate = checkedCount > 0 && checkedCount < checkboxes.length;
+            }
+
+            // City search
+            document.getElementById('citySearch').addEventListener('input', (e) => {
+                renderCities(e.target.value);
+            });
+
+            // Select all cities
+            document.getElementById('selectAllCitiesBtn').addEventListener('click', () => {
+                document.querySelectorAll('.city-checkbox').forEach(cb => {
+                    cb.checked = true;
+                    const cityKey = cb.dataset.city;
+                    const city = allCities.find(c => c.name.toLowerCase() === cityKey);
+                    if (city) city.is_active = true;
+                });
+                updateSelectAllCheckbox();
+                renderCities(document.getElementById('citySearch').value);
+            });
+
+            // Deselect all cities
+            document.getElementById('deselectAllCitiesBtn').addEventListener('click', () => {
+                document.querySelectorAll('.city-checkbox').forEach(cb => {
+                    cb.checked = false;
+                    const cityKey = cb.dataset.city;
+                    const city = allCities.find(c => c.name.toLowerCase() === cityKey);
+                    if (city) city.is_active = false;
+                });
+                updateSelectAllCheckbox();
+                renderCities(document.getElementById('citySearch').value);
+            });
+
+            // Select all checkbox
+            document.getElementById('selectAllCitiesCheckbox').addEventListener('change', (e) => {
+                document.querySelectorAll('.city-checkbox').forEach(cb => {
+                    cb.checked = e.target.checked;
+                    const cityKey = cb.dataset.city;
+                    const city = allCities.find(c => c.name.toLowerCase() === cityKey);
+                    if (city) city.is_active = e.target.checked;
+                });
+            });
+
+            // Individual city checkbox change
+            document.addEventListener('change', (e) => {
+                if (e.target.classList.contains('city-checkbox')) {
+                    const cityKey = e.target.dataset.city;
+                    const city = allCities.find(c => c.name.toLowerCase() === cityKey);
+                    if (city) {
+                        city.is_active = e.target.checked;
+                        // Update status badge
+                        const row = e.target.closest('tr');
+                        const badge = row.querySelector('.status-badge');
+                        if (badge) {
+                            badge.className = `status-badge ${city.is_active ? 'sale' : 'rent'}`;
+                            badge.textContent = city.is_active ? 'Active' : 'Inactive';
+                        }
+                    }
+                    updateSelectAllCheckbox();
+                }
+            });
+
+            // Save cities
+            document.getElementById('saveCitiesBtn').addEventListener('click', async () => {
+                const activeCityNames = allCities.filter(c => c.is_active).map(c => c.name);
+                
+                try {
+                    // Save all cities (bulk update)
+                    const response = await fetch('/api/admin/cities/bulk', {
+                        method: 'POST',
+                        headers: getAuthHeaders(),
+                        body: JSON.stringify({
+                            cities: allCities.map(city => ({
+                                name: city.name,
+                                state: city.state,
+                                is_active: city.is_active
+                            }))
+                        })
+                    });
+
+                    const data = await response.json();
+                    if (response.ok) {
+                        showNotification(`Successfully saved ${activeCityNames.length} active cities`, 'success');
+                        loadCities();
+                    } else {
+                        showNotification(data.message || 'Failed to save cities', 'error');
+                    }
+                } catch (error) {
+                    console.error('Error saving cities:', error);
+                    showNotification('Error saving cities. Please try again.', 'error');
+                }
+            });
+
+            // Load Categories
+            async function loadCategories() {
+                try {
+                    // Note: This endpoint would need to be created in the backend
+                    const response = await fetch('/api/admin/categories', {
+                        method: 'GET',
+                        headers: getAuthHeaders()
+                    });
+
+                    const data = await response.json();
+                    const tbody = document.getElementById('categoriesTableBody');
+                    tbody.innerHTML = '';
+
+                    if (response.ok && data.categories) {
+                        data.categories.forEach(category => {
+                            const row = document.createElement('tr');
+                            row.innerHTML = `
+                                <td>${category.name || '-'}</td>
+                                <td>${category.display_name || '-'}</td>
+                                <td><span class="status-badge ${category.is_active ? 'sale' : 'rent'}">${category.is_active ? 'Active' : 'Inactive'}</span></td>
+                                <td>${category.properties_count || 0}</td>
+                                <td>
+                                    <button class="dashboard-btn-secondary edit-category" data-id="${category.id}" style="margin-right: 0.5rem;">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button class="dashboard-btn-danger delete-category" data-id="${category.id}">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </td>
+                            `;
+                            tbody.appendChild(row);
+                        });
+                    } else {
+                        tbody.innerHTML = '<tr><td colspan="5" style="text-align: center;">No categories found</td></tr>';
+                    }
+                } catch (error) {
+                    console.error('Error loading categories:', error);
+                    showNotification('Error loading categories', 'error');
+                }
+            }
+
+            // Load Unit Types
+            async function loadUnitTypes() {
+                try {
+                    // Note: This endpoint would need to be created in the backend
+                    const response = await fetch('/api/admin/unit-types', {
+                        method: 'GET',
+                        headers: getAuthHeaders()
+                    });
+
+                    const data = await response.json();
+                    const tbody = document.getElementById('unitTypesTableBody');
+                    tbody.innerHTML = '';
+
+                    if (response.ok && data.unit_types) {
+                        data.unit_types.forEach(unitType => {
+                            const row = document.createElement('tr');
+                            row.innerHTML = `
+                                <td>${unitType.name || '-'}</td>
+                                <td>${unitType.display_name || '-'}</td>
+                                <td>${unitType.bedrooms || 0}</td>
+                                <td><span class="status-badge ${unitType.is_active ? 'sale' : 'rent'}">${unitType.is_active ? 'Active' : 'Inactive'}</span></td>
+                                <td>${unitType.properties_count || 0}</td>
+                                <td>
+                                    <button class="dashboard-btn-secondary edit-unit-type" data-id="${unitType.id}" style="margin-right: 0.5rem;">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button class="dashboard-btn-danger delete-unit-type" data-id="${unitType.id}">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </td>
+                            `;
+                            tbody.appendChild(row);
+                        });
+                    } else {
+                        tbody.innerHTML = '<tr><td colspan="6" style="text-align: center;">No unit types found</td></tr>';
+                    }
+                } catch (error) {
+                    console.error('Error loading unit types:', error);
+                    showNotification('Error loading unit types', 'error');
+                }
+            }
+
+
+            // Category Modal Handlers
+            const categoryModal = document.getElementById('categoryModal');
+            const categoryForm = document.getElementById('categoryForm');
+            const addCategoryBtn = document.getElementById('addCategoryBtn');
+            const cancelCategoryBtn = document.getElementById('cancelCategoryBtn');
+            const categoryModalClose = document.getElementById('categoryModalClose');
+            const categoryModalOverlay = document.getElementById('categoryModalOverlay');
+
+            if (addCategoryBtn && categoryModal && categoryForm) {
+                addCategoryBtn.addEventListener('click', () => {
+                    const modalTitle = document.getElementById('categoryModalTitle');
+                    const categoryIdInput = document.getElementById('categoryId');
+                    if (modalTitle) modalTitle.textContent = 'Add Category';
+                    if (categoryIdInput) categoryIdInput.value = '';
+                    categoryForm.reset();
+                    categoryModal.classList.add('active');
+                });
+            }
+
+            if (cancelCategoryBtn && categoryModal) {
+                cancelCategoryBtn.addEventListener('click', () => categoryModal.classList.remove('active'));
+            }
+            if (categoryModalClose && categoryModal) {
+                categoryModalClose.addEventListener('click', () => categoryModal.classList.remove('active'));
+            }
+            if (categoryModalOverlay && categoryModal) {
+                categoryModalOverlay.addEventListener('click', () => categoryModal.classList.remove('active'));
+            }
+
+            if (categoryForm && categoryModal) {
+                categoryForm.addEventListener('submit', async (e) => {
+                    e.preventDefault();
+                    const categoryNameInput = document.getElementById('categoryName');
+                    const categoryDisplayNameInput = document.getElementById('categoryDisplayName');
+                    const categoryIsActiveInput = document.getElementById('categoryIsActive');
+                    const categoryIdInput = document.getElementById('categoryId');
+                    
+                    if (!categoryNameInput || !categoryDisplayNameInput || !categoryIsActiveInput) {
+                        showNotification('Form fields not found', 'error');
+                        return;
+                    }
+                    
+                    const formData = {
+                        name: categoryNameInput.value.trim(),
+                        display_name: categoryDisplayNameInput.value.trim(),
+                        is_active: categoryIsActiveInput.checked
+                    };
+                    
+                    if (!formData.name || !formData.display_name) {
+                        showNotification('Category name and display name are required', 'error');
+                        return;
+                    }
+                    
+                    const categoryId = categoryIdInput ? categoryIdInput.value : '';
+                    const url = categoryId ? `/api/admin/categories/${categoryId}` : '/api/admin/categories';
+                    const method = categoryId ? 'PUT' : 'POST';
+
+                    try {
+                        const response = await fetch(url, {
+                            method: method,
+                            headers: getAuthHeaders(),
+                            body: JSON.stringify(formData)
+                        });
+
+                        const data = await response.json();
+                        if (response.ok) {
+                            showNotification(categoryId ? 'Category updated successfully' : 'Category added successfully', 'success');
+                            categoryModal.classList.remove('active');
+                            loadCategories();
+                        } else {
+                            showNotification(data.error || data.message || 'Failed to save category', 'error');
+                        }
+                    } catch (error) {
+                        console.error('Error saving category:', error);
+                        showNotification('Error saving category. Please try again.', 'error');
+                    }
+                });
+            }
+
+            // Unit Type Modal Handlers
+            const unitTypeModal = document.getElementById('unitTypeModal');
+            const unitTypeForm = document.getElementById('unitTypeForm');
+            const addUnitTypeBtn = document.getElementById('addUnitTypeBtn');
+            const cancelUnitTypeBtn = document.getElementById('cancelUnitTypeBtn');
+            const unitTypeModalClose = document.getElementById('unitTypeModalClose');
+            const unitTypeModalOverlay = document.getElementById('unitTypeModalOverlay');
+
+            if (addUnitTypeBtn && unitTypeModal && unitTypeForm) {
+                addUnitTypeBtn.addEventListener('click', () => {
+                    const modalTitle = document.getElementById('unitTypeModalTitle');
+                    const unitTypeIdInput = document.getElementById('unitTypeId');
+                    if (modalTitle) modalTitle.textContent = 'Add Unit Type';
+                    if (unitTypeIdInput) unitTypeIdInput.value = '';
+                    unitTypeForm.reset();
+                    unitTypeModal.classList.add('active');
+                });
+            }
+
+            if (cancelUnitTypeBtn && unitTypeModal) {
+                cancelUnitTypeBtn.addEventListener('click', () => unitTypeModal.classList.remove('active'));
+            }
+            if (unitTypeModalClose && unitTypeModal) {
+                unitTypeModalClose.addEventListener('click', () => unitTypeModal.classList.remove('active'));
+            }
+            if (unitTypeModalOverlay && unitTypeModal) {
+                unitTypeModalOverlay.addEventListener('click', () => unitTypeModal.classList.remove('active'));
+            }
+
+            if (unitTypeForm && unitTypeModal) {
+                unitTypeForm.addEventListener('submit', async (e) => {
+                    e.preventDefault();
+                    const unitTypeNameInput = document.getElementById('unitTypeName');
+                    const unitTypeDisplayNameInput = document.getElementById('unitTypeDisplayName');
+                    const unitTypeBedroomsInput = document.getElementById('unitTypeBedrooms');
+                    const unitTypeIsActiveInput = document.getElementById('unitTypeIsActive');
+                    const unitTypeIdInput = document.getElementById('unitTypeId');
+                    
+                    if (!unitTypeNameInput || !unitTypeDisplayNameInput || !unitTypeBedroomsInput || !unitTypeIsActiveInput) {
+                        showNotification('Form fields not found', 'error');
+                        return;
+                    }
+                    
+                    const bedrooms = parseInt(unitTypeBedroomsInput.value);
+                    if (isNaN(bedrooms) || bedrooms < 0) {
+                        showNotification('Bedrooms must be a valid non-negative number', 'error');
+                        return;
+                    }
+                    
+                    const formData = {
+                        name: unitTypeNameInput.value.trim(),
+                        display_name: unitTypeDisplayNameInput.value.trim(),
+                        bedrooms: bedrooms,
+                        is_active: unitTypeIsActiveInput.checked
+                    };
+                    
+                    if (!formData.name || !formData.display_name) {
+                        showNotification('Unit type name and display name are required', 'error');
+                        return;
+                    }
+                    
+                    const unitTypeId = unitTypeIdInput ? unitTypeIdInput.value : '';
+                    const url = unitTypeId ? `/api/admin/unit-types/${unitTypeId}` : '/api/admin/unit-types';
+                    const method = unitTypeId ? 'PUT' : 'POST';
+
+                    try {
+                        const response = await fetch(url, {
+                            method: method,
+                            headers: getAuthHeaders(),
+                            body: JSON.stringify(formData)
+                        });
+
+                        const data = await response.json();
+                        if (response.ok) {
+                            showNotification(unitTypeId ? 'Unit type updated successfully' : 'Unit type added successfully', 'success');
+                            unitTypeModal.classList.remove('active');
+                            loadUnitTypes();
+                        } else {
+                            showNotification(data.error || data.message || 'Failed to save unit type', 'error');
+                        }
+                    } catch (error) {
+                        console.error('Error saving unit type:', error);
+                        showNotification('Error saving unit type. Please try again.', 'error');
+                    }
+                });
+            }
+
+            // Event delegation for edit/delete buttons
+            document.addEventListener('click', async (e) => {
+                // Edit Category
+                if (e.target.closest('.edit-category')) {
+                    const categoryId = e.target.closest('.edit-category').dataset.id;
+                    try {
+                        const response = await fetch(`/api/admin/categories/${categoryId}`, {
+                            headers: getAuthHeaders()
+                        });
+                        const data = await response.json();
+                        if (response.ok && data.category) {
+                            document.getElementById('categoryModalTitle').textContent = 'Edit Category';
+                            document.getElementById('categoryId').value = data.category.id;
+                            document.getElementById('categoryName').value = data.category.name || '';
+                            document.getElementById('categoryDisplayName').value = data.category.display_name || '';
+                            document.getElementById('categoryIsActive').checked = data.category.is_active !== false;
+                            categoryModal.classList.add('active');
+                        }
+                    } catch (error) {
+                        console.error('Error loading category:', error);
+                        showNotification('Error loading category data', 'error');
+                    }
+                }
+
+                // Delete Category
+                if (e.target.closest('.delete-category')) {
+                    const categoryId = e.target.closest('.delete-category').dataset.id;
+                    if (confirm('Are you sure you want to delete this category?')) {
+                        try {
+                            const response = await fetch(`/api/admin/categories/${categoryId}`, {
+                                method: 'DELETE',
+                                headers: getAuthHeaders()
+                            });
+                            const data = await response.json();
+                            if (response.ok) {
+                                showNotification('Category deleted successfully', 'success');
+                                loadCategories();
+                            } else {
+                                showNotification(data.error || data.message || 'Failed to delete category', 'error');
+                            }
+                        } catch (error) {
+                            console.error('Error deleting category:', error);
+                            showNotification('Error deleting category', 'error');
+                        }
+                    }
+                }
+
+                // Edit Unit Type
+                if (e.target.closest('.edit-unit-type')) {
+                    const unitTypeId = e.target.closest('.edit-unit-type').dataset.id;
+                    try {
+                        const response = await fetch(`/api/admin/unit-types/${unitTypeId}`, {
+                            headers: getAuthHeaders()
+                        });
+                        const data = await response.json();
+                        if (response.ok && data.unit_type) {
+                            document.getElementById('unitTypeModalTitle').textContent = 'Edit Unit Type';
+                            document.getElementById('unitTypeId').value = data.unit_type.id;
+                            document.getElementById('unitTypeName').value = data.unit_type.name || '';
+                            document.getElementById('unitTypeDisplayName').value = data.unit_type.display_name || '';
+                            document.getElementById('unitTypeBedrooms').value = data.unit_type.bedrooms || 0;
+                            document.getElementById('unitTypeIsActive').checked = data.unit_type.is_active !== false;
+                            unitTypeModal.classList.add('active');
+                        }
+                    } catch (error) {
+                        console.error('Error loading unit type:', error);
+                        showNotification('Error loading unit type data', 'error');
+                    }
+                }
+
+                // Delete Unit Type
+                if (e.target.closest('.delete-unit-type')) {
+                    const unitTypeId = e.target.closest('.delete-unit-type').dataset.id;
+                    if (confirm('Are you sure you want to delete this unit type?')) {
+                        try {
+                            const response = await fetch(`/api/admin/unit-types/${unitTypeId}`, {
+                                method: 'DELETE',
+                                headers: getAuthHeaders()
+                            });
+                            const data = await response.json();
+                            if (response.ok) {
+                                showNotification('Unit type deleted successfully', 'success');
+                                loadUnitTypes();
+                            } else {
+                                showNotification(data.error || data.message || 'Failed to delete unit type', 'error');
+                            }
+                        } catch (error) {
+                            console.error('Error deleting unit type:', error);
+                            showNotification('Error deleting unit type', 'error');
+                        }
+                    }
+                }
+            });
+
+            // Profile Dropdown Toggle
+            const profileBtn = document.getElementById('dashboardProfileBtn');
+            const profileDropdown = document.getElementById('dashboardProfileDropdown');
+            
+            if (profileBtn && profileDropdown) {
+                profileBtn.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    profileDropdown.classList.toggle('show');
+                });
+
+                document.addEventListener('click', function(e) {
+                    if (!profileBtn.contains(e.target) && !profileDropdown.contains(e.target)) {
+                        profileDropdown.classList.remove('show');
+                    }
+                });
+            }
+
+            // Logout functionality
+            const logoutBtn = document.getElementById('dashboardLogout');
+            if (logoutBtn) {
+                logoutBtn.addEventListener('click', function() {
+                    if (confirm('Are you sure you want to logout?')) {
+                        localStorage.removeItem('dashboard_authenticated');
+                        localStorage.removeItem('isAuthenticated');
+                        localStorage.removeItem('user');
+                        sessionStorage.removeItem('dashboard_authenticated');
+                        sessionStorage.removeItem('isAuthenticated');
+                        sessionStorage.removeItem('user');
+                        window.location.replace('/index.html');
+                    }
+                });
+            }
+
+            // Load data on page load
+            window.addEventListener('load', function() {
+                loadCities();
+                loadCategories();
+                loadUnitTypes();
+            });
+        })();
+    </script>
+    <script>
+        // App Metrics Password Protection
+        document.addEventListener('DOMContentLoaded', function() {
+            const appMetricsLink = document.getElementById('appMetricsLink');
+            if (appMetricsLink) {
+                appMetricsLink.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    
+                    // Check if password is already verified in this session
+                    const isVerified = sessionStorage.getItem('app_metrics_verified') === 'true';
+                    if (isVerified) {
+                        window.location.href = '/app-metrics.html';
+                        return;
+                    }
+                    
+                    // Show password prompt
+                    const password = prompt('Enter password to access App Metrics:');
+                    if (password === null) {
+                        // User cancelled
+                        return;
+                    }
+                    
+                    if (!password || password.trim() === '') {
+                        alert('Password is required');
+                        return;
+                    }
+                    
+                    // Verify password with backend
+                    fetch('/api/admin/app-metrics/verify-password', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ password: password })
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            // Store verification in sessionStorage
+                            sessionStorage.setItem('app_metrics_verified', 'true');
+                            // Redirect to app-metrics page
+                            window.location.href = '/app-metrics.html';
+                        } else {
+                            alert(data.message || 'Invalid password');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error verifying password:', error);
+                        alert('Error verifying password. Please try again.');
+                    });
+                });
+            }
+        });
+    </script>
+</body>
+</html>

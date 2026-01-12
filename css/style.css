@@ -9454,9 +9454,14 @@ section:not(.hero).section-visible .section-header {
     width: 100%;
 }
 
-.category-section-centered[data-active-category="residential"] .subcategory-buttons[data-category="residential"],
-.category-section-centered[data-active-category="commercial"] .subcategory-buttons[data-category="commercial"] {
-    display: flex;
+/* Show subcategories when category is active */
+.category-section-centered[data-active-category="residential"] .category-subcategories-container .subcategory-buttons[data-category="residential"],
+.category-section-centered[data-active-category="commercial"] .category-subcategories-container .subcategory-buttons[data-category="commercial"],
+.filter-section.category-section-centered[data-active-category="residential"] .category-subcategories-container .subcategory-buttons[data-category="residential"],
+.filter-section.category-section-centered[data-active-category="commercial"] .category-subcategories-container .subcategory-buttons[data-category="commercial"],
+#indexCategorySection[data-active-category="residential"] .category-subcategories-container .subcategory-buttons[data-category="residential"],
+#indexCategorySection[data-active-category="commercial"] .category-subcategories-container .subcategory-buttons[data-category="commercial"] {
+    display: flex !important;
 }
 
 .properties-search {

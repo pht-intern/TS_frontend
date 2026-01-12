@@ -141,6 +141,7 @@
                     <div class="category-subcategories-container">
                         <div class="subcategory-buttons" data-category="residential">
                             <button type="button" class="filter-button subcategory-button" data-property-type="plots" data-parent-category="residential" id="indexFilterPlots">Plots</button>
+                            <button type="button" class="filter-button subcategory-button" data-property-type="apartment" data-parent-category="residential" id="indexFilterApartments">Apartments</button>
                             <button type="button" class="filter-button subcategory-button" data-property-type="house" data-parent-category="residential" id="indexFilterIndividualHouse">Individual House</button>
                             <button type="button" class="filter-button subcategory-button" data-property-type="villa" data-parent-category="residential" id="indexFilterVillas">Villas</button>
                             <button type="button" class="filter-button subcategory-button" data-property-type="row-house" data-parent-category="residential" id="indexFilterRowHouses">Row Houses</button>
@@ -1651,7 +1652,8 @@
                 if (transactionTypeSelect) {
                     transactionTypeSelect.addEventListener('change', (e) => {
                         indexCurrentFilter = e.target.value === 'all' ? 'all' : e.target.value;
-                        indexApplyFilters();
+                        // Update filter tags without redirecting
+                        indexApplyFilters(false);
                     });
                 }
                 
@@ -1660,7 +1662,8 @@
                 if (propertyConditionSelect) {
                     propertyConditionSelect.addEventListener('change', (e) => {
                         indexSelectedCondition = e.target.value || null;
-                        indexApplyFilters();
+                        // Update filter tags without redirecting
+                        indexApplyFilters(false);
                     });
                 }
                 
@@ -1675,39 +1678,92 @@
                             const bhk = parseInt(selectedOption.dataset.bhk);
                             indexSelectedBHK = bhk;
                         }
-                        indexApplyFilters();
+                        // Update filter tags without redirecting
+                        indexApplyFilters(false);
                     });
                 }
                 
-                // Category buttons
-                const categoryButtons = document.querySelectorAll('#indexPropertiesFilters .category-text-button[data-category]');
-                categoryButtons.forEach(btn => {
-                    btn.addEventListener('click', (e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        const category = btn.dataset.category;
+                // Category buttons - use multiple selectors to ensure we find them
+                let categoryButtons = document.querySelectorAll('#indexPropertiesFilters .category-text-button[data-category]');
+                
+                // Fallback: try direct ID selectors
+                if (categoryButtons.length === 0) {
+                    const residentialBtn = document.getElementById('indexFilterResidential');
+                    const commercialBtn = document.getElementById('indexFilterCommercial');
+                    if (residentialBtn && commercialBtn) {
+                        categoryButtons = [residentialBtn, commercialBtn];
+                    } else {
+                        // Last resort: try without container selector
+                        categoryButtons = document.querySelectorAll('.category-text-button[data-category]');
+                    }
+                }
+                
+                // Function to handle category button click
+                function handleCategoryClick(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const btn = e.currentTarget;
+                    const category = btn.getAttribute('data-category') || btn.dataset.category;
+                    
+                    if (!category || !categorySection) return;
+                    
+                    const currentActiveCategory = categorySection.getAttribute('data-active-category');
+                    
+                    if (currentActiveCategory === category) {
+                        // Toggle off - deselect category
+                        categorySection.removeAttribute('data-active-category');
                         
-                        if (!categorySection) return;
+                        // Hide all subcategory buttons
+                        const allSubcategoryContainers = document.querySelectorAll('#indexPropertiesFilters .subcategory-buttons');
+                        allSubcategoryContainers.forEach(container => {
+                            container.style.display = 'none';
+                        });
                         
-                        const currentActiveCategory = categorySection.getAttribute('data-active-category');
+                        btn.classList.remove('active');
+                        indexSelectedCategory = null;
+                        const allSubButtons = document.querySelectorAll('#indexPropertiesFilters .subcategory-button');
+                        allSubButtons.forEach(b => b.classList.remove('active'));
+                    } else {
+                        // Toggle on - select category
+                        categorySection.setAttribute('data-active-category', category);
                         
-                        if (currentActiveCategory === category) {
-                            categorySection.removeAttribute('data-active-category');
-                            btn.classList.remove('active');
-                            indexSelectedCategory = null;
-                            const allSubButtons = document.querySelectorAll('#indexPropertiesFilters .subcategory-button');
-                            allSubButtons.forEach(b => b.classList.remove('active'));
+                        // Show the appropriate subcategory buttons
+                        const allSubcategoryContainers = document.querySelectorAll('#indexPropertiesFilters .subcategory-buttons');
+                        allSubcategoryContainers.forEach(container => {
+                            const containerCategory = container.getAttribute('data-category');
+                            if (containerCategory === category) {
+                                container.style.display = 'flex';
+                            } else {
+                                container.style.display = 'none';
+                            }
+                        });
+                        
+                        // Remove active from all category buttons
+                        const allCategoryBtns = document.querySelectorAll('#indexPropertiesFilters .category-text-button[data-category]');
+                        if (allCategoryBtns.length === 0) {
+                            const altBtns = document.querySelectorAll('.category-text-button[data-category]');
+                            altBtns.forEach(b => b.classList.remove('active'));
                         } else {
-                            categorySection.setAttribute('data-active-category', category);
-                            categoryButtons.forEach(b => b.classList.remove('active'));
-                            btn.classList.add('active');
-                            const allSubButtons = document.querySelectorAll('#indexPropertiesFilters .subcategory-button');
-                            allSubButtons.forEach(b => b.classList.remove('active'));
-                            indexSelectedCategory = category;
-                            indexSelectedPropertyType = null;
+                            allCategoryBtns.forEach(b => b.classList.remove('active'));
                         }
-                        indexApplyFilters();
-                    });
+                        // Add active to clicked button
+                        btn.classList.add('active');
+                        // Clear all subcategory buttons
+                        const allSubButtons = document.querySelectorAll('#indexPropertiesFilters .subcategory-button');
+                        allSubButtons.forEach(b => b.classList.remove('active'));
+                        // Update state
+                        indexSelectedCategory = category;
+                        indexSelectedPropertyType = null;
+                    }
+                    // Update filter tags without redirecting
+                    indexApplyFilters(false);
+                }
+                
+                // Attach event listeners to all found buttons
+                categoryButtons.forEach(btn => {
+                    if (btn) {
+                        btn.addEventListener('click', handleCategoryClick);
+                    }
                 });
                 
                 // Property Type subcategory buttons
@@ -1736,7 +1792,8 @@
                             if (categoryBtn) categoryBtn.classList.add('active');
                             if (categorySection) categorySection.setAttribute('data-active-category', parentCategory);
                         }
-                        indexApplyFilters();
+                        // Update filter tags without redirecting
+                        indexApplyFilters(false);
                     });
                 });
                 
@@ -1745,13 +1802,15 @@
                 if (searchForm) {
                     searchForm.addEventListener('submit', (e) => {
                         e.preventDefault();
-                        indexApplyFilters();
+                        // Redirect when form is submitted
+                        indexApplyFilters(true);
                     });
                     
                     const searchInputs = searchForm.querySelectorAll('input, select');
                     searchInputs.forEach(input => {
                         input.addEventListener('change', () => {
-                            indexApplyFilters();
+                            // Update filter tags without redirecting for input changes
+                            indexApplyFilters(false);
                         });
                         
                         if (input.tagName === 'INPUT' && input.type === 'text') {
@@ -1759,7 +1818,8 @@
                             input.addEventListener('input', () => {
                                 clearTimeout(inputTimeout);
                                 inputTimeout = setTimeout(() => {
-                                    indexApplyFilters();
+                                    // Update filter tags without redirecting for text input
+                                    indexApplyFilters(false);
                                 }, 300);
                             });
                         }
@@ -1790,7 +1850,8 @@
                         document.getElementById('indexSearchDimensions').value = '';
                         document.getElementById('indexSearchPrice').value = '';
                         
-                        indexApplyFilters();
+                        // Update filter tags without redirecting when clearing
+                        indexApplyFilters(false);
                     });
                 }
                 
@@ -1798,54 +1859,57 @@
                 initIndexPriceRangeModal();
             }
             
-            // Apply filters (redirects to properties page with filters)
-            function indexApplyFilters() {
-                const params = new URLSearchParams();
-                
-                if (indexCurrentFilter !== 'all') {
-                    params.set('status', indexCurrentFilter);
-                }
-                
-                if (indexSelectedPropertyType) {
-                    params.set('type', indexSelectedPropertyType);
-                }
-                
-                if (indexSelectedCategory && !indexSelectedPropertyType) {
-                    params.set('category', indexSelectedCategory);
-                }
-                
-                const city = document.getElementById('indexSearchCity')?.value.trim() || '';
-                if (city) params.set('city', city);
-                
-                const area = document.getElementById('indexSearchArea')?.value.trim() || '';
-                if (area) params.set('area', area);
-                
-                const amenities = document.getElementById('indexSearchAmenities')?.value.trim() || '';
-                if (amenities) params.set('amenities', amenities);
-                
-                const dimensions = document.getElementById('indexSearchDimensions')?.value.trim() || '';
-                if (dimensions) params.set('dimensions', dimensions);
-                
-                const price = document.getElementById('indexSearchPrice')?.value || '';
-                if (price) params.set('price', price);
-                
-                if (indexSelectedCondition) {
-                    params.set('condition', indexSelectedCondition);
-                }
-                
-                if (indexSelectedBHK !== null) {
-                    params.set('bhk', indexSelectedBHK);
-                }
-                
-                // Update filter tags
+            // Apply filters (optionally redirects to properties page with filters)
+            function indexApplyFilters(shouldRedirect = false) {
+                // Update filter tags first
                 indexUpdateFilterTags();
                 
-                // Redirect to properties page with filters
-                const queryString = params.toString();
-                if (queryString) {
-                    window.location.href = '/properties.html?' + queryString;
-                } else {
-                    window.location.href = '/properties.html';
+                // Only redirect if explicitly requested (e.g., form submission, search button click)
+                if (shouldRedirect) {
+                    const params = new URLSearchParams();
+                    
+                    if (indexCurrentFilter !== 'all') {
+                        params.set('status', indexCurrentFilter);
+                    }
+                    
+                    if (indexSelectedPropertyType) {
+                        params.set('type', indexSelectedPropertyType);
+                    }
+                    
+                    if (indexSelectedCategory && !indexSelectedPropertyType) {
+                        params.set('category', indexSelectedCategory);
+                    }
+                    
+                    const city = document.getElementById('indexSearchCity')?.value.trim() || '';
+                    if (city) params.set('city', city);
+                    
+                    const area = document.getElementById('indexSearchArea')?.value.trim() || '';
+                    if (area) params.set('area', area);
+                    
+                    const amenities = document.getElementById('indexSearchAmenities')?.value.trim() || '';
+                    if (amenities) params.set('amenities', amenities);
+                    
+                    const dimensions = document.getElementById('indexSearchDimensions')?.value.trim() || '';
+                    if (dimensions) params.set('dimensions', dimensions);
+                    
+                    const price = document.getElementById('indexSearchPrice')?.value || '';
+                    if (price) params.set('price', price);
+                    
+                    if (indexSelectedCondition) {
+                        params.set('condition', indexSelectedCondition);
+                    }
+                    
+                    if (indexSelectedBHK !== null) {
+                        params.set('bhk', indexSelectedBHK);
+                    }
+                    
+                    // Redirect to properties page with filters
+                    const queryString = params.toString();
+                    if (queryString) {
+                        window.location.href = '/properties.html?' + queryString;
+                    } else {
+                        window.location.href = '/properties.html';
+                    }
                 }
             }
             
@@ -1862,7 +1926,8 @@
                     activeFilters.push({
                         type: 'status',
                         label: indexCurrentFilter === 'sale' ? 'Buy' : 'Rent',
-                        icon: indexCurrentFilter === 'sale' ? 'fa-shopping-cart' : 'fa-key'
+                        icon: indexCurrentFilter === 'sale' ? 'fa-shopping-cart' : 'fa-key',
+                        value: indexCurrentFilter
                     });
                 }
                 
@@ -1870,7 +1935,8 @@
                     activeFilters.push({
                         type: 'condition',
                         label: indexSelectedCondition === 'new' ? 'New' : 'Resale',
-                        icon: 'fa-certificate'
+                        icon: 'fa-certificate',
+                        value: indexSelectedCondition
                     });
                 }
                 
@@ -1889,13 +1955,15 @@
                     activeFilters.push({
                         type: 'bhk',
                         label: `Unit Type: ${unitTypeLabel}`,
-                        icon: 'fa-bed'
+                        icon: 'fa-bed',
+                        value: indexSelectedBHK.toString()
                     });
                 }
                 
                 if (indexSelectedPropertyType) {
                     const typeLabels = {
                         'plots': 'Plots',
+                        'apartment': 'Apartments',
                         'office-space': 'Office Space',
                         'warehouse': 'Warehouse',
                         'showrooms': 'Showrooms',
@@ -1909,13 +1977,15 @@
                     activeFilters.push({
                         type: 'propertyType',
                         label: categoryLabel ? `${categoryLabel}: ${typeLabel}` : `Type: ${typeLabel}`,
-                        icon: 'fa-building'
+                        icon: 'fa-building',
+                        value: indexSelectedPropertyType
                     });
                 } else if (indexSelectedCategory) {
                     activeFilters.push({
                         type: 'category',
                         label: indexSelectedCategory === 'residential' ? 'Residential' : 'Commercial',
-                        icon: 'fa-home'
+                        icon: 'fa-home',
+                        value: indexSelectedCategory
                     });
                 }
                 
@@ -1924,7 +1994,8 @@
                     activeFilters.push({
                         type: 'city',
                         label: `City: ${city}`,
-                        icon: 'fa-map-marker-alt'
+                        icon: 'fa-map-marker-alt',
+                        value: city
                     });
                 }
                 
@@ -1933,7 +2004,8 @@
                     activeFilters.push({
                         type: 'area',
                         label: `Area: ${area}`,
-                        icon: 'fa-map-marker-alt'
+                        icon: 'fa-map-marker-alt',
+                        value: area
                     });
                 }
                 
@@ -1942,7 +2014,8 @@
                     activeFilters.push({
                         type: 'dimensions',
                         label: `Dimensions: ${dimensions}`,
-                        icon: 'fa-ruler-combined'
+                        icon: 'fa-ruler-combined',
+                        value: dimensions
                     });
                 }
                 
@@ -1951,7 +2024,8 @@
                     activeFilters.push({
                         type: 'price',
                         label: `Price: Custom Range`,
-                        icon: 'fa-dollar-sign'
+                        icon: 'fa-dollar-sign',
+                        value: price
                     });
                 }
                 
@@ -1960,22 +2034,96 @@
                     activeFilters.push({
                         type: 'amenities',
                         label: `Amenities: ${amenities}`,
-                        icon: 'fa-star'
+                        icon: 'fa-star',
+                        value: amenities
                     });
                 }
                 
                 if (activeFilters.length > 0) {
                     filterTags.innerHTML = activeFilters.map(filter => `
-                        <div class="filter-tag" data-filter-type="${filter.type}">
+                        <div class="filter-tag" data-filter-type="${filter.type}" data-filter-value="${filter.value || ''}">
                             <i class="fas ${filter.icon} filter-tag-icon"></i>
                             <span class="filter-tag-text">${filter.label}</span>
+                            <button type="button" class="filter-tag-remove" data-filter-type="${filter.type}">
+                                <i class="fas fa-times"></i>
+                            </button>
                         </div>
                     `).join('');
                     filterTagsContainer.style.display = 'block';
+                    
+                    // Add event listeners to remove buttons
+                    filterTags.querySelectorAll('.filter-tag-remove').forEach(btn => {
+                        btn.addEventListener('click', (e) => {
+                            e.stopPropagation();
+                            const filterType = btn.dataset.filterType;
+                            indexRemoveFilter(filterType);
+                        });
+                    });
                 } else {
                     filterTagsContainer.style.display = 'none';
                     filterTags.innerHTML = '';
                 }
+            }
+            
+            // Remove Filter
+            function indexRemoveFilter(filterType) {
+                switch(filterType) {
+                    case 'status':
+                        indexCurrentFilter = 'all';
+                        const transactionTypeSelect = document.getElementById('indexSearchTransactionType');
+                        if (transactionTypeSelect) transactionTypeSelect.value = 'all';
+                        break;
+                    case 'condition':
+                        indexSelectedCondition = null;
+                        const propertyConditionSelect = document.getElementById('indexSearchPropertyCondition');
+                        if (propertyConditionSelect) propertyConditionSelect.value = '';
+                        break;
+                    case 'bhk':
+                        indexSelectedBHK = null;
+                        const unitTypeSelect = document.getElementById('indexSearchUnitType');
+                        if (unitTypeSelect) unitTypeSelect.value = '';
+                        break;
+                    case 'propertyType':
+                        indexSelectedPropertyType = null;
+                        indexSelectedCategory = null;
+                        document.querySelectorAll('#indexPropertiesFilters .subcategory-button[data-property-type]').forEach(btn => btn.classList.remove('active'));
+                        document.querySelectorAll('#indexPropertiesFilters .category-text-button[data-category]').forEach(btn => btn.classList.remove('active'));
+                        const categorySection = document.querySelector('#indexCategorySection');
+                        if (categorySection) categorySection.removeAttribute('data-active-category');
+                        break;
+                    case 'category':
+                        indexSelectedCategory = null;
+                        indexSelectedPropertyType = null;
+                        document.querySelectorAll('#indexPropertiesFilters .category-text-button[data-category]').forEach(btn => btn.classList.remove('active'));
+                        document.querySelectorAll('#indexPropertiesFilters .subcategory-button[data-property-type]').forEach(btn => btn.classList.remove('active'));
+                        const categorySection2 = document.querySelector('#indexCategorySection');
+                        if (categorySection2) categorySection2.removeAttribute('data-active-category');
+                        break;
+                    case 'city':
+                        const cityInput = document.getElementById('indexSearchCity');
+                        if (cityInput) cityInput.value = '';
+                        break;
+                    case 'area':
+                        const areaInput = document.getElementById('indexSearchArea');
+                        if (areaInput) areaInput.value = '';
+                        break;
+                    case 'dimensions':
+                        const dimensionsInput = document.getElementById('indexSearchDimensions');
+                        if (dimensionsInput) dimensionsInput.value = '';
+                        break;
+                    case 'price':
+                        const priceSelect = document.getElementById('indexSearchPrice');
+                        if (priceSelect) priceSelect.value = '';
+                        const priceRangeDisplay = document.getElementById('indexPriceRangeDisplay');
+                        if (priceRangeDisplay) priceRangeDisplay.textContent = 'Any Price';
+                        break;
+                    case 'amenities':
+                        const amenitiesInput = document.getElementById('indexSearchAmenities');
+                        if (amenitiesInput) amenitiesInput.value = '';
+                        break;
+                }
+                // Update filter tags without redirecting
+                indexApplyFilters(false);
             }
             
             // Initialize Price Range Modal for Index Page

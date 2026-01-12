@@ -27,14 +27,37 @@
     function init() {
         if (isInitialized) return;
         
-        // Only initialize if there's an active session
+        // Only initialize if there's a valid active session with user data
         const hasSession = sessionStorage.getItem(SESSION_KEY) === 'true' ||
                           sessionStorage.getItem('dashboard_authenticated') === 'true' ||
                           localStorage.getItem(SESSION_KEY) === 'true' ||
                           localStorage.getItem('dashboard_authenticated') === 'true';
         
-        if (!hasSession) {
-            // No active session, don't initialize
+        // Also verify user data exists and is valid
+        const userStr = sessionStorage.getItem(USER_KEY) || sessionStorage.getItem('user') ||
+                       localStorage.getItem(USER_KEY) || localStorage.getItem('user');
+        
+        let hasValidUser = false;
+        if (userStr) {
+            try {
+                const user = JSON.parse(userStr);
+                // Ensure user has required fields (email is mandatory) and has admin role
+                if (user && user.email && typeof user.email === 'string' && user.email.trim() !== '' && user.role === 'admin') {
+                    hasValidUser = true;
+                }
+            } catch (e) {
+                // Invalid JSON, treat as no valid user
+                hasValidUser = false;
+            }
+        }
+        
+        // Only initialize if there's both a session flag AND valid user data
+        if (!hasSession || !hasValidUser) {
+            // No valid session, don't initialize
+            // Clear any invalid session data
+            if (hasSession && !hasValidUser) {
+                clearSession();
+            }
             return;
         }
         
@@ -508,14 +531,62 @@
     }
 
     // Initialize when DOM is ready
+    // Only initialize if we're not on the login page (index.html)
+    // Sessions should only be managed after successful login
+    function shouldInitializeSessionManager() {
+        // Don't initialize on login page unless there's a valid session
+        const path = window.location.pathname;
+        const isLoginPage = path === '/' || path === '/index.html' || path.endsWith('/index.html');
+        
+        if (isLoginPage) {
+            // On login page, only initialize if there's already a valid session
+            // This handles the case where user is already logged in and visits the homepage
+            const hasSession = sessionStorage.getItem(SESSION_KEY) === 'true' ||
+                              sessionStorage.getItem('dashboard_authenticated') === 'true' ||
+                              localStorage.getItem(SESSION_KEY) === 'true' ||
+                              localStorage.getItem('dashboard_authenticated') === 'true';
+            
+            if (!hasSession) {
+                // No session on login page - don't initialize
+                return false;
+            }
+            
+            // Verify user data exists and is valid
+            const userStr = sessionStorage.getItem(USER_KEY) || sessionStorage.getItem('user') ||
+                           localStorage.getItem(USER_KEY) || localStorage.getItem('user');
+            
+            if (userStr) {
+                try {
+                    const user = JSON.parse(userStr);
+                    if (user && user.email && typeof user.email === 'string' && user.email.trim() !== '' && user.role === 'admin') {
+                        return true; // Valid session exists
+                    }
+                } catch (e) {
+                    // Invalid user data
+                }
+            }
+            
+            // Invalid session data on login page - clear it
+            clearSession();
+            return false;
+        }
+        
+        // Not on login page - check for valid session
+        return true;
+    }
+    
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', () => {
-            init();
-            checkSessionOnLoad();
+            if (shouldInitializeSessionManager()) {
+                init();
+                checkSessionOnLoad();
+            }
         });
     } else {
-        init();
-        checkSessionOnLoad();
+        if (shouldInitializeSessionManager()) {
+            init();
+            checkSessionOnLoad();
+        }
     }
 
     // Cleanup on page unload

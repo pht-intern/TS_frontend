@@ -1170,6 +1170,7 @@ function applyFilters() {
     // Define property type to category mapping
     const propertyTypeToCategory = {
         'plots': 'residential',
+        'apartment': 'residential',
         'house': 'residential',
         'villa': 'residential',
         'row-house': 'residential',
@@ -1188,6 +1189,7 @@ function applyFilters() {
         // Map new property types to existing types or check for new fields
         const typeMapping = {
             'plots': 'plots',
+            'apartment': 'apartment',
             'office-space': 'office-space',
             'warehouse': 'warehouse',
             'showrooms': 'showrooms',
@@ -1205,6 +1207,7 @@ function applyFilters() {
             const mappedType = typeMapping[selectedPropertyType];
             if (mappedType === 'house' && p.type === 'house') return true;
             if (mappedType === 'villa' && p.type === 'villa') return true;
+            if (mappedType === 'apartment' && (p.type === 'apartment' || p.type === 'apartments')) return true;
             // For new types (plots, office-space, etc.), check if type field matches
             return p.type === selectedPropertyType;
         });
@@ -1215,7 +1218,7 @@ function applyFilters() {
     if (selectedCategory && !selectedPropertyType) {
         // Map category to property types
         const categoryPropertyTypes = {
-            'residential': ['plots', 'house', 'villa', 'row-house'],
+            'residential': ['plots', 'apartment', 'house', 'villa', 'row-house'],
             'commercial': ['office-space', 'warehouse', 'showrooms']
         };
         
@@ -1230,6 +1233,7 @@ function applyFilters() {
             // If no category field, check by property type
             const typeMapping = {
                 'plots': 'plots',
+                'apartment': 'apartment',
                 'office-space': 'office-space',
                 'warehouse': 'warehouse',
                 'showrooms': 'showrooms',
@@ -1249,6 +1253,7 @@ function applyFilters() {
                 // Map existing types to new types
                 if (propertyType === 'house' && typesForCategory.includes('house')) return true;
                 if (propertyType === 'villa' && typesForCategory.includes('villa')) return true;
+                if ((propertyType === 'apartment' || propertyType === 'apartments') && typesForCategory.includes('apartment')) return true;
                 // Check if type matches any in category
                 return typesForCategory.some(t => propertyType.includes(t.replace('-', '')));
             }
@@ -1465,6 +1470,7 @@ function updateFilterTags() {
     if (selectedPropertyType) {
         const typeLabels = {
             'plots': 'Plots',
+            'apartment': 'Apartments',
             'office-space': 'Office Space',
             'warehouse': 'Warehouse',
             'showrooms': 'Showrooms',

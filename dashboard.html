@@ -76,88 +76,149 @@
                     }
                 }
                 
-                // IMMEDIATE CHECK: Get authentication data synchronously
-                let localAuth, sessionAuth, localUserStr, sessionUserStr;
-                try {
-                    localAuth = localStorage.getItem('dashboard_authenticated');
-                    sessionAuth = sessionStorage.getItem('dashboard_authenticated');
-                    localUserStr = localStorage.getItem('user');
-                    sessionUserStr = sessionStorage.getItem('user');
-                } catch (e) {
-                    // Storage access failed - treat as not authenticated
-                    clearAllAuthData();
-                    window.location.replace('/index.html');
-                    return;
-                }
-                
-                // Check if authentication flag exists
-                const isAuthenticated = (localAuth === 'true') || (sessionAuth === 'true');
-                
-                // Get user data
-                const userStr = localUserStr || sessionUserStr;
-                
-                // Validate user data exists and is valid JSON with required fields
-                let hasValidUser = false;
-                let user = null;
-                
-                if (userStr) {
+                // CRITICAL FIX: Add retry mechanism for timing issues
+                // Sometimes storage isn't immediately available after redirect
+                function checkAuthWithRetry(retryCount = 0) {
+                    const MAX_RETRIES = 3;
+                    const RETRY_DELAY = 50; // 50ms between retries
+                    
+                    // IMMEDIATE CHECK: Get authentication data synchronously
+                    let localAuth, sessionAuth, localUserStr, sessionUserStr;
                     try {
-                        user = JSON.parse(userStr);
-                        // STRICT VALIDATION: Must have email (non-empty string) AND admin role
-                        if (user && 
-                            user.email && 
-                            typeof user.email === 'string' && 
-                            user.email.trim() !== '' && 
-                            user.role === 'admin') {
-                            hasValidUser = true;
-                        } else {
-                            // Invalid user data
+                        localAuth = localStorage.getItem('dashboard_authenticated');
+                        sessionAuth = sessionStorage.getItem('dashboard_authenticated');
+                        localUserStr = localStorage.getItem('user');
+                        sessionUserStr = sessionStorage.getItem('user');
+                    } catch (e) {
+                        // Storage access failed - treat as not authenticated
+                        console.error('Storage access failed:', e);
+                        clearAllAuthData();
+                        window.location.replace('/index.html');
+                        return false;
+                    }
+                    
+                    // Check if authentication flag exists
+                    const isAuthenticated = (localAuth === 'true') || (sessionAuth === 'true');
+                    
+                    // Get user data
+                    const userStr = localUserStr || sessionUserStr;
+                    
+                    // Validate user data exists and is valid JSON with required fields
+                    let hasValidUser = false;
+                    let user = null;
+                    
+                    if (userStr) {
+                        try {
+                            user = JSON.parse(userStr);
+                            // STRICT VALIDATION: Must have email (non-empty string) AND admin role
+                            if (user && 
+                                user.email && 
+                                typeof user.email === 'string' && 
+                                user.email.trim() !== '' && 
+                                user.role === 'admin') {
+                                hasValidUser = true;
+                            } else {
+                                // Invalid user data
+                                console.warn('Invalid user data:', user);
+                                user = null;
+                                hasValidUser = false;
+                            }
+                        } catch (e) {
+                            // Invalid JSON
+                            console.error('Error parsing user data:', e, 'Raw:', userStr);
                             user = null;
                             hasValidUser = false;
                         }
-                    } catch (e) {
-                        // Invalid JSON
-                        user = null;
-                        hasValidUser = false;
                     }
-                }
-                
-                // CRITICAL CHECK: Both authentication flag AND valid user data must exist
-                // If either is missing or invalid, redirect immediately
-                if (!isAuthenticated || !hasValidUser || !user) {
-                    // Clear all authentication data
-                    clearAllAuthData();
-                    // Redirect immediately - use replace to prevent back button
-                    try {
-                        window.location.replace('/index.html');
-                    } catch (e) {
-                        try {
-                            window.location.href = '/index.html';
-                        } catch (e2) {
-                            // Last resort - show error and redirect
-                            if (document.body) {
-                                document.body.style.display = 'block';
-                                document.body.innerHTML = '<div style="font-family: Inter, sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; text-align: center;"><div><h1>Unauthorized Access</h1><p>Redirecting to login...</p></div></div>';
-                                setTimeout(function() {
-                                    window.location.href = '/index.html';
-                                }, 1000);
+                    
+                    // CRITICAL CHECK: Both authentication flag AND valid user data must exist
+                    // If either is missing or invalid, retry or redirect
+                    if (!isAuthenticated || !hasValidUser || !user) {
+                        // If we haven't exhausted retries and this looks like a timing issue, retry
+                        if (retryCount < MAX_RETRIES) {
+                            // Check if we're coming from a login redirect (has _login param)
+                            const urlParams = new URLSearchParams(window.location.search);
+                            const isLoginRedirect = urlParams.has('_login');
+                            
+                            if (isLoginRedirect) {
+                                // This is a login redirect - storage might not be ready yet
+                                console.log(`Auth check failed (attempt ${retryCount + 1}/${MAX_RETRIES}), retrying...`, {
+                                    isAuthenticated,
+                                    hasValidUser,
+                                    hasUserStr: !!userStr,
+                                    localAuth,
+                                    sessionAuth
+                                });
+                                setTimeout(() => {
+                                    checkAuthWithRetry(retryCount + 1);
+                                }, RETRY_DELAY);
+                                return false;
                             }
                         }
+                        
+                        // No retries left or not a login redirect - redirect to login
+                        console.error('Authentication check failed after retries:', {
+                            isAuthenticated,
+                            hasValidUser,
+                            hasUser: !!user,
+                            localAuth,
+                            sessionAuth,
+                            retryCount
+                        });
+                        clearAllAuthData();
+                        // Redirect immediately - use replace to prevent back button
+                        try {
+                            window.location.replace('/index.html');
+                        } catch (e) {
+                            try {
+                                window.location.href = '/index.html';
+                            } catch (e2) {
+                                // Last resort - show error and redirect
+                                if (document.body) {
+                                    document.body.style.display = 'block';
+                                    document.body.innerHTML = '<div style="font-family: Inter, sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; text-align: center;"><div><h1>Unauthorized Access</h1><p>Redirecting to login...</p></div></div>';
+                                    setTimeout(function() {
+                                        window.location.href = '/index.html';
+                                    }, 1000);
+                                }
+                            }
+                        }
+                        return false;
                     }
-                    return;
+                    
+                    // Authentication passed - return user data
+                    return { user, isAuthenticated, hasValidUser };
                 }
                 
+                // Perform auth check with retry
+                const authResult = checkAuthWithRetry();
+                if (!authResult) {
+                    return; // Redirect already handled
+                }
+                
+                const { user, isAuthenticated, hasValidUser } = authResult;
+                
                 // ADDITIONAL SECURITY: Double-check that we have valid data
-                if (!user.email || typeof user.email !== 'string' || user.email.trim() === '') {
+                // (Already validated in checkAuthWithRetry, but double-check for safety)
+                if (!user || !user.email || typeof user.email !== 'string' || user.email.trim() === '') {
+                    console.error('User validation failed:', user);
                     clearAllAuthData();
                     window.location.replace('/index.html');
                     return;
                 }
                 
                 if (user.role !== 'admin') {
+                    console.error('User role validation failed:', user.role);
                     clearAllAuthData();
                     window.location.replace('/index.html');
                     return;
+                }
+                
+                // Remove login redirect parameter from URL (clean URL)
+                if (window.location.search.includes('_login=')) {
+                    const url = new URL(window.location);
+                    url.searchParams.delete('_login');
+                    window.history.replaceState({}, '', url.pathname + url.search);
                 }
                 
                 // Authentication passed - mark body as authenticated

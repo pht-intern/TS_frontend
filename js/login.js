@@ -437,13 +437,52 @@
                         return;
                     }
                     
-                    // Verify storage was successful
-                    const storedUser = rememberMe ? localStorage.getItem('user') : sessionStorage.getItem('user');
-                    const storedAuth = rememberMe ? localStorage.getItem('dashboard_authenticated') : sessionStorage.getItem('dashboard_authenticated');
-                    if (!storedUser || storedAuth !== 'true') {
-                        console.error('Failed to verify session storage');
+                    // Verify storage was successful - check both storage types
+                    const storedUserLocal = localStorage.getItem('user');
+                    const storedAuthLocal = localStorage.getItem('dashboard_authenticated');
+                    const storedUserSession = sessionStorage.getItem('user');
+                    const storedAuthSession = sessionStorage.getItem('dashboard_authenticated');
+                    
+                    // Ensure data exists in at least one storage type
+                    const hasValidStorage = (storedUserLocal && storedAuthLocal === 'true') || 
+                                          (storedUserSession && storedAuthSession === 'true');
+                    
+                    if (!hasValidStorage) {
+                        console.error('Failed to verify session storage', {
+                            local: { user: !!storedUserLocal, auth: storedAuthLocal },
+                            session: { user: !!storedUserSession, auth: storedAuthSession }
+                        });
                         alert('Error saving session. Please try again.');
                         return;
+                    }
+                    
+                    // Double-check: Parse and validate stored user data
+                    try {
+                        const verifyUser = JSON.parse(storedUserLocal || storedUserSession || '{}');
+                        if (!verifyUser.email || verifyUser.role !== 'admin') {
+                            console.error('Stored user data is invalid:', verifyUser);
+                            alert('Error: Invalid user data stored. Please try again.');
+                            return;
+                        }
+                    } catch (e) {
+                        console.error('Error parsing stored user data:', e);
+                        alert('Error: Could not verify stored data. Please try again.');
+                        return;
+                    }
+                    
+                    // Force a synchronous flush to ensure storage is committed
+                    // This is a workaround for browsers that delay storage commits
+                    try {
+                        // Trigger a storage event to ensure it's committed
+                        if (rememberMe) {
+                            localStorage.setItem('_auth_verify', Date.now().toString());
+                            localStorage.removeItem('_auth_verify');
+                        } else {
+                            sessionStorage.setItem('_auth_verify', Date.now().toString());
+                            sessionStorage.removeItem('_auth_verify');
+                        }
+                    } catch (e) {
+                        console.warn('Storage verification flush failed:', e);
                     }
                     
                     // Initialize session manager to track tabs
@@ -458,12 +497,31 @@
                     // Close modal
                     closeModal();
                     
-                    // Small delay to ensure all storage operations are complete
-                    // Then redirect to dashboard for successful login
-                    // (Only admin users can login based on backend validation)
+                    // CRITICAL FIX: Use a longer delay and ensure storage is committed
+                    // Also add a query parameter to help dashboard verify the redirect
                     setTimeout(() => {
-                        window.location.replace('/dashboard.html');
-                    }, 100);
+                        // Final verification before redirect
+                        const finalCheckLocal = localStorage.getItem('dashboard_authenticated') === 'true';
+                        const finalCheckSession = sessionStorage.getItem('dashboard_authenticated') === 'true';
+                        const finalCheckUser = localStorage.getItem('user') || sessionStorage.getItem('user');
+                        
+                        if (finalCheckLocal || finalCheckSession) {
+                            // Add timestamp to prevent caching issues
+                            const redirectUrl = '/dashboard.html?_login=' + Date.now();
+                            console.log('Redirecting to dashboard with verified auth:', {
+                                local: finalCheckLocal,
+                                session: finalCheckSession,
+                                hasUser: !!finalCheckUser
+                            });
+                            window.location.replace(redirectUrl);
+                        } else {
+                            console.error('Storage lost before redirect!', {
+                                local: localStorage.getItem('dashboard_authenticated'),
+                                session: sessionStorage.getItem('dashboard_authenticated')
+                            });
+                            alert('Session storage error. Please try logging in again.');
+                        }
+                    }, 200); // Increased delay to 200ms for better reliability
                 } else {
                     // Login failed - NO session created
                     // Show error message based on status code

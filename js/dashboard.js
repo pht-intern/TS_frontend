@@ -142,21 +142,33 @@ function checkAuthentication() {
     
     // Validate user data exists and is valid JSON with required fields
     let user = null;
+    let hasValidUser = false;
+    
     if (userStr) {
         try {
             user = JSON.parse(userStr);
             // Ensure user has required fields (email is mandatory) and has admin role
-            if (!user || !user.email || typeof user.email !== 'string' || user.email.trim() === '' || user.role !== 'admin') {
+            if (user && 
+                user.email && 
+                typeof user.email === 'string' && 
+                user.email.trim() !== '' && 
+                user.role === 'admin') {
+                hasValidUser = true;
+            } else {
+                // Invalid user data
                 user = null;
+                hasValidUser = false;
             }
         } catch (e) {
             // Invalid JSON, treat as not authenticated
             user = null;
+            hasValidUser = false;
         }
     }
     
-    // Verify both authentication flag and valid user data exist
-    if (!isAuthenticated || !user) {
+    // CRITICAL: Verify both authentication flag AND valid user data exist
+    // If either is missing or invalid, redirect immediately
+    if (!isAuthenticated || !hasValidUser || !user) {
         // Clear any partial or invalid auth data from both storage types
         clearAllAuthData();
         // Redirect to index.html if not authenticated
@@ -1374,18 +1386,33 @@ async function openPropertyModal(propertyId = null) {
     
     if (!modal || !form) return;
 
-    // Reset form and steps
-    form.reset();
+    // Get property ID input reference BEFORE resetting form
     const propertyIdInput = document.getElementById('propertyId');
-    if (propertyIdInput) propertyIdInput.value = '';
     const currentStepInput = document.getElementById('currentStep');
+    
+    // Store property ID temporarily (form.reset() will clear all inputs)
+    const tempPropertyId = propertyId;
+    
+    // Reset form and steps (this clears ALL form fields including hidden propertyId)
+    form.reset();
+    
+    // CRITICAL FIX: Restore property ID immediately after reset if in edit mode
+    if (tempPropertyId && propertyIdInput) {
+        propertyIdInput.value = tempPropertyId;
+    } else if (propertyIdInput) {
+        propertyIdInput.value = '';
+    }
+    
     if (currentStepInput) currentStepInput.value = '1';
     
     // Reset to step 1
     showStep(1);
 
     if (propertyId) {
-        // Edit mode - fetch property from API
+        // Edit mode - ensure property ID is set (double-check after reset)
+        if (propertyIdInput) propertyIdInput.value = propertyId;
+        
+        // Fetch property from API
         try {
             const response = await fetch(`/api/properties/${propertyId}`);
             if (!response.ok) {
@@ -1393,14 +1420,19 @@ async function openPropertyModal(propertyId = null) {
             }
             const property = await response.json();
             populatePropertyForm(property);
+            // Ensure property ID is set after populating form
+            if (propertyIdInput) propertyIdInput.value = property.id || propertyId;
             if (modalTitle) modalTitle.textContent = 'Edit Property';
         } catch (error) {
             console.error('Error loading property:', error);
             showNotification('Failed to load property details.', 'error');
+            // Keep the property ID set even if fetch fails
+            if (propertyIdInput) propertyIdInput.value = propertyId;
             return;
         }
     } else {
-        // Add mode
+        // Add mode - clear property ID
+        if (propertyIdInput) propertyIdInput.value = '';
         if (modalTitle) modalTitle.textContent = 'Add New Property';
     }
 
@@ -1861,7 +1893,7 @@ function addImageUploadRow() {
                 Upload Image *
             </label>
             <div class="dashboard-image-upload-area gallery-image-upload" data-row-id="${rowId}" style="min-height: 100px; padding: 0.75rem;">
-                <input type="file" id="imageFile_${imageCount}" name="gallery_images[]" accept="image/jpeg,image/jpg,image/png,image/webp,image/svg+xml" class="gallery-image-input" style="display: none;" required>
+                <input type="file" id="imageFile_${imageCount}" name="gallery_images[]" accept="image/jpeg,image/jpg,image/png,image/webp,image/svg+xml" class="gallery-image-input" style="display: none;">
                 <div class="dashboard-image-upload-placeholder gallery-image-placeholder" id="imagePlaceholder_${imageCount}" style="padding: 0.5rem;">
                     <i class="fas fa-cloud-upload-alt" style="font-size: 1.5rem; margin-bottom: 0.4rem;"></i>
                     <p style="font-size: 0.85rem; margin: 0.3rem 0;">Click to upload or drag & drop</p>
@@ -2195,7 +2227,7 @@ function generateApartmentsStep2() {
         <div class="dashboard-form-row" style="margin-bottom: 1.5rem;">
             <div class="dashboard-form-group" style="flex: 1; margin-right: 1.5rem;">
                 <label for="propertyPrice" style="font-size: 1rem; margin-bottom: 0.75rem; font-weight: 500;">
-                    <i class="fas fa-dollar-sign"></i>
+                    <i class="fas fa-rupee-sign"></i>
                     Price *
                 </label>
                 <input type="text" id="propertyPrice" name="price" placeholder="e.g., Rs. 1.5 Cr" required style="padding: 1rem 1.25rem; font-size: 1rem;">
@@ -3078,7 +3110,28 @@ async function handlePropertySubmit(e) {
     e.preventDefault();
     
     const formData = new FormData(e.target);
-    const propertyId = formData.get('id');
+    // Get property ID from form data
+    let propertyId = formData.get('id');
+    
+    // CRITICAL FIX: Also check the input element directly as fallback
+    // form.reset() might have cleared it from FormData, so check the actual input value
+    if (!propertyId || propertyId === '' || propertyId === 'null') {
+        const propertyIdInput = document.getElementById('propertyId');
+        if (propertyIdInput && propertyIdInput.value) {
+            propertyId = propertyIdInput.value;
+        }
+    }
+    
+    // Normalize propertyId - convert to string and trim
+    if (propertyId) {
+        propertyId = String(propertyId).trim();
+        if (propertyId === '' || propertyId === 'null' || propertyId === 'undefined') {
+            propertyId = null;
+        }
+    } else {
+        propertyId = null;
+    }
+    
     const submitBtn = e.target.querySelector('button[type="submit"]');
     const originalBtnText = submitBtn ? submitBtn.innerHTML : '';
     
@@ -3414,9 +3467,20 @@ async function openResidentialPropertyModal(propertyId = null) {
     
     if (!modal || !form) return;
 
-    // Reset form
+    // Get property ID input reference BEFORE resetting form
+    const propertyIdInput = document.getElementById('residentialPropertyId');
+    const tempPropertyId = propertyId;
+    
+    // Reset form (this clears all inputs including hidden propertyId)
     form.reset();
-    document.getElementById('residentialPropertyId').value = '';
+    
+    // CRITICAL FIX: Restore property ID immediately after reset if in edit mode
+    if (tempPropertyId && propertyIdInput) {
+        propertyIdInput.value = tempPropertyId;
+    } else if (propertyIdInput) {
+        propertyIdInput.value = '';
+    }
+    
     clearResidentialImagePreviews();
     
     // Reset unit type buttons
@@ -3443,9 +3507,15 @@ async function openResidentialPropertyModal(propertyId = null) {
             }
             const property = await response.json();
             populateResidentialForm(property);
+            // CRITICAL: Ensure property ID is set after populating form
+            const propertyIdInput = document.getElementById('residentialPropertyId');
+            if (propertyIdInput) propertyIdInput.value = property.id || propertyId;
         } catch (error) {
             console.error('Error loading property:', error);
             showNotification('Failed to load property details.', 'error');
+            // Keep property ID set even if fetch fails
+            const propertyIdInput = document.getElementById('residentialPropertyId');
+            if (propertyIdInput) propertyIdInput.value = propertyId;
             return;
         }
     } else {
@@ -3470,7 +3540,27 @@ async function handleResidentialPropertySubmit(e) {
     e.preventDefault();
     
     const formData = new FormData(e.target);
-    const propertyId = formData.get('id');
+    // Get property ID from form data
+    let propertyId = formData.get('id');
+    
+    // CRITICAL FIX: Also check the input element directly as fallback
+    if (!propertyId || propertyId === '' || propertyId === 'null') {
+        const propertyIdInput = document.getElementById('residentialPropertyId');
+        if (propertyIdInput && propertyIdInput.value) {
+            propertyId = propertyIdInput.value;
+        }
+    }
+    
+    // Normalize propertyId
+    if (propertyId) {
+        propertyId = String(propertyId).trim();
+        if (propertyId === '' || propertyId === 'null' || propertyId === 'undefined') {
+            propertyId = null;
+        }
+    } else {
+        propertyId = null;
+    }
+    
     const submitBtn = e.target.querySelector('button[type="submit"]');
     const originalBtnText = submitBtn ? submitBtn.innerHTML : '';
     
@@ -3541,23 +3631,36 @@ async function handleResidentialPropertySubmit(e) {
     }
 
     try {
-        const response = await authenticatedFetch('/api/residential-properties', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(data)
-        });
+        let response;
+        if (propertyId) {
+            // Update existing property - use PUT to /api/properties/{id}
+            response = await authenticatedFetch(`/api/properties/${propertyId}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(data)
+            });
+        } else {
+            // Create new property
+            response = await authenticatedFetch('/api/residential-properties', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(data)
+            });
+        }
 
         if (!response.ok) {
             const errorData = await response.json();
             throw new Error(errorData.detail || errorData.message || 'Failed to save property');
         }
 
-        // Force refresh to bypass cache and show newly added property
+        // Force refresh to bypass cache and show newly added/updated property
         await loadProperties(true);
         closeResidentialPropertyModal();
-        showNotification('Residential property added successfully!');
+        showNotification(propertyId ? 'Residential property updated successfully!' : 'Residential property added successfully!');
     } catch (error) {
         console.error('Error saving residential property:', error);
         showNotification(error.message || 'Failed to save property. Please try again.', 'error');
@@ -3577,9 +3680,20 @@ async function openPlotPropertyModal(propertyId = null) {
     
     if (!modal || !form) return;
 
-    // Reset form
+    // Get property ID input reference BEFORE resetting form
+    const propertyIdInput = document.getElementById('plotPropertyId');
+    const tempPropertyId = propertyId;
+    
+    // Reset form (this clears all inputs including hidden propertyId)
     form.reset();
-    document.getElementById('plotPropertyId').value = '';
+    
+    // CRITICAL FIX: Restore property ID immediately after reset if in edit mode
+    if (tempPropertyId && propertyIdInput) {
+        propertyIdInput.value = tempPropertyId;
+    } else if (propertyIdInput) {
+        propertyIdInput.value = '';
+    }
+    
     clearPlotImagePreviews();
 
     if (propertyId) {
@@ -3592,9 +3706,15 @@ async function openPlotPropertyModal(propertyId = null) {
             }
             const property = await response.json();
             populatePlotForm(property);
+            // CRITICAL: Ensure property ID is set after populating form
+            const propertyIdInput = document.getElementById('plotPropertyId');
+            if (propertyIdInput) propertyIdInput.value = property.id || propertyId;
         } catch (error) {
             console.error('Error loading property:', error);
             showNotification('Failed to load property details.', 'error');
+            // Keep property ID set even if fetch fails
+            const propertyIdInput = document.getElementById('plotPropertyId');
+            if (propertyIdInput) propertyIdInput.value = propertyId;
             return;
         }
     } else {
@@ -3619,7 +3739,27 @@ async function handlePlotPropertySubmit(e) {
     e.preventDefault();
     
     const formData = new FormData(e.target);
-    const propertyId = formData.get('id');
+    // Get property ID from form data
+    let propertyId = formData.get('id');
+    
+    // CRITICAL FIX: Also check the input element directly as fallback
+    if (!propertyId || propertyId === '' || propertyId === 'null') {
+        const propertyIdInput = document.getElementById('plotPropertyId');
+        if (propertyIdInput && propertyIdInput.value) {
+            propertyId = propertyIdInput.value;
+        }
+    }
+    
+    // Normalize propertyId
+    if (propertyId) {
+        propertyId = String(propertyId).trim();
+        if (propertyId === '' || propertyId === 'null' || propertyId === 'undefined') {
+            propertyId = null;
+        }
+    } else {
+        propertyId = null;
+    }
+    
     const submitBtn = e.target.querySelector('button[type="submit"]');
     const originalBtnText = submitBtn ? submitBtn.innerHTML : '';
     
@@ -3686,23 +3826,36 @@ async function handlePlotPropertySubmit(e) {
     }
 
     try {
-        const response = await authenticatedFetch('/api/plot-properties', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(data)
-        });
+        let response;
+        if (propertyId) {
+            // Update existing property - use PUT to /api/properties/{id}
+            response = await authenticatedFetch(`/api/properties/${propertyId}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(data)
+            });
+        } else {
+            // Create new property
+            response = await authenticatedFetch('/api/plot-properties', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(data)
+            });
+        }
 
         if (!response.ok) {
             const errorData = await response.json();
             throw new Error(errorData.detail || errorData.message || 'Failed to save property');
         }
 
-        // Force refresh to bypass cache and show newly added property
+        // Force refresh to bypass cache and show newly added/updated property
         await loadProperties(true);
         closePlotPropertyModal();
-        showNotification('Plot property added successfully!');
+        showNotification(propertyId ? 'Plot property updated successfully!' : 'Plot property added successfully!');
     } catch (error) {
         console.error('Error saving plot property:', error);
         showNotification(error.message || 'Failed to save property. Please try again.', 'error');
@@ -4284,15 +4437,29 @@ function openTestimonialModal(testimonialId = null) {
     
     if (!modal || !form) return;
 
-    // Reset form
+    // Get testimonial ID input reference BEFORE resetting form
+    const testimonialIdInput = document.getElementById('testimonialId');
+    const tempTestimonialId = testimonialId;
+    
+    // Reset form (this clears all inputs including hidden testimonialId)
     form.reset();
-    document.getElementById('testimonialId').value = '';
+    
+    // CRITICAL FIX: Restore testimonial ID immediately after reset if in edit mode
+    if (tempTestimonialId && testimonialIdInput) {
+        testimonialIdInput.value = tempTestimonialId;
+    } else if (testimonialIdInput) {
+        testimonialIdInput.value = '';
+    }
 
     if (testimonialId) {
-        // Edit mode - find testimonial from current list
+        // Edit mode - ensure ID is set, then find testimonial from current list
+        if (testimonialIdInput) testimonialIdInput.value = testimonialId;
+        
         const testimonial = currentTestimonials.find(t => t.id === testimonialId);
         if (testimonial) {
             populateTestimonialForm(testimonial);
+            // CRITICAL: Ensure ID is set after populating form
+            if (testimonialIdInput) testimonialIdInput.value = testimonial.id || testimonialId;
             modalTitle.textContent = 'Edit Testimonial';
         }
     } else {
@@ -4330,7 +4497,27 @@ async function handleTestimonialSubmit(e) {
     e.preventDefault();
     
     const formData = new FormData(e.target);
-    const testimonialId = formData.get('id');
+    // Get testimonial ID from form data
+    let testimonialId = formData.get('id');
+    
+    // CRITICAL FIX: Also check the input element directly as fallback
+    if (!testimonialId || testimonialId === '' || testimonialId === 'null') {
+        const testimonialIdInput = document.getElementById('testimonialId');
+        if (testimonialIdInput && testimonialIdInput.value) {
+            testimonialId = testimonialIdInput.value;
+        }
+    }
+    
+    // Normalize testimonialId
+    if (testimonialId) {
+        testimonialId = String(testimonialId).trim();
+        if (testimonialId === '' || testimonialId === 'null' || testimonialId === 'undefined') {
+            testimonialId = null;
+        }
+    } else {
+        testimonialId = null;
+    }
+    
     const submitBtn = e.target.querySelector('button[type="submit"]');
     const originalBtnText = submitBtn ? submitBtn.innerHTML : '';
     
@@ -4628,17 +4815,32 @@ function openPartnerModal(partnerId = null) {
     
     if (!modal || !form) return;
 
-    // Reset form
+    // Get partner ID input reference BEFORE resetting form
+    const partnerIdInput = document.getElementById('partnerId');
+    const tempPartnerId = partnerId;
+    
+    // Reset form (this clears all inputs including hidden partnerId)
     form.reset();
-    document.getElementById('partnerId').value = '';
+    
+    // CRITICAL FIX: Restore partner ID immediately after reset if in edit mode
+    if (tempPartnerId && partnerIdInput) {
+        partnerIdInput.value = tempPartnerId;
+    } else if (partnerIdInput) {
+        partnerIdInput.value = '';
+    }
+    
     document.getElementById('partnerIsActive').checked = true;
     clearPartnerLogoPreviews();
 
     if (partnerId) {
-        // Edit mode - find partner from current list
+        // Edit mode - ensure ID is set, then find partner from current list
+        if (partnerIdInput) partnerIdInput.value = partnerId;
+        
         const partner = currentPartners.find(p => p.id === partnerId);
         if (partner) {
             populatePartnerForm(partner);
+            // CRITICAL: Ensure ID is set after populating form
+            if (partnerIdInput) partnerIdInput.value = partner.id || partnerId;
             modalTitle.textContent = 'Edit Partner';
         }
     } else {
@@ -4678,7 +4880,27 @@ async function handlePartnerSubmit(e) {
     e.preventDefault();
     
     const formData = new FormData(e.target);
-    const partnerId = formData.get('id');
+    // Get partner ID from form data
+    let partnerId = formData.get('id');
+    
+    // CRITICAL FIX: Also check the input element directly as fallback
+    if (!partnerId || partnerId === '' || partnerId === 'null') {
+        const partnerIdInput = document.getElementById('partnerId');
+        if (partnerIdInput && partnerIdInput.value) {
+            partnerId = partnerIdInput.value;
+        }
+    }
+    
+    // Normalize partnerId
+    if (partnerId) {
+        partnerId = String(partnerId).trim();
+        if (partnerId === '' || partnerId === 'null' || partnerId === 'undefined') {
+            partnerId = null;
+        }
+    } else {
+        partnerId = null;
+    }
+    
     const submitBtn = e.target.querySelector('button[type="submit"]');
     const originalBtnText = submitBtn ? submitBtn.innerHTML : '';
     
@@ -5232,9 +5454,20 @@ function openBlogModal(blogId = null) {
     
     if (!modal || !form) return;
 
-    // Reset form
+    // Get blog ID input reference BEFORE resetting form
+    const blogIdInput = document.getElementById('blogId');
+    const tempBlogId = blogId;
+    
+    // Reset form (this clears all inputs including hidden blogId)
     form.reset();
-    document.getElementById('blogId').value = '';
+    
+    // CRITICAL FIX: Restore blog ID immediately after reset if in edit mode
+    if (tempBlogId && blogIdInput) {
+        blogIdInput.value = tempBlogId;
+    } else if (blogIdInput) {
+        blogIdInput.value = '';
+    }
+    
     document.getElementById('blogAuthor').value = 'Tirumakudalu Properties';
     document.getElementById('blogIsActive').checked = true;
     clearBlogTags();
@@ -5246,10 +5479,14 @@ function openBlogModal(blogId = null) {
     }
 
     if (blogId) {
-        // Edit mode - find blog from current list
+        // Edit mode - ensure ID is set, then find blog from current list
+        if (blogIdInput) blogIdInput.value = blogId;
+        
         const blog = currentBlogs.find(b => b.id === blogId);
         if (blog) {
             populateBlogForm(blog);
+            // CRITICAL: Ensure ID is set after populating form
+            if (blogIdInput) blogIdInput.value = blog.id || blogId;
             modalTitle.textContent = 'Edit Blog';
         }
     } else {
@@ -5406,7 +5643,27 @@ async function handleBlogSubmit(e) {
     e.preventDefault();
     
     const formData = new FormData(e.target);
-    const blogId = formData.get('id');
+    // Get blog ID from form data
+    let blogId = formData.get('id');
+    
+    // CRITICAL FIX: Also check the input element directly as fallback
+    if (!blogId || blogId === '' || blogId === 'null') {
+        const blogIdInput = document.getElementById('blogId');
+        if (blogIdInput && blogIdInput.value) {
+            blogId = blogIdInput.value;
+        }
+    }
+    
+    // Normalize blogId
+    if (blogId) {
+        blogId = String(blogId).trim();
+        if (blogId === '' || blogId === 'null' || blogId === 'undefined') {
+            blogId = null;
+        }
+    } else {
+        blogId = null;
+    }
+    
     const submitBtn = e.target.querySelector('button[type="submit"]');
     const originalBtnText = submitBtn ? submitBtn.innerHTML : '';
     

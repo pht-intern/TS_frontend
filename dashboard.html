@@ -15,67 +15,237 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://cdn.quilljs.com/1.3.7/quill.snow.css" rel="stylesheet">
     <style>
-        /* Hide all content by default - only show after authentication check passes */
+        /* Hide body content by default - only show after authentication check passes */
+        /* Don't hide html element - it can block dev tools */
         body {
             display: none !important;
             visibility: hidden !important;
+            opacity: 0 !important;
         }
         body.authenticated {
             display: block !important;
             visibility: visible !important;
+            opacity: 1 !important;
+        }
+        /* Show loading message while checking authentication */
+        body::before {
+            content: 'Checking authentication...';
+            display: block;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-family: Inter, sans-serif;
+            color: #8B2E3D;
+            z-index: 9999;
+            background: white;
+            padding: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        body.authenticated::before {
+            display: none;
         }
     </style>
 </head>
 <body>
     <!-- Authentication Check - Must run immediately before any content -->
+    <!-- This script runs synchronously and blocks page rendering until authentication is verified -->
     <script>
+        // IMMEDIATE SYNCHRONOUS CHECK - No delays, no async operations
         (function() {
-            // Clear any stale or invalid authentication data first
-            function clearAllAuthData() {
-                sessionStorage.removeItem('dashboard_authenticated');
-                sessionStorage.removeItem('isAuthenticated');
-                sessionStorage.removeItem('user');
-                localStorage.removeItem('dashboard_authenticated');
-                localStorage.removeItem('isAuthenticated');
-                localStorage.removeItem('user');
-            }
+            'use strict';
             
-            // Check authentication immediately before page renders
-            const isAuthenticated = localStorage.getItem('dashboard_authenticated') === 'true' ||
-                                   sessionStorage.getItem('dashboard_authenticated') === 'true';
-            const userStr = localStorage.getItem('user') || sessionStorage.getItem('user');
-            
-            // Validate user data exists and is valid JSON
-            let user = null;
-            if (userStr) {
-                try {
-                    user = JSON.parse(userStr);
-                    // Ensure user has required fields (email is mandatory) and has admin role
-                    if (!user || !user.email || typeof user.email !== 'string' || user.email.trim() === '' || user.role !== 'admin') {
-                        user = null;
+            try {
+                // Function to clear all authentication data
+                function clearAllAuthData() {
+                    try {
+                        sessionStorage.removeItem('dashboard_authenticated');
+                        sessionStorage.removeItem('isAuthenticated');
+                        sessionStorage.removeItem('user');
+                        localStorage.removeItem('dashboard_authenticated');
+                        localStorage.removeItem('isAuthenticated');
+                        localStorage.removeItem('user');
+                        // Also clear any session manager tracking data
+                        for (let i = localStorage.length - 1; i >= 0; i--) {
+                            const key = localStorage.key(i);
+                            if (key && (key.startsWith('tab_') || key === 'session_cleared')) {
+                                localStorage.removeItem(key);
+                            }
+                        }
+                    } catch (e) {
+                        // Ignore errors during cleanup
                     }
+                }
+                
+                // IMMEDIATE CHECK: Get authentication data synchronously
+                let localAuth, sessionAuth, localUserStr, sessionUserStr;
+                try {
+                    localAuth = localStorage.getItem('dashboard_authenticated');
+                    sessionAuth = sessionStorage.getItem('dashboard_authenticated');
+                    localUserStr = localStorage.getItem('user');
+                    sessionUserStr = sessionStorage.getItem('user');
                 } catch (e) {
-                    // Invalid JSON, treat as not authenticated
-                    user = null;
+                    // Storage access failed - treat as not authenticated
+                    clearAllAuthData();
+                    window.location.replace('/index.html');
+                    return;
+                }
+                
+                // Check if authentication flag exists
+                const isAuthenticated = (localAuth === 'true') || (sessionAuth === 'true');
+                
+                // Get user data
+                const userStr = localUserStr || sessionUserStr;
+                
+                // Validate user data exists and is valid JSON with required fields
+                let hasValidUser = false;
+                let user = null;
+                
+                if (userStr) {
+                    try {
+                        user = JSON.parse(userStr);
+                        // STRICT VALIDATION: Must have email (non-empty string) AND admin role
+                        if (user && 
+                            user.email && 
+                            typeof user.email === 'string' && 
+                            user.email.trim() !== '' && 
+                            user.role === 'admin') {
+                            hasValidUser = true;
+                        } else {
+                            // Invalid user data
+                            user = null;
+                            hasValidUser = false;
+                        }
+                    } catch (e) {
+                        // Invalid JSON
+                        user = null;
+                        hasValidUser = false;
+                    }
+                }
+                
+                // CRITICAL CHECK: Both authentication flag AND valid user data must exist
+                // If either is missing or invalid, redirect immediately
+                if (!isAuthenticated || !hasValidUser || !user) {
+                    // Clear all authentication data
+                    clearAllAuthData();
+                    // Redirect immediately - use replace to prevent back button
+                    try {
+                        window.location.replace('/index.html');
+                    } catch (e) {
+                        try {
+                            window.location.href = '/index.html';
+                        } catch (e2) {
+                            // Last resort - show error and redirect
+                            if (document.body) {
+                                document.body.style.display = 'block';
+                                document.body.innerHTML = '<div style="font-family: Inter, sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; text-align: center;"><div><h1>Unauthorized Access</h1><p>Redirecting to login...</p></div></div>';
+                                setTimeout(function() {
+                                    window.location.href = '/index.html';
+                                }, 1000);
+                            }
+                        }
+                    }
+                    return;
+                }
+                
+                // ADDITIONAL SECURITY: Double-check that we have valid data
+                if (!user.email || typeof user.email !== 'string' || user.email.trim() === '') {
+                    clearAllAuthData();
+                    window.location.replace('/index.html');
+                    return;
+                }
+                
+                if (user.role !== 'admin') {
+                    clearAllAuthData();
+                    window.location.replace('/index.html');
+                    return;
+                }
+                
+                // Authentication passed - mark body as authenticated
+                // Use multiple methods to ensure the class is added reliably
+                function addAuthenticatedClass() {
+                    try {
+                        if (document.body) {
+                            document.body.classList.add('authenticated');
+                            // Also add to html element for good measure
+                            if (document.documentElement) {
+                                document.documentElement.classList.add('authenticated');
+                            }
+                            return true;
+                        }
+                    } catch (e) {
+                        // Ignore errors
+                    }
+                    return false;
+                }
+                
+                // Try immediately (body might exist if script runs after body tag)
+                addAuthenticatedClass();
+                
+                // Also set up listeners for when body becomes available
+                if (document.readyState === 'loading') {
+                    // Document is still loading - wait for DOMContentLoaded
+                    document.addEventListener('DOMContentLoaded', function() {
+                        addAuthenticatedClass();
+                    });
+                } else {
+                    // Document is already loaded or interactive - try immediately and on next tick
+                    addAuthenticatedClass();
+                    setTimeout(function() {
+                        addAuthenticatedClass();
+                    }, 0);
+                }
+                
+                // Fallback: Use readystatechange for older browsers
+                if (document.attachEvent) {
+                    document.attachEvent('onreadystatechange', function() {
+                        if (document.readyState === 'complete' || document.readyState === 'interactive') {
+                            addAuthenticatedClass();
+                        }
+                    });
+                }
+                
+                // Final fallback: Force show after a short delay if authentication passed
+                setTimeout(function() {
+                    try {
+                        if (document.body && !document.body.classList.contains('authenticated')) {
+                            // Authentication passed but class wasn't added - add it now
+                            addAuthenticatedClass();
+                        }
+                    } catch (e) {
+                        // Ignore errors
+                    }
+                }, 100);
+                
+            } catch (error) {
+                // If any error occurs, show error message and redirect
+                console.error('Authentication check error:', error);
+                try {
+                    window.location.replace('/index.html');
+                } catch (e) {
+                    // Show error and redirect
+                    try {
+                        if (document.body) {
+                            document.body.style.display = 'block';
+                            document.body.innerHTML = '<div style="font-family: Inter, sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; text-align: center;"><div><h1>Error</h1><p>An error occurred. Redirecting to login...</p></div></div>';
+                            setTimeout(function() {
+                                window.location.href = '/index.html';
+                            }, 2000);
+                        } else {
+                            window.location.href = '/index.html';
+                        }
+                    } catch (e2) {
+                        window.location.href = '/index.html';
+                    }
                 }
             }
-            
-            // If not authenticated or user data is invalid, redirect immediately
-            if (!isAuthenticated || !user) {
-                // Clear all authentication data
-                clearAllAuthData();
-                // Redirect to index page immediately
-                window.location.replace('/index.html');
-                // Prevent page from rendering
-                document.body.innerHTML = '<div style="display: flex; justify-content: center; align-items: center; height: 100vh; font-family: Inter, sans-serif;"><p>Redirecting to login...</p></div>';
-                // Stop script execution
-                throw new Error('Unauthorized access - redirecting to login');
-            }
-            
-            // Authentication passed - show the page
-            document.body.classList.add('authenticated');
         })();
     </script>
+    <!-- Fallback: If JavaScript is disabled, redirect via meta refresh -->
+    <noscript>
+        <meta http-equiv="refresh" content="0; url=/index.html">
+    </noscript>
     
     <!-- Dashboard (shown when authenticated) -->
     <div class="dashboard-container" id="dashboardContainer">
@@ -120,10 +290,6 @@
                             <a href="/settings.html" class="dashboard-profile-item">
                                 <i class="fas fa-cog"></i>
                                 <span>Settings</span>
-                            </a>
-                            <a href="/app-metrics.html" class="dashboard-profile-item" id="appMetricsLink">
-                                <i class="fas fa-chart-line"></i>
-                                <span>App Metrics</span>
                             </a>
                             <a href="/activity-logs.html" class="dashboard-profile-item">
                                 <i class="fas fa-history"></i>
@@ -1163,60 +1329,6 @@
     <script src="/js/session-manager.js"></script>
     <script src="/js/dashboard.js?v=20250120120000"></script>
     <script src="/js/page-tracking.js"></script>
-    <script>
-        // App Metrics Password Protection
-        document.addEventListener('DOMContentLoaded', function() {
-            const appMetricsLink = document.getElementById('appMetricsLink');
-            if (appMetricsLink) {
-                appMetricsLink.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    
-                    // Check if password is already verified in this session
-                    const isVerified = sessionStorage.getItem('app_metrics_verified') === 'true';
-                    if (isVerified) {
-                        window.location.href = '/app-metrics.html';
-                        return;
-                    }
-                    
-                    // Show password prompt
-                    const password = prompt('Enter password to access App Metrics:');
-                    if (password === null) {
-                        // User cancelled
-                        return;
-                    }
-                    
-                    if (!password || password.trim() === '') {
-                        alert('Password is required');
-                        return;
-                    }
-                    
-                    // Verify password with backend
-                    fetch('/api/admin/app-metrics/verify-password', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({ password: password })
-                    })
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.success) {
-                            // Store verification in sessionStorage
-                            sessionStorage.setItem('app_metrics_verified', 'true');
-                            // Redirect to app-metrics page
-                            window.location.href = '/app-metrics.html';
-                        } else {
-                            alert(data.message || 'Invalid password');
-                        }
-                    })
-                    .catch(error => {
-                        console.error('Error verifying password:', error);
-                        alert('Error verifying password. Please try again.');
-                    });
-                });
-            }
-        });
-    </script>
 </body>
 </html>
 

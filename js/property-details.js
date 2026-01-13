@@ -1056,18 +1056,6 @@ function renderPropertyDetails(property) {
         `;
     }
     
-    if (property.configuration || property.unit_type) {
-        const configValue = property.configuration || property.unit_type;
-        quickInfoHTML += `
-        <div class="quick-info-item">
-            <i class="fas fa-home"></i>
-            <div>
-                <span class="quick-info-label">Configuration</span>
-                <span class="quick-info-value">${escapeHtml(String(configValue).toUpperCase())}</span>
-            </div>
-        </div>
-        `;
-    }
     
     if (property.super_built_up_area) {
         quickInfoHTML += `

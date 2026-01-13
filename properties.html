@@ -151,7 +151,7 @@
                                     </select>
                                 </div>
                                 <div class="search-group">
-                                    <label><i class="fas fa-dollar-sign"></i> Price Range</label>
+                                    <label><i class="fas fa-rupee-sign"></i> Price Range</label>
                                     <button type="button" class="price-range-btn" id="propertiesPriceRangeBtn">
                                         <span class="price-range-display" id="propertiesPriceRangeDisplay">Any Price</span>
                                         <i class="fas fa-chevron-down"></i>
@@ -361,6 +361,62 @@
         </div>
     </div>
 
+    <!-- Visitor Info Popup Modal -->
+    <div class="visitor-modal" id="visitorModal">
+        <div class="visitor-modal-overlay" id="visitorModalOverlay"></div>
+        <div class="visitor-modal-content">
+            <button class="visitor-modal-close" id="visitorModalClose" type="button">
+                <i class="fas fa-times"></i>
+            </button>
+            <div class="visitor-modal-header">
+                <div class="visitor-modal-icon">
+                    <i class="fas fa-user-circle"></i>
+                </div>
+                <h2>Welcome to Tirumakudalu Properties</h2>
+                <p>Please share your information so we can assist you better</p>
+            </div>
+            <form class="visitor-form" id="visitorForm">
+                <div class="form-group">
+                    <label for="visitorFullName">
+                        <i class="fas fa-user"></i>
+                        Full Name <span class="required">*</span>
+                    </label>
+                    <input type="text" id="visitorFullName" name="full_name" placeholder="Enter your full name" required>
+                </div>
+                <div class="form-group">
+                    <label for="visitorEmail">
+                        <i class="fas fa-envelope"></i>
+                        Email Address <span class="required">*</span>
+                    </label>
+                    <input type="email" id="visitorEmail" name="email" placeholder="Enter your email" required>
+                </div>
+                <div class="form-group">
+                    <label for="visitorPhone">
+                        <i class="fas fa-phone"></i>
+                        Phone Number <span class="required">*</span>
+                    </label>
+                    <input type="tel" id="visitorPhone" name="phone" placeholder="Enter your phone number" required>
+                </div>
+                <div class="form-group">
+                    <label for="visitorLookingFor">
+                        <i class="fas fa-search"></i>
+                        What are you looking for?
+                    </label>
+                    <textarea id="visitorLookingFor" name="looking_for" placeholder="E.g., 2BHK apartment for rent, investment property, etc." rows="3"></textarea>
+                </div>
+                <div class="visitor-form-message" id="visitorFormMessage" style="display: none;"></div>
+                <div class="visitor-form-footer">
+                    <button type="submit" class="btn-visitor-submit">
+                        <span class="btn-text">Submit</span>
+                        <span class="btn-loader" style="display: none;">
+                            <i class="fas fa-spinner fa-spin"></i> Submitting...
+                        </span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <!-- Login Modal -->
     <div class="login-modal" id="loginModal">
         <div class="login-modal-overlay" id="loginModalOverlay"></div>
@@ -451,7 +507,7 @@
                         </li>
                         <li>
                             <i class="fas fa-map-marker-alt"></i>
-                            <span>78, SBM COLONY, 2ND CROSS, KONANAKUNTE, BANGALORE - 560062</span>
+                            <span>#76, 2ND floor, 2ND CROSS, Mysore Bank Colony, JP nagar, 7th Phase, BANGALORE - 560078</span>
                         </li>
                     </ul>
                 </div>
@@ -615,6 +671,250 @@
             }
         })();
 
+    </script>
+    <script>
+        // Visitor Modal Functionality - Triggered by filter button, then every 20 seconds if skipped
+        (function() {
+            const visitorModal = document.getElementById('visitorModal');
+            const visitorForm = document.getElementById('visitorForm');
+            const visitorFormMessage = document.getElementById('visitorFormMessage');
+            const visitorModalOverlay = document.getElementById('visitorModalOverlay');
+            let visitorModalInterval = null;
+            
+            // Storage keys
+            const VISITOR_FORM_SUBMITTED_KEY = 'visitorFormSubmitted';
+            const VISITOR_FORM_SKIPPED_KEY = 'visitorFormSkipped';
+            const VISITOR_MODAL_TRIGGERED_KEY = 'visitorModalTriggeredByFilter';
+
+            // Show modal
+            function showVisitorModal() {
+                if (visitorModal) {
+                    visitorModal.classList.add('active');
+                    document.body.style.overflow = 'hidden';
+                }
+            }
+
+            // Close modal
+            function closeVisitorModal() {
+                if (visitorModal) {
+                    visitorModal.classList.remove('active');
+                    document.body.style.overflow = '';
+                }
+            }
+            
+            // Check if form was already submitted
+            function isFormSubmitted() {
+                return sessionStorage.getItem(VISITOR_FORM_SUBMITTED_KEY) === 'true';
+            }
+            
+            // Check if form was skipped
+            function isFormSkipped() {
+                return sessionStorage.getItem(VISITOR_FORM_SKIPPED_KEY) === 'true';
+            }
+            
+            // Mark form as submitted
+            function markFormSubmitted() {
+                sessionStorage.setItem(VISITOR_FORM_SUBMITTED_KEY, 'true');
+                sessionStorage.removeItem(VISITOR_FORM_SKIPPED_KEY);
+                // Stop the interval if running
+                if (visitorModalInterval) {
+                    clearInterval(visitorModalInterval);
+                    visitorModalInterval = null;
+                }
+            }
+            
+            // Mark form as skipped
+            function markFormSkipped() {
+                sessionStorage.setItem(VISITOR_FORM_SKIPPED_KEY, 'true');
+                // Start the 20-second interval if not already running
+                if (!visitorModalInterval && !isFormSubmitted()) {
+                    startVisitorModalInterval();
+                }
+            }
+
+            // Prevent closing modal with Escape key
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape' && visitorModal && visitorModal.classList.contains('active')) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    return false;
+                }
+            });
+
+            // Close modal when clicking overlay
+            if (visitorModalOverlay) {
+                visitorModalOverlay.addEventListener('click', () => {
+                    closeVisitorModal();
+                    // Mark as skipped if form wasn't submitted
+                    if (!isFormSubmitted()) {
+                        markFormSkipped();
+                    }
+                });
+            }
+
+            // Close button functionality
+            const visitorModalClose = document.getElementById('visitorModalClose');
+            if (visitorModalClose) {
+                visitorModalClose.addEventListener('click', () => {
+                    closeVisitorModal();
+                    // Mark as skipped if form wasn't submitted
+                    if (!isFormSubmitted()) {
+                        markFormSkipped();
+                    }
+                });
+            }
+
+            // Form submission
+            if (visitorForm) {
+                visitorForm.addEventListener('submit', async (e) => {
+                    e.preventDefault();
+                    
+                    const submitBtn = visitorForm.querySelector('.btn-visitor-submit');
+                    const btnText = submitBtn.querySelector('.btn-text');
+                    const btnLoader = submitBtn.querySelector('.btn-loader');
+                    
+                    // Get form values
+                    const formData = {
+                        full_name: document.getElementById('visitorFullName').value.trim(),
+                        email: document.getElementById('visitorEmail').value.trim(),
+                        phone: document.getElementById('visitorPhone').value.trim(),
+                        looking_for: document.getElementById('visitorLookingFor').value.trim() || null
+                    };
+                    
+                    // Validate required fields
+                    if (!formData.full_name || !formData.email || !formData.phone) {
+                        showVisitorMessage('Please fill in all required fields.', 'error');
+                        return;
+                    }
+                    
+                    // Validate email format
+                    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                    if (!emailRegex.test(formData.email)) {
+                        showVisitorMessage('Please enter a valid email address.', 'error');
+                        return;
+                    }
+                    
+                    // Show loading state
+                    submitBtn.disabled = true;
+                    if (btnText) btnText.style.display = 'none';
+                    if (btnLoader) btnLoader.style.display = 'inline';
+                    if (visitorFormMessage) visitorFormMessage.style.display = 'none';
+                    
+                    try {
+                        const response = await fetch('/api/visitor-info', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify(formData)
+                        });
+                        
+                        const data = await response.json();
+                        
+                        if (response.ok) {
+                            // Success - mark as submitted
+                            markFormSubmitted();
+                            showVisitorMessage('Thank you! We will get in touch with you soon.', 'success');
+                            // Close modal after 2 seconds
+                            setTimeout(() => {
+                                closeVisitorModal();
+                                visitorForm.reset();
+                            }, 2000);
+                        } else {
+                            // Error from server
+                            const errorMessage = data.detail || data.error || 'Failed to submit. Please try again.';
+                            showVisitorMessage(errorMessage, 'error');
+                        }
+                    } catch (error) {
+                        console.error('Error submitting visitor form:', error);
+                        showVisitorMessage('Network error. Please check your connection and try again.', 'error');
+                    } finally {
+                        // Reset button state
+                        submitBtn.disabled = false;
+                        if (btnText) btnText.style.display = 'inline';
+                        if (btnLoader) btnLoader.style.display = 'none';
+                    }
+                });
+            }
+
+            // Helper function to show messages
+            function showVisitorMessage(message, type) {
+                if (!visitorFormMessage) return;
+                
+                visitorFormMessage.textContent = message;
+                visitorFormMessage.className = `visitor-form-message ${type}`;
+                visitorFormMessage.style.display = 'block';
+                
+                // Scroll to message
+                visitorFormMessage.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }
+
+            // Show modal every 20 seconds (only if skipped)
+            function startVisitorModalInterval() {
+                // Don't start if form was already submitted
+                if (isFormSubmitted()) {
+                    return;
+                }
+                
+                // Then show every 20 seconds
+                visitorModalInterval = setInterval(() => {
+                    // Only show if modal is not already active and form wasn't submitted
+                    if (visitorModal && !visitorModal.classList.contains('active') && !isFormSubmitted()) {
+                        showVisitorModal();
+                    }
+                }, 20000); // 20 seconds = 20000 milliseconds
+            }
+
+            // Trigger modal on filter button click (first time only)
+            function initFilterButtonTrigger() {
+                const filterForm = document.getElementById('propertiesPropertiesSearchForm');
+                if (filterForm) {
+                    filterForm.addEventListener('submit', (e) => {
+                        // Check if modal was already triggered by filter button
+                        const alreadyTriggered = sessionStorage.getItem(VISITOR_MODAL_TRIGGERED_KEY) === 'true';
+                        
+                        // Only show modal if:
+                        // 1. It hasn't been triggered by filter button before
+                        // 2. Form wasn't already submitted
+                        if (!alreadyTriggered && !isFormSubmitted()) {
+                            // Mark as triggered
+                            sessionStorage.setItem(VISITOR_MODAL_TRIGGERED_KEY, 'true');
+                            
+                            // Show modal after a short delay (let filter process first)
+                            setTimeout(() => {
+                                showVisitorModal();
+                            }, 500);
+                        }
+                    });
+                }
+            }
+
+            // Initialize on page load
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', () => {
+                    initFilterButtonTrigger();
+                    
+                    // If form was skipped before, start the interval
+                    if (isFormSkipped() && !isFormSubmitted()) {
+                        startVisitorModalInterval();
+                    }
+                });
+            } else {
+                initFilterButtonTrigger();
+                
+                // If form was skipped before, start the interval
+                if (isFormSkipped() && !isFormSubmitted()) {
+                    startVisitorModalInterval();
+                }
+            }
+
+            // Clean up interval on page unload
+            window.addEventListener('beforeunload', () => {
+                if (visitorModalInterval) {
+                    clearInterval(visitorModalInterval);
+                }
+            });
+        })();
     </script>
     <script>
         // Suppress browser extension errors that are not related to our code

@@ -310,48 +310,7 @@
                 throw new Error('Unauthorized access - redirecting to login');
             }
             
-            // Check app-metrics password verification
-            const appMetricsVerified = sessionStorage.getItem('app_metrics_verified') === 'true';
-            if (!appMetricsVerified) {
-                // Password not verified - prompt for password
-                const password = prompt('Enter password to access App Metrics:');
-                if (password === null) {
-                    // User cancelled - redirect to dashboard
-                    window.location.replace('/dashboard.html');
-                    throw new Error('Password entry cancelled');
-                }
-                
-                if (!password || password.trim() === '') {
-                    alert('Password is required');
-                    window.location.replace('/dashboard.html');
-                    throw new Error('Password required');
-                }
-                
-                // Verify password synchronously (blocking)
-                // Note: In production, you might want to use a more sophisticated approach
-                const xhr = new XMLHttpRequest();
-                xhr.open('POST', '/api/admin/app-metrics/verify-password', false); // false = synchronous
-                xhr.setRequestHeader('Content-Type', 'application/json');
-                xhr.send(JSON.stringify({ password: password }));
-                
-                if (xhr.status === 200) {
-                    const response = JSON.parse(xhr.responseText);
-                    if (response.success) {
-                        // Store verification in sessionStorage
-                        sessionStorage.setItem('app_metrics_verified', 'true');
-                    } else {
-                        alert(response.message || 'Invalid password');
-                        window.location.replace('/dashboard.html');
-                        throw new Error('Invalid password');
-                    }
-                } else {
-                    alert('Error verifying password. Please try again.');
-                    window.location.replace('/dashboard.html');
-                    throw new Error('Password verification failed');
-                }
-            }
-            
-            // Authentication and password verification passed - show the page
+            // Authentication passed - show the page
             document.body.classList.add('authenticated');
         })();
     </script>
@@ -428,12 +387,6 @@
                         Application Metrics
                     </h1>
                     <div style="display: flex; gap: 1rem; align-items: center; flex-wrap: wrap;">
-                        <div class="time-range-selector">
-                            <button class="time-range-btn" data-hours="24">24H</button>
-                            <button class="time-range-btn active" data-hours="48">48H</button>
-                            <button class="time-range-btn" data-hours="72">72H</button>
-                            <button class="time-range-btn" data-hours="168">7D</button>
-                        </div>
                         <button class="refresh-btn" id="realtimeToggle" title="Toggle Real-time Updates">
                             <i class="fas fa-circle" id="realtimeIcon" style="color: #27ae60; font-size: 0.7rem;"></i>
                             <span id="realtimeText">Real-time ON</span>
@@ -1321,23 +1274,6 @@
                     console.error('Error parsing user data:', e);
                 }
             }
-
-            // Time range buttons
-            document.querySelectorAll('.time-range-btn').forEach(btn => {
-                btn.addEventListener('click', function() {
-                    // Update active state
-                    document.querySelectorAll('.time-range-btn').forEach(b => b.classList.remove('active'));
-                    this.classList.add('active');
-                    
-                    // Update current hours and reload metrics
-                    const newHours = parseInt(this.dataset.hours);
-                    if (newHours !== currentHours) {
-                        currentHours = newHours;
-                        // Reload metrics with new time range
-                        loadMetrics(currentHours, true);
-                    }
-                });
-            });
 
             // Real-time toggle button
             const realtimeToggle = document.getElementById('realtimeToggle');

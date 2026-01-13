@@ -4,6 +4,46 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Tirumakudalu Properties - Premium Real Estate Solutions</title>
+    <!-- Clear any invalid session data immediately on page load -->
+    <script>
+        (function() {
+            // Clear invalid session data before any other scripts run
+            // This ensures sessions are only valid after successful login
+            const hasSessionFlag = sessionStorage.getItem('dashboard_authenticated') === 'true' ||
+                                  localStorage.getItem('dashboard_authenticated') === 'true';
+            
+            if (hasSessionFlag) {
+                const userStr = sessionStorage.getItem('user') || localStorage.getItem('user');
+                let hasValidUser = false;
+                
+                if (userStr) {
+                    try {
+                        const user = JSON.parse(userStr);
+                        // Validate user has required fields (email and admin role)
+                        if (user && 
+                            user.email && 
+                            typeof user.email === 'string' && 
+                            user.email.trim() !== '' && 
+                            user.role === 'admin') {
+                            hasValidUser = true;
+                        }
+                    } catch (e) {
+                        // Invalid JSON
+                    }
+                }
+                
+                // If there's a session flag but no valid user, clear it
+                if (!hasValidUser) {
+                    sessionStorage.removeItem('dashboard_authenticated');
+                    sessionStorage.removeItem('isAuthenticated');
+                    sessionStorage.removeItem('user');
+                    localStorage.removeItem('dashboard_authenticated');
+                    localStorage.removeItem('isAuthenticated');
+                    localStorage.removeItem('user');
+                }
+            }
+        })();
+    </script>
     <link rel="icon" type="image/png" href="/images/TirumakudaluProperties_Logo-2048x1858.png">
     <link rel="stylesheet" href="/css/style.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -204,7 +244,7 @@
                                     </select>
                                 </div>
                                 <div class="search-group">
-                                    <label><i class="fas fa-dollar-sign"></i> Price Range</label>
+                                    <label><i class="fas fa-rupee-sign"></i> Price Range</label>
                                     <button type="button" class="price-range-btn" id="indexPriceRangeBtn">
                                         <span class="price-range-display" id="indexPriceRangeDisplay">Any Price</span>
                                         <i class="fas fa-chevron-down"></i>
@@ -739,7 +779,7 @@
                     <div class="founder-compact-label">About Founder</div>
                     <h3 style="color: #8B2E3D;">Seshadri T S.</h3>
                     <div class="founder-compact-role">Proprietor | Consultant</div>
-                    <p>Tirumakudalu Properties is a solely owned and operated firm promoted by Mr. Seshadri T. S. He has over 30 years of vast professional experience in finance, marketing, and sales, and 15 years in the field of property management. Mr. Seshadri is the grandson of Sri T. Rama Rao, the late founder member of The National Institute of Engineering (NIE), Mysore.</p>
+                    <p>Tirumakudalu Properties is a solely owned and operated firm promoted by Mr. Seshadri T. S. He has over 30 years of vast professional experience in finance, marketing, and sales, and 16 years in the field of property management. Mr. Seshadri is the grandson of Sri T. Rama Rao, the late founder member of The National Institute of Engineering (NIE), Mysore.</p>
                 </div>
             </div>
         </div>
@@ -762,7 +802,7 @@
                 </div>
                 <div class="stat-card" data-stat="years_experience">
                     <div class="stat-icon"><i class="fas fa-award"></i></div>
-                    <div class="stat-number" data-target="15">15</div>
+                    <div class="stat-number" data-target="16">16</div>
                     <div class="stat-label">Years Experience</div>
                 </div>
                 <div class="stat-card" data-stat="deals_closed">
@@ -841,62 +881,6 @@
         </div>
     </section>
     <hr>
-
-    <!-- Visitor Info Popup Modal -->
-    <div class="visitor-modal" id="visitorModal">
-        <div class="visitor-modal-overlay" id="visitorModalOverlay"></div>
-        <div class="visitor-modal-content">
-            <div class="visitor-modal-header">
-                <div class="visitor-modal-icon">
-                    <i class="fas fa-user-circle"></i>
-                </div>
-                <h2>Welcome to Tirumakudalu Properties</h2>
-                <p>Please share your information so we can assist you better</p>
-            </div>
-            <form class="visitor-form" id="visitorForm">
-                <div class="form-group">
-                    <label for="visitorFullName">
-                        <i class="fas fa-user"></i>
-                        Full Name <span class="required">*</span>
-                    </label>
-                    <input type="text" id="visitorFullName" name="full_name" placeholder="Enter your full name" required>
-                </div>
-                <div class="form-group">
-                    <label for="visitorEmail">
-                        <i class="fas fa-envelope"></i>
-                        Email Address <span class="required">*</span>
-                    </label>
-                    <input type="email" id="visitorEmail" name="email" placeholder="Enter your email" required>
-                </div>
-                <div class="form-group">
-                    <label for="visitorPhone">
-                        <i class="fas fa-phone"></i>
-                        Phone Number <span class="required">*</span>
-                    </label>
-                    <input type="tel" id="visitorPhone" name="phone" placeholder="Enter your phone number" required>
-                </div>
-                <div class="form-group">
-                    <label for="visitorLookingFor">
-                        <i class="fas fa-search"></i>
-                        What are you looking for?
-                    </label>
-                    <textarea id="visitorLookingFor" name="looking_for" placeholder="E.g., 2BHK apartment for rent, investment property, etc." rows="3"></textarea>
-                </div>
-                <div class="visitor-form-message" id="visitorFormMessage" style="display: none;"></div>
-                <div class="visitor-form-footer">
-                    <button type="button" class="visitor-skip-link" id="visitorSkipLink">
-                        >
-                    </button>
-                    <button type="submit" class="btn-visitor-submit">
-                        <span class="btn-text">Submit</span>
-                        <span class="btn-loader" style="display: none;">
-                            <i class="fas fa-spinner fa-spin"></i> Submitting...
-                        </span>
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
 
     <!-- Login Modal -->
     <div class="login-modal" id="loginModal">
@@ -1022,7 +1006,7 @@
                         </li>
                         <li>
                             <i class="fas fa-map-marker-alt"></i>
-                            <span>#76, 2ND floor, 2ND CROSS, Mysore Bank Colony, JP nagar, 7th Phase, BANGALORE - 560062</span>
+                            <span>#76, 2ND floor, 2ND CROSS, Mysore Bank Colony, JP nagar, 7th Phase, BANGALORE - 560078</span>
                         </li>
                     </ul>
                 </div>
@@ -1256,90 +1240,136 @@
                 return stars;
             }
 
-            // Load testimonials from API
+            // JSONP helper function
+            function loadTestimonialsJSONP(url, callback) {
+                return new Promise((resolve, reject) => {
+                    const callbackName = 'testimonialsCallback_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+                    const script = document.createElement('script');
+                    const timeout = setTimeout(() => {
+                        cleanup();
+                        reject(new Error('JSONP request timeout'));
+                    }, 10000); // 10 second timeout
+                    
+                    window[callbackName] = function(data) {
+                        clearTimeout(timeout);
+                        cleanup();
+                        resolve(data);
+                    };
+                    
+                    function cleanup() {
+                        if (script.parentNode) {
+                            script.parentNode.removeChild(script);
+                        }
+                        delete window[callbackName];
+                    }
+                    
+                    script.src = url + (url.indexOf('?') >= 0 ? '&' : '?') + 'callback=' + callbackName;
+                    script.onerror = function() {
+                        clearTimeout(timeout);
+                        cleanup();
+                        reject(new Error('JSONP script load failed'));
+                    };
+                    
+                    document.head.appendChild(script);
+                });
+            }
+
+            // Load testimonials from API using JSONP (preferred) with fetch fallback
             async function loadTestimonialsFromAPI() {
                 try {
                     let fetchedTestimonials = [];
+                    let useJSONP = true; // Prefer JSONP for cross-origin compatibility
                     
-                    // Fetch approved testimonials (API defaults to is_approved=true)
-                    // Optionally fetch featured testimonials first
+                    // Try to fetch featured testimonials first
                     try {
-                        const response = await fetch('/api/testimonials?is_approved=true&is_featured=true', {
-                            headers: {
-                                'Accept': 'application/json',
-                                'Content-Type': 'application/json'
-                            }
-                        });
-                        
-                        if (response.ok) {
+                        if (useJSONP) {
                             try {
-                                const data = await response.json();
-                                // Validate response is an array
+                                const url = '/api/testimonials?is_approved=true&is_featured=true';
+                                const data = await loadTestimonialsJSONP(url);
                                 if (Array.isArray(data)) {
                                     fetchedTestimonials = data;
-                                } else {
-                                    console.warn('Testimonials API returned non-array response');
                                 }
-                            } catch (parseError) {
-                                console.warn('Error parsing featured testimonials response:', parseError);
+                            } catch (jsonpError) {
+                                useJSONP = false; // Fall back to fetch
                             }
-                        } else {
-                            // If featured request fails, try to get error details
-                            let errorMessage = `HTTP ${response.status}: ${response.statusText}`;
-                            try {
-                                const errorData = await response.json();
-                                errorMessage = errorData.detail || errorData.error || errorMessage;
-                            } catch (e) {
-                                // Ignore JSON parse errors
-                            }
-                            console.warn('Failed to fetch featured testimonials:', errorMessage);
                         }
-                    } catch (fetchError) {
-                        // Handle network errors, CORS errors, or other fetch failures
-                        if (fetchError.name === 'TypeError' && fetchError.message.includes('fetch')) {
-                            console.warn('Network error fetching featured testimonials:', fetchError.message);
-                        } else {
-                            console.warn('Error fetching featured testimonials:', fetchError);
-                        }
-                    }
-                    
-                    // If no featured testimonials, get all approved
-                    if (fetchedTestimonials.length === 0) {
-                        try {
-                            const allResponse = await fetch('/api/testimonials?is_approved=true', {
+                        
+                        // Fallback to fetch if JSONP failed or not preferred
+                        if (!useJSONP || fetchedTestimonials.length === 0) {
+                            const response = await fetch('/api/testimonials?is_approved=true&is_featured=true', {
                                 headers: {
                                     'Accept': 'application/json',
                                     'Content-Type': 'application/json'
                                 }
                             });
                             
-                            if (allResponse.ok) {
+                            if (response.ok) {
                                 try {
-                                    const allTestimonials = await allResponse.json();
-                                    if (Array.isArray(allTestimonials)) {
-                                        fetchedTestimonials = allTestimonials;
+                                    const data = await response.json();
+                                    if (Array.isArray(data)) {
+                                        fetchedTestimonials = data;
                                     }
                                 } catch (parseError) {
-                                    console.warn('Error parsing all testimonials response:', parseError);
+                                    // Error parsing featured testimonials response - silently handled
                                 }
                             } else {
-                                // Log but don't throw
-                                let errorMessage = `HTTP ${allResponse.status}: ${allResponse.statusText}`;
+                                let errorMessage = `HTTP ${response.status}: ${response.statusText}`;
                                 try {
-                                    const errorData = await allResponse.json();
+                                    const errorData = await response.json();
                                     errorMessage = errorData.detail || errorData.error || errorMessage;
                                 } catch (e) {
                                     // Ignore JSON parse errors
                                 }
-                                console.warn('Failed to fetch all testimonials:', errorMessage);
+                            }
+                        }
+                    } catch (fetchError) {
+                        // Error fetching featured testimonials - silently handled
+                    }
+                    
+                    // If no featured testimonials, get all approved
+                    if (fetchedTestimonials.length === 0) {
+                        try {
+                            if (useJSONP) {
+                                try {
+                                    const url = '/api/testimonials?is_approved=true';
+                                    const data = await loadTestimonialsJSONP(url);
+                                    if (Array.isArray(data)) {
+                                        fetchedTestimonials = data;
+                                    }
+                                } catch (jsonpError) {
+                                    useJSONP = false;
+                                }
+                            }
+                            
+                            if (!useJSONP || fetchedTestimonials.length === 0) {
+                                const allResponse = await fetch('/api/testimonials?is_approved=true', {
+                                    headers: {
+                                        'Accept': 'application/json',
+                                        'Content-Type': 'application/json'
+                                    }
+                                });
+                                
+                                if (allResponse.ok) {
+                                    try {
+                                        const allTestimonials = await allResponse.json();
+                                        if (Array.isArray(allTestimonials)) {
+                                            fetchedTestimonials = allTestimonials;
+                                        }
+                                    } catch (parseError) {
+                                        // Error parsing all testimonials response - silently handled
+                                    }
+                                } else {
+                                    let errorMessage = `HTTP ${allResponse.status}: ${allResponse.statusText}`;
+                                    try {
+                                        const errorData = await allResponse.json();
+                                        errorMessage = errorData.detail || errorData.error || errorMessage;
+                                    } catch (e) {
+                                        // Ignore JSON parse errors
+                                    }
+                                }
                             }
                         } catch (fallbackError) {
-                            // Handle network errors for fallback request
-                            if (fallbackError.name === 'TypeError' && fallbackError.message.includes('fetch')) {
-                                console.warn('Network error fetching all testimonials:', fallbackError.message);
-                            } else {
-                                console.warn('Error fetching all testimonials:', fallbackError);
-                            }
+                            // Error fetching all testimonials - silently handled
                         }
                     }
                     
@@ -1357,9 +1387,7 @@
                     
                     renderTestimonialsCompact();
                 } catch (error) {
-                    // Silently handle any unexpected errors - don't break the page
-                    console.warn('Unexpected error loading testimonials from API:', error);
-                    // Keep empty state if API fails
+                    // Unexpected error loading testimonials - silently handled
                     testimonials = [];
                     renderTestimonialsCompact();
                 }
@@ -1367,16 +1395,27 @@
 
             function renderTestimonialsCompact() {
                 const grid = document.getElementById('testimonialsCompactGrid');
-                if (!grid) return;
+                if (!grid) {
+                    return;
+                }
 
                 if (testimonials.length === 0) {
                     // Show empty state (already in HTML)
                     grid.classList.remove('scrolling');
+                    // Make sure empty state is visible
+                    const emptyState = grid.querySelector('.testimonials-compact-empty');
+                    if (emptyState) {
+                        emptyState.style.display = 'block';
+                    }
                     return;
                 }
 
-                // Remove empty state and add scrolling class
+                // Hide empty state and add scrolling class
                 grid.classList.add('scrolling');
+                const emptyState = grid.querySelector('.testimonials-compact-empty');
+                if (emptyState) {
+                    emptyState.style.display = 'none';
+                }
 
                 // Render testimonials twice for seamless infinite scrolling
                 const displayTestimonials = testimonials;
@@ -1422,145 +1461,6 @@
             }
         })();
 
-        // Visitor Modal Functionality
-        (function() {
-            const visitorModal = document.getElementById('visitorModal');
-            const visitorForm = document.getElementById('visitorForm');
-            const visitorFormMessage = document.getElementById('visitorFormMessage');
-
-            // Check if modal was already shown in this session
-            const modalShownKey = 'visitorModalShown';
-            const modalShown = sessionStorage.getItem(modalShownKey);
-
-            // Show modal on page load if not shown before
-            function showVisitorModal() {
-                if (!modalShown) {
-                    // Small delay to ensure page is loaded
-                    setTimeout(() => {
-                        visitorModal.classList.add('active');
-                        document.body.style.overflow = 'hidden';
-                    }, 500);
-                }
-            }
-
-            // Close modal (only after successful submission)
-            function closeVisitorModal() {
-                visitorModal.classList.remove('active');
-                document.body.style.overflow = '';
-                // Mark as shown in session
-                sessionStorage.setItem(modalShownKey, 'true');
-            }
-
-            // Prevent closing modal with Escape key
-            document.addEventListener('keydown', (e) => {
-                if (e.key === 'Escape' && visitorModal.classList.contains('active')) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    return false;
-                }
-            });
-
-            // Skip link functionality
-            const visitorSkipLink = document.getElementById('visitorSkipLink');
-            if (visitorSkipLink) {
-                visitorSkipLink.addEventListener('click', () => {
-                    closeVisitorModal();
-                });
-            }
-
-            // Form submission
-            if (visitorForm) {
-                visitorForm.addEventListener('submit', async (e) => {
-                    e.preventDefault();
-                    
-                    const submitBtn = visitorForm.querySelector('.btn-visitor-submit');
-                    const btnText = submitBtn.querySelector('.btn-text');
-                    const btnLoader = submitBtn.querySelector('.btn-loader');
-                    
-                    // Get form values
-                    const formData = {
-                        full_name: document.getElementById('visitorFullName').value.trim(),
-                        email: document.getElementById('visitorEmail').value.trim(),
-                        phone: document.getElementById('visitorPhone').value.trim(),
-                        looking_for: document.getElementById('visitorLookingFor').value.trim() || null
-                    };
-                    
-                    // Validate required fields
-                    if (!formData.full_name || !formData.email || !formData.phone) {
-                        showVisitorMessage('Please fill in all required fields.', 'error');
-                        return;
-                    }
-                    
-                    // Validate email format
-                    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-                    if (!emailRegex.test(formData.email)) {
-                        showVisitorMessage('Please enter a valid email address.', 'error');
-                        return;
-                    }
-                    
-                    // Show loading state
-                    submitBtn.disabled = true;
-                    if (btnText) btnText.style.display = 'none';
-                    if (btnLoader) btnLoader.style.display = 'inline';
-                    if (visitorFormMessage) visitorFormMessage.style.display = 'none';
-                    
-                    try {
-                        const response = await fetch('/api/visitor-info', {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                            },
-                            body: JSON.stringify(formData)
-                        });
-                        
-                        const data = await response.json();
-                        
-                        if (response.ok) {
-                            // Success
-                            showVisitorMessage('Thank you! We will get in touch with you soon.', 'success');
-                            // Close modal after 2 seconds
-                            setTimeout(() => {
-                                closeVisitorModal();
-                                visitorForm.reset();
-                            }, 2000);
-                        } else {
-                            // Error from server
-                            const errorMessage = data.detail || data.error || 'Failed to submit. Please try again.';
-                            showVisitorMessage(errorMessage, 'error');
-                        }
-                    } catch (error) {
-                        console.error('Error submitting visitor form:', error);
-                        showVisitorMessage('Network error. Please check your connection and try again.', 'error');
-                    } finally {
-                        // Reset button state
-                        submitBtn.disabled = false;
-                        if (btnText) btnText.style.display = 'inline';
-                        if (btnLoader) btnLoader.style.display = 'none';
-                    }
-                });
-            }
-
-            // Helper function to show messages
-            function showVisitorMessage(message, type) {
-                if (!visitorFormMessage) return;
-                
-                visitorFormMessage.textContent = message;
-                visitorFormMessage.className = `visitor-form-message ${type}`;
-                visitorFormMessage.style.display = 'block';
-                
-                // Scroll to message
-                visitorFormMessage.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-            }
-
-            // Show modal on page load
-            if (document.readyState === 'loading') {
-                document.addEventListener('DOMContentLoaded', showVisitorModal);
-            } else {
-                showVisitorModal();
-            }
-        })();
-
-
         // Floating Button to Browse by Property Type
         (function() {
             const floatingBtn = document.getElementById('floatingPropertyTypeBtn');
@@ -1605,9 +1505,31 @@
                 });
             });
 
-            // Check scroll position on scroll and on load
-            window.addEventListener('scroll', checkScrollPosition, { passive: true });
-            window.addEventListener('resize', checkScrollPosition);
+            // Throttle function to limit how often checkScrollPosition runs
+            let scrollTimeout = null;
+            let resizeTimeout = null;
+            
+            function throttledCheckScrollPosition() {
+                if (scrollTimeout) return;
+                scrollTimeout = requestAnimationFrame(() => {
+                    checkScrollPosition();
+                    scrollTimeout = null;
+                });
+            }
+            
+            function throttledCheckResize() {
+                if (resizeTimeout) {
+                    cancelAnimationFrame(resizeTimeout);
+                }
+                resizeTimeout = requestAnimationFrame(() => {
+                    checkScrollPosition();
+                    resizeTimeout = null;
+                });
+            }
+            
+            // Check scroll position on scroll and on load (throttled)
+            window.addEventListener('scroll', throttledCheckScrollPosition, { passive: true });
+            window.addEventListener('resize', throttledCheckResize, { passive: true });
             
             // Initial check - wait for page to fully load
             function initButton() {
@@ -2024,7 +1946,7 @@
                     activeFilters.push({
                         type: 'price',
                         label: `Price: Custom Range`,
-                        icon: 'fa-dollar-sign',
+                        icon: 'fa-rupee-sign',
                         value: price
                     });
                 }

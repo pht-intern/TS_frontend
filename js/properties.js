@@ -164,7 +164,11 @@ function hideLoadingState() {
     const gridEl = document.getElementById('propertiesGrid');
     
     if (loadingEl) loadingEl.style.display = 'none';
-    if (gridEl) gridEl.style.display = 'grid';
+    if (gridEl) {
+        gridEl.style.display = 'grid';
+        // Remove any inline grid-template-columns to let CSS handle it
+        gridEl.style.gridTemplateColumns = '';
+    }
 }
 
 // Show error state
@@ -195,7 +199,6 @@ function fetchWithTimeout(url, options = {}, timeout = 30000) {
 async function loadPropertiesFromAPI() {
     try {
         showLoadingState();
-        console.log('Starting to load properties from API...');
         
         // Fetch active properties from API
         let allFetchedProperties = [];
@@ -206,7 +209,6 @@ async function loadPropertiesFromAPI() {
         
         while (hasMore && page <= maxPages) {
             const pageStartTime = Date.now();
-            console.log(`Fetching page ${page}...`);
             
             try {
                 const response = await fetchWithTimeout(
@@ -225,7 +227,6 @@ async function loadPropertiesFromAPI() {
                 allFetchedProperties = allFetchedProperties.concat(properties);
                 
                 const pageTime = Date.now() - pageStartTime;
-                console.log(`Page ${page} loaded: ${properties.length} properties in ${pageTime}ms`);
                 
                 // Check if there are more pages
                 hasMore = page < data.pages;
@@ -248,7 +249,6 @@ async function loadPropertiesFromAPI() {
                 console.error(`Error fetching page ${page}:`, error);
                 // If it's a timeout and we have some properties, use what we have
                 if (error.message === 'Request timeout' && allFetchedProperties.length > 0) {
-                    console.warn('Request timed out, using properties fetched so far');
                     break;
                 }
                 throw error;
@@ -256,7 +256,6 @@ async function loadPropertiesFromAPI() {
         }
         
         const totalTime = Date.now() - startTime;
-        console.log(`Total fetch time: ${totalTime}ms for ${allFetchedProperties.length} properties`);
         
         // If no properties found, show message
         if (allFetchedProperties.length === 0) {
@@ -372,8 +371,6 @@ async function loadPropertiesFromAPI() {
         
         // Update load more button visibility
         updateLoadMoreButton();
-        
-        console.log(`Loaded ${allProperties.length} properties from database`);
         
     } catch (error) {
         console.error('Error loading properties from API:', error);
@@ -696,20 +693,6 @@ function renderProperties(propertiesToRender = filteredProperties.slice(0, displ
                 <div class="property-location">
                     <i class="fas fa-map-marker-alt"></i>
                     <span>${location}</span>
-                </div>
-                <div class="property-features">
-                    <div class="property-feature">
-                        <i class="fas fa-bed"></i>
-                        <span>${bedrooms} ${bedrooms === 1 ? 'Bed' : 'Beds'}</span>
-                    </div>
-                    <div class="property-feature">
-                        <i class="fas fa-bath"></i>
-                        <span>${bathrooms} ${bathrooms === 1 ? 'Bath' : 'Baths'}</span>
-                    </div>
-                    <div class="property-feature">
-                        <i class="fas fa-ruler-combined"></i>
-                        <span>${area.toLocaleString()} sqft</span>
-                    </div>
                 </div>
                 <div class="property-footer">
                     <a href="/property-details.html?id=${propertyId}" class="btn-view-details" target="_blank">View Details</a>
@@ -1566,7 +1549,7 @@ function updateFilterTags() {
             activeFilters.push({
                 type: 'price',
                 label: `Price: ${priceLabel}`,
-                icon: 'fa-dollar-sign',
+                icon: 'fa-rupee-sign',
                 value: price
             });
         }
@@ -1942,10 +1925,37 @@ function initMainSearch() {
 function updateLoadMoreButton() {
     const loadMoreBtn = document.getElementById('loadMoreBtn');
     if (loadMoreBtn) {
-        if (displayedProperties >= filteredProperties.length) {
-            loadMoreBtn.style.display = 'none';
+        const loadMoreContainer = loadMoreBtn.closest('.properties-load-more');
+        
+        if (displayedProperties >= filteredProperties.length || filteredProperties.length === 0) {
+            // Hide button if all properties are displayed or no properties
+            if (loadMoreContainer) {
+                loadMoreContainer.style.display = 'none';
+            } else {
+                loadMoreBtn.style.display = 'none';
+            }
         } else {
-            loadMoreBtn.style.display = 'flex';
+            // Show button if there are more properties to load
+            if (loadMoreContainer) {
+                loadMoreContainer.style.display = 'block';
+            }
+            loadMoreBtn.style.display = 'inline-flex';
+            
+            // Update button text to show remaining count (only if not in loading state)
+            if (!loadMoreBtn.disabled) {
+                const remaining = filteredProperties.length - displayedProperties;
+                const buttonText = loadMoreBtn.querySelector('span');
+                if (buttonText && remaining > 0) {
+                    // Store original text if not already stored
+                    if (!loadMoreBtn.dataset.originalText) {
+                        loadMoreBtn.dataset.originalText = buttonText.textContent;
+                    }
+                    const originalText = loadMoreBtn.dataset.originalText;
+                    buttonText.textContent = remaining <= 8 
+                        ? originalText 
+                        : `${originalText} (${remaining} remaining)`;
+                }
+            }
         }
     }
 }
@@ -1954,10 +1964,71 @@ function updateLoadMoreButton() {
 function initLoadMore() {
     const loadMoreBtn = document.getElementById('loadMoreBtn');
     if (loadMoreBtn) {
-        loadMoreBtn.addEventListener('click', () => {
-            displayedProperties += 8;
+        loadMoreBtn.addEventListener('click', async () => {
+            // Disable button during load
+            loadMoreBtn.disabled = true;
+            const buttonText = loadMoreBtn.querySelector('span');
+            const buttonIcon = loadMoreBtn.querySelector('i');
+            const originalText = buttonText ? buttonText.textContent : '';
+            
+            // Show loading state
+            if (buttonText) {
+                buttonText.textContent = 'Loading...';
+            }
+            if (buttonIcon) {
+                buttonIcon.className = 'fas fa-spinner fa-spin';
+            }
+            
+            // Small delay for smooth UX
+            await new Promise(resolve => setTimeout(resolve, 300));
+            
+            // Calculate how many to show (8 more, or remaining if less)
+            const remaining = filteredProperties.length - displayedProperties;
+            const toShow = Math.min(8, remaining);
+            displayedProperties += toShow;
+            
+            // Get current scroll position
+            const scrollPosition = window.pageYOffset || document.documentElement.scrollTop;
+            
+            // Render properties
             renderProperties();
+            
+            // Smooth scroll to show newly loaded properties
+            setTimeout(() => {
+                const propertiesGrid = document.getElementById('propertiesGrid');
+                if (propertiesGrid) {
+                    const newProperties = propertiesGrid.querySelectorAll('.property-card');
+                    if (newProperties.length > 0) {
+                        // Scroll to the first newly loaded property
+                        const firstNewProperty = newProperties[Math.max(0, displayedProperties - toShow - 1)];
+                        if (firstNewProperty) {
+                            firstNewProperty.scrollIntoView({ 
+                                behavior: 'smooth', 
+                                block: 'start',
+                                inline: 'nearest'
+                            });
+                        }
+                    }
+                }
+            }, 100);
+            
+            // Update button state
             updateLoadMoreButton();
+            
+            // Re-enable button
+            loadMoreBtn.disabled = false;
+            if (buttonText) {
+                // Restore original text or update with remaining count
+                const remaining = filteredProperties.length - displayedProperties;
+                if (remaining > 0 && remaining > 8) {
+                    buttonText.textContent = `${originalText} (${remaining} remaining)`;
+                } else {
+                    buttonText.textContent = originalText;
+                }
+            }
+            if (buttonIcon) {
+                buttonIcon.className = 'fas fa-arrow-down';
+            }
         });
     }
 }

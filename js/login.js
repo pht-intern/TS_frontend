@@ -24,9 +24,30 @@
         // Only read from storage - never write during this check
         const isAuthenticated = localStorage.getItem('dashboard_authenticated') === 'true' ||
                                sessionStorage.getItem('dashboard_authenticated') === 'true';
-        const user = localStorage.getItem('user') || sessionStorage.getItem('user');
+        const userStr = localStorage.getItem('user') || sessionStorage.getItem('user');
         
-        if (isAuthenticated && user) {
+        // Validate user data exists and is valid JSON with required fields
+        let hasValidUser = false;
+        
+        if (userStr) {
+            try {
+                const user = JSON.parse(userStr);
+                // Ensure user has required fields (email is mandatory) and has admin role
+                if (user && 
+                    user.email && 
+                    typeof user.email === 'string' && 
+                    user.email.trim() !== '' && 
+                    user.role === 'admin') {
+                    hasValidUser = true;
+                }
+            } catch (e) {
+                // Invalid JSON, treat as not authenticated
+                hasValidUser = false;
+            }
+        }
+        
+        // Only show dashboard button if both auth flag AND valid user exist
+        if (isAuthenticated && hasValidUser) {
             // Show dashboard button in nav
             dashboardNavItem.style.display = '';
         } else {
@@ -49,10 +70,47 @@
         // This is a passive check that does not create any sessions
         const isAuthenticated = localStorage.getItem('dashboard_authenticated') === 'true' ||
                                sessionStorage.getItem('dashboard_authenticated') === 'true';
-        const user = localStorage.getItem('user') || sessionStorage.getItem('user');
+        const userStr = localStorage.getItem('user') || sessionStorage.getItem('user');
         
-        // Determine desired button state
-        const desiredState = (isAuthenticated && user) ? 'dashboard' : 'login';
+        // Validate user data exists and is valid JSON with required fields
+        let user = null;
+        let hasValidUser = false;
+        
+        if (userStr) {
+            try {
+                user = JSON.parse(userStr);
+                // Ensure user has required fields (email is mandatory) and has admin role
+                if (user && 
+                    user.email && 
+                    typeof user.email === 'string' && 
+                    user.email.trim() !== '' && 
+                    user.role === 'admin') {
+                    hasValidUser = true;
+                } else {
+                    // Invalid user data - clear it
+                    user = null;
+                    hasValidUser = false;
+                    // Clear invalid session data
+                    sessionStorage.removeItem('dashboard_authenticated');
+                    sessionStorage.removeItem('user');
+                    localStorage.removeItem('dashboard_authenticated');
+                    localStorage.removeItem('user');
+                }
+            } catch (e) {
+                // Invalid JSON, treat as not authenticated
+                user = null;
+                hasValidUser = false;
+                // Clear invalid session data
+                sessionStorage.removeItem('dashboard_authenticated');
+                sessionStorage.removeItem('user');
+                localStorage.removeItem('dashboard_authenticated');
+                localStorage.removeItem('user');
+            }
+        }
+        
+        // Determine desired button state - require both auth flag AND valid user
+        // STRICT: Only show dashboard if BOTH authentication flag AND valid user exist
+        const desiredState = (isAuthenticated && hasValidUser && user) ? 'dashboard' : 'login';
         
         // Only update if state has changed
         if (currentButtonState === desiredState) {
@@ -61,7 +119,8 @@
         
         currentButtonState = desiredState;
         
-        if (isAuthenticated && user) {
+        // STRICT CHECK: Only show dashboard button if authenticated AND has valid user
+        if (isAuthenticated && hasValidUser && user) {
             // User is logged in - change button from LOGIN to DASHBOARD
             const icon = currentBtn.querySelector('i');
             const span = currentBtn.querySelector('span');
@@ -162,6 +221,12 @@
                 localStorage.removeItem('isAuthenticated');
                 localStorage.removeItem('user');
             }
+        }
+        
+        // ALWAYS hide dashboard button initially - it will be shown only if valid session exists
+        const dashboardNavItem = document.getElementById('navDashboardItem');
+        if (dashboardNavItem) {
+            dashboardNavItem.style.display = 'none';
         }
     }
     

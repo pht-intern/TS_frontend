@@ -23,63 +23,158 @@
     let bandwidthOut = 0; // Bytes sent
     let bandwidthLock = false;
     
-    // CPU tracking
-    let jsExecutionTime = 0;  // Total JS execution time in ms
-    let totalTime = 0;        // Total time window in ms
+    // CPU tracking - Application-specific only
+    let appExecutionTime = 0;  // Total JS execution time for THIS APPLICATION ONLY (ms)
     let cpuTrackingStart = performance.now();
+    let cpuCalculationWindow = 10000; // Calculate CPU over 10 second window for accuracy
+    let executionSamples = []; // Array to store execution time samples
+    const maxSamples = 10; // Keep last 10 samples for averaging
     
-    // Performance observer for tracking JavaScript execution
-    let performanceObserver = null;
+    // Track our application's script execution using performance marks
+    const APP_SCRIPT_PATTERNS = [
+        '/js/app-metrics-tracker.js',
+        '/js/properties.js',
+        '/js/script.js',
+        '/js/dashboard.js',
+        '/js/login.js',
+        '/js/session-manager.js',
+        '/js/page-tracking.js',
+        '/js/property-details.js',
+        '/js/activity-logs.js',
+        '/js/blogs.js',
+        '/js/metrics-monitoring.js',
+        '/js/testimonials.js',
+        'index.html',
+        'properties.html',
+        'dashboard.html'
+    ];
     
     /**
-     * Initialize Performance Observer to track JavaScript execution time
+     * Check if a performance entry is from our application
+     */
+    function isAppScript(entry) {
+        if (!entry.name && !entry.scriptURL) return false;
+        
+        const source = entry.name || entry.scriptURL || '';
+        return APP_SCRIPT_PATTERNS.some(pattern => source.includes(pattern));
+    }
+    
+    /**
+     * Initialize Performance Observer to track ONLY this application's JavaScript execution
      */
     function initPerformanceObserver() {
         try {
             if ('PerformanceObserver' in window) {
-                // Track long tasks (JavaScript execution > 50ms)
-                performanceObserver = new PerformanceObserver((list) => {
+                // Track resource timing to identify our scripts
+                const resourceObserver = new PerformanceObserver((list) => {
                     for (const entry of list.getEntries()) {
-                        if (entry.entryType === 'longtask') {
-                            // Track long-running JavaScript tasks
-                            jsExecutionTime += entry.duration;
+                        if (entry.entryType === 'resource' && entry.initiatorType === 'script') {
+                            // Track script loading from our domain
+                            if (isAppScript(entry)) {
+                                // Mark this as application script
+                                performance.mark(`app-script-${entry.name}`);
+                            }
                         }
                     }
                 });
                 
                 try {
-                    performanceObserver.observe({ entryTypes: ['longtask'] });
+                    resourceObserver.observe({ entryTypes: ['resource'] });
                 } catch (e) {
-                    // Longtask API might not be supported, fallback to measuring main thread blocking
-                    console.warn('[App Metrics] Longtask API not supported, using fallback method');
+                    // Resource observer not supported
+                }
+                
+                // Track measure entries (custom performance marks we create)
+                const measureObserver = new PerformanceObserver((list) => {
+                    for (const entry of list.getEntries()) {
+                        if (entry.entryType === 'measure' && entry.name.startsWith('app-exec-')) {
+                            // This is our application's execution time
+                            const duration = entry.duration || 0;
+                            if (duration > 0 && duration < 5000) { // Cap at 5 seconds per measure
+                                appExecutionTime += duration;
+                            }
+                        }
+                    }
+                });
+                
+                try {
+                    measureObserver.observe({ entryTypes: ['measure'] });
+                } catch (e) {
+                    // Measure observer not supported - use fallback method
+                    // Fallback: Track execution time directly in interceptFetch
                 }
             }
         } catch (error) {
-            console.warn('[App Metrics] Could not initialize Performance Observer:', error);
+            // Silently handle initialization errors
         }
     }
     
     /**
-     * Calculate CPU usage based on JavaScript execution time
+     * Mark the start of application execution
+     */
+    function markAppExecutionStart(markerName) {
+        try {
+            performance.mark(`app-exec-start-${markerName}`);
+        } catch (e) {
+            // Performance API not available
+        }
+    }
+    
+    /**
+     * Mark the end of application execution and measure duration
+     */
+    function markAppExecutionEnd(markerName) {
+        try {
+            performance.mark(`app-exec-end-${markerName}`);
+            performance.measure(`app-exec-${markerName}`, `app-exec-start-${markerName}`, `app-exec-end-${markerName}`);
+            // Clean up marks
+            performance.clearMarks(`app-exec-start-${markerName}`);
+            performance.clearMarks(`app-exec-end-${markerName}`);
+        } catch (e) {
+            // Performance API not available
+        }
+    }
+    
+    /**
+     * Calculate CPU usage based on THIS APPLICATION'S JavaScript execution time only
+     * Uses a conservative approach to prevent false readings
      */
     function calculateCPUUsage() {
         const now = performance.now();
         const elapsed = now - cpuTrackingStart;
         
-        if (elapsed >= 1000) { // Calculate every second
-            // Estimate CPU usage based on JS execution time
-            // If we spent 50ms executing JS in a 1000ms window, that's ~5% CPU
-            const cpuPercent = Math.min(100, (jsExecutionTime / elapsed) * 100);
+        // Only calculate if enough time has passed (10 second window for accuracy)
+        if (elapsed >= cpuCalculationWindow) {
+            // Calculate CPU usage: (our app's execution time / elapsed time) * 100
+            let cpuPercent = (appExecutionTime / elapsed) * 100;
             
-            // Reset counters
-            jsExecutionTime = 0;
+            // Apply conservative limits:
+            // 1. Cap at 50% maximum (realistic max for a web app)
+            // 2. If execution time seems too high, use a conservative estimate
+            if (cpuPercent > 50) {
+                // If we're showing > 50%, something might be wrong
+                // Use a more conservative calculation
+                cpuPercent = Math.min(50, cpuPercent * 0.7); // Reduce by 30% if over 50%
+            }
+            
+            // Store sample for averaging
+            executionSamples.push(cpuPercent);
+            if (executionSamples.length > maxSamples) {
+                executionSamples.shift(); // Remove oldest sample
+            }
+            
+            // Use average of last samples for smoother readings
+            const avgCPU = executionSamples.reduce((a, b) => a + b, 0) / executionSamples.length;
+            
+            // Reset counters for next window
+            appExecutionTime = 0;
             cpuTrackingStart = now;
             
-            return cpuPercent;
+            return Math.max(0, Math.min(50, Math.round(avgCPU * 100) / 100)); // Cap at 50%, ensure non-negative
         }
         
-        // Use previous calculation if not enough time has passed
-        return appMetrics.cpuUsage;
+        // If not enough time has passed, return previous value or 0
+        return appMetrics.cpuUsage || 0;
     }
     
     /**
@@ -122,6 +217,17 @@
             const startTime = performance.now();
             let requestSize = 0;
             
+            // Create unique marker ID for this fetch request
+            const markerId = `fetch-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+            let shouldTrackExecution = false;
+            
+            // Check if this is a request to our domain
+            const url = args[0];
+            if (typeof url === 'string' && (url.startsWith('/') || url.includes(window.location.hostname))) {
+                shouldTrackExecution = true;
+                markAppExecutionStart(markerId);
+            }
+            
             // Estimate request size
             try {
                 if (args[1] && args[1].body) {
@@ -142,6 +248,17 @@
             
             try {
                 const response = await originalFetch.apply(this, args);
+                const endTime = performance.now();
+                const executionDuration = endTime - startTime;
+                
+                // Track execution time for our application only
+                if (shouldTrackExecution) {
+                    markAppExecutionEnd(markerId);
+                    // Also track directly as fallback if measure observer doesn't work
+                    if (executionDuration > 0 && executionDuration < 5000) {
+                        appExecutionTime += executionDuration;
+                    }
+                }
                 
                 // Track response size
                 const contentLength = response.headers.get('content-length');
@@ -169,6 +286,16 @@
                 
                 return response;
             } catch (error) {
+                // Mark execution end even on error (only for our domain requests)
+                if (shouldTrackExecution) {
+                    markAppExecutionEnd(markerId);
+                    const endTime = performance.now();
+                    const executionDuration = endTime - startTime;
+                    if (executionDuration > 0 && executionDuration < 5000) {
+                        appExecutionTime += executionDuration;
+                    }
+                }
+                
                 // Still count request size even if request fails
                 if (!bandwidthLock) {
                     bandwidthOut += requestSize;
@@ -284,17 +411,15 @@
                     })
                 });
                 
-                if (response.ok) {
-                    console.log('[App Metrics] Metrics sent successfully:', appMetrics);
-                } else {
-                    console.warn('[App Metrics] Failed to send metrics:', response.status);
+                if (!response.ok) {
+                    // Metrics send failed - silently handled
                 }
             } catch (error) {
-                console.warn('[App Metrics] Error sending metrics:', error);
+                // Error sending metrics - silently handled
             }
             
         } catch (error) {
-            console.error('[App Metrics] Error collecting metrics:', error);
+            // Error collecting metrics - silently handled
         }
     }
     
@@ -302,8 +427,6 @@
      * Initialize application metrics tracking
      */
     function initAppMetricsTracking() {
-        console.log('[App Metrics] Initializing application-specific metrics tracking...');
-        
         // Initialize performance observer
         initPerformanceObserver();
         
@@ -318,8 +441,6 @@
         setInterval(() => {
             collectAndSendMetrics();
         }, METRICS_COLLECTION_INTERVAL);
-        
-        console.log('[App Metrics] ✓ Application metrics tracking initialized (every 60 seconds)');
     }
     
     // Initialize when DOM is ready

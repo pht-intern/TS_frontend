@@ -1685,28 +1685,53 @@
                         return;
                     }
                     
-                    // Verify password with backend
-                    fetch('/api/admin/app-metrics/verify-password', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({ password: password })
+                    // Hash password with SHA-256 before sending (client-side encryption)
+                    async function hashPassword(password) {
+                        const encoder = new TextEncoder();
+                        const data = encoder.encode(password);
+                        const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+                        const hashArray = Array.from(new Uint8Array(hashBuffer));
+                        const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+                        return hashHex;
+                    }
+                    
+                    // Hash and verify password with backend
+                    hashPassword(password).then(hashedPassword => {
+                        console.log('Password hashed with SHA-256 before sending');
+                        return fetch('/api/admin/app-metrics/verify-password', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({ password: hashedPassword, encrypted: true })
+                        });
+                    }).then(response => {
+                    .then(response => {
+                        console.log('Password verification response status:', response.status);
+                        if (!response.ok) {
+                            // If response is not OK, try to get error message
+                            return response.json().then(data => {
+                                throw new Error(data.message || `Server error: ${response.status}`);
+                            });
+                        }
+                        return response.json();
                     })
-                    .then(response => response.json())
                     .then(data => {
-                        if (data.success) {
+                        console.log('Password verification response data:', data);
+                        if (data.success === true) {
                             // Store verification in sessionStorage
                             sessionStorage.setItem('app_metrics_verified', 'true');
-                            // Redirect to app-metrics page
-                            window.location.href = '/app-metrics.html';
+                            console.log('Password verified, redirecting to app-metrics...');
+                            // Use replace instead of href to prevent back button issues
+                            window.location.replace('/app-metrics.html');
                         } else {
+                            console.error('Password verification failed:', data.message);
                             alert(data.message || 'Invalid password');
                         }
                     })
                     .catch(error => {
                         console.error('Error verifying password:', error);
-                        alert('Error verifying password. Please try again.');
+                        alert('Error verifying password: ' + (error.message || 'Please try again.'));
                     });
                 });
             }

@@ -1,3 +1,16 @@
+// Service Worker Cleanup (One-time cleanup for existing users)
+// This removes any legacy service workers that may be causing cache issues.
+// After one successful deploy, this code can be removed.
+if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.getRegistrations()
+        .then(regs => {
+            regs.forEach(reg => reg.unregister());
+        })
+        .catch(err => {
+            // Service worker cleanup error - silently handled
+        });
+}
+
 // Format price for display (same logic as property-details.js)
 function formatPropertyPrice(property) {
     // Get price_text from property object
@@ -155,15 +168,20 @@ const properties = [
     }
 ];
 
-// Navigation scroll effect
+// Navigation scroll effect (throttled for performance)
+let scrollThrottleTimeout = null;
 window.addEventListener('scroll', () => {
-    const navbar = document.querySelector('.navbar');
-    if (window.scrollY > 50) {
-        navbar.classList.add('scrolled');
-    } else {
-        navbar.classList.remove('scrolled');
-    }
-});
+    if (scrollThrottleTimeout) return;
+    scrollThrottleTimeout = requestAnimationFrame(() => {
+        const navbar = document.querySelector('.navbar');
+        if (window.scrollY > 50) {
+            navbar.classList.add('scrolled');
+        } else {
+            navbar.classList.remove('scrolled');
+        }
+        scrollThrottleTimeout = null;
+    });
+}, { passive: true });
 
 // Mobile menu toggle
 const navToggle = document.getElementById('navToggle');
@@ -240,16 +258,23 @@ if (navToggle && navMenu) {
         });
     });
     
-    // Close menu on window resize if it becomes desktop size
+    // Close menu on window resize if it becomes desktop size (throttled for performance)
+    let resizeThrottleTimeout = null;
     window.addEventListener('resize', () => {
-        if (window.innerWidth > 768) {
-            navMenu.classList.remove('active');
-            navToggle.classList.remove('active');
-            document.body.classList.remove('menu-open');
-            const navbar = document.querySelector('.navbar');
-            if (navbar) navbar.classList.remove('menu-open');
+        if (resizeThrottleTimeout) {
+            cancelAnimationFrame(resizeThrottleTimeout);
         }
-    });
+        resizeThrottleTimeout = requestAnimationFrame(() => {
+            if (window.innerWidth > 768) {
+                navMenu.classList.remove('active');
+                navToggle.classList.remove('active');
+                document.body.classList.remove('menu-open');
+                const navbar = document.querySelector('.navbar');
+                if (navbar) navbar.classList.remove('menu-open');
+            }
+            resizeThrottleTimeout = null;
+        });
+    }, { passive: true });
 }
 
 // Dropdown menu toggle for mobile
@@ -915,6 +940,17 @@ async function loadStatistics() {
             deals_closed: 0
         };
         
+        // Override with fixed values as requested
+        finalStats.happy_clients = 45;
+        finalStats.deals_closed = 20;
+        
+        // Calculate years of experience dynamically (auto-increase each year)
+        // Base year: 2010 (2026 - 2010 = 16 years)
+        const currentYear = new Date().getFullYear();
+        const baseYear = 2010;
+        const calculatedYears = currentYear - baseYear;
+        finalStats.years_experience = calculatedYears;
+        
         // Update each stat card with the fetched data
         const statCards = document.querySelectorAll('.stat-card');
         statCards.forEach(card => {
@@ -936,11 +972,16 @@ async function loadStatistics() {
         // Silently handle any unexpected errors - don't break the page
         console.warn('Unexpected error loading statistics:', error);
         // Fallback to default values if API fails
+        // Calculate years of experience dynamically (auto-increase each year)
+        const currentYear = new Date().getFullYear();
+        const baseYear = 2010;
+        const calculatedYears = currentYear - baseYear;
+        
         const defaultStats = {
             properties_listed: 0,
-            happy_clients: 0,
-            years_experience: 15,
-            deals_closed: 0
+            happy_clients: 45,
+            years_experience: calculatedYears,
+            deals_closed: 20
         };
         
         const statCards = document.querySelectorAll('.stat-card');

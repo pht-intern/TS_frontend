@@ -254,10 +254,13 @@
             }
             
             // Check if we're the last tab after cleanup
-            const otherTabsCount = Array.from(activeTabs.keys()).filter(id => id !== tabId).length;
-            if (otherTabsCount === 0 && activeTabs.size > 0) {
-                // We're the only tab left - double check with localStorage
-                checkIfLastTab();
+            // CRITICAL: Only check if initial check is done to prevent premature session clearing
+            if (initialCheckDone) {
+                const otherTabsCount = Array.from(activeTabs.keys()).filter(id => id !== tabId).length;
+                if (otherTabsCount === 0 && activeTabs.size > 0) {
+                    // We're the only tab left - double check with localStorage
+                    checkIfLastTab();
+                }
             }
         }, HEARTBEAT_INTERVAL);
     }
@@ -379,10 +382,18 @@
     /**
      * Check if this is the last active tab
      * If so, clear the session immediately
+     * CRITICAL: Only clears session when tabs are actually closing, not on initial load
      */
     function checkIfLastTab() {
         // Only check if session manager is initialized
         if (!isInitialized) return;
+        
+        // CRITICAL FIX: Don't check if initial check hasn't completed yet
+        // This prevents clearing session when we're just starting up
+        if (!initialCheckDone) {
+            // Still waiting for initial check - don't clear session yet
+            return;
+        }
         
         // Remove stale tabs first
         const now = Date.now();
@@ -424,9 +435,10 @@
         // Count active tabs from BroadcastChannel (excluding self)
         const otherTabs = Array.from(activeTabs.keys()).filter(id => id !== tabId);
         
-        // If no other tabs found via either method, clear session immediately
-        if (otherTabs.length === 0 && !otherTabsFound) {
-            // We're the last tab - clear session immediately
+        // Only clear session if we're sure we're the last tab AND initial check is done
+        // This prevents clearing session on initial load when we're the only tab
+        if (otherTabs.length === 0 && !otherTabsFound && initialCheckDone) {
+            // We're the last tab and initial check completed - clear session
             clearSession();
         }
     }

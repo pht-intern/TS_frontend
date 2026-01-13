@@ -4000,36 +4000,69 @@ function handleImageSelect(e) {
     handleImageFiles(files);
 }
 
-function handleImageFiles(files, formType = 'property', imageCategory = 'project') {
+async function handleImageFiles(files, formType = 'property', imageCategory = 'project') {
     const maxFileSize = 5 * 1024 * 1024; // 5MB
     const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/svg+xml'];
     
-    Array.from(files).forEach(file => {
+    // Process files sequentially to avoid overwhelming the server
+    for (const file of Array.from(files)) {
         // Validate file type
         if (!file.type.startsWith('image/') || !allowedTypes.includes(file.type)) {
             showNotification(`File "${file.name}" is not a valid image format. Please use JPG, PNG, SVG, or WebP.`, 'error');
-            return;
+            continue;
         }
         
         // Validate file size
         if (file.size > maxFileSize) {
             showNotification(`File "${file.name}" is too large. Maximum size is 5MB.`, 'error');
-            return;
+            continue;
         }
         
-        // Read and preview image
-        const reader = new FileReader();
-        reader.onload = (e) => {
-            addImagePreview(e.target.result, false, formType, imageCategory);
-        };
-        reader.onerror = () => {
-            showNotification(`Failed to read file "${file.name}".`, 'error');
-        };
-        reader.readAsDataURL(file);
-    });
+        // Read file as base64
+        const base64Data = await new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = (e) => resolve(e.target.result);
+            reader.onerror = () => reject(new Error(`Failed to read file "${file.name}"`));
+            reader.readAsDataURL(file);
+        });
+        
+        // Show temporary preview with loading indicator
+        const tempPreviewId = addImagePreview(base64Data, false, formType, imageCategory, true);
+        
+        // Automatically upload image
+        try {
+            const response = await authenticatedFetch('/api/upload-image', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    image: base64Data
+                })
+            });
+            
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({}));
+                throw new Error(errorData.message || 'Failed to upload image');
+            }
+            
+            const result = await response.json();
+            const uploadedUrl = result.image_url;
+            
+            // Update preview with uploaded URL
+            updateImagePreview(tempPreviewId, uploadedUrl, formType, imageCategory);
+            
+            showNotification(`Image "${file.name}" uploaded successfully`, 'success');
+        } catch (error) {
+            console.error('Error uploading image:', error);
+            // Remove the failed preview
+            removeImagePreviewById(tempPreviewId, formType, imageCategory);
+            showNotification(`Failed to upload "${file.name}": ${error.message}`, 'error');
+        }
+    }
 }
 
-function addImagePreview(imageSrc, isExisting, formType = 'property', imageCategory = 'project') {
+function addImagePreview(imageSrc, isExisting, formType = 'property', imageCategory = 'project', isUploading = false) {
     // Determine container and placeholder IDs based on form type and image category
     let containerId, placeholderId;
     
@@ -4069,19 +4102,92 @@ function addImagePreview(imageSrc, isExisting, formType = 'property', imageCateg
     const container = document.getElementById(containerId);
     const placeholder = document.getElementById(placeholderId);
     
-    if (!container) return;
+    if (!container) return null;
 
     if (placeholder) placeholder.style.display = 'none';
 
+    // Generate unique ID for this preview
+    const previewId = 'preview_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+    
     const preview = document.createElement('div');
     preview.className = 'dashboard-image-preview';
+    preview.id = previewId;
+    preview.setAttribute('data-image-src', imageSrc);
+    
+    // Show loading indicator if uploading
+    const loadingHtml = isUploading ? '<div class="dashboard-image-uploading" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(0,0,0,0.7); color: white; padding: 0.5rem 1rem; border-radius: 4px; z-index: 10;"><i class="fas fa-spinner fa-spin"></i> Uploading...</div>' : '';
+    
     preview.innerHTML = `
-        <img src="${imageSrc}" alt="Property image">
+        <div style="position: relative;">
+            <img src="${imageSrc}" alt="Property image">
+            ${loadingHtml}
+        </div>
         <button type="button" class="dashboard-image-remove" onclick="removeImagePreview(this, '${formType}', '${imageCategory}')">
             <i class="fas fa-times"></i>
         </button>
     `;
     container.appendChild(preview);
+    
+    return previewId;
+}
+
+function updateImagePreview(previewId, newImageSrc, formType = 'property', imageCategory = 'project') {
+    const preview = document.getElementById(previewId);
+    if (!preview) return;
+    
+    // Update the image source
+    const img = preview.querySelector('img');
+    if (img) {
+        img.src = newImageSrc;
+    }
+    
+    // Update data attribute
+    preview.setAttribute('data-image-src', newImageSrc);
+    
+    // Remove loading indicator
+    const loadingIndicator = preview.querySelector('.dashboard-image-uploading');
+    if (loadingIndicator) {
+        loadingIndicator.remove();
+    }
+}
+
+function removeImagePreviewById(previewId, formType = 'property', imageCategory = 'project') {
+    const preview = document.getElementById(previewId);
+    if (preview) {
+        const container = preview.parentElement;
+        preview.remove();
+        
+        // Show placeholder if container is empty
+        let placeholderId;
+        if (formType === 'residential') {
+            if (imageCategory === 'project') {
+                placeholderId = 'residentialProjectImageUploadPlaceholder';
+            } else if (imageCategory === 'floorplan') {
+                placeholderId = 'residentialFloorPlanImageUploadPlaceholder';
+            } else if (imageCategory === 'masterplan') {
+                placeholderId = 'residentialMasterPlanImageUploadPlaceholder';
+            } else {
+                placeholderId = 'residentialImageUploadPlaceholder';
+            }
+        } else if (formType === 'plot') {
+            if (imageCategory === 'project') {
+                placeholderId = 'plotProjectImageUploadPlaceholder';
+            } else if (imageCategory === 'floorplan') {
+                placeholderId = 'plotFloorPlanImageUploadPlaceholder';
+            } else if (imageCategory === 'masterplan') {
+                placeholderId = 'plotMasterPlanImageUploadPlaceholder';
+            } else {
+                placeholderId = 'plotImageUploadPlaceholder';
+            }
+        } else {
+            placeholderId = 'imageUploadPlaceholder';
+        }
+        
+        const placeholder = document.getElementById(placeholderId);
+        if (placeholder && container && container.children.length === 0) {
+            placeholder.style.display = 'block';
+        }
+    }
 }
 
 function removeImagePreview(btn, formType = 'property', imageCategory = 'project') {

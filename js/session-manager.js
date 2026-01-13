@@ -524,10 +524,18 @@
             // Ignore storage errors
         }
         
-        // If we're using BroadcastChannel, wait for other tabs to respond
+        // CRITICAL FIX: Don't clear session just because we're the only tab
+        // The session should only be cleared when ALL tabs are closed, not when we're the first/only tab
+        // We'll mark that we've done the initial check, but we won't clear the session
+        // The session will only be cleared when tabs actually close (via cleanup/checkIfLastTab)
+        
+        // Wait a bit to see if other tabs respond, but don't clear session if none found
+        // This allows the session to persist even if we're the only tab
         setTimeout(() => {
-            // Check for other tabs via localStorage
-            let otherTabsFound = false;
+            // Mark that initial check is done
+            initialCheckDone = true;
+            
+            // Check for other tabs via localStorage (for tracking purposes only)
             try {
                 const now = Date.now();
                 for (let i = 0; i < localStorage.length; i++) {
@@ -536,7 +544,8 @@
                         try {
                             const tabData = JSON.parse(localStorage.getItem(key) || '{}');
                             if (tabData.timestamp && (now - tabData.timestamp) < TAB_TIMEOUT * 2 && !tabData.closing) {
-                                otherTabsFound = true;
+                                // Found other active tabs - mark that we found them
+                                initialCheckDone = true;
                                 break;
                             }
                         } catch (e) {
@@ -548,11 +557,8 @@
                 // Ignore storage errors
             }
             
-            // If no other tabs responded and none found in localStorage, clear session
-            if (!initialCheckDone && activeTabs.size === 0 && !otherTabsFound) {
-                // No other tabs found - clear session
-                clearSession();
-            }
+            // DO NOT clear session here - even if we're the only tab
+            // Session should only be cleared when tabs actually close, not on initial load
         }, INITIAL_CHECK_TIMEOUT);
     }
 

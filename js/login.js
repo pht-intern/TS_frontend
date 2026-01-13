@@ -356,8 +356,17 @@
     if (loginForm) {
         loginForm.addEventListener('submit', async (e) => {
             e.preventDefault();
+            
+            // Get form values - email and password are required, remember me is OPTIONAL
             const email = document.getElementById('loginEmail').value.trim();
             const password = loginPassword.value;
+            
+            // Validate required fields (email and password only)
+            if (!email || !password) {
+                alert('Please enter both email and password.');
+                return;
+            }
+            
             const submitBtn = loginForm.querySelector('.btn-login-submit');
             const originalText = submitBtn.innerHTML;
             
@@ -402,11 +411,23 @@
                         return;
                     }
                     
-                    // Check if "Remember Me" is checked
-                    const rememberMeCheckbox = document.getElementById('rememberMe');
-                    const rememberMe = rememberMeCheckbox ? rememberMeCheckbox.checked : false;
+                    // Check if "Remember Me" is checked (OPTIONAL - checkbox is not required)
+                    // Safely get checkbox state - defaults to false if checkbox doesn't exist
+                    let rememberMe = false;
+                    try {
+                        const rememberMeCheckbox = document.getElementById('rememberMe');
+                        if (rememberMeCheckbox && rememberMeCheckbox.type === 'checkbox') {
+                            rememberMe = rememberMeCheckbox.checked === true;
+                        }
+                        // If checkbox doesn't exist, rememberMe stays false (default)
+                    } catch (checkboxError) {
+                        // If there's any error accessing checkbox, default to false and continue
+                        console.warn('Could not access remember me checkbox, defaulting to false:', checkboxError);
+                        rememberMe = false;
+                    }
                     
                     // Store authentication data synchronously (localStorage/sessionStorage are synchronous)
+                    // CRITICAL: Login works regardless of remember me checkbox state
                     try {
                         if (rememberMe) {
                             // Remember Me checked: Use localStorage for persistent storage
@@ -420,13 +441,14 @@
                             sessionStorage.setItem('user', JSON.stringify(userData));
                             sessionStorage.setItem('dashboard_authenticated', 'true');
                         } else {
-                            // Remember Me not checked: Use sessionStorage (clears when tab closes)
+                            // Remember Me not checked OR checkbox doesn't exist: Use sessionStorage
+                            // Store in both for reliability, but session manager will clear localStorage when tabs close
                             sessionStorage.setItem('user', JSON.stringify(userData));
                             sessionStorage.setItem('dashboard_authenticated', 'true');
-                            // Store in localStorage as backup, but session manager will clear it when last tab closes
+                            // Store in localStorage as backup for immediate access
                             localStorage.setItem('user', JSON.stringify(userData));
                             localStorage.setItem('dashboard_authenticated', 'true');
-                            localStorage.removeItem('remember_me'); // Clear flag if unchecked
+                            localStorage.removeItem('remember_me'); // Clear flag if unchecked or doesn't exist
                             // Clear saved credentials
                             localStorage.removeItem('saved_email');
                             localStorage.removeItem('saved_password');

@@ -1243,7 +1243,8 @@
             // JSONP helper function
             function loadTestimonialsJSONP(url, callback) {
                 return new Promise((resolve, reject) => {
-                    const callbackName = 'testimonialsCallback_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+                    // Generate a valid callback name that matches backend regex: ^[a-zA-Z_$][a-zA-Z0-9_$]*$
+                    const callbackName = 'testimonialsCallback' + Date.now() + Math.random().toString(36).substr(2, 9);
                     const script = document.createElement('script');
                     const timeout = setTimeout(() => {
                         cleanup();
@@ -1285,18 +1286,23 @@
                         if (useJSONP) {
                             try {
                                 const url = '/api/testimonials?is_approved=true&is_featured=true';
+                                console.log('Loading featured testimonials via JSONP:', url);
                                 const data = await loadTestimonialsJSONP(url);
                                 if (Array.isArray(data)) {
                                     fetchedTestimonials = data;
+                                    console.log('Featured testimonials loaded:', fetchedTestimonials.length);
                                 }
                             } catch (jsonpError) {
+                                console.warn('JSONP failed, falling back to fetch:', jsonpError);
                                 useJSONP = false; // Fall back to fetch
                             }
                         }
                         
                         // Fallback to fetch if JSONP failed or not preferred
                         if (!useJSONP || fetchedTestimonials.length === 0) {
-                            const response = await fetch('/api/testimonials?is_approved=true&is_featured=true', {
+                            const featuredUrl = '/api/testimonials?is_approved=true&is_featured=true';
+                            console.log('Loading featured testimonials via fetch:', featuredUrl);
+                            const response = await fetch(featuredUrl, {
                                 headers: {
                                     'Accept': 'application/json',
                                     'Content-Type': 'application/json'
@@ -1308,9 +1314,12 @@
                                     const data = await response.json();
                                     if (Array.isArray(data)) {
                                         fetchedTestimonials = data;
+                                        console.log('Featured testimonials loaded via fetch:', fetchedTestimonials.length);
+                                    } else {
+                                        console.warn('Featured testimonials API returned non-array:', data);
                                     }
                                 } catch (parseError) {
-                                    // Error parsing featured testimonials response - silently handled
+                                    console.error('Error parsing featured testimonials response:', parseError);
                                 }
                             } else {
                                 let errorMessage = `HTTP ${response.status}: ${response.statusText}`;
@@ -1320,10 +1329,11 @@
                                 } catch (e) {
                                     // Ignore JSON parse errors
                                 }
+                                console.warn('Failed to fetch featured testimonials:', errorMessage);
                             }
                         }
                     } catch (fetchError) {
-                        // Error fetching featured testimonials - silently handled
+                        console.error('Error fetching featured testimonials:', fetchError);
                     }
                     
                     // If no featured testimonials, get all approved
@@ -1332,17 +1342,22 @@
                             if (useJSONP) {
                                 try {
                                     const url = '/api/testimonials?is_approved=true';
+                                    console.log('Loading all approved testimonials via JSONP:', url);
                                     const data = await loadTestimonialsJSONP(url);
                                     if (Array.isArray(data)) {
                                         fetchedTestimonials = data;
+                                        console.log('All testimonials loaded:', fetchedTestimonials.length);
                                     }
                                 } catch (jsonpError) {
+                                    console.warn('JSONP failed for all testimonials, falling back to fetch:', jsonpError);
                                     useJSONP = false;
                                 }
                             }
                             
                             if (!useJSONP || fetchedTestimonials.length === 0) {
-                                const allResponse = await fetch('/api/testimonials?is_approved=true', {
+                                const allUrl = '/api/testimonials?is_approved=true';
+                                console.log('Loading all approved testimonials via fetch:', allUrl);
+                                const allResponse = await fetch(allUrl, {
                                     headers: {
                                         'Accept': 'application/json',
                                         'Content-Type': 'application/json'
@@ -1354,9 +1369,12 @@
                                         const allTestimonials = await allResponse.json();
                                         if (Array.isArray(allTestimonials)) {
                                             fetchedTestimonials = allTestimonials;
+                                            console.log('All testimonials loaded via fetch:', fetchedTestimonials.length);
+                                        } else {
+                                            console.warn('All testimonials API returned non-array:', allTestimonials);
                                         }
                                     } catch (parseError) {
-                                        // Error parsing all testimonials response - silently handled
+                                        console.error('Error parsing all testimonials response:', parseError);
                                     }
                                 } else {
                                     let errorMessage = `HTTP ${allResponse.status}: ${allResponse.statusText}`;
@@ -1366,10 +1384,11 @@
                                     } catch (e) {
                                         // Ignore JSON parse errors
                                     }
+                                    console.error('Failed to fetch all testimonials:', errorMessage);
                                 }
                             }
                         } catch (fallbackError) {
-                            // Error fetching all testimonials - silently handled
+                            console.error('Error fetching all testimonials:', fallbackError);
                         }
                     }
                     
@@ -1385,9 +1404,10 @@
                             date: testimonial.created_at ? new Date(testimonial.created_at).toLocaleDateString() : ''
                         }));
                     
+                    console.log('Final testimonials count:', testimonials.length);
                     renderTestimonialsCompact();
                 } catch (error) {
-                    // Unexpected error loading testimonials - silently handled
+                    console.error('Unexpected error loading testimonials:', error);
                     testimonials = [];
                     renderTestimonialsCompact();
                 }

@@ -66,13 +66,11 @@
                         localStorage.removeItem('dashboard_authenticated');
                         localStorage.removeItem('isAuthenticated');
                         localStorage.removeItem('user');
-                        // Also clear any session manager tracking data
-                        for (let i = localStorage.length - 1; i >= 0; i--) {
-                            const key = localStorage.key(i);
-                            if (key && (key.startsWith('tab_') || key === 'session_cleared')) {
-                                localStorage.removeItem(key);
-                            }
-                        }
+                        // CRITICAL FIX: Don't clear session manager tracking data here
+                        // This was causing sessions to be cleared prematurely
+                        // The session manager handles its own cleanup
+                        // Only clear tab_ data if we're actually logging out
+                        // (We'll let the session manager handle tab tracking)
                     } catch (e) {
                         // Ignore errors during cleanup
                     }

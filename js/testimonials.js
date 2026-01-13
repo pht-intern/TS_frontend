@@ -7,7 +7,14 @@ let testimonials = [];
 async function loadTestimonialsFromAPI() {
     try {
         // Fetch approved testimonials (API defaults to is_approved=true)
-        const response = await fetch('/api/testimonials?is_approved=true');
+        const url = '/api/testimonials?is_approved=true';
+        console.log('Loading testimonials from API:', url);
+        const response = await fetch(url, {
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json'
+            }
+        });
         
         let fetchedTestimonials = [];
         if (response.ok) {
@@ -16,11 +23,12 @@ async function loadTestimonialsFromAPI() {
                 // Validate response is an array
                 if (Array.isArray(data)) {
                     fetchedTestimonials = data;
+                    console.log('Testimonials loaded successfully:', fetchedTestimonials.length);
                 } else {
-                    console.warn('Testimonials API returned non-array response');
+                    console.warn('Testimonials API returned non-array response:', data);
                 }
             } catch (parseError) {
-                console.warn('Error parsing testimonials response:', parseError);
+                console.error('Error parsing testimonials response:', parseError);
             }
         } else {
             // Log error but don't throw - use empty array
@@ -31,7 +39,7 @@ async function loadTestimonialsFromAPI() {
             } catch (e) {
                 // Ignore JSON parse errors
             }
-            console.warn('Failed to fetch testimonials:', errorMessage);
+            console.error('Failed to fetch testimonials:', errorMessage);
         }
         
         // Convert API format to display format with validation
@@ -46,10 +54,11 @@ async function loadTestimonialsFromAPI() {
                 date: testimonial.created_at ? new Date(testimonial.created_at).toLocaleDateString() : ''
             }));
         
+        console.log('Final testimonials count after filtering:', testimonials.length);
         renderTestimonials();
     } catch (error) {
-        // Silently handle errors - don't break the page
-        console.warn('Error loading testimonials from API:', error);
+        // Log error for debugging
+        console.error('Error loading testimonials from API:', error);
         testimonials = [];
         renderTestimonials();
     }

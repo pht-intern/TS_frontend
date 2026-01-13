@@ -63,6 +63,13 @@
         // CRITICAL: Only initialize if there's BOTH a session flag AND valid user data
         // If either is missing, do NOT initialize and do NOT create any tracking data
         if (!hasSession || !hasValidUser) {
+            // DEBUG: Log why initialization is being skipped
+            console.log('[SessionManager] Skipping initialization', {
+                hasSession,
+                hasValidUser,
+                userStr: userStr ? 'present' : 'missing'
+            });
+            
             // No valid session - don't initialize and don't create any data
             // Clear any invalid session data
             if (hasSession && !hasValidUser) {
@@ -83,6 +90,13 @@
             // DO NOT initialize - return immediately without creating any data
             return;
         }
+        
+        // DEBUG: Log successful initialization
+        console.log('[SessionManager] Initializing session manager', {
+            tabId: tabId || 'generating...',
+            hasSession,
+            hasValidUser
+        });
         
         // Check if BroadcastChannel is supported
         if (typeof BroadcastChannel === 'undefined') {
@@ -187,7 +201,10 @@
                 
             case 'session-cleared':
                 // Another tab cleared the session, clear ours too
-                clearSession();
+                // But only if initial check is done to prevent premature clearing during startup
+                if (initialCheckDone && isInitialized) {
+                    clearSession();
+                }
                 break;
         }
     }
@@ -360,10 +377,17 @@
 
         // Listen for storage events (when other tabs modify localStorage)
         window.addEventListener('storage', (e) => {
+            // Only process storage events if session manager is initialized
+            if (!isInitialized) return;
+            
             // If another tab cleared the session, clear ours too
             if (e.key && (e.key === 'session_cleared' || e.key.startsWith('tab_'))) {
                 if (e.key === 'session_cleared') {
-                    clearSession();
+                    // Only clear if session manager is initialized and initial check is done
+                    // This prevents premature clearing during initialization
+                    if (isInitialized && initialCheckDone) {
+                        clearSession();
+                    }
                 } else if (e.key.startsWith('tab_')) {
                     // Another tab is active, update our tracking
                     try {
@@ -447,6 +471,15 @@
      * Clear session data
      */
     function clearSession() {
+        // DEBUG: Log when session is being cleared
+        console.log('[SessionManager] clearSession() called', {
+            isInitialized,
+            initialCheckDone,
+            tabId,
+            activeTabsCount: activeTabs.size,
+            stackTrace: new Error().stack
+        });
+        
         // Always clear sessionStorage
         sessionStorage.removeItem(SESSION_KEY);
         sessionStorage.removeItem('dashboard_authenticated');
@@ -522,19 +555,11 @@
         }
         
         // Check if session was already cleared by another tab
-        try {
-            const sessionCleared = localStorage.getItem('session_cleared');
-            if (sessionCleared) {
-                // Session was cleared, but check if it was recent (within last 10 seconds)
-                const clearedTime = parseInt(sessionCleared, 10);
-                if (Date.now() - clearedTime < 10000) {
-                    clearSession();
-                    return;
-                }
-            }
-        } catch (e) {
-            // Ignore storage errors
-        }
+        // CRITICAL FIX: Don't check for session_cleared on initial load
+        // This prevents stale session_cleared flags from clearing new sessions
+        // Only check for session_cleared after we've initialized and confirmed we're not the only tab
+        // We'll check this later, after initial check completes
+        // (Removed premature session_cleared check to prevent false positives)
         
         // CRITICAL FIX: Don't clear session just because we're the only tab
         // The session should only be cleared when ALL tabs are closed, not when we're the first/only tab

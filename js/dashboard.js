@@ -5134,11 +5134,6 @@ function renderTestimonials(testimonials) {
                             title="${testimonial.is_approved ? 'Unapprove' : 'Approve'}">
                         <i class="fas fa-${testimonial.is_approved ? 'check-circle' : 'clock'}"></i>
                     </button>
-                    <button class="dashboard-action-btn ${testimonial.is_featured ? 'edit' : 'delete'}" 
-                            onclick="toggleTestimonialFeatured(${testimonial.id}, ${!testimonial.is_featured})" 
-                            title="${testimonial.is_featured ? 'Unfeature' : 'Feature'}">
-                        <i class="fas fa-${testimonial.is_featured ? 'star' : 'star'}"></i>
-                    </button>
                     <button class="dashboard-action-btn delete" onclick="deleteTestimonial(${testimonial.id})" title="Delete">
                         <i class="fas fa-trash"></i>
                     </button>

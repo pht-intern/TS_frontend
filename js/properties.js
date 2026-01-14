@@ -853,9 +853,14 @@ async function loadActiveCities() {
         
         if (response.ok) {
             const data = await response.json();
+            console.log('Cities API response:', data);
             // Try both ID mappings (old and new)
             const citySelect = document.getElementById('propertiesSearchCity') || document.getElementById('searchCity');
-            if (citySelect && data.cities && Array.isArray(data.cities)) {
+            if (!citySelect) {
+                console.error('City select element not found: propertiesSearchCity or searchCity');
+                return;
+            }
+            if (data.cities && Array.isArray(data.cities)) {
                 // Store current selection before clearing
                 const currentValue = citySelect.value;
                 
@@ -947,9 +952,13 @@ async function loadAmenities() {
         
         if (response.ok) {
             const data = await response.json();
+            console.log('Amenities API response:', data);
             const amenitiesSelect = document.getElementById('propertiesSearchAmenities') || document.getElementById('searchAmenities');
-            
-            if (amenitiesSelect && data.amenities && Array.isArray(data.amenities)) {
+            if (!amenitiesSelect) {
+                console.error('Amenities select element not found: propertiesSearchAmenities or searchAmenities');
+                return;
+            }
+            if (data.amenities && Array.isArray(data.amenities)) {
                 // Store current value before clearing
                 const currentValue = amenitiesSelect.value;
                 
@@ -1006,9 +1015,14 @@ async function loadUnitTypes() {
         
         if (response.ok) {
             const data = await response.json();
+            console.log('Unit Types API response:', data);
             // Try both ID mappings (old and new)
             const unitTypeSelect = document.getElementById('propertiesSearchUnitType') || document.getElementById('searchUnitType');
-            if (unitTypeSelect && data.unit_types && Array.isArray(data.unit_types)) {
+            if (!unitTypeSelect) {
+                console.error('Unit Type select element not found: propertiesSearchUnitType or searchUnitType');
+                return;
+            }
+            if (data.unit_types && Array.isArray(data.unit_types)) {
                 // Store current selection before clearing
                 const currentValue = unitTypeSelect.value;
                 
@@ -1075,10 +1089,12 @@ async function loadUnitTypes() {
 // Load categories and populate dropdown
 // Initialize Filters
 function initFilters() {
-    // Load cities, amenities, and unit types
-    loadActiveCities();
-    loadAmenities();
-    loadUnitTypes();
+    // Wait for DOM to be ready, then load cities, amenities, and unit types
+    setTimeout(() => {
+        loadActiveCities().catch(err => console.error('Error loading cities:', err));
+        loadAmenities().catch(err => console.error('Error loading amenities:', err));
+        loadUnitTypes().catch(err => console.error('Error loading unit types:', err));
+    }, 100);
     
     // City select change handler
     const citySelect = document.getElementById('propertiesSearchCity') || document.getElementById('searchCity');

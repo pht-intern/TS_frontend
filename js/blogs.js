@@ -7,6 +7,45 @@ let currentCategory = 'all';
 let currentTag = null;
 let currentSort = 'latest';
 
+// Increment blog views (same logic as blog-details.js)
+async function incrementBlogViews(blogId) {
+    try {
+        // Check if we've already incremented views for this blog in this session
+        const viewedBlogs = JSON.parse(sessionStorage.getItem('viewedBlogs') || '[]');
+        if (viewedBlogs.includes(blogId.toString())) {
+            // Already viewed in this session, skip increment
+            return null;
+        }
+        
+        // Increment views via API
+        const response = await fetch(`/api/blogs/${blogId}/increment-views`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            // Mark as viewed in this session
+            viewedBlogs.push(blogId.toString());
+            sessionStorage.setItem('viewedBlogs', JSON.stringify(viewedBlogs));
+            
+            // Update the blog in allBlogs array
+            const blogIndex = allBlogs.findIndex(b => b.id === blogId);
+            if (blogIndex !== -1 && data.views !== undefined) {
+                allBlogs[blogIndex].views = data.views;
+            }
+            
+            return data.views;
+        }
+    } catch (error) {
+        console.error('Error incrementing blog views:', error);
+        // Don't throw error, just log it - view tracking is not critical
+    }
+    return null;
+}
+
 // Show loading state
 function showLoadingState() {
     const blogsGrid = document.getElementById('blogsGrid');
@@ -124,6 +163,7 @@ async function loadBlogsFromAPI() {
         renderLatestBlog();
         renderBlogs();
         renderRecentPosts();
+        renderPopularPosts();
         renderArchive();
         updateCategoryFilters();
         updateTagsCloud();
@@ -147,6 +187,7 @@ async function loadBlogsFromAPI() {
         // Also update latest blog section
         renderLatestBlog();
         renderRecentPosts();
+        renderPopularPosts();
     }
 }
 
@@ -421,6 +462,7 @@ function renderLatestBlog() {
         if (titleLink) {
             titleLink.textContent = latestBlog.title || 'Untitled Blog';
             titleLink.href = `/blog-details.html?id=${latestBlog.id}`;
+            titleLink.setAttribute('data-blog-id', latestBlog.id);
             titleLink.style.pointerEvents = 'auto';
             titleLink.style.cursor = 'pointer';
         }
@@ -430,6 +472,7 @@ function renderLatestBlog() {
     if (latestBlogLink && !latestBlogTitle) {
         latestBlogLink.textContent = latestBlog.title || 'Untitled Blog';
         latestBlogLink.href = `/blog-details.html?id=${latestBlog.id}`;
+        latestBlogLink.setAttribute('data-blog-id', latestBlog.id);
         latestBlogLink.style.pointerEvents = 'auto';
         latestBlogLink.style.cursor = 'pointer';
     }
@@ -440,12 +483,17 @@ function renderLatestBlog() {
     
     if (latestBlogReadMore) {
         latestBlogReadMore.href = `/blog-details.html?id=${latestBlog.id}`;
+        latestBlogReadMore.setAttribute('data-blog-id', latestBlog.id);
         latestBlogReadMore.style.display = 'inline-block';
     }
     
     if (latestBlogLink && latestBlogTitle) {
         latestBlogLink.href = `/blog-details.html?id=${latestBlog.id}`;
+        latestBlogLink.setAttribute('data-blog-id', latestBlog.id);
     }
+    
+    // Attach click tracking to latest blog links
+    attachBlogClickTracking();
 }
 
 // Format category name
@@ -487,7 +535,7 @@ function renderBlogs() {
             <div class="blog-card-image">
                 <img src="${escapeHtml(blog.image || blog.image_url || '/images/img1.jpg')}" alt="${escapeHtml(blog.title)}">
                 <div class="blog-card-overlay">
-                    <a href="/blog-details.html?id=${blog.id}" class="blog-card-link">
+                    <a href="/blog-details.html?id=${blog.id}" class="blog-card-link" data-blog-id="${blog.id}">
                         <i class="fas fa-arrow-right"></i>
                     </a>
                 </div>
@@ -498,7 +546,7 @@ function renderBlogs() {
                     <span class="blog-date">${escapeHtml(formatDate(blog.date || blog.created_at))}</span>
                 </div>
                 <h3 class="blog-card-title">
-                    <a href="/blog-details.html?id=${blog.id}">${escapeHtml(blog.title)}</a>
+                    <a href="/blog-details.html?id=${blog.id}" data-blog-id="${blog.id}">${escapeHtml(blog.title)}</a>
                 </h3>
                 <p class="blog-card-excerpt">${escapeHtml(blog.excerpt || '')}</p>
                 <button class="blog-views-btn" data-blog-id="${blog.id}" data-views="${blog.views || 0}">
@@ -507,7 +555,7 @@ function renderBlogs() {
                     <span class="views-label">Views</span>
                 </button>
                 <div class="blog-card-footer">
-                    <a href="/blog-details.html?id=${blog.id}" class="blog-read-more">
+                    <a href="/blog-details.html?id=${blog.id}" class="blog-read-more" data-blog-id="${blog.id}">
                         Read More <i class="fas fa-arrow-right"></i>
                     </a>
                     <div class="blog-card-stats">
@@ -520,6 +568,9 @@ function renderBlogs() {
     
     // Attach event listeners to views buttons
     attachViewsButtonListeners();
+    
+    // Attach click tracking to blog links
+    attachBlogClickTracking();
     
     // Update load more button
     updateLoadMoreButton(filteredBlogs.length);
@@ -539,10 +590,55 @@ function attachViewsButtonListeners() {
             // Optional: Navigate to blog details page on click
             const blogId = this.getAttribute('data-blog-id');
             if (blogId) {
-                // Small delay for visual feedback before navigation
-                setTimeout(() => {
-                    window.location.href = `/blog-details.html?id=${blogId}`;
-                }, 150);
+                // Increment views before navigation
+                incrementBlogViews(parseInt(blogId)).then(() => {
+                    // Small delay for visual feedback before navigation
+                    setTimeout(() => {
+                        window.location.href = `/blog-details.html?id=${blogId}`;
+                    }, 150);
+                });
+            }
+        });
+    });
+}
+
+// Attach click tracking to blog links (for view counting)
+function attachBlogClickTracking() {
+    // Track clicks on blog card links, titles, and read more buttons
+    const blogLinks = document.querySelectorAll('a[data-blog-id], .blog-card-link, .blog-read-more, .recent-post-link, .popular-post-link');
+    blogLinks.forEach(link => {
+        // Check if listener already attached
+        if (link.hasAttribute('data-tracking-attached')) {
+            return;
+        }
+        
+        link.setAttribute('data-tracking-attached', 'true');
+        
+        link.addEventListener('click', function(e) {
+            const blogId = this.getAttribute('data-blog-id') || 
+                          this.href.match(/id=(\d+)/)?.[1];
+            
+            if (blogId) {
+                // Increment views when clicking on blog links (don't prevent navigation)
+                incrementBlogViews(parseInt(blogId)).then(updatedViews => {
+                    if (updatedViews !== null) {
+                        // Update views count in the UI if element exists
+                        const viewsElements = document.querySelectorAll(`[data-blog-id="${blogId}"] .views-count, [data-blog-id="${blogId}"] .blog-card-stats span, [data-blog-id="${blogId}"] .popular-post-views`);
+                        viewsElements.forEach(viewsElement => {
+                            if (viewsElement) {
+                                const viewsText = viewsElement.textContent || viewsElement.innerText;
+                                if (viewsText.includes('views')) {
+                                    viewsElement.innerHTML = `<i class="fas fa-eye"></i> ${updatedViews} views`;
+                                } else if (viewsElement.classList.contains('views-count')) {
+                                    viewsElement.textContent = updatedViews;
+                                }
+                            }
+                        });
+                        
+                        // Update popular posts if this blog's views changed
+                        renderPopularPosts();
+                    }
+                });
             }
         });
     });
@@ -603,7 +699,7 @@ function renderRecentPosts() {
     
     recentPostsList.innerHTML = recentPosts.map(blog => `
         <li class="recent-post-item">
-            <a href="/blog-details.html?id=${blog.id}" class="recent-post-link">
+            <a href="/blog-details.html?id=${blog.id}" class="recent-post-link" data-blog-id="${blog.id}">
                 <div class="recent-post-image">
                     <img src="${escapeHtml(blog.image || blog.image_url || '/images/img1.jpg')}" alt="${escapeHtml(blog.title)}">
                 </div>
@@ -614,6 +710,47 @@ function renderRecentPosts() {
             </a>
         </li>
     `).join('');
+    
+    // Attach click tracking to recent post links
+    attachBlogClickTracking();
+}
+
+// Render popular posts (most viewed) in sidebar
+function renderPopularPosts() {
+    const popularPostsList = document.getElementById('popularPostsList');
+    if (!popularPostsList) return;
+    
+    // Sort blogs by views (descending) and take top 5
+    const popularPosts = [...allBlogs]
+        .sort((a, b) => (b.views || 0) - (a.views || 0))
+        .slice(0, 5);
+    
+    if (popularPosts.length === 0) {
+        popularPostsList.innerHTML = '<li class="no-posts">No popular posts</li>';
+        return;
+    }
+    
+    popularPostsList.innerHTML = popularPosts.map(blog => `
+        <li class="popular-post-item">
+            <a href="/blog-details.html?id=${blog.id}" class="popular-post-link" data-blog-id="${blog.id}">
+                <div class="popular-post-image">
+                    <img src="${escapeHtml(blog.image || blog.image_url || '/images/img1.jpg')}" alt="${escapeHtml(blog.title)}">
+                </div>
+                <div class="popular-post-info">
+                    <h4 class="popular-post-title">${escapeHtml(blog.title)}</h4>
+                    <div class="popular-post-meta">
+                        <span class="popular-post-views">
+                            <i class="fas fa-eye"></i> ${blog.views || 0} views
+                        </span>
+                        <span class="popular-post-date">${escapeHtml(formatDate(blog.date || blog.created_at))}</span>
+                    </div>
+                </div>
+            </a>
+        </li>
+    `).join('');
+    
+    // Attach click tracking to popular post links
+    attachBlogClickTracking();
 }
 
 // Render archive in sidebar

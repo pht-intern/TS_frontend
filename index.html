@@ -1596,8 +1596,13 @@
                     
                     if (response.ok) {
                         const data = await response.json();
+                        console.log('Unit Types API response:', data);
                         const unitTypeSelect = document.getElementById('indexSearchUnitType');
-                        if (unitTypeSelect && data.unit_types && Array.isArray(data.unit_types)) {
+                        if (!unitTypeSelect) {
+                            console.error('Unit Type select element not found: indexSearchUnitType');
+                            return;
+                        }
+                        if (data.unit_types && Array.isArray(data.unit_types)) {
                             // Store current selection before clearing
                             const currentValue = unitTypeSelect.value;
                             
@@ -1676,9 +1681,13 @@
                     
                     if (response.ok) {
                         const data = await response.json();
+                        console.log('Amenities API response:', data);
                         const amenitiesSelect = document.getElementById('indexSearchAmenities');
-                        
-                        if (amenitiesSelect && data.amenities && Array.isArray(data.amenities)) {
+                        if (!amenitiesSelect) {
+                            console.error('Amenities select element not found: indexSearchAmenities');
+                            return;
+                        }
+                        if (data.amenities && Array.isArray(data.amenities)) {
                             // Store current value before clearing
                             const currentValue = amenitiesSelect.value;
                             
@@ -1735,8 +1744,13 @@
                     
                     if (response.ok) {
                         const data = await response.json();
+                        console.log('Cities API response:', data);
                         const citySelect = document.getElementById('indexSearchCity');
-                        if (citySelect && data.cities && Array.isArray(data.cities)) {
+                        if (!citySelect) {
+                            console.error('City select element not found: indexSearchCity');
+                            return;
+                        }
+                        if (data.cities && Array.isArray(data.cities)) {
                             // Store current selection before clearing
                             const currentValue = citySelect.value;
                             
@@ -1820,10 +1834,12 @@
                     categorySection.removeAttribute('data-active-category');
                 }
                 
-                // Load cities, amenities, and unit types
-                loadActiveCities();
-                loadAmenities();
-                loadUnitTypes();
+                // Wait for DOM to be ready, then load cities, amenities, and unit types
+                setTimeout(() => {
+                    loadActiveCities().catch(err => console.error('Error loading cities:', err));
+                    loadAmenities().catch(err => console.error('Error loading amenities:', err));
+                    loadUnitTypes().catch(err => console.error('Error loading unit types:', err));
+                }, 100);
                 
                 // City select change handler
                 const citySelect = document.getElementById('indexSearchCity');

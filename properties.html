@@ -115,8 +115,16 @@
                             <!-- Left Column: Filter 1 -->
                             <div class="filter1">
                                 <div class="search-group">
+                                    <label><i class="fas fa-tag"></i> Category</label>
+                                    <select id="propertiesSearchCategory">
+                                        <option value="">Any Category</option>
+                                    </select>
+                                </div>
+                                <div class="search-group">
                                     <label><i class="fas fa-map-marker-alt"></i> City</label>
-                                    <input type="text" id="propertiesSearchCity" placeholder="Enter city">
+                                    <select id="propertiesSearchCity">
+                                        <option value="">Any City</option>
+                                    </select>
                                 </div>
                                 <div class="search-group">
                                     <label><i class="fas fa-map-marker-alt"></i> Area</label>
@@ -124,7 +132,10 @@
                                 </div>
                                 <div class="search-group">
                                     <label><i class="fas fa-star"></i> Amenities</label>
-                                    <input type="text" id="propertiesSearchAmenities" placeholder="e.g., Parking, Lift, Security">
+                                    <input type="text" id="propertiesSearchAmenities" list="propertiesAmenitiesList" placeholder="Select or type amenity">
+                                    <datalist id="propertiesAmenitiesList">
+                                        <option value="">Any Amenity</option>
+                                    </datalist>
                                 </div>
                                 <div class="search-group">
                                     <label><i class="fas fa-compass"></i> Directions</label>
@@ -171,11 +182,6 @@
                                 <label><i class="fas fa-home"></i> Unit Type</label>
                                 <select id="propertiesSearchUnitType">
                                     <option value="">Any Unit Type</option>
-                                    <option value="rk" data-bhk="0">1RK</option>
-                                    <option value="bhk" data-bhk="1">1BHK</option>
-                                    <option value="bhk" data-bhk="2">2BHK</option>
-                                    <option value="bhk" data-bhk="3">3BHK</option>
-                                    <option value="4plus" data-bhk="4">4+BHK</option>
                                 </select>
                             </div>
                             <div class="search-group">

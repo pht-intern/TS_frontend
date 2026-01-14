@@ -838,8 +838,356 @@ function showToastNotification(message) {
     }, 3000);
 }
 
+// Load active cities and populate dropdown
+async function loadActiveCities() {
+    try {
+        // Add cache-busting timestamp to ensure fresh data
+        const timestamp = new Date().getTime();
+        const response = await fetch(`/api/cities?_t=${timestamp}`, {
+            method: 'GET',
+            cache: 'no-cache',
+            headers: {
+                'Cache-Control': 'no-cache'
+            }
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            // Try both ID mappings (old and new)
+            const citySelect = document.getElementById('propertiesSearchCity') || document.getElementById('searchCity');
+            if (citySelect && data.cities && Array.isArray(data.cities)) {
+                // Store current selection before clearing
+                const currentValue = citySelect.value;
+                
+                // Clear existing options except the first "Any City" option
+                citySelect.innerHTML = '<option value="">Any City</option>';
+                
+                // If no active cities, show message
+                if (data.cities.length === 0) {
+                    const option = document.createElement('option');
+                    option.value = '';
+                    option.textContent = 'No active cities available';
+                    option.disabled = true;
+                    citySelect.appendChild(option);
+                    return;
+                }
+                
+                // Group cities by state
+                const citiesByState = {};
+                data.cities.forEach(city => {
+                    // Handle both string and object formats
+                    const cityName = typeof city === 'string' ? city : (city.name || '');
+                    const state = typeof city === 'object' ? (city.state || 'Other') : 'Other';
+                    
+                    if (cityName && cityName.trim()) {
+                        if (!citiesByState[state]) {
+                            citiesByState[state] = [];
+                        }
+                        citiesByState[state].push(cityName.trim());
+                    }
+                });
+                
+                // Sort states and cities
+                const sortedStates = Object.keys(citiesByState).sort();
+                sortedStates.forEach(state => {
+                    const cities = citiesByState[state].sort();
+                    cities.forEach(cityName => {
+                        const option = document.createElement('option');
+                        option.value = cityName;
+                        option.textContent = `${cityName}, ${state}`;
+                        citySelect.appendChild(option);
+                    });
+                });
+                
+                // Restore selected value from URL params if present, otherwise restore previous selection
+                const urlParams = new URLSearchParams(window.location.search);
+                const cityParam = urlParams.get('city');
+                if (cityParam && citySelect.querySelector(`option[value="${cityParam}"]`)) {
+                    citySelect.value = cityParam;
+                } else if (currentValue && citySelect.querySelector(`option[value="${currentValue}"]`)) {
+                    citySelect.value = currentValue;
+                }
+            }
+        } else {
+            console.error('Failed to load cities:', response.status, response.statusText);
+            const citySelect = document.getElementById('propertiesSearchCity') || document.getElementById('searchCity');
+            if (citySelect) {
+                const option = document.createElement('option');
+                option.value = '';
+                option.textContent = 'Error loading cities';
+                option.disabled = true;
+                citySelect.appendChild(option);
+            }
+        }
+    } catch (error) {
+        console.error('Error loading cities:', error);
+        const citySelect = document.getElementById('propertiesSearchCity') || document.getElementById('searchCity');
+        if (citySelect) {
+            const option = document.createElement('option');
+            option.value = '';
+            option.textContent = 'Error loading cities';
+            option.disabled = true;
+            citySelect.appendChild(option);
+        }
+    }
+}
+
+// Load amenities and populate datalist
+async function loadAmenities() {
+    try {
+        // Add cache-busting timestamp to ensure fresh data
+        const timestamp = new Date().getTime();
+        const response = await fetch(`/api/amenities?_t=${timestamp}`, {
+            method: 'GET',
+            cache: 'no-cache',
+            headers: {
+                'Cache-Control': 'no-cache'
+            }
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            // Try both ID mappings (old and new)
+            const amenitiesDatalist = document.getElementById('propertiesAmenitiesList') || document.getElementById('amenitiesList');
+            const amenitiesInput = document.getElementById('propertiesSearchAmenities') || document.getElementById('searchAmenities');
+            
+            if (amenitiesDatalist && amenitiesInput && data.amenities && Array.isArray(data.amenities)) {
+                // Store current value before clearing
+                const currentValue = amenitiesInput.value;
+                
+                // Clear existing options except the first "Any Amenity" option
+                amenitiesDatalist.innerHTML = '<option value="">Any Amenity</option>';
+                
+                // If no amenities, still allow text input (no error message needed)
+                if (data.amenities.length > 0) {
+                    // Add amenities sorted alphabetically to datalist
+                    data.amenities.sort().forEach(amenity => {
+                        if (amenity && amenity.trim()) {
+                            const option = document.createElement('option');
+                            option.value = amenity.trim();
+                            // Format amenity name for display (replace underscores with spaces, capitalize)
+                            const displayName = amenity.trim()
+                                .replace(/_/g, ' ')
+                                .replace(/\b\w/g, l => l.toUpperCase());
+                            option.textContent = displayName;
+                            amenitiesDatalist.appendChild(option);
+                        }
+                    });
+                }
+                
+                // Restore selected value from URL params if present, otherwise restore previous selection
+                const urlParams = new URLSearchParams(window.location.search);
+                const amenitiesParam = urlParams.get('amenities');
+                if (amenitiesParam) {
+                    amenitiesInput.value = amenitiesParam;
+                } else if (currentValue) {
+                    amenitiesInput.value = currentValue;
+                }
+            }
+        } else {
+            console.error('Failed to load amenities:', response.status, response.statusText);
+            // Don't show error - allow free text input even if API fails
+        }
+    } catch (error) {
+        console.error('Error loading amenities:', error);
+        // Don't show error - allow free text input even if API fails
+    }
+}
+
+// Load unit types and populate dropdown
+async function loadUnitTypes() {
+    try {
+        // Add cache-busting timestamp to ensure fresh data
+        const timestamp = new Date().getTime();
+        const response = await fetch(`/api/unit-types?_t=${timestamp}`, {
+            method: 'GET',
+            cache: 'no-cache',
+            headers: {
+                'Cache-Control': 'no-cache'
+            }
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            // Try both ID mappings (old and new)
+            const unitTypeSelect = document.getElementById('propertiesSearchUnitType') || document.getElementById('searchUnitType');
+            if (unitTypeSelect && data.unit_types && Array.isArray(data.unit_types)) {
+                // Store current selection before clearing
+                const currentValue = unitTypeSelect.value;
+                
+                // Clear existing options except the first "Any Unit Type" option
+                unitTypeSelect.innerHTML = '<option value="">Any Unit Type</option>';
+                
+                // If no unit types, show message
+                if (data.unit_types.length === 0) {
+                    const option = document.createElement('option');
+                    option.value = '';
+                    option.textContent = 'No unit types available';
+                    option.disabled = true;
+                    unitTypeSelect.appendChild(option);
+                    return;
+                }
+                
+                // Add unit types sorted by bedrooms, then name
+                data.unit_types.forEach(unitType => {
+                    if (unitType && unitType.name && unitType.display_name) {
+                        const option = document.createElement('option');
+                        option.value = unitType.name;
+                        option.textContent = unitType.display_name;
+                        // Preserve data-bhk attribute for compatibility with existing code
+                        if (unitType.bedrooms !== null && unitType.bedrooms !== undefined) {
+                            option.setAttribute('data-bhk', unitType.bedrooms.toString());
+                        }
+                        unitTypeSelect.appendChild(option);
+                    }
+                });
+                
+                // Restore selected value from URL params if present, otherwise restore previous selection
+                const urlParams = new URLSearchParams(window.location.search);
+                const unitTypeParam = urlParams.get('unit_type') || urlParams.get('type');
+                if (unitTypeParam && unitTypeSelect.querySelector(`option[value="${unitTypeParam}"]`)) {
+                    unitTypeSelect.value = unitTypeParam;
+                } else if (currentValue && unitTypeSelect.querySelector(`option[value="${currentValue}"]`)) {
+                    unitTypeSelect.value = currentValue;
+                }
+            }
+        } else {
+            console.error('Failed to load unit types:', response.status, response.statusText);
+            const unitTypeSelect = document.getElementById('propertiesSearchUnitType') || document.getElementById('searchUnitType');
+            if (unitTypeSelect) {
+                const option = document.createElement('option');
+                option.value = '';
+                option.textContent = 'Error loading unit types';
+                option.disabled = true;
+                unitTypeSelect.appendChild(option);
+            }
+        }
+    } catch (error) {
+        console.error('Error loading unit types:', error);
+        const unitTypeSelect = document.getElementById('propertiesSearchUnitType') || document.getElementById('searchUnitType');
+        if (unitTypeSelect) {
+            const option = document.createElement('option');
+            option.value = '';
+            option.textContent = 'Error loading unit types';
+            option.disabled = true;
+            unitTypeSelect.appendChild(option);
+        }
+    }
+}
+
+// Load categories and populate dropdown
+async function loadCategories() {
+    try {
+        // Add cache-busting timestamp to ensure fresh data
+        const timestamp = new Date().getTime();
+        const response = await fetch(`/api/categories?_t=${timestamp}`, {
+            method: 'GET',
+            cache: 'no-cache',
+            headers: {
+                'Cache-Control': 'no-cache'
+            }
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            // Try both ID mappings (old and new)
+            const categorySelect = document.getElementById('propertiesSearchCategory') || document.getElementById('searchCategory');
+            if (categorySelect && data.categories && Array.isArray(data.categories)) {
+                // Store current selection before clearing
+                const currentValue = categorySelect.value;
+                
+                // Clear existing options except the first "Any Category" option
+                categorySelect.innerHTML = '<option value="">Any Category</option>';
+                
+                // If no categories, show message
+                if (data.categories.length === 0) {
+                    const option = document.createElement('option');
+                    option.value = '';
+                    option.textContent = 'No categories available';
+                    option.disabled = true;
+                    categorySelect.appendChild(option);
+                    return;
+                }
+                
+                // Add categories sorted alphabetically
+                data.categories.forEach(category => {
+                    if (category && category.name && category.display_name) {
+                        const option = document.createElement('option');
+                        option.value = category.name;
+                        option.textContent = category.display_name;
+                        categorySelect.appendChild(option);
+                    }
+                });
+                
+                // Restore selected value from URL params if present, otherwise restore previous selection
+                const urlParams = new URLSearchParams(window.location.search);
+                const categoryParam = urlParams.get('category');
+                if (categoryParam && categorySelect.querySelector(`option[value="${categoryParam}"]`)) {
+                    categorySelect.value = categoryParam;
+                } else if (currentValue && categorySelect.querySelector(`option[value="${currentValue}"]`)) {
+                    categorySelect.value = currentValue;
+                }
+            }
+        } else {
+            console.error('Failed to load categories:', response.status, response.statusText);
+            const categorySelect = document.getElementById('propertiesSearchCategory') || document.getElementById('searchCategory');
+            if (categorySelect) {
+                const option = document.createElement('option');
+                option.value = '';
+                option.textContent = 'Error loading categories';
+                option.disabled = true;
+                categorySelect.appendChild(option);
+            }
+        }
+    } catch (error) {
+        console.error('Error loading categories:', error);
+        const categorySelect = document.getElementById('propertiesSearchCategory') || document.getElementById('searchCategory');
+        if (categorySelect) {
+            const option = document.createElement('option');
+            option.value = '';
+            option.textContent = 'Error loading categories';
+            option.disabled = true;
+            categorySelect.appendChild(option);
+        }
+    }
+}
+
 // Initialize Filters
 function initFilters() {
+    // Load categories, cities, amenities, and unit types
+    loadCategories();
+    loadActiveCities();
+    loadAmenities();
+    loadUnitTypes();
+    
+    // Category select change handler
+    const categorySelect = document.getElementById('propertiesSearchCategory') || document.getElementById('searchCategory');
+    if (categorySelect) {
+        categorySelect.addEventListener('change', () => {
+            applyFilters();
+        });
+    }
+    
+    // City select change handler
+    const citySelect = document.getElementById('propertiesSearchCity') || document.getElementById('searchCity');
+    if (citySelect) {
+        citySelect.addEventListener('change', () => {
+            applyFilters();
+        });
+    }
+    
+    // Amenities input change handler (for both dropdown selection and text input)
+    const amenitiesInput = document.getElementById('propertiesSearchAmenities') || document.getElementById('searchAmenities');
+    if (amenitiesInput) {
+        // Listen to both input and change events to catch both typing and selection
+        amenitiesInput.addEventListener('input', () => {
+            applyFilters();
+        });
+        amenitiesInput.addEventListener('change', () => {
+            applyFilters();
+        });
+    }
+    
     // Transaction Type select (Buy/Rent/All)
     const transactionTypeSelect = document.getElementById('searchTransactionType');
     if (transactionTypeSelect) {
@@ -1196,6 +1544,12 @@ function applyFilters() {
         });
     }
     
+    // Get category from dropdown if not set from buttons
+    const categoryFromDropdown = (document.getElementById('propertiesSearchCategory') || document.getElementById('searchCategory'))?.value.trim() || '';
+    if (categoryFromDropdown) {
+        selectedCategory = categoryFromDropdown;
+    }
+    
     // Residential/Commercial filter (category)
     // If category is selected but no specific property type, show all properties of that category
     if (selectedCategory && !selectedPropertyType) {
@@ -1364,7 +1718,7 @@ function applyFilters() {
     }
     
     // Amenities filter
-    const amenities = document.getElementById('searchAmenities')?.value.toLowerCase().trim() || '';
+    const amenities = (document.getElementById('propertiesSearchAmenities') || document.getElementById('searchAmenities'))?.value.toLowerCase().trim() || '';
     if (amenities) {
         filtered = filtered.filter(p => {
             if (p.amenities !== undefined) {

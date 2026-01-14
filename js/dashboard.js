@@ -2348,7 +2348,7 @@ function generateVillasStep2() {
             </div>
         </div>
 
-        <div class="dashboard-form-row" style="margin-bottom: 1.5rem;">
+        <div class="dashboard-form-row" id="villaLengthBreadthRow" style="margin-bottom: 1.5rem;">
             <div class="dashboard-form-group" style="flex: 1; margin-right: 1.5rem;">
                 <label for="propertyLength" style="font-size: 1rem; margin-bottom: 0.75rem; font-weight: 500;">
                     <i class="fas fa-ruler-horizontal"></i>
@@ -2507,7 +2507,7 @@ function generateIndividualHouseStep2() {
             </div>
         </div>
 
-        <div class="dashboard-form-row" style="margin-bottom: 1.5rem;">
+        <div class="dashboard-form-row" id="houseLengthBreadthRow" style="margin-bottom: 1.5rem;">
             <div class="dashboard-form-group" style="flex: 1; margin-right: 1.5rem;">
                 <label for="propertyLength" style="font-size: 1rem; margin-bottom: 0.75rem; font-weight: 500;">
                     <i class="fas fa-ruler-horizontal"></i>
@@ -2614,25 +2614,36 @@ function initializeStep2Handlers(propertyType) {
         }
     });
     
-    // Handle villa type change for conditional plot area field
+    // Handle villa type change for conditional plot area field and length/breadth fields
     if (propertyType === 'villas' || propertyType === 'individual_house') {
         const villaTypeSelect = document.getElementById('propertyVillaType');
         if (villaTypeSelect) {
             villaTypeSelect.addEventListener('change', function() {
                 const plotAreaRow = document.getElementById(propertyType === 'villas' ? 'villaPlotAreaRow' : 'housePlotAreaRow');
                 const plotAreaInput = document.getElementById('propertyPlotArea');
+                const lengthBreadthRow = document.getElementById(propertyType === 'villas' ? 'villaLengthBreadthRow' : 'houseLengthBreadthRow');
+                const lengthInput = document.getElementById('propertyLength');
+                const breadthInput = document.getElementById('propertyBreadth');
                 
                 if (this.value === 'independent_villa') {
                     if (plotAreaRow) plotAreaRow.style.display = 'flex';
                     if (plotAreaInput) plotAreaInput.required = true;
+                    if (lengthBreadthRow) lengthBreadthRow.style.display = 'flex';
                 } else {
                     if (plotAreaRow) plotAreaRow.style.display = 'none';
                     if (plotAreaInput) {
                         plotAreaInput.required = false;
                         plotAreaInput.value = '';
                     }
+                    // Hide Length and Breadth for row_villa and villament
+                    if (lengthBreadthRow) lengthBreadthRow.style.display = 'none';
+                    if (lengthInput) lengthInput.value = '';
+                    if (breadthInput) breadthInput.value = '';
                 }
             });
+            
+            // Trigger change event on page load to set initial state
+            villaTypeSelect.dispatchEvent(new Event('change'));
         }
     }
 }
@@ -3961,14 +3972,14 @@ async function confirmDelete() {
             throw new Error(errorData.detail || `Failed to delete ${type}`);
         }
 
-        // Reload data with force refresh to bypass cache
-        if (type === 'testimonial') {
-            await loadTestimonials(true); // Force refresh after delete
-        } else {
-            await loadProperties(true); // Force refresh after delete
-        }
+        // Close modal and reload page instead of updating display immediately
         closeDeleteModal();
-        showNotification(`${type.charAt(0).toUpperCase() + type.slice(1)} deleted successfully!`);
+        showNotification(`${type.charAt(0).toUpperCase() + type.slice(1)} deleted successfully!`, 'success');
+        
+        // Reload the page after a short delay to show the notification
+        setTimeout(() => {
+            window.location.reload();
+        }, 500);
     } catch (error) {
         console.error(`Error deleting ${type}:`, error);
         showNotification(error.message || `Failed to delete ${type}. Please try again.`, 'error');
@@ -5343,18 +5354,14 @@ async function confirmDelete() {
             throw new Error(errorData.detail || `Failed to delete ${type}`);
         }
 
-        // Reload data with force refresh to bypass cache
-        if (type === 'testimonial') {
-            await loadTestimonials(true); // Force refresh after delete
-        } else if (type === 'partner') {
-            await loadPartners();
-        } else if (type === 'blog') {
-            await loadBlogs();
-        } else {
-            await loadProperties(true); // Force refresh after delete
-        }
+        // Close modal and reload page instead of updating display immediately
         closeDeleteModal();
-        showNotification(`${type.charAt(0).toUpperCase() + type.slice(1)} deleted successfully!`);
+        showNotification(`${type.charAt(0).toUpperCase() + type.slice(1)} deleted successfully!`, 'success');
+        
+        // Reload the page after a short delay to show the notification
+        setTimeout(() => {
+            window.location.reload();
+        }, 500);
     } catch (error) {
         console.error(`Error deleting ${type}:`, error);
         showNotification(error.message || `Failed to delete ${type}. Please try again.`, 'error');

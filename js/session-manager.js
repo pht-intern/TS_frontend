@@ -469,10 +469,12 @@
 
     /**
      * Clear session data
+     * CRITICAL: Always clears session when all tabs close, regardless of "Remember Me"
+     * "Remember Me" only preserves saved email/password for autofill, not the active session
      */
     function clearSession() {
         // DEBUG: Log when session is being cleared
-        console.log('[SessionManager] clearSession() called', {
+        console.log('[SessionManager] clearSession() called - clearing session because all tabs closed', {
             isInitialized,
             initialCheckDone,
             tabId,
@@ -487,18 +489,18 @@
         sessionStorage.removeItem(USER_KEY);
         sessionStorage.removeItem('user');
         
-        // Check if "Remember Me" was set - if so, don't clear localStorage
-        const rememberMe = localStorage.getItem('remember_me') === 'true';
+        // CRITICAL FIX: Always clear session from localStorage when all tabs close
+        // "Remember Me" only saves email/password for autofill, NOT the active session
+        // The session must be cleared when all tabs close for security
+        localStorage.removeItem(SESSION_KEY);
+        localStorage.removeItem('dashboard_authenticated');
+        localStorage.removeItem('isAuthenticated');
+        localStorage.removeItem(USER_KEY);
+        localStorage.removeItem('user');
         
-        if (!rememberMe) {
-            // Remember Me not set - clear localStorage
-            localStorage.removeItem(SESSION_KEY);
-            localStorage.removeItem('dashboard_authenticated');
-            localStorage.removeItem('isAuthenticated');
-            localStorage.removeItem(USER_KEY);
-            localStorage.removeItem('user');
-        }
-        // If rememberMe is true, keep localStorage intact for persistent login
+        // Note: We keep 'remember_me', 'saved_email', and 'saved_password' in localStorage
+        // if "Remember Me" was checked, so the user can easily log back in with autofill
+        // But the actual session/authentication is cleared
         
         // Mark session as cleared in localStorage (triggers storage event for other tabs)
         try {

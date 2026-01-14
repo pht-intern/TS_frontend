@@ -29,47 +29,168 @@
     <!-- Authentication Check - Must run immediately before any content -->
     <script>
         (function() {
-            // Clear any stale or invalid authentication data first
-            function clearAllAuthData() {
-                sessionStorage.removeItem('dashboard_authenticated');
-                sessionStorage.removeItem('isAuthenticated');
-                sessionStorage.removeItem('user');
-                localStorage.removeItem('dashboard_authenticated');
-                localStorage.removeItem('isAuthenticated');
-                localStorage.removeItem('user');
-            }
+            'use strict';
             
-            // Check authentication immediately before page renders
-            const isAuthenticated = localStorage.getItem('dashboard_authenticated') === 'true' ||
-                                   sessionStorage.getItem('dashboard_authenticated') === 'true';
-            const userStr = localStorage.getItem('user') || sessionStorage.getItem('user');
-            
-            // Validate user data exists and is valid JSON
-            let user = null;
-            if (userStr) {
-                try {
-                    user = JSON.parse(userStr);
-                    // Ensure user has required fields (email is mandatory) and has admin role
-                    if (!user || !user.email || typeof user.email !== 'string' || user.email.trim() === '' || user.role !== 'admin') {
-                        user = null;
+            try {
+                // Function to clear all authentication data
+                function clearAllAuthData() {
+                    try {
+                        sessionStorage.removeItem('dashboard_authenticated');
+                        sessionStorage.removeItem('isAuthenticated');
+                        sessionStorage.removeItem('user');
+                        localStorage.removeItem('dashboard_authenticated');
+                        localStorage.removeItem('isAuthenticated');
+                        localStorage.removeItem('user');
+                    } catch (e) {
+                        // Ignore errors during cleanup
                     }
-                } catch (e) {
-                    // Invalid JSON, treat as not authenticated
-                    user = null;
                 }
-            }
-            
-            // If not authenticated or user data is invalid, redirect immediately
-            if (!isAuthenticated || !user) {
-                // Clear all authentication data
-                clearAllAuthData();
-                // Redirect to index page immediately
-                window.location.replace('/index.html');
-                // Prevent page from rendering
-                document.body.innerHTML = '<div style="display: flex; justify-content: center; align-items: center; height: 100vh; font-family: Inter, sans-serif;"><p>Redirecting to login...</p></div>';
-                // Stop script execution
-                throw new Error('Unauthorized access - redirecting to login');
-            }
+                
+                // CRITICAL FIX: Add retry mechanism for timing issues
+                // Sometimes storage isn't immediately available after redirect
+                function checkAuthWithRetry(retryCount = 0) {
+                    const MAX_RETRIES = 3;
+                    const RETRY_DELAY = 50; // 50ms between retries
+                    
+                    // IMMEDIATE CHECK: Get authentication data synchronously
+                    // Prioritize localStorage (persistent) over sessionStorage
+                    let localAuth, sessionAuth, localUserStr, sessionUserStr;
+                    try {
+                        localAuth = localStorage.getItem('dashboard_authenticated');
+                        sessionAuth = sessionStorage.getItem('dashboard_authenticated');
+                        localUserStr = localStorage.getItem('user');
+                        sessionUserStr = sessionStorage.getItem('user');
+                    } catch (e) {
+                        // Storage access failed - treat as not authenticated
+                        console.error('Storage access failed:', e);
+                        clearAllAuthData();
+                        window.location.replace('/index.html');
+                        return false;
+                    }
+                    
+                    // CRITICAL: Sync localStorage to sessionStorage for persistence
+                    // If localStorage has auth but sessionStorage doesn't, sync it
+                    if (localAuth === 'true' && localUserStr && (!sessionAuth || !sessionUserStr)) {
+                        try {
+                            sessionStorage.setItem('dashboard_authenticated', 'true');
+                            sessionStorage.setItem('user', localUserStr);
+                            sessionAuth = 'true';
+                            sessionUserStr = localUserStr;
+                        } catch (e) {
+                            console.error('Error syncing to sessionStorage:', e);
+                        }
+                    }
+                    
+                    // Check if authentication flag exists (prioritize localStorage)
+                    const isAuthenticated = (localAuth === 'true') || (sessionAuth === 'true');
+                    
+                    // Get user data (prioritize localStorage)
+                    const userStr = localUserStr || sessionUserStr;
+                    
+                    // Validate user data exists and is valid JSON with required fields
+                    let hasValidUser = false;
+                    let user = null;
+                    
+                    if (userStr) {
+                        try {
+                            user = JSON.parse(userStr);
+                            // STRICT VALIDATION: Must have email (non-empty string) AND admin role
+                            if (user && 
+                                user.email && 
+                                typeof user.email === 'string' && 
+                                user.email.trim() !== '' && 
+                                user.role === 'admin') {
+                                hasValidUser = true;
+                            } else {
+                                // Invalid user data
+                                console.warn('Invalid user data:', user);
+                                user = null;
+                                hasValidUser = false;
+                            }
+                        } catch (e) {
+                            // Invalid JSON
+                            console.error('Error parsing user data:', e, 'Raw:', userStr);
+                            user = null;
+                            hasValidUser = false;
+                        }
+                    }
+                    
+                    // CRITICAL CHECK: Both authentication flag AND valid user data must exist
+                    // If either is missing or invalid, retry or redirect
+                    if (!isAuthenticated || !hasValidUser || !user) {
+                        // If we haven't exhausted retries and this looks like a timing issue, retry
+                        if (retryCount < MAX_RETRIES) {
+                            // Check if we're coming from a login redirect (has _login param)
+                            const urlParams = new URLSearchParams(window.location.search);
+                            const isLoginRedirect = urlParams.has('_login');
+                            
+                            if (isLoginRedirect) {
+                                // This is a login redirect - storage might not be ready yet
+                                console.log(`Auth check failed (attempt ${retryCount + 1}/${MAX_RETRIES}), retrying...`, {
+                                    isAuthenticated,
+                                    hasValidUser,
+                                    hasUserStr: !!userStr,
+                                    localAuth,
+                                    sessionAuth
+                                });
+                                setTimeout(() => {
+                                    checkAuthWithRetry(retryCount + 1);
+                                }, RETRY_DELAY);
+                                return false;
+                            }
+                        }
+                        
+                        // No retries left or not a login redirect - redirect to login
+                        console.error('Authentication check failed after retries:', {
+                            isAuthenticated,
+                            hasValidUser,
+                            hasUser: !!user,
+                            localAuth,
+                            sessionAuth,
+                            retryCount
+                        });
+                        clearAllAuthData();
+                        // Redirect immediately - use replace to prevent back button
+                        try {
+                            window.location.replace('/index.html');
+                        } catch (e) {
+                            try {
+                                window.location.href = '/index.html';
+                            } catch (e2) {
+                                // Last resort - show error and redirect
+                                if (document.body) {
+                                    document.body.style.display = 'block';
+                                    document.body.innerHTML = '<div style="font-family: Inter, sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; text-align: center;"><div><h1>Unauthorized Access</h1><p>Redirecting to login...</p></div></div>';
+                                    setTimeout(function() {
+                                        window.location.href = '/index.html';
+                                    }, 1000);
+                                }
+                            }
+                        }
+                        return false;
+                    }
+                    
+                    // Authentication passed - sync to sessionStorage if needed
+                    if (localAuth === 'true' && localUserStr && (!sessionAuth || !sessionUserStr)) {
+                        try {
+                            sessionStorage.setItem('dashboard_authenticated', 'true');
+                            sessionStorage.setItem('user', localUserStr);
+                        } catch (e) {
+                            console.error('Error syncing to sessionStorage:', e);
+                        }
+                    }
+                    
+                    // Authentication passed - return user data
+                    return { user, isAuthenticated, hasValidUser };
+                }
+                
+                // Perform auth check with retry
+                const authResult = checkAuthWithRetry();
+                if (!authResult) {
+                    return; // Redirect already handled
+                }
+                
+                const { user, isAuthenticated, hasValidUser } = authResult;
             
             // Authentication passed - show the page
             document.body.classList.add('authenticated');
@@ -1287,26 +1408,37 @@
                     tbody.innerHTML = '';
 
                     if (response.ok && data.categories) {
-                        data.categories.forEach(category => {
-                            const row = document.createElement('tr');
-                            row.innerHTML = `
-                                <td>${category.name || '-'}</td>
-                                <td>${category.display_name || '-'}</td>
-                                <td><span class="status-badge ${category.is_active ? 'sale' : 'rent'}">${category.is_active ? 'Active' : 'Inactive'}</span></td>
-                                <td>${category.properties_count || 0}</td>
-                                <td>
-                                    <button class="dashboard-btn-secondary edit-category" data-id="${category.id}" style="margin-right: 0.5rem;">
-                                        <i class="fas fa-edit"></i>
-                                    </button>
-                                    <button class="dashboard-btn-danger delete-category" data-id="${category.id}">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
-                                </td>
-                            `;
-                            tbody.appendChild(row);
-                        });
+                        if (data.categories.length === 0) {
+                            tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 2rem;">No categories found. Click "Add Category" to create one.</td></tr>';
+                        } else {
+                            data.categories.forEach(category => {
+                                const row = document.createElement('tr');
+                                // Escape HTML to prevent XSS
+                                const categoryName = (category.name || '-').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+                                const displayName = (category.display_name || '-').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+                                const isActive = category.is_active !== undefined ? category.is_active : true;
+                                const propertiesCount = category.properties_count || 0;
+                                
+                                row.innerHTML = `
+                                    <td>${categoryName}</td>
+                                    <td>${displayName}</td>
+                                    <td><span class="status-badge ${isActive ? 'sale' : 'rent'}">${isActive ? 'Active' : 'Inactive'}</span></td>
+                                    <td>${propertiesCount}</td>
+                                    <td>
+                                        <button class="dashboard-btn-secondary edit-category" data-id="${category.id}" style="margin-right: 0.5rem;" title="Edit Category">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                        <button class="dashboard-btn-danger delete-category" data-id="${category.id}" title="Delete Category">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </td>
+                                `;
+                                tbody.appendChild(row);
+                            });
+                        }
                     } else {
-                        tbody.innerHTML = '<tr><td colspan="5" style="text-align: center;">No categories found</td></tr>';
+                        const errorMsg = data?.error || data?.message || 'Failed to load categories';
+                        tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: #e74c3c; padding: 2rem;">Error: ${errorMsg}</td></tr>`;
                     }
                 } catch (error) {
                     console.error('Error loading categories:', error);
@@ -1328,27 +1460,39 @@
                     tbody.innerHTML = '';
 
                     if (response.ok && data.unit_types) {
-                        data.unit_types.forEach(unitType => {
-                            const row = document.createElement('tr');
-                            row.innerHTML = `
-                                <td>${unitType.name || '-'}</td>
-                                <td>${unitType.display_name || '-'}</td>
-                                <td>${unitType.bedrooms || 0}</td>
-                                <td><span class="status-badge ${unitType.is_active ? 'sale' : 'rent'}">${unitType.is_active ? 'Active' : 'Inactive'}</span></td>
-                                <td>${unitType.properties_count || 0}</td>
-                                <td>
-                                    <button class="dashboard-btn-secondary edit-unit-type" data-id="${unitType.id}" style="margin-right: 0.5rem;">
-                                        <i class="fas fa-edit"></i>
-                                    </button>
-                                    <button class="dashboard-btn-danger delete-unit-type" data-id="${unitType.id}">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
-                                </td>
-                            `;
-                            tbody.appendChild(row);
-                        });
+                        if (data.unit_types.length === 0) {
+                            tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 2rem;">No unit types found. Click "Add Unit Type" to create one.</td></tr>';
+                        } else {
+                            data.unit_types.forEach(unitType => {
+                                const row = document.createElement('tr');
+                                // Escape HTML to prevent XSS
+                                const unitTypeName = (unitType.name || '-').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+                                const displayName = (unitType.display_name || '-').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+                                const bedrooms = unitType.bedrooms !== undefined ? unitType.bedrooms : 0;
+                                const isActive = unitType.is_active !== undefined ? unitType.is_active : true;
+                                const propertiesCount = unitType.properties_count || 0;
+                                
+                                row.innerHTML = `
+                                    <td>${unitTypeName}</td>
+                                    <td>${displayName}</td>
+                                    <td>${bedrooms}</td>
+                                    <td><span class="status-badge ${isActive ? 'sale' : 'rent'}">${isActive ? 'Active' : 'Inactive'}</span></td>
+                                    <td>${propertiesCount}</td>
+                                    <td>
+                                        <button class="dashboard-btn-secondary edit-unit-type" data-id="${unitType.id}" style="margin-right: 0.5rem;" title="Edit Unit Type">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                        <button class="dashboard-btn-danger delete-unit-type" data-id="${unitType.id}" title="Delete Unit Type">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </td>
+                                `;
+                                tbody.appendChild(row);
+                            });
+                        }
                     } else {
-                        tbody.innerHTML = '<tr><td colspan="6" style="text-align: center;">No unit types found</td></tr>';
+                        const errorMsg = data?.error || data?.message || 'Failed to load unit types';
+                        tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: #e74c3c; padding: 2rem;">Error: ${errorMsg}</td></tr>`;
                     }
                 } catch (error) {
                     console.error('Error loading unit types:', error);
@@ -1369,9 +1513,17 @@
                 addCategoryBtn.addEventListener('click', () => {
                     const modalTitle = document.getElementById('categoryModalTitle');
                     const categoryIdInput = document.getElementById('categoryId');
+                    const categoryNameInput = document.getElementById('categoryName');
                     if (modalTitle) modalTitle.textContent = 'Add Category';
                     if (categoryIdInput) categoryIdInput.value = '';
+                    if (categoryNameInput) {
+                        categoryNameInput.disabled = false; // Enable name input for new categories
+                        categoryNameInput.value = '';
+                    }
                     categoryForm.reset();
+                    // Ensure is_active checkbox is checked by default
+                    const categoryIsActiveInput = document.getElementById('categoryIsActive');
+                    if (categoryIsActiveInput) categoryIsActiveInput.checked = true;
                     categoryModal.classList.add('active');
                 });
             }
@@ -1399,22 +1551,43 @@
                         return;
                     }
                     
-                    const formData = {
-                        name: categoryNameInput.value.trim(),
-                        display_name: categoryDisplayNameInput.value.trim(),
-                        is_active: categoryIsActiveInput.checked
-                    };
+                    const categoryName = categoryNameInput.value.trim();
+                    const displayName = categoryDisplayNameInput.value.trim();
                     
-                    if (!formData.name || !formData.display_name) {
+                    if (!categoryName || !displayName) {
                         showNotification('Category name and display name are required', 'error');
                         return;
                     }
+                    
+                    // Normalize category name: lowercase and replace spaces with underscores
+                    const normalizedName = categoryName.toLowerCase().replace(/\s+/g, '_');
+                    
+                    // Validate category name format (alphanumeric and underscores only)
+                    if (!/^[a-z0-9_]+$/.test(normalizedName)) {
+                        showNotification('Category name can only contain lowercase letters, numbers, and underscores', 'error');
+                        return;
+                    }
+                    
+                    const formData = {
+                        name: normalizedName,
+                        display_name: displayName,
+                        is_active: categoryIsActiveInput.checked
+                    };
                     
                     const categoryId = categoryIdInput ? categoryIdInput.value : '';
                     const url = categoryId ? `/api/admin/categories/${categoryId}` : '/api/admin/categories';
                     const method = categoryId ? 'PUT' : 'POST';
 
                     try {
+                        // Show loading state
+                        const submitBtn = categoryForm.querySelector('button[type="submit"]');
+                        const originalBtnText = submitBtn ? submitBtn.innerHTML : '';
+                        if (submitBtn) {
+                            submitBtn.setAttribute('data-original-text', originalBtnText);
+                            submitBtn.disabled = true;
+                            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+                        }
+                        
                         const response = await fetch(url, {
                             method: method,
                             headers: getAuthHeaders(),
@@ -1422,16 +1595,32 @@
                         });
 
                         const data = await response.json();
+                        
+                        // Restore button state
+                        if (submitBtn) {
+                            submitBtn.disabled = false;
+                            submitBtn.innerHTML = originalBtnText;
+                        }
+                        
                         if (response.ok) {
                             showNotification(categoryId ? 'Category updated successfully' : 'Category added successfully', 'success');
                             categoryModal.classList.remove('active');
+                            categoryForm.reset();
                             loadCategories();
                         } else {
-                            showNotification(data.error || data.message || 'Failed to save category', 'error');
+                            const errorMsg = data.error || data.message || 'Failed to save category';
+                            showNotification(errorMsg, 'error');
                         }
                     } catch (error) {
                         console.error('Error saving category:', error);
-                        showNotification('Error saving category. Please try again.', 'error');
+                        // Restore button state
+                        const submitBtn = categoryForm.querySelector('button[type="submit"]');
+                        if (submitBtn) {
+                            submitBtn.disabled = false;
+                            const originalBtnText = submitBtn.getAttribute('data-original-text') || '<i class="fas fa-save"></i> Save Category';
+                            submitBtn.innerHTML = originalBtnText;
+                        }
+                        showNotification('Error saving category. Please check your connection and try again.', 'error');
                     }
                 });
             }
@@ -1448,9 +1637,20 @@
                 addUnitTypeBtn.addEventListener('click', () => {
                     const modalTitle = document.getElementById('unitTypeModalTitle');
                     const unitTypeIdInput = document.getElementById('unitTypeId');
+                    const unitTypeNameInput = document.getElementById('unitTypeName');
                     if (modalTitle) modalTitle.textContent = 'Add Unit Type';
                     if (unitTypeIdInput) unitTypeIdInput.value = '';
+                    if (unitTypeNameInput) {
+                        unitTypeNameInput.disabled = false; // Enable name input for new unit types
+                        unitTypeNameInput.value = '';
+                    }
                     unitTypeForm.reset();
+                    // Ensure is_active checkbox is checked by default
+                    const unitTypeIsActiveInput = document.getElementById('unitTypeIsActive');
+                    if (unitTypeIsActiveInput) unitTypeIsActiveInput.checked = true;
+                    // Set default bedrooms to 0
+                    const unitTypeBedroomsInput = document.getElementById('unitTypeBedrooms');
+                    if (unitTypeBedroomsInput) unitTypeBedroomsInput.value = '0';
                     unitTypeModal.classList.add('active');
                 });
             }
@@ -1479,29 +1679,73 @@
                         return;
                     }
                     
+                    const unitTypeId = unitTypeIdInput ? unitTypeIdInput.value : '';
+                    const isEdit = !!unitTypeId;
+                    const unitTypeName = unitTypeNameInput.value.trim();
+                    const displayName = unitTypeDisplayNameInput.value.trim();
                     const bedrooms = parseInt(unitTypeBedroomsInput.value);
+                    
+                    // Validate display name (always required)
+                    if (!displayName) {
+                        showNotification('Display name is required', 'error');
+                        return;
+                    }
+                    
+                    // Validate name only when creating (not editing)
+                    if (!isEdit) {
+                        if (!unitTypeName) {
+                            showNotification('Unit type name is required', 'error');
+                            return;
+                        }
+                        
+                        // Normalize unit type name: uppercase and remove spaces
+                        const normalizedName = unitTypeName.toUpperCase().replace(/\s+/g, '');
+                        
+                        // Validate unit type name format (alphanumeric only, no spaces)
+                        if (!/^[A-Z0-9]+$/.test(normalizedName)) {
+                            showNotification('Unit type name can only contain uppercase letters and numbers', 'error');
+                            return;
+                        }
+                    }
+                    
                     if (isNaN(bedrooms) || bedrooms < 0) {
                         showNotification('Bedrooms must be a valid non-negative number', 'error');
                         return;
                     }
                     
-                    const formData = {
-                        name: unitTypeNameInput.value.trim(),
-                        display_name: unitTypeDisplayNameInput.value.trim(),
-                        bedrooms: bedrooms,
-                        is_active: unitTypeIsActiveInput.checked
-                    };
-                    
-                    if (!formData.name || !formData.display_name) {
-                        showNotification('Unit type name and display name are required', 'error');
-                        return;
+                    // Build form data based on whether we're creating or editing
+                    let formData;
+                    if (!isEdit) {
+                        // When creating, include normalized name
+                        const normalizedName = unitTypeName.toUpperCase().replace(/\s+/g, '');
+                        formData = {
+                            name: normalizedName,
+                            display_name: displayName,
+                            bedrooms: bedrooms,
+                            is_active: unitTypeIsActiveInput.checked
+                        };
+                    } else {
+                        // When editing, don't send name (backend doesn't update it anyway)
+                        formData = {
+                            display_name: displayName,
+                            bedrooms: bedrooms,
+                            is_active: unitTypeIsActiveInput.checked
+                        };
                     }
                     
-                    const unitTypeId = unitTypeIdInput ? unitTypeIdInput.value : '';
                     const url = unitTypeId ? `/api/admin/unit-types/${unitTypeId}` : '/api/admin/unit-types';
                     const method = unitTypeId ? 'PUT' : 'POST';
 
                     try {
+                        // Show loading state
+                        const submitBtn = unitTypeForm.querySelector('button[type="submit"]');
+                        const originalBtnText = submitBtn ? submitBtn.innerHTML : '';
+                        if (submitBtn) {
+                            submitBtn.setAttribute('data-original-text', originalBtnText);
+                            submitBtn.disabled = true;
+                            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+                        }
+                        
                         const response = await fetch(url, {
                             method: method,
                             headers: getAuthHeaders(),
@@ -1509,16 +1753,32 @@
                         });
 
                         const data = await response.json();
+                        
+                        // Restore button state
+                        if (submitBtn) {
+                            submitBtn.disabled = false;
+                            submitBtn.innerHTML = originalBtnText;
+                        }
+                        
                         if (response.ok) {
                             showNotification(unitTypeId ? 'Unit type updated successfully' : 'Unit type added successfully', 'success');
                             unitTypeModal.classList.remove('active');
+                            unitTypeForm.reset();
                             loadUnitTypes();
                         } else {
-                            showNotification(data.error || data.message || 'Failed to save unit type', 'error');
+                            const errorMsg = data.error || data.message || 'Failed to save unit type';
+                            showNotification(errorMsg, 'error');
                         }
                     } catch (error) {
                         console.error('Error saving unit type:', error);
-                        showNotification('Error saving unit type. Please try again.', 'error');
+                        // Restore button state
+                        const submitBtn = unitTypeForm.querySelector('button[type="submit"]');
+                        if (submitBtn) {
+                            submitBtn.disabled = false;
+                            const originalBtnText = submitBtn.getAttribute('data-original-text') || '<i class="fas fa-save"></i> Save Unit Type';
+                            submitBtn.innerHTML = originalBtnText;
+                        }
+                        showNotification('Error saving unit type. Please check your connection and try again.', 'error');
                     }
                 });
             }
@@ -1536,10 +1796,14 @@
                         if (response.ok && data.category) {
                             document.getElementById('categoryModalTitle').textContent = 'Edit Category';
                             document.getElementById('categoryId').value = data.category.id;
-                            document.getElementById('categoryName').value = data.category.name || '';
+                            const categoryNameInput = document.getElementById('categoryName');
+                            categoryNameInput.value = data.category.name || '';
+                            categoryNameInput.disabled = true; // Prevent changing category name to avoid breaking references
                             document.getElementById('categoryDisplayName').value = data.category.display_name || '';
                             document.getElementById('categoryIsActive').checked = data.category.is_active !== false;
                             categoryModal.classList.add('active');
+                        } else {
+                            showNotification(data?.error || data?.message || 'Failed to load category data', 'error');
                         }
                     } catch (error) {
                         console.error('Error loading category:', error);
@@ -1550,22 +1814,37 @@
                 // Delete Category
                 if (e.target.closest('.delete-category')) {
                     const categoryId = e.target.closest('.delete-category').dataset.id;
-                    if (confirm('Are you sure you want to delete this category?')) {
+                    const categoryRow = e.target.closest('tr');
+                    const categoryName = categoryRow ? categoryRow.querySelector('td:first-child')?.textContent || 'this category' : 'this category';
+                    
+                    if (confirm(`Are you sure you want to delete the category "${categoryName}"? This action cannot be undone.`)) {
+                        const deleteBtn = e.target.closest('.delete-category');
+                        const originalBtnHtml = deleteBtn.innerHTML;
+                        deleteBtn.disabled = true;
+                        deleteBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+                        
                         try {
                             const response = await fetch(`/api/admin/categories/${categoryId}`, {
                                 method: 'DELETE',
                                 headers: getAuthHeaders()
                             });
                             const data = await response.json();
+                            
+                            deleteBtn.disabled = false;
+                            deleteBtn.innerHTML = originalBtnHtml;
+                            
                             if (response.ok) {
                                 showNotification('Category deleted successfully', 'success');
                                 loadCategories();
                             } else {
-                                showNotification(data.error || data.message || 'Failed to delete category', 'error');
+                                const errorMsg = data.error || data.message || 'Failed to delete category';
+                                showNotification(errorMsg, 'error');
                             }
                         } catch (error) {
                             console.error('Error deleting category:', error);
-                            showNotification('Error deleting category', 'error');
+                            deleteBtn.disabled = false;
+                            deleteBtn.innerHTML = originalBtnHtml;
+                            showNotification('Error deleting category. Please check your connection and try again.', 'error');
                         }
                     }
                 }
@@ -1581,11 +1860,15 @@
                         if (response.ok && data.unit_type) {
                             document.getElementById('unitTypeModalTitle').textContent = 'Edit Unit Type';
                             document.getElementById('unitTypeId').value = data.unit_type.id;
-                            document.getElementById('unitTypeName').value = data.unit_type.name || '';
+                            const unitTypeNameInput = document.getElementById('unitTypeName');
+                            unitTypeNameInput.value = data.unit_type.name || '';
+                            unitTypeNameInput.disabled = true; // Prevent changing unit type name to avoid breaking references
                             document.getElementById('unitTypeDisplayName').value = data.unit_type.display_name || '';
                             document.getElementById('unitTypeBedrooms').value = data.unit_type.bedrooms || 0;
                             document.getElementById('unitTypeIsActive').checked = data.unit_type.is_active !== false;
                             unitTypeModal.classList.add('active');
+                        } else {
+                            showNotification(data?.error || data?.message || 'Failed to load unit type data', 'error');
                         }
                     } catch (error) {
                         console.error('Error loading unit type:', error);
@@ -1596,22 +1879,37 @@
                 // Delete Unit Type
                 if (e.target.closest('.delete-unit-type')) {
                     const unitTypeId = e.target.closest('.delete-unit-type').dataset.id;
-                    if (confirm('Are you sure you want to delete this unit type?')) {
+                    const unitTypeRow = e.target.closest('tr');
+                    const unitTypeName = unitTypeRow ? unitTypeRow.querySelector('td:first-child')?.textContent || 'this unit type' : 'this unit type';
+                    
+                    if (confirm(`Are you sure you want to delete the unit type "${unitTypeName}"? This action cannot be undone.`)) {
+                        const deleteBtn = e.target.closest('.delete-unit-type');
+                        const originalBtnHtml = deleteBtn.innerHTML;
+                        deleteBtn.disabled = true;
+                        deleteBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+                        
                         try {
                             const response = await fetch(`/api/admin/unit-types/${unitTypeId}`, {
                                 method: 'DELETE',
                                 headers: getAuthHeaders()
                             });
                             const data = await response.json();
+                            
+                            deleteBtn.disabled = false;
+                            deleteBtn.innerHTML = originalBtnHtml;
+                            
                             if (response.ok) {
                                 showNotification('Unit type deleted successfully', 'success');
                                 loadUnitTypes();
                             } else {
-                                showNotification(data.error || data.message || 'Failed to delete unit type', 'error');
+                                const errorMsg = data.error || data.message || 'Failed to delete unit type';
+                                showNotification(errorMsg, 'error');
                             }
                         } catch (error) {
                             console.error('Error deleting unit type:', error);
-                            showNotification('Error deleting unit type', 'error');
+                            deleteBtn.disabled = false;
+                            deleteBtn.innerHTML = originalBtnHtml;
+                            showNotification('Error deleting unit type. Please check your connection and try again.', 'error');
                         }
                     }
                 }

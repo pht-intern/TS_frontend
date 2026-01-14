@@ -29,47 +29,168 @@
     <!-- Authentication Check - Must run immediately before any content -->
     <script>
         (function() {
-            // Clear any stale or invalid authentication data first
-            function clearAllAuthData() {
-                sessionStorage.removeItem('dashboard_authenticated');
-                sessionStorage.removeItem('isAuthenticated');
-                sessionStorage.removeItem('user');
-                localStorage.removeItem('dashboard_authenticated');
-                localStorage.removeItem('isAuthenticated');
-                localStorage.removeItem('user');
-            }
+            'use strict';
             
-            // Check authentication immediately before page renders
-            const isAuthenticated = localStorage.getItem('dashboard_authenticated') === 'true' ||
-                                   sessionStorage.getItem('dashboard_authenticated') === 'true';
-            const userStr = localStorage.getItem('user') || sessionStorage.getItem('user');
-            
-            // Validate user data exists and is valid JSON
-            let user = null;
-            if (userStr) {
-                try {
-                    user = JSON.parse(userStr);
-                    // Ensure user has required fields (email is mandatory) and has admin role
-                    if (!user || !user.email || typeof user.email !== 'string' || user.email.trim() === '' || user.role !== 'admin') {
-                        user = null;
+            try {
+                // Function to clear all authentication data
+                function clearAllAuthData() {
+                    try {
+                        sessionStorage.removeItem('dashboard_authenticated');
+                        sessionStorage.removeItem('isAuthenticated');
+                        sessionStorage.removeItem('user');
+                        localStorage.removeItem('dashboard_authenticated');
+                        localStorage.removeItem('isAuthenticated');
+                        localStorage.removeItem('user');
+                    } catch (e) {
+                        // Ignore errors during cleanup
                     }
-                } catch (e) {
-                    // Invalid JSON, treat as not authenticated
-                    user = null;
                 }
-            }
-            
-            // If not authenticated or user data is invalid, redirect immediately
-            if (!isAuthenticated || !user) {
-                // Clear all authentication data
-                clearAllAuthData();
-                // Redirect to index page immediately
-                window.location.replace('/index.html');
-                // Prevent page from rendering
-                document.body.innerHTML = '<div style="display: flex; justify-content: center; align-items: center; height: 100vh; font-family: Inter, sans-serif;"><p>Redirecting to login...</p></div>';
-                // Stop script execution
-                throw new Error('Unauthorized access - redirecting to login');
-            }
+                
+                // CRITICAL FIX: Add retry mechanism for timing issues
+                // Sometimes storage isn't immediately available after redirect
+                function checkAuthWithRetry(retryCount = 0) {
+                    const MAX_RETRIES = 3;
+                    const RETRY_DELAY = 50; // 50ms between retries
+                    
+                    // IMMEDIATE CHECK: Get authentication data synchronously
+                    // Prioritize localStorage (persistent) over sessionStorage
+                    let localAuth, sessionAuth, localUserStr, sessionUserStr;
+                    try {
+                        localAuth = localStorage.getItem('dashboard_authenticated');
+                        sessionAuth = sessionStorage.getItem('dashboard_authenticated');
+                        localUserStr = localStorage.getItem('user');
+                        sessionUserStr = sessionStorage.getItem('user');
+                    } catch (e) {
+                        // Storage access failed - treat as not authenticated
+                        console.error('Storage access failed:', e);
+                        clearAllAuthData();
+                        window.location.replace('/index.html');
+                        return false;
+                    }
+                    
+                    // CRITICAL: Sync localStorage to sessionStorage for persistence
+                    // If localStorage has auth but sessionStorage doesn't, sync it
+                    if (localAuth === 'true' && localUserStr && (!sessionAuth || !sessionUserStr)) {
+                        try {
+                            sessionStorage.setItem('dashboard_authenticated', 'true');
+                            sessionStorage.setItem('user', localUserStr);
+                            sessionAuth = 'true';
+                            sessionUserStr = localUserStr;
+                        } catch (e) {
+                            console.error('Error syncing to sessionStorage:', e);
+                        }
+                    }
+                    
+                    // Check if authentication flag exists (prioritize localStorage)
+                    const isAuthenticated = (localAuth === 'true') || (sessionAuth === 'true');
+                    
+                    // Get user data (prioritize localStorage)
+                    const userStr = localUserStr || sessionUserStr;
+                    
+                    // Validate user data exists and is valid JSON with required fields
+                    let hasValidUser = false;
+                    let user = null;
+                    
+                    if (userStr) {
+                        try {
+                            user = JSON.parse(userStr);
+                            // STRICT VALIDATION: Must have email (non-empty string) AND admin role
+                            if (user && 
+                                user.email && 
+                                typeof user.email === 'string' && 
+                                user.email.trim() !== '' && 
+                                user.role === 'admin') {
+                                hasValidUser = true;
+                            } else {
+                                // Invalid user data
+                                console.warn('Invalid user data:', user);
+                                user = null;
+                                hasValidUser = false;
+                            }
+                        } catch (e) {
+                            // Invalid JSON
+                            console.error('Error parsing user data:', e, 'Raw:', userStr);
+                            user = null;
+                            hasValidUser = false;
+                        }
+                    }
+                    
+                    // CRITICAL CHECK: Both authentication flag AND valid user data must exist
+                    // If either is missing or invalid, retry or redirect
+                    if (!isAuthenticated || !hasValidUser || !user) {
+                        // If we haven't exhausted retries and this looks like a timing issue, retry
+                        if (retryCount < MAX_RETRIES) {
+                            // Check if we're coming from a login redirect (has _login param)
+                            const urlParams = new URLSearchParams(window.location.search);
+                            const isLoginRedirect = urlParams.has('_login');
+                            
+                            if (isLoginRedirect) {
+                                // This is a login redirect - storage might not be ready yet
+                                console.log(`Auth check failed (attempt ${retryCount + 1}/${MAX_RETRIES}), retrying...`, {
+                                    isAuthenticated,
+                                    hasValidUser,
+                                    hasUserStr: !!userStr,
+                                    localAuth,
+                                    sessionAuth
+                                });
+                                setTimeout(() => {
+                                    checkAuthWithRetry(retryCount + 1);
+                                }, RETRY_DELAY);
+                                return false;
+                            }
+                        }
+                        
+                        // No retries left or not a login redirect - redirect to login
+                        console.error('Authentication check failed after retries:', {
+                            isAuthenticated,
+                            hasValidUser,
+                            hasUser: !!user,
+                            localAuth,
+                            sessionAuth,
+                            retryCount
+                        });
+                        clearAllAuthData();
+                        // Redirect immediately - use replace to prevent back button
+                        try {
+                            window.location.replace('/index.html');
+                        } catch (e) {
+                            try {
+                                window.location.href = '/index.html';
+                            } catch (e2) {
+                                // Last resort - show error and redirect
+                                if (document.body) {
+                                    document.body.style.display = 'block';
+                                    document.body.innerHTML = '<div style="font-family: Inter, sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; text-align: center;"><div><h1>Unauthorized Access</h1><p>Redirecting to login...</p></div></div>';
+                                    setTimeout(function() {
+                                        window.location.href = '/index.html';
+                                    }, 1000);
+                                }
+                            }
+                        }
+                        return false;
+                    }
+                    
+                    // Authentication passed - sync to sessionStorage if needed
+                    if (localAuth === 'true' && localUserStr && (!sessionAuth || !sessionUserStr)) {
+                        try {
+                            sessionStorage.setItem('dashboard_authenticated', 'true');
+                            sessionStorage.setItem('user', localUserStr);
+                        } catch (e) {
+                            console.error('Error syncing to sessionStorage:', e);
+                        }
+                    }
+                    
+                    // Authentication passed - return user data
+                    return { user, isAuthenticated, hasValidUser };
+                }
+                
+                // Perform auth check with retry
+                const authResult = checkAuthWithRetry();
+                if (!authResult) {
+                    return; // Redirect already handled
+                }
+                
+                const { user, isAuthenticated, hasValidUser } = authResult;
             
             // Authentication passed - show the page
             document.body.classList.add('authenticated');

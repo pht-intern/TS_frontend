@@ -947,31 +947,30 @@ async function loadAmenities() {
         
         if (response.ok) {
             const data = await response.json();
-            // Try both ID mappings (old and new)
-            const amenitiesDatalist = document.getElementById('propertiesAmenitiesList') || document.getElementById('amenitiesList');
-            const amenitiesInput = document.getElementById('propertiesSearchAmenities') || document.getElementById('searchAmenities');
+            const amenitiesSelect = document.getElementById('propertiesSearchAmenities') || document.getElementById('searchAmenities');
             
-            if (amenitiesDatalist && amenitiesInput && data.amenities && Array.isArray(data.amenities)) {
+            if (amenitiesSelect && data.amenities && Array.isArray(data.amenities)) {
                 // Store current value before clearing
-                const currentValue = amenitiesInput.value;
+                const currentValue = amenitiesSelect.value;
                 
                 // Clear existing options except the first "Any Amenity" option
-                amenitiesDatalist.innerHTML = '<option value="">Any Amenity</option>';
+                amenitiesSelect.innerHTML = '<option value="">Any Amenity</option>';
                 
-                // If no amenities, still allow text input (no error message needed)
-                if (data.amenities.length > 0) {
-                    // Add amenities sorted alphabetically to datalist
-                    data.amenities.sort().forEach(amenity => {
-                        if (amenity && amenity.trim()) {
-                            const option = document.createElement('option');
-                            option.value = amenity.trim();
-                            // Format amenity name for display (replace underscores with spaces, capitalize)
-                            const displayName = amenity.trim()
-                                .replace(/_/g, ' ')
-                                .replace(/\b\w/g, l => l.toUpperCase());
-                            option.textContent = displayName;
-                            amenitiesDatalist.appendChild(option);
-                        }
+                // Remove duplicates and sort amenities
+                const uniqueAmenities = [...new Set(data.amenities.map(a => a && a.trim()).filter(Boolean))];
+                uniqueAmenities.sort();
+                
+                // Add amenities to select dropdown
+                if (uniqueAmenities.length > 0) {
+                    uniqueAmenities.forEach(amenity => {
+                        const option = document.createElement('option');
+                        option.value = amenity;
+                        // Format amenity name for display (replace underscores with spaces, capitalize)
+                        const displayName = amenity
+                            .replace(/_/g, ' ')
+                            .replace(/\b\w/g, l => l.toUpperCase());
+                        option.textContent = displayName;
+                        amenitiesSelect.appendChild(option);
                     });
                 }
                 
@@ -979,18 +978,16 @@ async function loadAmenities() {
                 const urlParams = new URLSearchParams(window.location.search);
                 const amenitiesParam = urlParams.get('amenities');
                 if (amenitiesParam) {
-                    amenitiesInput.value = amenitiesParam;
+                    amenitiesSelect.value = amenitiesParam;
                 } else if (currentValue) {
-                    amenitiesInput.value = currentValue;
+                    amenitiesSelect.value = currentValue;
                 }
             }
         } else {
             console.error('Failed to load amenities:', response.status, response.statusText);
-            // Don't show error - allow free text input even if API fails
         }
     } catch (error) {
         console.error('Error loading amenities:', error);
-        // Don't show error - allow free text input even if API fails
     }
 }
 
@@ -1076,97 +1073,12 @@ async function loadUnitTypes() {
 }
 
 // Load categories and populate dropdown
-async function loadCategories() {
-    try {
-        // Add cache-busting timestamp to ensure fresh data
-        const timestamp = new Date().getTime();
-        const response = await fetch(`/api/categories?_t=${timestamp}`, {
-            method: 'GET',
-            cache: 'no-cache',
-            headers: {
-                'Cache-Control': 'no-cache'
-            }
-        });
-        
-        if (response.ok) {
-            const data = await response.json();
-            // Try both ID mappings (old and new)
-            const categorySelect = document.getElementById('propertiesSearchCategory') || document.getElementById('searchCategory');
-            if (categorySelect && data.categories && Array.isArray(data.categories)) {
-                // Store current selection before clearing
-                const currentValue = categorySelect.value;
-                
-                // Clear existing options except the first "Any Category" option
-                categorySelect.innerHTML = '<option value="">Any Category</option>';
-                
-                // If no categories, show message
-                if (data.categories.length === 0) {
-                    const option = document.createElement('option');
-                    option.value = '';
-                    option.textContent = 'No categories available';
-                    option.disabled = true;
-                    categorySelect.appendChild(option);
-                    return;
-                }
-                
-                // Add categories sorted alphabetically
-                data.categories.forEach(category => {
-                    if (category && category.name && category.display_name) {
-                        const option = document.createElement('option');
-                        option.value = category.name;
-                        option.textContent = category.display_name;
-                        categorySelect.appendChild(option);
-                    }
-                });
-                
-                // Restore selected value from URL params if present, otherwise restore previous selection
-                const urlParams = new URLSearchParams(window.location.search);
-                const categoryParam = urlParams.get('category');
-                if (categoryParam && categorySelect.querySelector(`option[value="${categoryParam}"]`)) {
-                    categorySelect.value = categoryParam;
-                } else if (currentValue && categorySelect.querySelector(`option[value="${currentValue}"]`)) {
-                    categorySelect.value = currentValue;
-                }
-            }
-        } else {
-            console.error('Failed to load categories:', response.status, response.statusText);
-            const categorySelect = document.getElementById('propertiesSearchCategory') || document.getElementById('searchCategory');
-            if (categorySelect) {
-                const option = document.createElement('option');
-                option.value = '';
-                option.textContent = 'Error loading categories';
-                option.disabled = true;
-                categorySelect.appendChild(option);
-            }
-        }
-    } catch (error) {
-        console.error('Error loading categories:', error);
-        const categorySelect = document.getElementById('propertiesSearchCategory') || document.getElementById('searchCategory');
-        if (categorySelect) {
-            const option = document.createElement('option');
-            option.value = '';
-            option.textContent = 'Error loading categories';
-            option.disabled = true;
-            categorySelect.appendChild(option);
-        }
-    }
-}
-
 // Initialize Filters
 function initFilters() {
-    // Load categories, cities, amenities, and unit types
-    loadCategories();
+    // Load cities, amenities, and unit types
     loadActiveCities();
     loadAmenities();
     loadUnitTypes();
-    
-    // Category select change handler
-    const categorySelect = document.getElementById('propertiesSearchCategory') || document.getElementById('searchCategory');
-    if (categorySelect) {
-        categorySelect.addEventListener('change', () => {
-            applyFilters();
-        });
-    }
     
     // City select change handler
     const citySelect = document.getElementById('propertiesSearchCity') || document.getElementById('searchCity');
@@ -1176,14 +1088,10 @@ function initFilters() {
         });
     }
     
-    // Amenities input change handler (for both dropdown selection and text input)
-    const amenitiesInput = document.getElementById('propertiesSearchAmenities') || document.getElementById('searchAmenities');
-    if (amenitiesInput) {
-        // Listen to both input and change events to catch both typing and selection
-        amenitiesInput.addEventListener('input', () => {
-            applyFilters();
-        });
-        amenitiesInput.addEventListener('change', () => {
+    // Amenities select change handler
+    const amenitiesSelect = document.getElementById('propertiesSearchAmenities') || document.getElementById('searchAmenities');
+    if (amenitiesSelect) {
+        amenitiesSelect.addEventListener('change', () => {
             applyFilters();
         });
     }
@@ -1544,11 +1452,6 @@ function applyFilters() {
         });
     }
     
-    // Get category from dropdown if not set from buttons
-    const categoryFromDropdown = (document.getElementById('propertiesSearchCategory') || document.getElementById('searchCategory'))?.value.trim() || '';
-    if (categoryFromDropdown) {
-        selectedCategory = categoryFromDropdown;
-    }
     
     // Residential/Commercial filter (category)
     // If category is selected but no specific property type, show all properties of that category

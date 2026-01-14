@@ -305,10 +305,31 @@
             // Only process if session manager is still initialized
             if (!isInitialized) return;
             
+            // CRITICAL FIX: Check if this is a page reload (not a tab closure)
+            // Check both storages for reliability
+            let isPageReload = false;
+            try {
+                isPageReload = sessionStorage.getItem('_page_reload') === 'true' ||
+                              localStorage.getItem('_page_reload') === 'true';
+            } catch (e) {
+                // Ignore storage errors
+            }
+            
+            // CRITICAL FIX: Also check if session data exists in localStorage
+            // If session data exists, this is likely a refresh, not a tab closure
+            let hasSessionData = false;
+            try {
+                hasSessionData = localStorage.getItem('dashboard_authenticated') === 'true' ||
+                                localStorage.getItem('user') !== null;
+            } catch (e) {
+                // Ignore storage errors
+            }
+            
             // event.persisted is false when the page is being unloaded (tab closing)
             // event.persisted is true when the page is being cached (e.g., back/forward navigation)
-            if (!event.persisted) {
-                // Tab is actually closing, not just navigating
+            // Only mark as closing if it's NOT a reload AND session data doesn't exist (real closure)
+            if (!event.persisted && !isPageReload && !hasSessionData) {
+                // Tab is actually closing, not just navigating or reloading
                 sendMessage('tab-closing', { tabId });
                 
                 // Also update localStorage timestamp to mark this tab as closing
@@ -333,10 +354,41 @@
         });
 
         // Use beforeunload as backup (fires earlier than pagehide)
-        // This is critical for detecting when all tabs close
+        // CRITICAL FIX: Don't treat page reloads as tab closures
+        // Regular refreshes (F5, Ctrl+R) also fire beforeunload, so we need to be careful
         window.addEventListener('beforeunload', () => {
             // Only process if session manager is initialized
             if (isInitialized && tabId) {
+                // CRITICAL: Check for reload flag FIRST - check both storages for reliability
+                let isPageReload = false;
+                try {
+                    isPageReload = sessionStorage.getItem('_page_reload') === 'true' ||
+                                  localStorage.getItem('_page_reload') === 'true';
+                } catch (e) {
+                    // Ignore storage errors - assume it's not a reload if we can't check
+                }
+                
+                // CRITICAL FIX: Also check if session data exists in localStorage
+                // If session data exists, this is likely a refresh, not a tab closure
+                // Regular page refreshes preserve localStorage, so if we have session data,
+                // we should assume it's a refresh and not clear the session
+                let hasSessionData = false;
+                try {
+                    hasSessionData = localStorage.getItem('dashboard_authenticated') === 'true' ||
+                                    localStorage.getItem('user') !== null;
+                } catch (e) {
+                    // Ignore storage errors
+                }
+                
+                // If this is a reload OR session data exists (likely a refresh), don't clear session
+                if (isPageReload || hasSessionData) {
+                    // This is just a page reload/refresh, not a tab closure
+                    // Don't mark as closing or clear session
+                    // The flag will be cleared after page loads
+                    return;
+                }
+                
+                // This appears to be a real tab closure
                 // Mark tab as closing immediately
                 try {
                     const tabData = {
@@ -351,11 +403,8 @@
                 
                 sendMessage('tab-closing', { tabId });
                 
-                // Immediately check if we're the last tab and clear session
-                // Use synchronous check since we're in beforeunload
-                setTimeout(() => {
-                    checkIfLastTab();
-                }, 100);
+                // Don't immediately check if we're the last tab - let the cleanup function handle it
+                // This prevents premature session clearing during refreshes
             }
         });
 
@@ -406,7 +455,7 @@
     /**
      * Check if this is the last active tab
      * If so, clear the session immediately
-     * CRITICAL: Only clears session when tabs are actually closing, not on initial load
+     * CRITICAL: Only clears session when tabs are actually closing, not on initial load or refresh
      */
     function checkIfLastTab() {
         // Only check if session manager is initialized
@@ -416,6 +465,21 @@
         // This prevents clearing session when we're just starting up
         if (!initialCheckDone) {
             // Still waiting for initial check - don't clear session yet
+            return;
+        }
+        
+        // CRITICAL FIX: Check if this is a page reload/refresh
+        // If session data exists in localStorage, this is likely a refresh, not a tab closure
+        let hasSessionData = false;
+        try {
+            hasSessionData = localStorage.getItem('dashboard_authenticated') === 'true' ||
+                            localStorage.getItem('user') !== null;
+        } catch (e) {
+            // Ignore storage errors
+        }
+        
+        // If session data exists, don't clear - this is likely a refresh
+        if (hasSessionData) {
             return;
         }
         
@@ -460,8 +524,8 @@
         const otherTabs = Array.from(activeTabs.keys()).filter(id => id !== tabId);
         
         // Only clear session if we're sure we're the last tab AND initial check is done
-        // This prevents clearing session on initial load when we're the only tab
-        if (otherTabs.length === 0 && !otherTabsFound && initialCheckDone) {
+        // AND session data doesn't exist (indicating a real closure, not a refresh)
+        if (otherTabs.length === 0 && !otherTabsFound && initialCheckDone && !hasSessionData) {
             // We're the last tab and initial check completed - clear session
             clearSession();
         }
@@ -604,10 +668,38 @@
     /**
      * Cleanup function - called when tab is closing
      * Clears session if this is the last tab
+     * CRITICAL FIX: Don't run cleanup during page reloads
      */
     function cleanup() {
         // Only cleanup if session manager was initialized
         if (!isInitialized) return;
+        
+        // CRITICAL FIX: Check if this is a page reload before doing cleanup
+        // Check both storages for reliability
+        let isPageReload = false;
+        try {
+            isPageReload = sessionStorage.getItem('_page_reload') === 'true' ||
+                          localStorage.getItem('_page_reload') === 'true';
+        } catch (e) {
+            // Ignore storage errors
+        }
+        
+        // CRITICAL FIX: Also check if session data exists in localStorage
+        // If session data exists, this is likely a refresh, not a tab closure
+        let hasSessionData = false;
+        try {
+            hasSessionData = localStorage.getItem('dashboard_authenticated') === 'true' ||
+                            localStorage.getItem('user') !== null;
+        } catch (e) {
+            // Ignore storage errors
+        }
+        
+        // If this is a reload OR session data exists (likely a refresh), don't run cleanup
+        if (isPageReload || hasSessionData) {
+            // This is just a page reload/refresh, not a tab closure
+            // Don't clear session or do cleanup
+            return;
+        }
         
         stopHeartbeat();
         
@@ -755,6 +847,16 @@
     
     // Only initialize and set up handlers if there's a valid session
     function setupSessionManager() {
+        // CRITICAL FIX: Clear any reload flag from previous page load
+        // This ensures the flag doesn't persist incorrectly
+        // Clear from both storages
+        try {
+            sessionStorage.removeItem('_page_reload');
+            localStorage.removeItem('_page_reload');
+        } catch (e) {
+            // Ignore storage errors
+        }
+        
         if (!shouldInitializeSessionManager()) {
             // No valid session - don't initialize anything
             return;

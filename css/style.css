@@ -1812,6 +1812,37 @@ hr {
     width: 100%;
     max-width: 100%;
     box-sizing: border-box;
+    background-color: var(--white);
+    cursor: pointer;
+}
+
+/* Add scrollbar for select dropdowns with many options */
+.search-group select option {
+    padding: 0.5rem;
+}
+
+/* Custom scrollbar for select dropdowns */
+.search-group select {
+    scrollbar-width: thin;
+    scrollbar-color: var(--grey-light) var(--grey-pale);
+}
+
+.search-group select::-webkit-scrollbar {
+    width: 8px;
+}
+
+.search-group select::-webkit-scrollbar-track {
+    background: var(--grey-pale);
+    border-radius: 4px;
+}
+
+.search-group select::-webkit-scrollbar-thumb {
+    background: var(--grey-light);
+    border-radius: 4px;
+}
+
+.search-group select::-webkit-scrollbar-thumb:hover {
+    background: var(--grey-medium);
 }
 
 .search-group input:focus,

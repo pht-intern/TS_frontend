@@ -192,8 +192,13 @@
                 
                 const { user, isAuthenticated, hasValidUser } = authResult;
             
-            // Authentication passed - show the page
-            document.body.classList.add('authenticated');
+                // Authentication passed - show the page
+                document.body.classList.add('authenticated');
+            } catch (e) {
+                console.error('Error during authentication check:', e);
+                // Redirect to login on error
+                window.location.replace('/index.html');
+            }
         })();
     </script>
     
@@ -2004,7 +2009,6 @@
                             body: JSON.stringify({ password: hashedPassword, encrypted: true })
                         });
                     }).then(response => {
-                    .then(response => {
                         console.log('Password verification response status:', response.status);
                         if (!response.ok) {
                             // If response is not OK, try to get error message

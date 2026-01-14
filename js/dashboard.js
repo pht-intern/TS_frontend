@@ -1419,7 +1419,65 @@ async function openPropertyModal(propertyId = null) {
                 throw new Error('Failed to fetch property');
             }
             const property = await response.json();
-            populatePropertyForm(property);
+            
+            // Populate step 1 fields first
+    const projectNameInput = document.getElementById('propertyProjectName');
+    const cityInput = document.getElementById('propertyCity');
+    const localityInput = document.getElementById('propertyLocality');
+    const locationLinkInput = document.getElementById('propertyLocationLink');
+    const propertyTypeSelect = document.getElementById('propertyType');
+    
+    if (projectNameInput) projectNameInput.value = property.project_name || property.property_name || property.title || '';
+    if (cityInput) cityInput.value = property.city || '';
+    if (localityInput) localityInput.value = property.locality || '';
+    if (locationLinkInput) locationLinkInput.value = property.location_link || '';
+    
+            // Populate price field (now in Step 1)
+            const priceInput = document.getElementById('propertyPrice');
+            const priceNegotiableInput = document.getElementById('propertyPriceNegotiable');
+            if (priceInput) {
+                priceInput.value = property.price_text || property.price || '';
+            }
+            if (priceNegotiableInput) {
+                priceNegotiableInput.checked = property.price_negotiable || false;
+            }
+            
+            // Map property type and trigger step 2 load
+    if (propertyTypeSelect) {
+        let typeValue = '';
+        if (property.type) {
+            const typeStr = typeof property.type === 'string' ? property.type.toLowerCase() : (property.type.value || '').toLowerCase();
+            if (typeStr === 'plot' || typeStr === 'plots') {
+                typeValue = 'plot_properties';
+            } else if (typeStr === 'apartment' || typeStr === 'apartments') {
+                typeValue = 'apartments';
+            } else if (typeStr === 'villa' || typeStr === 'villas') {
+                typeValue = 'villas';
+            } else if (typeStr === 'house') {
+                typeValue = 'individual_house';
+            }
+        }
+        propertyTypeSelect.value = typeValue;
+                
+                // Navigate to step 2 to load step 2 content, then populate
+                showStep(2);
+                
+                // Populate step 2 fields after content loads
+                setTimeout(() => {
+                    populateStep2Fields(property);
+                    // Navigate to step 3 to load step 3 content
+                    showStep(3);
+                    // Populate step 3 fields after content loads
+                    setTimeout(() => {
+                        const descriptionInput = document.getElementById('propertyDescription');
+                        if (descriptionInput) {
+                            descriptionInput.value = property.description || '';
+                        }
+                        populateStep3Fields(property);
+                    }, 100);
+                }, 200);
+            }
+            
             // Ensure property ID is set after populating form
             if (propertyIdInput) propertyIdInput.value = property.id || propertyId;
             if (modalTitle) modalTitle.textContent = 'Edit Property';
@@ -1440,37 +1498,280 @@ async function openPropertyModal(propertyId = null) {
     document.body.style.overflow = 'hidden';
 }
 
-// Populate property form with data
+// Populate property form with data (called from openPropertyModal)
 function populatePropertyForm(property) {
-    const propertyIdInput = document.getElementById('propertyId');
-    const projectNameInput = document.getElementById('propertyProjectName');
-    const cityInput = document.getElementById('propertyCity');
-    const localityInput = document.getElementById('propertyLocality');
-    const locationLinkInput = document.getElementById('propertyLocationLink');
-    const propertyTypeSelect = document.getElementById('propertyType');
+    // This function is kept for backward compatibility but the actual population
+    // is now handled directly in openPropertyModal to ensure proper step loading order
+    // Step 1 fields are populated in openPropertyModal
+    // Step 2 and Step 3 fields are populated via populateStep2Fields and populateStep3Fields
+}
+
+// Populate step 2 fields based on property type
+function populateStep2Fields(property) {
+    const propertyType = document.getElementById('propertyType')?.value;
+    if (!propertyType) return;
     
-    if (propertyIdInput) propertyIdInput.value = property.id || '';
-    if (projectNameInput) projectNameInput.value = property.project_name || property.property_name || property.title || '';
-    if (cityInput) cityInput.value = property.city || '';
-    if (localityInput) localityInput.value = property.locality || '';
-    if (locationLinkInput) locationLinkInput.value = property.location_link || '';
+    // Common fields for all types (price is now in Step 1, so skip it here)
+    const statusInput = document.getElementById('propertyStatus');
     
-    // Map property type to the new format
-    if (propertyTypeSelect) {
-        let typeValue = '';
-        if (property.type) {
-            const typeStr = typeof property.type === 'string' ? property.type.toLowerCase() : (property.type.value || '').toLowerCase();
-            if (typeStr === 'plot' || typeStr === 'plots') {
-                typeValue = 'plot_properties';
-            } else if (typeStr === 'apartment' || typeStr === 'apartments') {
-                typeValue = 'apartments';
-            } else if (typeStr === 'villa' || typeStr === 'villas') {
-                typeValue = 'villas';
-            } else if (typeStr === 'house') {
-                typeValue = 'individual_house';
+    if (statusInput) {
+        // Map status - backend uses 'sale'/'rent' but property_status may have more details
+        const statusValue = property.property_status || property.status || 'sale';
+        statusInput.value = statusValue;
+    }
+    
+    // Type-specific fields
+    if (propertyType === 'apartments') {
+        const superBuiltupAreaInput = document.getElementById('propertySuperBuiltupArea');
+        const carpetAreaInput = document.getElementById('propertyCarpetArea');
+        const listingTypeInput = document.getElementById('propertyListingType');
+        const directionInput = document.getElementById('propertyDirection');
+        const bedroomsInput = document.getElementById('propertyBedrooms');
+        const unitTypeInput = document.getElementById('propertyUnitType');
+        const amenitiesInput = document.getElementById('propertyAmenities');
+        
+        if (superBuiltupAreaInput) {
+            superBuiltupAreaInput.value = property.super_built_up_area || property.super_builtup_area || '';
+        }
+        if (carpetAreaInput) {
+            carpetAreaInput.value = property.carpet_area || '';
+        }
+        if (listingTypeInput) {
+            listingTypeInput.value = property.listing_type || property.property_status || '';
+        }
+        if (directionInput) {
+            directionInput.value = property.direction || '';
+        }
+        if (bedroomsInput) {
+            bedroomsInput.value = property.bedrooms || 1;
+        }
+        if (unitTypeInput) {
+            unitTypeInput.value = property.unit_type || 'bhk';
+        }
+        if (amenitiesInput && property.features) {
+            // Select amenities that match property features
+            const featureNames = property.features.map(f => f.feature_name || f).filter(Boolean);
+            Array.from(amenitiesInput.options).forEach(option => {
+                option.selected = featureNames.includes(option.value);
+            });
+        }
+    } else if (propertyType === 'plot_properties') {
+        const plotAreaInput = document.getElementById('propertyPlotArea');
+        const plotLengthInput = document.getElementById('propertyPlotLength');
+        const plotBreadthInput = document.getElementById('propertyPlotBreadth');
+        
+        if (plotAreaInput) {
+            plotAreaInput.value = property.plot_area || '';
+        }
+        if (plotLengthInput) {
+            plotLengthInput.value = property.plot_length || '';
+        }
+        if (plotBreadthInput) {
+            plotBreadthInput.value = property.plot_breadth || '';
+        }
+    }
+    // Add other property types as needed
+}
+
+// Populate step 3 fields (images and description)
+function populateStep3Fields(property) {
+    // Description is already populated in populatePropertyForm
+    
+    // Ensure gallery container exists before populating images
+    const container = document.getElementById('galleryImagesContainer');
+    if (!container) {
+        // Wait a bit and try again
+        setTimeout(() => populateStep3Fields(property), 100);
+        return;
+    }
+    
+    // Clear any existing empty rows first (keep only rows with images)
+    const existingRows = container.querySelectorAll('.gallery-image-row');
+    existingRows.forEach(row => {
+        const previewContainer = row.querySelector('[id^="imagePreview_"]');
+        if (previewContainer) {
+            const computedStyle = window.getComputedStyle(previewContainer);
+            const hasImage = previewContainer.getAttribute('data-image-url') || 
+                           previewContainer.querySelector('img');
+            // Remove empty rows (no image and hidden)
+            if (!hasImage && (computedStyle.display === 'none' || !previewContainer.querySelector('img'))) {
+                row.remove();
             }
         }
-        propertyTypeSelect.value = typeValue;
+    });
+    
+    let imageIndex = 0;
+    
+    // Populate images if they exist
+    if (property.project_images && property.project_images.length > 0) {
+        property.project_images.forEach((image) => {
+            const imageUrl = image.image_url || image;
+            if (imageUrl) {
+                // Add image preview to gallery
+                setTimeout(() => {
+                    addImagePreview(imageUrl, true, property.property_category || 'residential', 'project');
+                }, imageIndex * 50);
+                imageIndex++;
+            }
+        });
+    }
+    
+    if (property.floorplan_images && property.floorplan_images.length > 0) {
+        property.floorplan_images.forEach((image) => {
+            const imageUrl = image.image_url || image;
+            if (imageUrl) {
+                setTimeout(() => {
+                    addImagePreview(imageUrl, true, property.property_category || 'residential', 'floorplan');
+                }, imageIndex * 50);
+                imageIndex++;
+            }
+        });
+    }
+    
+    if (property.masterplan_images && property.masterplan_images.length > 0) {
+        property.masterplan_images.forEach((image) => {
+            const imageUrl = image.image_url || image;
+            if (imageUrl) {
+                setTimeout(() => {
+                    addImagePreview(imageUrl, true, property.property_category || 'residential', 'masterplan');
+                }, imageIndex * 50);
+                imageIndex++;
+            }
+        });
+    }
+    
+    // Also check legacy images array
+    if (property.images && property.images.length > 0) {
+        property.images.forEach((image) => {
+            const imageUrl = image.image_url || image;
+            if (imageUrl) {
+                setTimeout(() => {
+                    addImagePreview(imageUrl, true, property.property_category || 'residential', 'project');
+                }, imageIndex * 50);
+                imageIndex++;
+            }
+        });
+    }
+    
+    // If no images were added, add one empty row for new uploads
+    if (imageIndex === 0) {
+        addImageUploadRow();
+    }
+}
+
+// Helper function to add image preview (for existing images from API)
+function addImagePreview(imageUrl, isExisting, propertyCategory, imageType) {
+    const container = document.getElementById('galleryImagesContainer');
+    if (!container) return;
+    
+    // Normalize image URL
+    let normalizedUrl = imageUrl;
+    if (!normalizedUrl.startsWith('data:') && !normalizedUrl.startsWith('http://') && !normalizedUrl.startsWith('https://')) {
+        if (!normalizedUrl.startsWith('/')) {
+            normalizedUrl = '/' + normalizedUrl;
+        }
+    }
+    
+    // Check if image already exists
+    const existingPreviews = container.querySelectorAll('.gallery-image-preview img');
+    for (const preview of existingPreviews) {
+        const existingSrc = preview.src || preview.getAttribute('data-image-src');
+        if (existingSrc === normalizedUrl || existingSrc === imageUrl || 
+            existingSrc.includes(normalizedUrl.split('/').pop()) || 
+            existingSrc.includes(imageUrl.split('/').pop())) {
+            return; // Image already exists
+        }
+    }
+    
+    // Add new image row if needed
+    const imageRows = container.querySelectorAll('.gallery-image-row');
+    let imageRow = null;
+    let imageIndex = imageRows.length;
+    
+    // Find first empty row or create new one
+    for (let i = 0; i < imageRows.length; i++) {
+        const row = imageRows[i];
+        const previewContainer = row.querySelector('[id^="imagePreview_"]');
+        if (previewContainer) {
+            const computedStyle = window.getComputedStyle(previewContainer);
+            const img = previewContainer.querySelector('img');
+            // Check if preview is empty or hidden
+            if ((computedStyle.display === 'none' || !img || !img.src) && 
+                !previewContainer.getAttribute('data-image-url')) {
+                imageRow = row;
+                // Extract index from preview ID
+                const previewIdMatch = previewContainer.id.match(/imagePreview_(\d+)/);
+                imageIndex = previewIdMatch ? parseInt(previewIdMatch[1]) : i;
+                break;
+            }
+        }
+    }
+    
+    if (!imageRow) {
+        addImageUploadRow();
+        const newRows = container.querySelectorAll('.gallery-image-row');
+        imageRow = newRows[newRows.length - 1];
+        const newPreviewContainer = imageRow.querySelector('[id^="imagePreview_"]');
+        if (newPreviewContainer) {
+            const previewIdMatch = newPreviewContainer.id.match(/imagePreview_(\d+)/);
+            imageIndex = previewIdMatch ? parseInt(previewIdMatch[1]) : imageRows.length;
+        } else {
+            imageIndex = imageRows.length;
+        }
+    }
+    
+    // Set image preview
+    if (imageRow) {
+        const preview = imageRow.querySelector(`#imagePreview_${imageIndex}`);
+        const fileInput = imageRow.querySelector(`#imageFile_${imageIndex}`);
+        const categorySelect = imageRow.querySelector(`#imageCategory_${imageIndex}`);
+        
+        if (preview) {
+            preview.innerHTML = `
+                <div style="position: relative; display: inline-block; margin-top: 0.5rem;">
+                    <img src="${normalizedUrl}" alt="Preview" style="max-width: 200px; max-height: 200px; border-radius: 6px; object-fit: cover; border: 2px solid var(--border-color);" data-image-src="${normalizedUrl}">
+                    <button type="button" class="remove-preview-btn" style="position: absolute; top: -8px; right: -8px; background: var(--danger-color); color: white; border: none; border-radius: 50%; width: 24px; height: 24px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            `;
+            // Ensure preview is visible
+            preview.style.display = 'block';
+            preview.style.visibility = 'visible';
+            // Store the URL in data attribute for easy access
+            preview.setAttribute('data-image-url', normalizedUrl);
+            preview.setAttribute('data-is-existing', 'true');
+            
+            // Set category based on image type
+            if (categorySelect) {
+                if (imageType === 'project' || imageType === 'project_image') {
+                    categorySelect.value = 'project_image';
+                } else if (imageType === 'floorplan' || imageType === 'floor_plan') {
+                    categorySelect.value = 'floor_plan';
+                } else if (imageType === 'masterplan' || imageType === 'master_plan') {
+                    categorySelect.value = 'master_plan';
+                }
+            }
+            
+            // Clear file input since this is an existing image
+            if (fileInput) {
+                fileInput.value = '';
+            }
+            
+            // Add remove handler
+            const removeBtn = preview.querySelector('.remove-preview-btn');
+            if (removeBtn) {
+                removeBtn.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    e.preventDefault();
+                    if (fileInput) fileInput.value = '';
+                    preview.innerHTML = '';
+                    preview.style.display = 'none';
+                    preview.removeAttribute('data-image-url');
+                    preview.removeAttribute('data-is-existing');
+                });
+            }
+        }
     }
 }
 
@@ -1577,6 +1878,7 @@ function handleNextStep() {
         const city = document.getElementById('propertyCity');
         const locality = document.getElementById('propertyLocality');
         const propertyType = document.getElementById('propertyType');
+        const price = document.getElementById('propertyPrice');
         
         if (!projectName || !projectName.value.trim()) {
             showNotification('Please enter project name.', 'error');
@@ -1596,6 +1898,11 @@ function handleNextStep() {
         if (!propertyType || !propertyType.value) {
             showNotification('Please select property type.', 'error');
             propertyType.focus();
+            return;
+        }
+        if (!price || !price.value.trim()) {
+            showNotification('Please enter price.', 'error');
+            price.focus();
             return;
         }
         
@@ -1625,7 +1932,6 @@ function validateStep2() {
         const superBuiltupArea = document.getElementById('propertySuperBuiltupArea');
         const carpetArea = document.getElementById('propertyCarpetArea');
         const direction = document.getElementById('propertyDirection');
-        const price = document.getElementById('propertyPrice');
         const amenities = document.getElementById('propertyAmenities');
         
         if (!status || !status.value) {
@@ -1653,11 +1959,7 @@ function validateStep2() {
             direction?.focus();
             return false;
         }
-        if (!price || !price.value.trim()) {
-            showNotification('Please enter price.', 'error');
-            price?.focus();
-            return false;
-        }
+        // Price is now validated in Step 1, so removed from here
         if (!amenities || !amenities.selectedOptions || amenities.selectedOptions.length === 0) {
             showNotification('Please select at least one amenity.', 'error');
             amenities?.focus();
@@ -1797,6 +2099,33 @@ function loadStep3Content() {
     const step3Content = document.getElementById('step3Content');
     if (!step3Content) return;
     
+    // Clear existing content first to avoid duplicates
+    const existingContainer = document.getElementById('galleryImagesContainer');
+    const existingImages = [];
+    
+    // Store existing images before clearing (for edit mode)
+    if (existingContainer) {
+        const existingRows = existingContainer.querySelectorAll('.gallery-image-row');
+        existingRows.forEach(row => {
+            const previewContainer = row.querySelector('[id^="imagePreview_"]');
+            if (previewContainer) {
+                const img = previewContainer.querySelector('img');
+                const imageUrl = previewContainer.getAttribute('data-image-url') || 
+                                (img ? (img.getAttribute('data-image-src') || img.src) : null);
+                const categorySelect = row.querySelector('.image-category-select');
+                const category = categorySelect ? categorySelect.value : 'project_image';
+                
+                if (imageUrl) {
+                    existingImages.push({
+                        url: imageUrl,
+                        category: category,
+                        isExisting: previewContainer.getAttribute('data-is-existing') === 'true'
+                    });
+                }
+            }
+        });
+    }
+    
     step3Content.innerHTML = `
         <div class="dashboard-form-group" style="margin-bottom: 1.5rem;">
             <label style="font-size: 1rem; margin-bottom: 0.75rem; font-weight: 500;">
@@ -1809,7 +2138,7 @@ function loadStep3Content() {
         <div class="dashboard-form-group" style="margin-bottom: 1.5rem;">
             <label style="font-size: 1rem; margin-bottom: 0.75rem; font-weight: 500;">
                 <i class="fas fa-images"></i>
-                Gallery Images *
+                Gallery Images
             </label>
             <div id="galleryImagesContainer">
                 <!-- Image upload rows will be added here -->
@@ -1829,8 +2158,19 @@ function loadStep3Content() {
         </div>
     `;
     
-    // Initialize gallery - add first image row
-    addImageUploadRow();
+    // Restore existing images if any (for edit mode)
+    if (existingImages.length > 0) {
+        existingImages.forEach((imgData, index) => {
+            setTimeout(() => {
+                const imageType = imgData.category === 'floor_plan' ? 'floorplan' : 
+                                 imgData.category === 'master_plan' ? 'masterplan' : 'project';
+                addImagePreview(imgData.url, imgData.isExisting, 'residential', imageType);
+            }, index * 50);
+        });
+    } else {
+        // Initialize gallery - add first image row only if no existing images
+        addImageUploadRow();
+    }
     
     // Add event listener for add image button
     const addImageBtn = document.getElementById('addImageRowBtn');
@@ -1888,19 +2228,12 @@ function addImageUploadRow() {
         </div>
         
         <div class="dashboard-form-group" style="margin-bottom: 0;">
-            <label style="font-size: 0.9rem; margin-bottom: 0.4rem;">
+            <label for="imageFile_${imageCount}" style="font-size: 0.9rem; margin-bottom: 0.4rem;">
                 <i class="fas fa-upload" style="font-size: 0.85rem;"></i>
                 Upload Image *
             </label>
-            <div class="dashboard-image-upload-area gallery-image-upload" data-row-id="${rowId}" style="min-height: 100px; padding: 0.75rem;">
-                <input type="file" id="imageFile_${imageCount}" name="gallery_images[]" accept="image/jpeg,image/jpg,image/png,image/webp,image/svg+xml" class="gallery-image-input" style="display: none;">
-                <div class="dashboard-image-upload-placeholder gallery-image-placeholder" id="imagePlaceholder_${imageCount}" style="padding: 0.5rem;">
-                    <i class="fas fa-cloud-upload-alt" style="font-size: 1.5rem; margin-bottom: 0.4rem;"></i>
-                    <p style="font-size: 0.85rem; margin: 0.3rem 0;">Click to upload or drag & drop</p>
-                    <span style="font-size: 0.75rem; color: var(--text-gray);">JPG, PNG, WebP, SVG (Max 5MB)</span>
-                </div>
-                <div class="dashboard-image-preview-container gallery-image-preview" id="imagePreview_${imageCount}" style="display: none; padding: 0.5rem;"></div>
-            </div>
+            <input type="file" id="imageFile_${imageCount}" name="gallery_images[]" accept="image/jpeg,image/jpg,image/png,image/webp,image/svg+xml" class="gallery-image-input" style="padding: 0.6rem 0.75rem; font-size: 0.9rem; width: 100%; border: 1px solid var(--border-color); border-radius: 6px; background: var(--bg-color);">
+            <div class="dashboard-image-preview-container gallery-image-preview" id="imagePreview_${imageCount}" style="display: none; margin-top: 0.75rem; padding: 0.5rem;"></div>
         </div>
     `;
     
@@ -1926,22 +2259,12 @@ function addImageUploadRow() {
 
 // Initialize image upload handlers for a specific row
 function initializeImageUploadRow(rowId, index) {
-    const uploadArea = document.querySelector(`[data-row-id="${rowId}"]`);
     const fileInput = document.getElementById(`imageFile_${index}`);
-    const placeholder = document.getElementById(`imagePlaceholder_${index}`);
     const preview = document.getElementById(`imagePreview_${index}`);
     
-    if (!uploadArea || !fileInput || !placeholder || !preview) return;
+    if (!fileInput || !preview) return;
     
-    // Click to upload
-    placeholder.addEventListener('click', () => fileInput.click());
-    uploadArea.addEventListener('click', (e) => {
-        if (e.target === uploadArea || e.target === placeholder || placeholder.contains(e.target)) {
-            fileInput.click();
-        }
-    });
-    
-    // File input change
+    // File input change handler
     fileInput.addEventListener('change', function(e) {
         const file = e.target.files[0];
         if (file) {
@@ -1949,6 +2272,8 @@ function initializeImageUploadRow(rowId, index) {
             if (file.size > 5 * 1024 * 1024) {
                 showNotification('Image size must be less than 5MB.', 'error');
                 this.value = '';
+                preview.style.display = 'none';
+                preview.innerHTML = '';
                 return;
             }
             
@@ -1957,58 +2282,55 @@ function initializeImageUploadRow(rowId, index) {
             if (!validTypes.includes(file.type)) {
                 showNotification('Invalid file type. Please upload JPG, PNG, SVG, or WebP images.', 'error');
                 this.value = '';
+                preview.style.display = 'none';
+                preview.innerHTML = '';
                 return;
             }
             
             // Show preview
             const reader = new FileReader();
             reader.onload = function(e) {
+                const dataUrl = e.target.result;
                 preview.innerHTML = `
-                    <div style="position: relative; display: inline-block;">
-                        <img src="${e.target.result}" alt="Preview" style="max-width: 150px; max-height: 150px; border-radius: 6px; object-fit: cover; border: 2px solid var(--border-color);">
-                        <button type="button" class="remove-preview-btn" style="position: absolute; top: -8px; right: -8px; background: var(--danger-color); color: white; border: none; border-radius: 50%; width: 20px; height: 20px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">
+                    <div style="position: relative; display: inline-block; margin-top: 0.5rem;">
+                        <img src="${dataUrl}" alt="Preview" style="max-width: 200px; max-height: 200px; border-radius: 6px; object-fit: cover; border: 2px solid var(--border-color);" data-image-src="${dataUrl}">
+                        <button type="button" class="remove-preview-btn" style="position: absolute; top: -8px; right: -8px; background: var(--danger-color); color: white; border: none; border-radius: 50%; width: 24px; height: 24px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">
                             <i class="fas fa-times"></i>
                         </button>
                     </div>
                 `;
+                // Ensure preview is visible
                 preview.style.display = 'block';
-                placeholder.style.display = 'none';
+                preview.style.visibility = 'visible';
+                
+                // Store the data URL in the preview container for easy access
+                preview.setAttribute('data-image-url', dataUrl);
                 
                 // Remove preview button handler
                 const removePreviewBtn = preview.querySelector('.remove-preview-btn');
                 if (removePreviewBtn) {
                     removePreviewBtn.addEventListener('click', function(e) {
                         e.stopPropagation();
+                        e.preventDefault();
                         fileInput.value = '';
                         preview.innerHTML = '';
                         preview.style.display = 'none';
-                        placeholder.style.display = 'block';
+                        preview.removeAttribute('data-image-url');
                     });
                 }
             };
+            reader.onerror = function() {
+                showNotification('Error reading image file. Please try again.', 'error');
+                fileInput.value = '';
+                preview.style.display = 'none';
+                preview.innerHTML = '';
+                preview.removeAttribute('data-image-url');
+            };
             reader.readAsDataURL(file);
-        }
-    });
-    
-    // Drag and drop
-    uploadArea.addEventListener('dragover', function(e) {
-        e.preventDefault();
-        uploadArea.style.borderColor = 'var(--primary-color)';
-    });
-    
-    uploadArea.addEventListener('dragleave', function(e) {
-        e.preventDefault();
-        uploadArea.style.borderColor = 'var(--border-color)';
-    });
-    
-    uploadArea.addEventListener('drop', function(e) {
-        e.preventDefault();
-        uploadArea.style.borderColor = 'var(--border-color)';
-        
-        const file = e.dataTransfer.files[0];
-        if (file) {
-            fileInput.files = e.dataTransfer.files;
-            fileInput.dispatchEvent(new Event('change'));
+        } else {
+            // No file selected, hide preview
+            preview.style.display = 'none';
+            preview.innerHTML = '';
         }
     });
 }
@@ -2047,36 +2369,111 @@ function validateStep3() {
     }
     
     // Check if at least one image is uploaded
-    const imageInputs = document.querySelectorAll('.gallery-image-input');
+    // Check gallery images container for previews
+    const galleryImagesContainer = document.getElementById('galleryImagesContainer');
     let hasAtLeastOneImage = false;
     
-    imageInputs.forEach(input => {
-        if (input.files && input.files.length > 0) {
-            hasAtLeastOneImage = true;
-        }
-    });
-    
-    if (!hasAtLeastOneImage) {
-        showNotification('Please upload at least one gallery image.', 'error');
-        return false;
+    if (galleryImagesContainer) {
+        // Check all image rows for valid previews
+        const imageRows = galleryImagesContainer.querySelectorAll('.gallery-image-row');
+        
+        imageRows.forEach((row) => {
+            if (hasAtLeastOneImage) return; // Already found one
+            
+            // Find preview container
+            const previewContainer = row.querySelector('[id^="imagePreview_"]');
+            if (!previewContainer) return;
+            
+            // Check if preview is visible
+            const computedStyle = window.getComputedStyle(previewContainer);
+            if (computedStyle.display === 'none' || computedStyle.visibility === 'hidden') return;
+            
+            // Get the image element
+            const img = previewContainer.querySelector('img');
+            if (!img || !img.src) return;
+            
+            const imageSrc = img.src.trim();
+            if (!imageSrc || imageSrc === '' || imageSrc === 'undefined' || imageSrc === 'null') return;
+            
+            // Skip placeholder/empty images
+            if (imageSrc.includes('data:image/svg+xml') || 
+                imageSrc.includes('placeholder') ||
+                imageSrc.includes('blank')) {
+                return;
+            }
+            
+            // Valid image found
+            if (imageSrc.startsWith('data:image/') || 
+                imageSrc.startsWith('http') || 
+                imageSrc.startsWith('/') ||
+                imageSrc.startsWith('images/')) {
+                hasAtLeastOneImage = true;
+            }
+        });
     }
     
-    // Validate that all uploaded images have categories
-    const categorySelects = document.querySelectorAll('.image-category-select');
-    let allCategoriesValid = true;
+    // Also check file inputs as fallback (in case preview hasn't been created yet)
+    if (!hasAtLeastOneImage) {
+        const imageInputs = document.querySelectorAll('.gallery-image-input');
+        imageInputs.forEach(input => {
+            if (input && input.files && input.files.length > 0) {
+                hasAtLeastOneImage = true;
+            }
+        });
+    }
     
-    categorySelects.forEach((select, index) => {
-        const correspondingInput = document.getElementById(`imageFile_${index}`);
-        if (correspondingInput && correspondingInput.files && correspondingInput.files.length > 0) {
-            if (!select.value) {
+    // Gallery images are optional for now - allow submission without images
+    // if (!hasAtLeastOneImage) {
+    //     showNotification('Please upload at least one gallery image.', 'error');
+    //     return false;
+    // }
+    
+    // Validate that all uploaded images have categories
+    const imageRows = galleryImagesContainer ? galleryImagesContainer.querySelectorAll('.gallery-image-row') : [];
+    let allCategoriesValid = true;
+    let firstInvalidSelect = null;
+    
+    imageRows.forEach((row) => {
+        const previewContainer = row.querySelector('[id^="imagePreview_"]');
+        if (!previewContainer) return;
+        
+        // Check if preview is visible and has an image
+        const computedStyle = window.getComputedStyle(previewContainer);
+        if (computedStyle.display === 'none' || computedStyle.visibility === 'hidden') return;
+        
+        const img = previewContainer.querySelector('img');
+        if (!img || !img.src) return;
+        
+        const imageSrc = img.src.trim();
+        if (!imageSrc || imageSrc === '' || imageSrc === 'undefined' || imageSrc === 'null') return;
+        
+        // Skip placeholder/empty images
+        if (imageSrc.includes('data:image/svg+xml') || 
+            imageSrc.includes('placeholder') ||
+            imageSrc.includes('blank')) {
+            return;
+        }
+        
+        // Extract index from preview ID
+        const previewIdMatch = previewContainer.id.match(/imagePreview_(\d+)/);
+        const previewIndex = previewIdMatch ? parseInt(previewIdMatch[1]) : null;
+        
+        if (previewIndex !== null) {
+            const categorySelect = row.querySelector(`#imageCategory_${previewIndex}`);
+            if (categorySelect && !categorySelect.value) {
                 allCategoriesValid = false;
-                select.focus();
+                if (!firstInvalidSelect) {
+                    firstInvalidSelect = categorySelect;
+                }
             }
         }
     });
     
     if (!allCategoriesValid) {
         showNotification('Please select category for all uploaded images.', 'error');
+        if (firstInvalidSelect) {
+            firstInvalidSelect.focus();
+        }
         return false;
     }
     
@@ -2221,22 +2618,6 @@ function generateApartmentsStep2() {
                     <option value="north">North</option>
                     <option value="south">South</option>
                 </select>
-            </div>
-        </div>
-
-        <div class="dashboard-form-row" style="margin-bottom: 1.5rem;">
-            <div class="dashboard-form-group" style="flex: 1; margin-right: 1.5rem;">
-                <label for="propertyPrice" style="font-size: 1rem; margin-bottom: 0.75rem; font-weight: 500;">
-                    <i class="fas fa-rupee-sign"></i>
-                    Price *
-                </label>
-                <input type="text" id="propertyPrice" name="price" placeholder="e.g., Rs. 1.5 Cr" required style="padding: 1rem 1.25rem; font-size: 1rem;">
-            </div>
-            <div class="dashboard-form-group" style="flex: 1; display: flex; align-items: flex-end;">
-                <label style="display: flex; align-items: center; gap: 0.75rem; font-size: 1rem; font-weight: 500; margin-bottom: 0;">
-                    <input type="checkbox" id="propertyPriceNegotiable" name="price_negotiable" style="width: 20px; height: 20px; cursor: pointer;">
-                    <span>Price is Negotiable</span>
-                </label>
             </div>
         </div>
 
@@ -3120,6 +3501,17 @@ function populatePlotForm(property) {
 async function handlePropertySubmit(e) {
     e.preventDefault();
     
+    // Ensure we're on step 3 before submitting
+    const currentStepInput = document.getElementById('currentStep');
+    const currentStep = currentStepInput ? parseInt(currentStepInput.value) : 1;
+    
+    if (currentStep !== 3) {
+        // Navigate to step 3 first
+        showStep(3);
+        showNotification('Please complete all steps before submitting. Navigated to Step 3.', 'warning');
+        return;
+    }
+    
     const formData = new FormData(e.target);
     // Get property ID from form data
     let propertyId = formData.get('id');
@@ -3146,70 +3538,207 @@ async function handlePropertySubmit(e) {
     const submitBtn = e.target.querySelector('button[type="submit"]');
     const originalBtnText = submitBtn ? submitBtn.innerHTML : '';
     
-    // Validate required fields
-    const title = formData.get('title')?.trim();
-    const location = formData.get('location')?.trim();
-    const price = formData.get('price');
-    const type = formData.get('type');
-    const status = formData.get('status');
-    const description = formData.get('description')?.trim();
+    // Extract form data from actual form fields (multi-step form)
+    const projectNameInput = document.getElementById('propertyProjectName');
+    const cityInput = document.getElementById('propertyCity');
+    const localityInput = document.getElementById('propertyLocality');
+    const propertyTypeSelect = document.getElementById('propertyType');
+    const descriptionInput = document.getElementById('propertyDescription');
     
-    // New fields
-    const builder = formData.get('builder')?.trim();
-    const configuration = formData.get('configuration')?.trim();
-    const plotArea = formData.get('plot_area')?.trim();
-    const superBuiltUpArea = formData.get('super_built_up_area')?.trim();
-    const totalFlats = formData.get('total_flats')?.trim();
-    const totalFloors = formData.get('total_floors')?.trim();
-    const totalAcres = formData.get('total_acres')?.trim();
+    const projectName = projectNameInput?.value?.trim();
+    const city = cityInput?.value?.trim();
+    const locality = localityInput?.value?.trim();
+    const propertyType = propertyTypeSelect?.value;
+    const description = descriptionInput?.value?.trim();
     
-    if (!title || !location || !price || !type || !status || !description) {
-        showNotification('Please fill in all required fields.', 'error');
+    // Step 1 fields - Price moved to Step 1
+    const priceInput = document.getElementById('propertyPrice');
+    const price = priceInput?.value?.trim();
+    
+    // Step 2 fields (dynamically loaded based on property type)
+    const statusSelect = document.getElementById('propertyStatus');
+    const status = statusSelect?.value;
+    
+    // Build title and location from available fields
+    const title = projectName || formData.get('title')?.trim() || '';
+    const location = (city && locality) ? `${city}, ${locality}` : (city || locality || formData.get('location')?.trim() || '');
+    
+    // Extract type from propertyType select
+    const type = propertyType || formData.get('type') || '';
+    
+    // Optional fields (may not exist for all property types)
+    const builder = document.getElementById('propertyBuilder')?.value?.trim() || formData.get('builder')?.trim() || '';
+    const configuration = document.getElementById('propertyConfiguration')?.value?.trim() || formData.get('configuration')?.trim() || '';
+    const plotArea = document.getElementById('propertyPlotArea')?.value?.trim() || formData.get('plot_area')?.trim() || '';
+    const superBuiltUpArea = document.getElementById('propertySuperBuiltupArea')?.value?.trim() || formData.get('super_builtup_area')?.trim() || formData.get('super_built_up_area')?.trim() || '';
+    const totalFlats = document.getElementById('propertyTotalFlats')?.value?.trim() || formData.get('total_flats')?.trim() || '';
+    const totalFloors = document.getElementById('propertyTotalFloors')?.value?.trim() || formData.get('total_floors')?.trim() || '';
+    const totalAcres = document.getElementById('propertyTotalAcres')?.value?.trim() || formData.get('total_acres')?.trim() || '';
+    
+    // Validate required fields from step 1
+    const missingStep1Fields = [];
+    if (!projectName) missingStep1Fields.push('Project Name');
+    if (!city) missingStep1Fields.push('City');
+    if (!locality) missingStep1Fields.push('Locality');
+    if (!propertyType) missingStep1Fields.push('Property Type');
+    if (!price) missingStep1Fields.push('Price');
+    
+    if (missingStep1Fields.length > 0) {
+        showNotification(`Please fill in all required fields from Step 1: ${missingStep1Fields.join(', ')}.`, 'error');
+        // Navigate to step 1 and focus on first missing field
+        showStep(1);
+        setTimeout(() => {
+            if (!projectName && projectNameInput) projectNameInput.focus();
+            else if (!city && cityInput) cityInput.focus();
+            else if (!locality && localityInput) localityInput.focus();
+            else if (!propertyType && propertyTypeSelect) propertyTypeSelect.focus();
+            else if (!price && priceInput) priceInput.focus();
+        }, 100);
         return;
     }
     
-    // Validate new required fields
-    if (!builder || !configuration || !superBuiltUpArea || !totalFlats || !totalFloors || !totalAcres) {
-        showNotification('Please fill in all required fields (Builder, Configuration, Super Built-up Area, Total Flats, Total Floors, Total Acres).', 'error');
+    // Validate required fields from step 2 (varies by property type)
+    const missingStep2Fields = [];
+    if (!status) missingStep2Fields.push('Status');
+    
+    if (missingStep2Fields.length > 0) {
+        showNotification(`Please fill in all required fields from Step 2: ${missingStep2Fields.join(', ')}.`, 'error');
+        // Navigate to step 2 and focus on first missing field
+        showStep(2);
+        setTimeout(() => {
+            if (!status && statusSelect) statusSelect.focus();
+        }, 100);
         return;
     }
     
-    // Get images - extract URLs from image previews
-    const imagePreviews = document.querySelectorAll('.dashboard-image-preview');
-    const images = Array.from(imagePreviews).map(preview => {
-        if (!preview) return null;
-        const img = preview.querySelector('img');
-        if (!img) return null;
-        const imageSrc = img.src;
+    // Validate required fields from step 3 (description is already validated by validateStep3, but double-check)
+    if (!description) {
+        showNotification('Please fill in the property description.', 'error');
+        // Stay on step 3 and focus on description
+        if (descriptionInput) descriptionInput.focus();
+        return;
+    }
+    
+    // Note: builder, configuration, superBuiltUpArea, totalFlats, totalFloors, totalAcres are optional
+    // They may not be required for all property types, so we don't validate them here
+    
+    // Get images - extract URLs from image previews with categories
+    // Check gallery images from Step 3 (gallery-image-preview containers)
+    const galleryImagesContainer = document.getElementById('galleryImagesContainer');
+    const images = [];
+    
+    if (galleryImagesContainer) {
+        // Get all image rows in the gallery
+        const imageRows = galleryImagesContainer.querySelectorAll('.gallery-image-row');
         
-        // Check if it's a base64 data URL (data:image/...)
-        // Base64 URLs can be very long - validate length
-        if (imageSrc.startsWith('data:')) {
-            // Base64 data URL - check if it's too long (warn but allow up to reasonable size)
-            if (imageSrc.length > 5000000) { // ~5MB base64 (very large)
-                showNotification('Image is too large. Please use a smaller image (max 5MB).', 'error');
-                return null;
+        imageRows.forEach((row) => {
+            // Find preview container - search for any preview container in this row
+            const previewContainer = row.querySelector('[id^="imagePreview_"]');
+            if (!previewContainer) return;
+            
+            // Check if preview is visible (not display: none)
+            const computedStyle = window.getComputedStyle(previewContainer);
+            if (computedStyle.display === 'none' || computedStyle.visibility === 'hidden') return;
+            
+            // Get the image element or data URL from attribute
+            const img = previewContainer.querySelector('img');
+            let imageSrc = null;
+            
+            // Check data attribute first (for existing images)
+            if (previewContainer.getAttribute('data-image-url')) {
+                imageSrc = previewContainer.getAttribute('data-image-url');
+            } else if (img) {
+                // Check img src attribute or data-image-src
+                imageSrc = img.getAttribute('data-image-src') || img.src;
+            }
+            
+            if (!imageSrc || imageSrc.trim() === '') return;
+            
+            // Skip placeholder/empty images
+            if (imageSrc.includes('data:image/svg+xml') || 
+                imageSrc.includes('placeholder') ||
+                imageSrc.includes('blank') ||
+                imageSrc === 'undefined' ||
+                imageSrc === 'null') {
+                return;
+            }
+            
+            // Extract index from preview ID for getting category
+            const previewIdMatch = previewContainer.id.match(/imagePreview_(\d+)/);
+            const previewIndex = previewIdMatch ? parseInt(previewIdMatch[1]) : null;
+            
+            // Get the category for this image
+            let imageCategory = 'project_image'; // Default
+            if (previewIndex !== null) {
+                const categorySelect = row.querySelector(`#imageCategory_${previewIndex}`);
+                if (categorySelect && categorySelect.value) {
+                    imageCategory = categorySelect.value;
+                }
+            }
+            
+            // Check if it's a base64 data URL (data:image/...)
+            if (imageSrc.startsWith('data:')) {
+                // Base64 data URL - check if it's too long
+                if (imageSrc.length > 5000000) { // ~5MB base64 (very large)
+                    showNotification('Image is too large. Please use a smaller image (max 5MB).', 'error');
+                    return;
+                }
+            }
+            
+            // Add image with category info
+            const imageTitle = previewIndex !== null ? (row.querySelector(`#imageTitle_${previewIndex}`)?.value || '') : '';
+            images.push({
+                url: imageSrc,
+                category: imageCategory,
+                title: imageTitle
+            });
+        });
+    }
+    
+    // Double-check: If we have file inputs with files but no previews collected, 
+    // trigger the preview creation (this shouldn't normally happen, but ensures completeness)
+    const imageInputs = document.querySelectorAll('.gallery-image-input');
+    imageInputs.forEach((input) => {
+        if (input.files && input.files.length > 0) {
+            const row = input.closest('.gallery-image-row');
+            if (!row) return;
+            
+            const inputIdMatch = input.id.match(/imageFile_(\d+)/);
+            const inputIndex = inputIdMatch ? parseInt(inputIdMatch[1]) : null;
+            
+            if (inputIndex !== null) {
+                const previewContainer = row.querySelector(`#imagePreview_${inputIndex}`);
+                const hasPreview = previewContainer && 
+                                 previewContainer.style.display !== 'none' && 
+                                 previewContainer.querySelector('img');
+                
+                // If file exists but no preview, trigger change event to create preview
+                // This ensures the preview is created before collection
+                if (!hasPreview) {
+                    // Trigger change event to create preview
+                    input.dispatchEvent(new Event('change', { bubbles: true }));
+                }
             }
         }
-        
-        return imageSrc;
-    }).filter(Boolean);
+    });
+    
+    // Extract just the URLs for backward compatibility (backend currently expects flat array)
+    const imageUrls = images.map(img => img.url);
 
-    // For new properties, require at least one image
-    // For editing, if no images are present, require at least one
-    if (images.length === 0) {
-        if (!propertyId) {
-            // New property must have at least one image
-            showNotification('Please add at least one property image.', 'error');
-            return;
-        } else {
-            // When editing, check if property already has images from API
-            // If we're editing and no images in preview, we should still require at least one
-            // This prevents accidentally removing all images
-            showNotification('Please add at least one property image. You can keep existing images or upload new ones.', 'error');
-            return;
-        }
-    }
+    // Gallery images are optional for now - allow submission without images
+    // if (imageUrls.length === 0) {
+    //     if (!propertyId) {
+    //         // New property must have at least one image
+    //         showNotification('Please add at least one property image.', 'error');
+    //         return;
+    //     } else {
+    //         // When editing, check if property already has images from API
+    //         // If we're editing and no images in preview, we should still require at least one
+    //         // This prevents accidentally removing all images
+    //         showNotification('Please add at least one property image. You can keep existing images or upload new ones.', 'error');
+    //         return;
+    //     }
+    // }
 
     // Get features
     const featureItems = document.querySelectorAll('.dashboard-feature-item');
@@ -3359,47 +3888,109 @@ async function handlePropertySubmit(e) {
         }
     }
     
-    // Get unit type and bedrooms from form
+    // Get Step 1 additional fields
+    const locationLinkInput = document.getElementById('propertyLocationLink');
+    const locationLink = locationLinkInput?.value?.trim() || '';
+    
+    // Get Step 2 fields based on property type
     const bedroomsInput = document.getElementById('propertyBedrooms');
     const unitTypeInput = document.getElementById('propertyUnitType');
     const bedrooms = bedroomsInput ? parseInt(bedroomsInput.value) || 1 : 1;
     const unitType = unitTypeInput ? unitTypeInput.value : 'bhk';
     
-    // Ensure bedrooms is at least 1 for backend (except for RK which is 0)
-    const finalBedrooms = (unitType === 'rk') ? 0 : Math.max(1, bedrooms);
+    // Get Step 2 specific fields
+    const superBuiltupAreaInput = document.getElementById('propertySuperBuiltupArea');
+    const carpetAreaInput = document.getElementById('propertyCarpetArea');
+    const buildupAreaInput = document.getElementById('propertyBuildupArea');
+    const listingTypeInput = document.getElementById('propertyListingType');
+    const directionInput = document.getElementById('propertyDirection');
+    const bathroomsInput = document.getElementById('propertyBathrooms');
+    const bedroomsCountInput = document.getElementById('propertyBedroomsCount');
+    const lengthInput = document.getElementById('propertyLength');
+    const breadthInput = document.getElementById('propertyBreadth');
+    const priceNegotiableInput = document.getElementById('propertyPriceNegotiable');
+    const amenitiesSelect = document.getElementById('propertyAmenities');
     
+    // Extract Step 2 values
+    const superBuiltupArea = superBuiltupAreaInput?.value?.trim() || '';
+    const carpetArea = carpetAreaInput?.value?.trim() || '';
+    const buildupArea = buildupAreaInput?.value?.trim() || '';
+    const listingType = listingTypeInput?.value || '';
+    const direction = directionInput?.value || '';
+    const bathrooms = bathroomsInput ? parseFloat(bathroomsInput.value) || 1.0 : 1.0;
+    const bedroomsCount = bedroomsCountInput ? parseInt(bedroomsCountInput.value) || bedrooms : bedrooms;
+    const length = lengthInput?.value ? parseFloat(lengthInput.value) : null;
+    const breadth = breadthInput?.value ? parseFloat(breadthInput.value) : null;
+    const priceNegotiable = priceNegotiableInput?.checked || false;
+    
+    // Get amenities/features from select (if exists)
+    let amenitiesArray = [];
+    if (amenitiesSelect) {
+        amenitiesArray = Array.from(amenitiesSelect.selectedOptions).map(opt => opt.value);
+    }
+    // Use amenities if available, otherwise use features from step 3
+    const finalFeatures = amenitiesArray.length > 0 ? amenitiesArray : features;
+    
+    // Ensure bedrooms is at least 1 for backend (except for RK which is 0)
+    const finalBedrooms = (unitType === 'rk') ? 0 : Math.max(1, bedroomsCount || bedrooms);
+    
+    // Determine which endpoint to use based on property type
+    const isPlotProperty = propertyType === 'plot_properties';
+    
+    // Build property data with all Step 1 and Step 2 fields
     const propertyData = {
-        title: title,
-        location: location,
+        // Step 1 fields - REQUIRED by backend
+        city: city,
+        locality: locality,
+        property_name: isPlotProperty ? null : projectName, // For residential properties
+        project_name: isPlotProperty ? projectName : null, // For plot properties
+        location_link: locationLink || null,
+        
+        // Step 2 common fields
         price: finalPrice, // Must be a float > 0 for backend
-        price_text: price ? String(price).trim() : null, // Store original price text (ensure it's a string)
-        type: type,
-        bedrooms: finalBedrooms,
-        bathrooms: 1.0, // Default value (backend requires > 0)
-        area: 1, // Default value (backend requires > 0)
-        // Map status values to backend format
-        // Backend only accepts 'sale' or 'rent' for status field
-        // Additional statuses are stored in property_status
+        price_text: price ? String(price).trim() : null,
+        price_negotiable: priceNegotiable,
         status: (() => {
             if (status === 'resale' || status === 'new' || status === 'ready_to_move' || status === 'under_construction') {
                 return 'sale'; // These are all sale-related statuses
             }
-            return status;
+            return status || 'sale';
         })(),
+        property_status: status || null, // Store the actual status (resale, new, ready_to_move, under_construction, sale, rent)
+        listing_type: listingType || null,
+        direction: direction || null,
+        
+        // Step 2 fields for residential properties
+        type: isPlotProperty ? 'plot' : (type || 'apartment'),
+        unit_type: isPlotProperty ? null : (unitType || 'bhk'),
+        bedrooms: isPlotProperty ? null : finalBedrooms,
+        bathrooms: isPlotProperty ? null : bathrooms,
+        buildup_area: isPlotProperty ? null : (buildupArea ? parseFloat(buildupArea) : null),
+        carpet_area: isPlotProperty ? null : (carpetArea ? parseFloat(carpetArea) : null),
+        super_built_up_area: isPlotProperty ? null : (superBuiltupArea ? parseFloat(superBuiltupArea) : null),
+        length: isPlotProperty ? null : length,
+        breadth: isPlotProperty ? null : breadth,
+        
+        // Step 2 fields for plot properties
+        plot_area: isPlotProperty ? (plotArea ? parseFloat(plotArea) : null) : null,
+        plot_length: isPlotProperty ? (document.getElementById('propertyPlotLength')?.value ? parseFloat(document.getElementById('propertyPlotLength').value) : null) : null,
+        plot_breadth: isPlotProperty ? (document.getElementById('propertyPlotBreadth')?.value ? parseFloat(document.getElementById('propertyPlotBreadth').value) : null) : null,
+        
+        // Common optional fields
+        builder: builder || null,
+        configuration: configuration || null,
+        total_flats: totalFlats ? parseInt(totalFlats) : null,
+        total_floors: totalFloors ? parseInt(totalFloors) : null,
+        total_acres: totalAcres ? parseFloat(totalAcres) : null,
+        
+        // Step 3 fields
         description: fullDescription,
-        images: images,
-        features: features,
+        images: imageUrls.length > 0 ? imageUrls : null,
+        features: finalFeatures,
+        
+        // Metadata
         is_active: true,
-        // Store additional fields as metadata (backend may not support these yet)
-        builder: builder,
-        configuration: configuration,
-        plot_area: plotArea || null,
-        super_built_up_area: superBuiltUpArea,
-        total_flats: totalFlats,
-        total_floors: totalFloors,
-        total_acres: totalAcres,
-        property_status: status, // Store the actual status (resale, new, ready_to_move, under_construction, sale, rent)
-        unit_type: unitType // Store unit type for filtering
+        is_featured: false
     };
 
     // Show loading state
@@ -3411,7 +4002,7 @@ async function handlePropertySubmit(e) {
     try {
         let response;
         if (propertyId) {
-            // Update existing property
+            // Update existing property - use generic endpoint (backend handles both types)
             response = await authenticatedFetch(`/api/properties/${propertyId}`, {
                 method: 'PUT',
                 headers: {
@@ -3420,8 +4011,9 @@ async function handlePropertySubmit(e) {
                 body: JSON.stringify(propertyData)
             });
         } else {
-            // Create new property
-            response = await authenticatedFetch('/api/properties', {
+            // Create new property - use specific endpoint based on property type
+            const endpoint = isPlotProperty ? '/api/plot-properties' : '/api/residential-properties';
+            response = await authenticatedFetch(endpoint, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -3976,10 +4568,21 @@ async function confirmDelete() {
         closeDeleteModal();
         showNotification(`${type.charAt(0).toUpperCase() + type.slice(1)} deleted successfully!`, 'success');
         
+        // CRITICAL FIX: Set flag to indicate this is a page reload, not a tab closure
+        // This prevents the session manager from clearing the session during reload
+        // Set in BOTH sessionStorage and localStorage for maximum reliability
+        try {
+            sessionStorage.setItem('_page_reload', 'true');
+            localStorage.setItem('_page_reload', 'true');
+        } catch (e) {
+            console.error('Error setting reload flag:', e);
+        }
+        
         // Reload the page after a short delay to show the notification
+        // Use a shorter delay to ensure flag is set before any cleanup runs
         setTimeout(() => {
             window.location.reload();
-        }, 500);
+        }, 100);
     } catch (error) {
         console.error(`Error deleting ${type}:`, error);
         showNotification(error.message || `Failed to delete ${type}. Please try again.`, 'error');
@@ -5358,10 +5961,21 @@ async function confirmDelete() {
         closeDeleteModal();
         showNotification(`${type.charAt(0).toUpperCase() + type.slice(1)} deleted successfully!`, 'success');
         
+        // CRITICAL FIX: Set flag to indicate this is a page reload, not a tab closure
+        // This prevents the session manager from clearing the session during reload
+        // Set in BOTH sessionStorage and localStorage for maximum reliability
+        try {
+            sessionStorage.setItem('_page_reload', 'true');
+            localStorage.setItem('_page_reload', 'true');
+        } catch (e) {
+            console.error('Error setting reload flag:', e);
+        }
+        
         // Reload the page after a short delay to show the notification
+        // Use a shorter delay to ensure flag is set before any cleanup runs
         setTimeout(() => {
             window.location.reload();
-        }, 500);
+        }, 100);
     } catch (error) {
         console.error(`Error deleting ${type}:`, error);
         showNotification(error.message || `Failed to delete ${type}. Please try again.`, 'error');

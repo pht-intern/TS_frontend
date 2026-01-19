@@ -337,21 +337,53 @@ async function loadPropertiesFromAPI() {
                 priceValue = 0;
             }
             
+            // Guard: Ensure features is always an array
+            let safeFeatures = [];
+            if (property.features && Array.isArray(property.features)) {
+                safeFeatures = property.features.filter(f => {
+                    if (!f) return false;
+                    if (typeof f === 'string') return f.trim().length > 0;
+                    if (f && typeof f === 'object' && f.feature_name) {
+                        return String(f.feature_name).trim().length > 0;
+                    }
+                    return false;
+                }).map(f => {
+                    if (typeof f === 'string') return f.trim();
+                    if (f && typeof f === 'object' && f.feature_name) {
+                        return String(f.feature_name).trim();
+                    }
+                    return String(f).trim();
+                });
+            }
+            
+            // Guard: Ensure images is always an array
+            let safeImages = [];
+            if (property.images && Array.isArray(property.images)) {
+                safeImages = property.images.filter(img => {
+                    if (!img) return false;
+                    if (typeof img === 'string') return img.trim().length > 0;
+                    if (img && typeof img === 'object' && img.image_url) {
+                        return String(img.image_url).trim().length > 0;
+                    }
+                    return false;
+                });
+            }
+            
             return {
                 id: property.id,
-                title: property.title,
-                location: property.location,
+                title: property.title || 'Untitled Property',
+                location: property.location || 'Location not specified',
                 price: priceValue,
                 price_text: priceText,
-                type: typeof property.type === 'string' ? property.type : property.type?.value || property.type,
-                bedrooms: property.bedrooms,
-                bathrooms: property.bathrooms,
-                area: property.area,
-                status: typeof property.status === 'string' ? property.status : property.status?.value || property.status,
+                type: typeof property.type === 'string' ? property.type : property.type?.value || property.type || 'apartment',
+                bedrooms: property.bedrooms || 0,
+                bathrooms: property.bathrooms || 0,
+                area: property.area || null,
+                status: typeof property.status === 'string' ? property.status : property.status?.value || property.status || 'sale',
                 image: imageUrl,
-                images: property.images || [],
-                description: property.description,
-                features: property.features || []
+                images: safeImages,
+                description: property.description || '',
+                features: safeFeatures
             };
         }
         
@@ -860,7 +892,11 @@ async function loadActiveCities() {
                 console.error('City select element not found: propertiesSearchCity or searchCity');
                 return;
             }
-            if (data.cities && Array.isArray(data.cities)) {
+            if (!data.cities) {
+                console.error('Cities data not found in response:', data);
+                return;
+            }
+            if (Array.isArray(data.cities)) {
                 // Store current selection before clearing
                 const currentValue = citySelect.value;
                 
@@ -958,7 +994,11 @@ async function loadAmenities() {
                 console.error('Amenities select element not found: propertiesSearchAmenities or searchAmenities');
                 return;
             }
-            if (data.amenities && Array.isArray(data.amenities)) {
+            if (!data.amenities) {
+                console.error('Amenities data not found in response:', data);
+                return;
+            }
+            if (Array.isArray(data.amenities)) {
                 // Store current value before clearing
                 const currentValue = amenitiesSelect.value;
                 
@@ -1022,7 +1062,11 @@ async function loadUnitTypes() {
                 console.error('Unit Type select element not found: propertiesSearchUnitType or searchUnitType');
                 return;
             }
-            if (data.unit_types && Array.isArray(data.unit_types)) {
+            if (!data.unit_types) {
+                console.error('Unit types data not found in response:', data);
+                return;
+            }
+            if (Array.isArray(data.unit_types)) {
                 // Store current selection before clearing
                 const currentValue = unitTypeSelect.value;
                 

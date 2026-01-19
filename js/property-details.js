@@ -1,6 +1,48 @@
 // Property Details Page JavaScript
 // Version: 2.0 - Fixed propertyType duplicate declaration issue
 
+// Utility function to safely access nested properties with informative warnings
+function safeGetProperty(obj, path, defaultValue = null, warnOnMissing = true) {
+    if (!obj) {
+        if (warnOnMissing) {
+            console.warn(`[Property Guard] Object is null/undefined for path: ${path}`);
+        }
+        return defaultValue;
+    }
+    
+    const keys = path.split('.');
+    let current = obj;
+    
+    for (let i = 0; i < keys.length; i++) {
+        if (current === null || current === undefined) {
+            if (warnOnMissing) {
+                console.warn(`[Property Guard] Missing property at path: ${keys.slice(0, i + 1).join('.')} (full path: ${path})`);
+            }
+            return defaultValue;
+        }
+        current = current[keys[i]];
+    }
+    
+    if (current === null || current === undefined) {
+        if (warnOnMissing) {
+            console.warn(`[Property Guard] Property is null/undefined at path: ${path}`);
+        }
+        return defaultValue;
+    }
+    
+    return current;
+}
+
+// Utility function to safely get array property, ensuring it's always an array
+function safeGetArray(obj, path, defaultValue = []) {
+    const value = safeGetProperty(obj, path, defaultValue, false);
+    if (!Array.isArray(value)) {
+        console.warn(`[Property Guard] Expected array at path: ${path}, got ${typeof value}. Using empty array.`);
+        return defaultValue;
+    }
+    return value;
+}
+
 // HTML escaping function for security
 function escapeHtml(text) {
     if (text === null || text === undefined) return '';
@@ -138,32 +180,54 @@ function normalizeImageUrl(url) {
 
 // Convert API property format to display format
 function convertPropertyFromAPI(property) {
+    // Guard: Ensure property exists
+    if (!property) {
+        console.warn('convertPropertyFromAPI: property is null or undefined');
+        property = {};
+    }
+    
     // Handle images - API returns array of objects with image_url
+    // Guard: Always ensure images is an array, even if null/undefined
     let images = [];
-    if (property.images && property.images.length > 0) {
+    if (property.images && Array.isArray(property.images) && property.images.length > 0) {
         images = property.images.map(img => {
+            // Guard: Handle null/undefined image objects
+            if (!img) return null;
+            
             let imageUrl = null;
             if (typeof img === 'string') {
                 imageUrl = img;
-            } else if (img && img.image_url) {
+            } else if (img && typeof img === 'object' && img.image_url) {
                 imageUrl = img.image_url;
             }
-            // Normalize the URL
-            return normalizeImageUrl(imageUrl);
-        }).filter(Boolean);
+            // Normalize the URL (handles null gracefully)
+            return imageUrl ? normalizeImageUrl(imageUrl) : null;
+        }).filter(Boolean); // Remove null/undefined entries
+    }
+    // Ensure images is always an array (even if empty)
+    if (!Array.isArray(images)) {
+        images = [];
     }
     
     // Handle features - API returns array of objects with feature_name
+    // Guard: Always ensure features is an array, even if null/undefined
     let features = [];
-    if (property.features && property.features.length > 0) {
+    if (property.features && Array.isArray(property.features) && property.features.length > 0) {
         features = property.features.map(feature => {
+            // Guard: Handle null/undefined feature objects
+            if (!feature) return null;
+            
             if (typeof feature === 'string') {
-                return feature;
-            } else if (feature && feature.feature_name) {
-                return feature.feature_name;
+                return feature.trim() || null; // Return null for empty strings
+            } else if (feature && typeof feature === 'object' && feature.feature_name) {
+                return feature.feature_name ? String(feature.feature_name).trim() : null;
             }
             return null;
-        }).filter(Boolean);
+        }).filter(Boolean); // Remove null/undefined/empty entries
+    }
+    // Ensure features is always an array (even if empty)
+    if (!Array.isArray(features)) {
+        features = [];
     }
     
     // Construct location from city and locality if location is not provided
@@ -579,16 +643,46 @@ async function loadPropertyDetails() {
 // Render Property Details
 function renderPropertyDetails(property) {
     try {
-        // Update page title
-        document.title = `${property.title} - Tirumakudalu Properties`;
+        // Guard: Ensure property exists
+        if (!property) {
+            console.error('[Property Details] Property is null or undefined');
+            showErrorState('Property data is missing. Please try refreshing the page.');
+            return;
+        }
         
-        // Get images first
-        const images = property.images && property.images.length > 0 ? property.images : 
-                       (property.image ? [property.image] : ['/images/img1.jpg']);
+        // Update page title - Guard: Handle missing title
+        const propertyTitle = property.title || property.property_name || 'Untitled Property';
+        document.title = `${propertyTitle} - Tirumakudalu Properties`;
         
-        // Get main image (first image)
+        // Get images first - Guard: Ensure images is always an array
+        let images = [];
+        if (property.images && Array.isArray(property.images) && property.images.length > 0) {
+            // Filter out null/undefined/invalid images
+            images = property.images.filter(img => {
+                if (!img) return false;
+                if (typeof img === 'string') return img.trim().length > 0;
+                if (typeof img === 'object' && img.image_url) return String(img.image_url).trim().length > 0;
+                return false;
+            }).map(img => {
+                if (typeof img === 'string') return img.trim();
+                if (typeof img === 'object' && img.image_url) return String(img.image_url).trim();
+                return String(img);
+            });
+        }
+        
+        // Fallback to single image property
+        if (images.length === 0 && property.image) {
+            images = [String(property.image).trim()];
+        }
+        
+        // Final fallback
+        if (images.length === 0) {
+            images = ['/images/img1.jpg'];
+        }
+        
+        // Get main image (first image) - Guard: Always ensure we have a valid image
         const mainImage = images[0] || '/images/img1.jpg';
-        const normalizedMainImage = normalizeImageUrl(mainImage);
+        const normalizedMainImage = normalizeImageUrl(mainImage) || '/images/img1.jpg';
         
         // Render Header Image Section
         const headerImageSection = document.getElementById('propertyHeaderImage');
@@ -641,8 +735,8 @@ function renderPropertyDetails(property) {
             </div>
             ${features.length > 0 ? `
             <div class="property-header-amenities">
-                ${features.map(feature => {
-                    const featureName = escapeHtml(feature);
+                ${features.filter(f => f && typeof f === 'string' && f.trim()).map(feature => {
+                    const featureName = escapeHtml(String(feature).trim());
                     return `<button class="amenity-btn">${featureName}</button>`;
                 }).join('')}
             </div>
@@ -671,8 +765,8 @@ function renderPropertyDetails(property) {
     
     // Categorize images
     
-    // Store all images for lightbox
-    allImages = images;
+    // Store all images for lightbox (guard: ensure it's an array)
+    allImages = Array.isArray(images) ? images : [];
     
     // Categorize images based on URL patterns or default to "project"
     categorizedImages = {
@@ -681,20 +775,26 @@ function renderPropertyDetails(property) {
         masterplan: []
     };
     
-    images.forEach(img => {
-        const imgUrl = (img || '').toLowerCase();
-        // Check if image URL contains keywords for floor plan or master plan
-        if (imgUrl.includes('floor') || imgUrl.includes('floorplan') || imgUrl.includes('floor-plan')) {
-            categorizedImages.floorplan.push(img);
-        } else if (imgUrl.includes('master') || imgUrl.includes('masterplan') || imgUrl.includes('master-plan') || imgUrl.includes('site-plan')) {
-            categorizedImages.masterplan.push(img);
-        } else {
-            // Default to project images
-            categorizedImages.project.push(img);
-        }
-    });
+    // Guard: Only process if images array exists and has items
+    if (Array.isArray(images) && images.length > 0) {
+        images.forEach(img => {
+            // Guard: Skip null/undefined images
+            if (!img) return;
+            
+            const imgUrl = String(img || '').toLowerCase();
+            // Check if image URL contains keywords for floor plan or master plan
+            if (imgUrl.includes('floor') || imgUrl.includes('floorplan') || imgUrl.includes('floor-plan')) {
+                categorizedImages.floorplan.push(img);
+            } else if (imgUrl.includes('master') || imgUrl.includes('masterplan') || imgUrl.includes('master-plan') || imgUrl.includes('site-plan')) {
+                categorizedImages.masterplan.push(img);
+            } else {
+                // Default to project images
+                categorizedImages.project.push(img);
+            }
+        });
+    }
     
-    // If no images in a category, ensure at least project has images
+    // If no images in a category, ensure at least project has images (or empty array)
     if (categorizedImages.project.length === 0 && images.length > 0) {
         categorizedImages.project = images;
     }
@@ -790,18 +890,25 @@ function renderPropertyDetails(property) {
     
     // Render Features
     const featuresElement = document.getElementById('propertyFeatures');
-    if (property.features && property.features.length > 0) {
-        featuresElement.innerHTML = property.features.map(feature => {
-            const featureName = escapeHtml(feature);
-            return `
+    if (featuresElement) {
+        // Guard: Ensure features is an array and has valid entries
+        const safeFeatures = Array.isArray(features) && features.length > 0 
+            ? features.filter(f => f && typeof f === 'string' && f.trim())
+            : [];
+        
+        if (safeFeatures.length > 0) {
+            featuresElement.innerHTML = safeFeatures.map(feature => {
+                const featureName = escapeHtml(String(feature).trim());
+                return `
         <div class="property-feature-item">
             <i class="fas fa-check-circle"></i>
                 <span>${featureName}</span>
         </div>
             `;
-        }).join('');
-    } else {
-        featuresElement.innerHTML = '<p class="no-features">No features listed for this property.</p>';
+            }).join('');
+        } else {
+            featuresElement.innerHTML = '<p class="no-features" style="color: #6b7280; font-style: italic;">No features listed for this property. Features may not have been added during property creation.</p>';
+        }
     }
     
     // Render Sidebar - Price Display

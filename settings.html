@@ -9,10 +9,10 @@
     <title>Settings - Tirumakudalu Properties</title>
     <link rel="icon" type="image/png" href="/images/TirumakudaluProperties_Logo-2048x1858.png">
     <link rel="stylesheet" href="/css/style.css">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:wght@400;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts - Load with fallback, no preconnect to avoid connection issues -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:wght@400;600;700&display=swap" rel="stylesheet" onerror="this.onerror=null; this.href='';">
+    <!-- Font Awesome - Load with fallback -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" onerror="this.onerror=null; this.remove();">
     <style>
         /* Hide all content by default - only show after authentication check passes */
         body {
@@ -1581,7 +1581,7 @@
                     
                     const categoryId = categoryIdInput ? categoryIdInput.value : '';
                     const url = categoryId ? `/api/admin/categories/${categoryId}` : '/api/admin/categories';
-                    const method = categoryId ? 'PUT' : 'POST';
+                    const method = 'POST';
 
                     try {
                         // Show loading state
@@ -1739,7 +1739,7 @@
                     }
                     
                     const url = unitTypeId ? `/api/admin/unit-types/${unitTypeId}` : '/api/admin/unit-types';
-                    const method = unitTypeId ? 'PUT' : 'POST';
+                    const method = 'POST';
 
                     try {
                         // Show loading state

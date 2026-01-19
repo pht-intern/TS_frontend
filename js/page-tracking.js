@@ -86,14 +86,23 @@
                 },
                 body: JSON.stringify(logData)
             })
-            .then(response => {
+            .then(async response => {
                 if (!response.ok) {
-                    return response.json().catch(() => null).then(errorData => {
-                        console.warn('Tracking API error:', response.status, errorData);
-                        return null;
-                    });
+                    const text = await response.text();
+                    let errorData = null;
+                    try {
+                        errorData = JSON.parse(text);
+                    } catch {
+                        errorData = { message: text || `HTTP ${response.status}: ${response.statusText}` };
+                    }
+                    console.warn('Tracking API error:', response.status, errorData);
+                    return null;
                 }
-                return response.json().catch(() => null);
+                try {
+                    return await response.json();
+                } catch {
+                    return null;
+                }
             })
             .catch(error => {
                 console.warn('Tracking network error:', error);
@@ -116,6 +125,8 @@
         const propertyId = urlParams.get('id');
         
         await trackEvent('page_view', userEmail ? `User ${userEmail} viewed: ${pageName}` : `Page viewed: ${pageName}`, {
+            page: pageName,
+            page_url: pageUrl,
             referrer: referrer,
             property_id: propertyId || null,
             is_authenticated: !!userEmail

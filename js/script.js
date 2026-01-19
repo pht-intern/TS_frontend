@@ -597,35 +597,17 @@ async function loadPropertyTypeCounts() {
         if (!response.ok) {
             // Try to get error message from response
             let errorMessage = `HTTP ${response.status}: ${response.statusText}`;
-            let errorData = null;
-            
+            const text = await response.text();
             try {
-                const contentType = response.headers.get('content-type');
-                if (contentType && contentType.includes('application/json')) {
-                    errorData = await response.json();
-                    errorMessage = errorData.detail || errorData.error || errorData.message || errorMessage;
-                } else {
-                    // Try to read as text if not JSON
-                    const text = await response.text();
-                    if (text) {
-                        errorMessage = `${errorMessage} - ${text.substring(0, 100)}`;
-                    }
-                }
-            } catch (parseError) {
-                // If we can't parse the error response, use status text
-                console.warn('Could not parse error response:', parseError);
+                const errorData = JSON.parse(text);
+                errorMessage = errorData.detail || errorData.error || errorData.message || errorMessage;
+            } catch {
+                errorMessage = text || errorMessage;
             }
             
             // Log the error but don't throw - just use fallback values
             console.warn(`API returned error ${response.status}:`, errorMessage);
             throw new Error(`HTTP ${response.status}: ${errorMessage}`);
-        }
-        
-        // Check content type before parsing
-        const contentType = response.headers.get('content-type');
-        if (!contentType || !contentType.includes('application/json')) {
-            console.warn('Response is not JSON, skipping property statistics');
-            throw new Error('Invalid response format');
         }
         
         const stats = await response.json();
@@ -794,17 +776,23 @@ function initContactForm() {
                 body: JSON.stringify(formData)
             });
             
-            const data = await response.json();
-            
-            if (response.ok) {
-                // Success
-                showContactMessage('Thank you for your message! We will get back to you soon.', 'success');
-                contactForm.reset();
-            } else {
-                // Error from server
-                const errorMessage = data.detail || data.error || 'Failed to send message. Please try again.';
+            if (!response.ok) {
+                const text = await response.text();
+                let errorMessage = 'Failed to send message. Please try again.';
+                try {
+                    const errorData = JSON.parse(text);
+                    errorMessage = errorData.detail || errorData.error || errorData.message || errorMessage;
+                } catch {
+                    errorMessage = text || `HTTP ${response.status}: ${response.statusText}`;
+                }
                 showContactMessage(errorMessage, 'error');
+                return;
             }
+            
+            const data = await response.json();
+            // Success
+            showContactMessage('Thank you for your message! We will get back to you soon.', 'success');
+            contactForm.reset();
         } catch (error) {
             console.error('Error submitting contact form:', error);
             showContactMessage('Network error. Please check your connection and try again.', 'error');
@@ -914,12 +902,13 @@ async function loadStatistics() {
                 }
             } else {
                 // Log error but don't throw - use fallback values
+                const text = await response.text();
                 let errorMessage = `HTTP ${response.status}: ${response.statusText}`;
                 try {
-                    const errorData = await response.json();
-                    errorMessage = errorData.detail || errorData.error || errorMessage;
-                } catch (e) {
-                    // Ignore JSON parse errors
+                    const errorData = JSON.parse(text);
+                    errorMessage = errorData.detail || errorData.error || errorData.message || errorMessage;
+                } catch {
+                    errorMessage = text || errorMessage;
                 }
                 console.warn('Failed to fetch statistics:', errorMessage);
             }

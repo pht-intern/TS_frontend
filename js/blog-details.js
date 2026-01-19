@@ -9,7 +9,15 @@ async function loadBlogFromAPI(blogId) {
     try {
         const response = await fetch(`/api/blogs/${blogId}`);
         if (!response.ok) {
-            throw new Error('Failed to fetch blog');
+            const text = await response.text();
+            let errorMessage = 'Failed to fetch blog';
+            try {
+                const errorData = JSON.parse(text);
+                errorMessage = errorData.detail || errorData.error || errorData.message || errorMessage;
+            } catch {
+                errorMessage = text || `HTTP ${response.status}: ${response.statusText}`;
+            }
+            throw new Error(errorMessage);
         }
         const blog = await response.json();
         // Normalize blog data

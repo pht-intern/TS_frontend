@@ -6,10 +6,10 @@
     <title>Properties - Tirumakudalu Properties</title>
     <link rel="icon" type="image/png" href="/images/TirumakudaluProperties_Logo-2048x1858.png">
     <link rel="stylesheet" href="/css/style.css">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:wght@400;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts - Load with fallback, no preconnect to avoid connection issues -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:wght@400;600;700&display=swap" rel="stylesheet" onerror="this.onerror=null; this.href='';">
+    <!-- Font Awesome - Load with fallback -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" onerror="this.onerror=null; this.remove();">
 </head>
 <body>
     <!-- Top Bar -->
@@ -808,22 +808,28 @@
                             body: JSON.stringify(formData)
                         });
                         
-                        const data = await response.json();
-                        
-                        if (response.ok) {
-                            // Success - mark as submitted
-                            markFormSubmitted();
-                            showVisitorMessage('Thank you! We will get in touch with you soon.', 'success');
-                            // Close modal after 2 seconds
-                            setTimeout(() => {
-                                closeVisitorModal();
-                                visitorForm.reset();
-                            }, 2000);
-                        } else {
-                            // Error from server
-                            const errorMessage = data.detail || data.error || 'Failed to submit. Please try again.';
+                        if (!response.ok) {
+                            const text = await response.text();
+                            let errorMessage = 'Failed to submit. Please try again.';
+                            try {
+                                const errorData = JSON.parse(text);
+                                errorMessage = errorData.detail || errorData.error || errorData.message || errorMessage;
+                            } catch {
+                                errorMessage = text || `HTTP ${response.status}: ${response.statusText}`;
+                            }
                             showVisitorMessage(errorMessage, 'error');
+                            return;
                         }
+                        
+                        const data = await response.json();
+                        // Success - mark as submitted
+                        markFormSubmitted();
+                        showVisitorMessage('Thank you! We will get in touch with you soon.', 'success');
+                        // Close modal after 2 seconds
+                        setTimeout(() => {
+                            closeVisitorModal();
+                            visitorForm.reset();
+                        }, 2000);
                     } catch (error) {
                         console.error('Error submitting visitor form:', error);
                         showVisitorMessage('Network error. Please check your connection and try again.', 'error');

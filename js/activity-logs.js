@@ -198,20 +198,13 @@ async function loadLogs(logType = null) {
         
         if (!response.ok) {
             // Try to get error message from response
+            const text = await response.text();
             let errorMessage = `HTTP ${response.status}: ${response.statusText}`;
             try {
-                const contentType = response.headers.get('content-type');
-                if (contentType && contentType.includes('application/json')) {
-                    const errorData = await response.json();
-                    errorMessage = errorData.detail || errorData.error || errorData.message || errorMessage;
-                } else {
-                    const text = await response.text();
-                    if (text) {
-                        errorMessage = `${errorMessage} - ${text.substring(0, 100)}`;
-                    }
-                }
-            } catch (parseError) {
-                console.warn('Could not parse error response:', parseError);
+                const errorData = JSON.parse(text);
+                errorMessage = errorData.detail || errorData.error || errorData.message || errorMessage;
+            } catch {
+                errorMessage = text || errorMessage;
             }
             
             console.error('Failed to fetch logs:', errorMessage);
@@ -462,8 +455,15 @@ async function handleExportTable(tableName, exportBtn) {
         });
         
         if (!response.ok) {
-            const errorData = await response.json().catch(() => ({ detail: response.statusText }));
-            throw new Error(errorData.detail || `Export failed: ${response.statusText}`);
+            const text = await response.text();
+            let errorMessage = `Export failed: ${response.statusText}`;
+            try {
+                const errorData = JSON.parse(text);
+                errorMessage = errorData.detail || errorData.error || errorData.message || errorMessage;
+            } catch {
+                errorMessage = text || `HTTP ${response.status}: ${response.statusText}`;
+            }
+            throw new Error(errorMessage);
         }
         
         // Get the blob from response
@@ -542,8 +542,15 @@ async function handleImportTable(tableName, file, importBtn) {
         });
         
         if (!response.ok) {
-            const errorData = await response.json().catch(() => ({ detail: response.statusText }));
-            throw new Error(errorData.detail || `Import failed: ${response.statusText}`);
+            const text = await response.text();
+            let errorMessage = `Import failed: ${response.statusText}`;
+            try {
+                const errorData = JSON.parse(text);
+                errorMessage = errorData.detail || errorData.error || errorData.message || errorMessage;
+            } catch {
+                errorMessage = text || `HTTP ${response.status}: ${response.statusText}`;
+            }
+            throw new Error(errorMessage);
         }
         
         const result = await response.json();

@@ -384,6 +384,19 @@
                 });
                 
                 // Check if response is ok before parsing JSON
+                if (!response.ok) {
+                    const text = await response.text();
+                    let errorMessage = 'Login failed';
+                    try {
+                        const errorData = JSON.parse(text);
+                        errorMessage = errorData.detail || errorData.error || errorData.message || errorMessage;
+                    } catch {
+                        errorMessage = text || `HTTP ${response.status}: ${response.statusText}`;
+                    }
+                    alert(errorMessage);
+                    return;
+                }
+                
                 let data;
                 try {
                     data = await response.json();
@@ -393,7 +406,7 @@
                     return;
                 }
                 
-                if (response.ok && data.success && data.user) {
+                if (data.success && data.user) {
                     // SESSION CREATION: Only happens here after successful login
                     const userData = data.user;
                     

@@ -99,7 +99,15 @@ async function loadBlogsFromAPI() {
             const response = await fetch(`/api/blogs?is_active=true&page=${page}&limit=${limit}`);
             
             if (!response.ok) {
-                throw new Error(`Failed to fetch blogs: ${response.status}`);
+                const text = await response.text();
+                let errorMessage = `Failed to fetch blogs: ${response.status}`;
+                try {
+                    const errorData = JSON.parse(text);
+                    errorMessage = errorData.detail || errorData.error || errorData.message || errorMessage;
+                } catch {
+                    errorMessage = text || `HTTP ${response.status}: ${response.statusText}`;
+                }
+                throw new Error(errorMessage);
             }
             
             const data = await response.json();

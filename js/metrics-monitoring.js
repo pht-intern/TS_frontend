@@ -361,7 +361,15 @@ async function fetchMetrics() {
         const response = await authenticatedFetch(`/api/admin/application-metrics?hours=${hours}`);
         
         if (!response.ok) {
-            throw new Error(`Failed to fetch metrics: ${response.statusText}`);
+            const text = await response.text();
+            let errorMessage = `Failed to fetch metrics: ${response.statusText}`;
+            try {
+                const errorData = JSON.parse(text);
+                errorMessage = errorData.detail || errorData.error || errorData.message || errorMessage;
+            } catch {
+                errorMessage = text || `HTTP ${response.status}: ${response.statusText}`;
+            }
+            throw new Error(errorMessage);
         }
 
         const data = await response.json();

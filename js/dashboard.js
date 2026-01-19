@@ -1,5 +1,14 @@
 // Dashboard JavaScript
 
+// Safe JSON parsing helper - checks response.ok before parsing
+async function safeJsonParse(response) {
+    if (!response.ok) {
+        const text = await response.text();
+        throw new Error(text);
+    }
+    return await response.json();
+}
+
 // Format price for display (same logic as property-details.js)
 function formatPropertyPrice(property) {
     // Get price_text from property object
@@ -979,8 +988,15 @@ async function handleImportTable(tableName, file, importBtn) {
         });
         
         if (!response.ok) {
-            const errorData = await response.json().catch(() => ({ detail: response.statusText }));
-            throw new Error(errorData.detail || `Import failed: ${response.statusText}`);
+            const text = await response.text();
+            let errorMessage = `Import failed: ${response.statusText}`;
+            try {
+                const errorData = JSON.parse(text);
+                errorMessage = errorData.detail || errorData.message || errorData.error || errorMessage;
+            } catch {
+                errorMessage = text || `HTTP ${response.status}: ${response.statusText}`;
+            }
+            throw new Error(errorMessage);
         }
         
         const result = await response.json();
@@ -1061,7 +1077,15 @@ async function loadProperties(forceRefresh = false) {
             
             const response = await fetch(`/api/properties?page=${page}&limit=${limit}${cacheBuster}`, fetchOptions);
             if (!response.ok) {
-                throw new Error('Failed to fetch properties');
+                const text = await response.text();
+                let errorMessage = 'Failed to fetch properties';
+                try {
+                    const errorData = JSON.parse(text);
+                    errorMessage = errorData.detail || errorData.message || errorData.error || errorMessage;
+                } catch {
+                    errorMessage = text || `HTTP ${response.status}: ${response.statusText}`;
+                }
+                throw new Error(errorMessage);
             }
             const data = await response.json();
             const properties = data.items || [];
@@ -1259,7 +1283,15 @@ async function loadStats() {
     try {
         const response = await fetch('/api/stats/properties');
         if (!response.ok) {
-            throw new Error('Failed to fetch statistics');
+            const text = await response.text();
+            let errorMessage = 'Failed to fetch statistics';
+            try {
+                const errorData = JSON.parse(text);
+                errorMessage = errorData.detail || errorData.message || errorData.error || errorMessage;
+            } catch {
+                errorMessage = text || `HTTP ${response.status}: ${response.statusText}`;
+            }
+            throw new Error(errorMessage);
         }
         const stats = await response.json();
         
@@ -1335,14 +1367,35 @@ async function loadPageVisitStats() {
     try {
         const response = await authenticatedFetch('/api/admin/stats/page-visits');
         if (!response.ok) {
-            throw new Error('Failed to fetch page visit statistics');
+            const text = await response.text();
+            let errorMessage = 'Failed to fetch page visit statistics';
+            try {
+                const errorData = JSON.parse(text);
+                errorMessage = errorData.detail || errorData.message || errorData.error || errorMessage;
+            } catch {
+                errorMessage = text || `HTTP ${response.status}: ${response.statusText}`;
+            }
+            throw new Error(errorMessage);
         }
         const data = await response.json();
         
         const tableBody = document.getElementById('pageVisitsTableBody');
         if (!tableBody) return;
         
-        if (!data.page_visits || data.page_visits.length === 0) {
+        // Validate that page_visits is an array
+        if (!Array.isArray(data.page_visits)) {
+            console.error('Invalid page_visits data:', data);
+            tableBody.innerHTML = `
+                <tr>
+                    <td colspan="4" style="text-align: center; padding: 2rem; color: var(--danger-color);">
+                        <i class="fas fa-exclamation-triangle"></i> Invalid data format received.
+                    </td>
+                </tr>
+            `;
+            return;
+        }
+        
+        if (data.page_visits.length === 0) {
             tableBody.innerHTML = `
                 <tr>
                     <td colspan="4" style="text-align: center; padding: 2rem; color: var(--text-gray);">
@@ -1353,15 +1406,23 @@ async function loadPageVisitStats() {
             return;
         }
         
-        // Render page visits table
-        tableBody.innerHTML = data.page_visits.map(page => `
+        // Render page visits table with defensive checks
+        tableBody.innerHTML = data.page_visits.map(page => {
+            // Safely extract values with defaults
+            const pageName = page.page || page.page_name || 'Unknown';
+            const visitCount = Number(page.visits ?? page.visit_count ?? 0);
+            const uniqueVisitors = Number(page.unique_visitors ?? 0);
+            const authenticatedVisitors = Number(page.authenticated_visitors ?? 0);
+            
+            return `
             <tr>
-                <td><strong>${escapeHtml(page.page_name)}</strong></td>
-                <td>${page.visit_count.toLocaleString()}</td>
-                <td>${page.unique_visitors.toLocaleString()}</td>
-                <td>${page.authenticated_visitors.toLocaleString()}</td>
+                <td><strong>${escapeHtml(pageName)}</strong></td>
+                <td>${visitCount.toLocaleString()}</td>
+                <td>${uniqueVisitors.toLocaleString()}</td>
+                <td>${authenticatedVisitors.toLocaleString()}</td>
             </tr>
-        `).join('');
+        `;
+        }).join('');
         
     } catch (error) {
         console.error('Error loading page visit statistics:', error);
@@ -1416,7 +1477,15 @@ async function openPropertyModal(propertyId = null) {
         try {
             const response = await fetch(`/api/properties/${propertyId}`);
             if (!response.ok) {
-                throw new Error('Failed to fetch property');
+                const text = await response.text();
+                let errorMessage = 'Failed to fetch property';
+                try {
+                    const errorData = JSON.parse(text);
+                    errorMessage = errorData.detail || errorData.message || errorData.error || errorMessage;
+                } catch {
+                    errorMessage = text || `HTTP ${response.status}: ${response.statusText}`;
+                }
+                throw new Error(errorMessage);
             }
             const property = await response.json();
             
@@ -4004,7 +4073,7 @@ async function handlePropertySubmit(e) {
         if (propertyId) {
             // Update existing property - use generic endpoint (backend handles both types)
             response = await authenticatedFetch(`/api/properties/${propertyId}`, {
-                method: 'PUT',
+                method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
@@ -4238,7 +4307,7 @@ async function handleResidentialPropertySubmit(e) {
         if (propertyId) {
             // Update existing property - use PUT to /api/properties/{id}
             response = await authenticatedFetch(`/api/properties/${propertyId}`, {
-                method: 'PUT',
+                method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
@@ -4256,8 +4325,28 @@ async function handleResidentialPropertySubmit(e) {
         }
 
         if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.detail || errorData.message || 'Failed to save property');
+            const text = await response.text();
+            let errorMessage = 'Failed to save property';
+            try {
+                const errorData = JSON.parse(text);
+                if (errorData.detail) {
+                    if (Array.isArray(errorData.detail)) {
+                        errorMessage = errorData.detail.map(err => {
+                            const field = err.loc ? err.loc.join('.') : 'field';
+                            return `${field}: ${err.msg}`;
+                        }).join(', ');
+                    } else if (typeof errorData.detail === 'string') {
+                        errorMessage = errorData.detail;
+                    } else {
+                        errorMessage = JSON.stringify(errorData.detail);
+                    }
+                } else {
+                    errorMessage = errorData.message || errorData.error || errorMessage;
+                }
+            } catch {
+                errorMessage = text || `HTTP ${response.status}: ${response.statusText}`;
+            }
+            throw new Error(errorMessage);
         }
 
         // Force refresh to bypass cache and show newly added/updated property
@@ -4433,7 +4522,7 @@ async function handlePlotPropertySubmit(e) {
         if (propertyId) {
             // Update existing property - use PUT to /api/properties/{id}
             response = await authenticatedFetch(`/api/properties/${propertyId}`, {
-                method: 'PUT',
+                method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
@@ -4451,8 +4540,28 @@ async function handlePlotPropertySubmit(e) {
         }
 
         if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.detail || errorData.message || 'Failed to save property');
+            const text = await response.text();
+            let errorMessage = 'Failed to save property';
+            try {
+                const errorData = JSON.parse(text);
+                if (errorData.detail) {
+                    if (Array.isArray(errorData.detail)) {
+                        errorMessage = errorData.detail.map(err => {
+                            const field = err.loc ? err.loc.join('.') : 'field';
+                            return `${field}: ${err.msg}`;
+                        }).join(', ');
+                    } else if (typeof errorData.detail === 'string') {
+                        errorMessage = errorData.detail;
+                    } else {
+                        errorMessage = JSON.stringify(errorData.detail);
+                    }
+                } else {
+                    errorMessage = errorData.message || errorData.error || errorMessage;
+                }
+            } catch {
+                errorMessage = text || `HTTP ${response.status}: ${response.statusText}`;
+            }
+            throw new Error(errorMessage);
         }
 
         // Force refresh to bypass cache and show newly added/updated property
@@ -4553,6 +4662,10 @@ async function confirmDelete() {
             response = await authenticatedFetch(`/api/testimonials/${id}`, {
                 method: 'DELETE'
             });
+        } else if (type === 'partner') {
+            response = await authenticatedFetch(`/api/partners/${id}`, {
+                method: 'DELETE'
+            });
         } else {
             response = await authenticatedFetch(`/api/properties/${id}`, {
                 method: 'DELETE'
@@ -4560,8 +4673,15 @@ async function confirmDelete() {
         }
 
         if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.detail || `Failed to delete ${type}`);
+            const text = await response.text();
+            let errorMessage = `Failed to delete ${type}`;
+            try {
+                const errorData = JSON.parse(text);
+                errorMessage = errorData.detail || errorData.message || errorData.error || errorMessage;
+            } catch {
+                errorMessage = text || `HTTP ${response.status}: ${response.statusText}`;
+            }
+            throw new Error(errorMessage);
         }
 
         // Close modal and reload page instead of updating display immediately
@@ -5054,20 +5174,14 @@ async function loadTestimonials(forceRefresh = false) {
         
         if (!response.ok) {
             // Try to get error message from response
+            const text = await response.text();
             let errorMessage = `HTTP ${response.status}: ${response.statusText}`;
             try {
-                const contentType = response.headers.get('content-type');
-                if (contentType && contentType.includes('application/json')) {
-                    const errorData = await response.json();
-                    errorMessage = errorData.detail || errorData.error || errorData.message || errorMessage;
-                } else {
-                    const text = await response.text();
-                    if (text) {
-                        errorMessage = `${errorMessage} - ${text.substring(0, 100)}`;
-                    }
-                }
-            } catch (parseError) {
-                console.warn('Could not parse error response:', parseError);
+                const errorData = JSON.parse(text);
+                errorMessage = errorData.detail || errorData.error || errorData.message || errorMessage;
+            } catch {
+                // If not JSON, use the text as error message
+                errorMessage = text || errorMessage;
             }
             
             console.error('Failed to fetch testimonials:', errorMessage);
@@ -5299,7 +5413,7 @@ async function handleTestimonialSubmit(e) {
         if (testimonialId) {
             // Update existing testimonial
             response = await authenticatedFetch(`/api/testimonials/${testimonialId}`, {
-                method: 'PUT',
+                method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
@@ -5317,21 +5431,29 @@ async function handleTestimonialSubmit(e) {
         }
 
         if (!response.ok) {
-            const errorData = await response.json();
-            // Handle Pydantic validation errors (422)
+            const text = await response.text();
             let errorMessage = 'Failed to save testimonial';
-            if (errorData.detail) {
-                if (Array.isArray(errorData.detail)) {
-                    // Pydantic validation errors are in array format
-                    errorMessage = errorData.detail.map(err => {
-                        const field = err.loc ? err.loc.join('.') : 'field';
-                        return `${field}: ${err.msg}`;
-                    }).join(', ');
-                } else {
-                    errorMessage = errorData.detail;
+            try {
+                const errorData = JSON.parse(text);
+                // Handle Pydantic validation errors (422)
+                if (errorData.detail) {
+                    if (Array.isArray(errorData.detail)) {
+                        // Pydantic validation errors are in array format
+                        errorMessage = errorData.detail.map(err => {
+                            const field = err.loc ? err.loc.join('.') : 'field';
+                            return `${field}: ${err.msg}`;
+                        }).join(', ');
+                    } else {
+                        errorMessage = errorData.detail;
+                    }
+                } else if (errorData.message) {
+                    errorMessage = errorData.message;
+                } else if (errorData.error) {
+                    errorMessage = errorData.error;
                 }
-            } else if (errorData.message) {
-                errorMessage = errorData.message;
+            } catch {
+                // If not JSON, use the text as error message
+                errorMessage = text || `HTTP ${response.status}: ${response.statusText}`;
             }
             throw new Error(errorMessage);
         }
@@ -5384,7 +5506,7 @@ function deleteTestimonial(id) {
 async function toggleTestimonialApproval(id, isApproved) {
     try {
         const response = await authenticatedFetch(`/api/testimonials/${id}`, {
-            method: 'PUT',
+            method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
             },
@@ -5392,7 +5514,15 @@ async function toggleTestimonialApproval(id, isApproved) {
         });
 
         if (!response.ok) {
-            throw new Error('Failed to update testimonial');
+            const text = await response.text();
+            let errorMessage = 'Failed to update testimonial';
+            try {
+                const errorData = JSON.parse(text);
+                errorMessage = errorData.detail || errorData.message || errorData.error || errorMessage;
+            } catch {
+                errorMessage = text || `HTTP ${response.status}: ${response.statusText}`;
+            }
+            throw new Error(errorMessage);
         }
 
         await loadTestimonials(true); // Force refresh after approval change
@@ -5407,7 +5537,7 @@ async function toggleTestimonialApproval(id, isApproved) {
 async function toggleTestimonialFeatured(id, isFeatured) {
     try {
         const response = await authenticatedFetch(`/api/testimonials/${id}`, {
-            method: 'PUT',
+            method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
             },
@@ -5415,7 +5545,15 @@ async function toggleTestimonialFeatured(id, isFeatured) {
         });
 
         if (!response.ok) {
-            throw new Error('Failed to update testimonial');
+            const text = await response.text();
+            let errorMessage = 'Failed to update testimonial';
+            try {
+                const errorData = JSON.parse(text);
+                errorMessage = errorData.detail || errorData.message || errorData.error || errorMessage;
+            } catch {
+                errorMessage = text || `HTTP ${response.status}: ${response.statusText}`;
+            }
+            throw new Error(errorMessage);
         }
 
         await loadTestimonials(true); // Force refresh after featured change
@@ -5455,7 +5593,15 @@ async function loadPartners() {
     try {
         const response = await fetch('/api/partners');
         if (!response.ok) {
-            throw new Error('Failed to fetch partners');
+            const text = await response.text();
+            let errorMessage = 'Failed to fetch partners';
+            try {
+                const errorData = JSON.parse(text);
+                errorMessage = errorData.detail || errorData.message || errorData.error || errorMessage;
+            } catch {
+                errorMessage = text || `HTTP ${response.status}: ${response.statusText}`;
+            }
+            throw new Error(errorMessage);
         }
         const partners = await response.json();
         // Store partners for search functionality
@@ -5689,7 +5835,7 @@ async function handlePartnerSubmit(e) {
         if (partnerId) {
             // Update existing partner
             response = await authenticatedFetch(`/api/partners/${partnerId}`, {
-                method: 'PUT',
+                method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
@@ -6100,7 +6246,7 @@ function renderBlogs(blogs) {
                 <div class="dashboard-table-location">${escapeHtml(blog.author || 'N/A')}</div>
             </td>
             <td>
-                <div class="dashboard-table-location">${(blog.views || 0).toLocaleString()}</div>
+                <div class="dashboard-table-location">${Number(blog.views ?? 0).toLocaleString()}</div>
             </td>
             <td>
                 <span class="dashboard-status ${blog.is_active ? 'active' : 'inactive'}">
@@ -6469,7 +6615,7 @@ async function handleBlogSubmit(e) {
         if (blogId) {
             // Update existing blog
             response = await authenticatedFetch(`/api/blogs/${blogId}`, {
-                method: 'PUT',
+                method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
@@ -7041,7 +7187,7 @@ function renderContactInquiries(inquiries) {
 async function updateInquiryStatus(inquiryId, newStatus) {
     try {
         const response = await authenticatedFetch(`/api/admin/inquiries/${inquiryId}`, {
-            method: 'PUT',
+            method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
             },

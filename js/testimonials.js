@@ -32,12 +32,13 @@ async function loadTestimonialsFromAPI() {
             }
         } else {
             // Log error but don't throw - use empty array
+            const text = await response.text();
             let errorMessage = `HTTP ${response.status}: ${response.statusText}`;
             try {
-                const errorData = await response.json();
-                errorMessage = errorData.detail || errorData.error || errorMessage;
-            } catch (e) {
-                // Ignore JSON parse errors
+                const errorData = JSON.parse(text);
+                errorMessage = errorData.detail || errorData.error || errorData.message || errorMessage;
+            } catch {
+                errorMessage = text || errorMessage;
             }
             console.error('Failed to fetch testimonials:', errorMessage);
         }
@@ -183,8 +184,15 @@ function initTestimonialForm() {
             });
             
             if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.detail || 'Failed to submit testimonial');
+                const text = await response.text();
+                let errorMessage = 'Failed to submit testimonial';
+                try {
+                    const errorData = JSON.parse(text);
+                    errorMessage = errorData.detail || errorData.error || errorData.message || errorMessage;
+                } catch {
+                    errorMessage = text || `HTTP ${response.status}: ${response.statusText}`;
+                }
+                throw new Error(errorMessage);
             }
             
             // Show success message

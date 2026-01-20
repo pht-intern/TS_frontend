@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -10,11 +11,15 @@
     <link rel="icon" type="image/png" href="/images/TirumakudaluProperties_Logo-2048x1858.png">
     <link rel="stylesheet" href="/css/style.css">
     <!-- Google Fonts - Load with fallback, no preconnect to avoid connection issues -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:wght@400;600;700&display=swap" rel="stylesheet" onerror="this.onerror=null; this.href='';">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:wght@400;600;700&display=swap"
+        rel="stylesheet" onerror="this.onerror=null; this.href='';">
     <!-- Font Awesome - Load with fallback -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" onerror="this.onerror=null; this.remove();">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+        onerror="this.onerror=null; this.remove();">
     <!-- Quill Editor CSS - Load with fallback -->
-    <link href="https://cdn.quilljs.com/1.3.7/quill.snow.css" rel="stylesheet" onerror="this.onerror=null; this.remove();">
+    <link href="https://cdn.quilljs.com/1.3.7/quill.snow.css" rel="stylesheet"
+        onerror="this.onerror=null; this.remove();">
     <style>
         /* Hide body content by default - only show after authentication check passes */
         /* Don't hide html element - it can block dev tools */
@@ -23,11 +28,13 @@
             visibility: hidden !important;
             opacity: 0 !important;
         }
+
         body.authenticated {
             display: block !important;
             visibility: visible !important;
             opacity: 1 !important;
         }
+
         /* Show loading message while checking authentication */
         body::before {
             content: 'Checking authentication...';
@@ -42,21 +49,23 @@
             background: white;
             padding: 2rem;
             border-radius: 8px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
         }
+
         body.authenticated::before {
             display: none;
         }
     </style>
 </head>
+
 <body>
     <!-- Authentication Check - Must run immediately before any content -->
     <!-- This script runs synchronously and blocks page rendering until authentication is verified -->
     <script>
         // IMMEDIATE SYNCHRONOUS CHECK - No delays, no async operations
-        (function() {
+        (function () {
             'use strict';
-            
+
             try {
                 // Function to clear all authentication data
                 function clearAllAuthData() {
@@ -76,13 +85,13 @@
                         // Ignore errors during cleanup
                     }
                 }
-                
+
                 // CRITICAL FIX: Add retry mechanism for timing issues
                 // Sometimes storage isn't immediately available after redirect
                 function checkAuthWithRetry(retryCount = 0) {
                     const MAX_RETRIES = 3;
                     const RETRY_DELAY = 50; // 50ms between retries
-                    
+
                     // IMMEDIATE CHECK: Get authentication data synchronously
                     let localAuth, sessionAuth, localUserStr, sessionUserStr;
                     try {
@@ -97,25 +106,25 @@
                         window.location.replace('/index.html');
                         return false;
                     }
-                    
+
                     // Check if authentication flag exists
                     const isAuthenticated = (localAuth === 'true') || (sessionAuth === 'true');
-                    
+
                     // Get user data
                     const userStr = localUserStr || sessionUserStr;
-                    
+
                     // Validate user data exists and is valid JSON with required fields
                     let hasValidUser = false;
                     let user = null;
-                    
+
                     if (userStr) {
                         try {
                             user = JSON.parse(userStr);
                             // STRICT VALIDATION: Must have email (non-empty string) AND admin role
-                            if (user && 
-                                user.email && 
-                                typeof user.email === 'string' && 
-                                user.email.trim() !== '' && 
+                            if (user &&
+                                user.email &&
+                                typeof user.email === 'string' &&
+                                user.email.trim() !== '' &&
                                 user.role === 'admin') {
                                 hasValidUser = true;
                             } else {
@@ -131,7 +140,7 @@
                             hasValidUser = false;
                         }
                     }
-                    
+
                     // CRITICAL CHECK: Both authentication flag AND valid user data must exist
                     // If either is missing or invalid, retry or redirect
                     if (!isAuthenticated || !hasValidUser || !user) {
@@ -140,7 +149,7 @@
                             // Check if we're coming from a login redirect (has _login param)
                             const urlParams = new URLSearchParams(window.location.search);
                             const isLoginRedirect = urlParams.has('_login');
-                            
+
                             if (isLoginRedirect) {
                                 // This is a login redirect - storage might not be ready yet
                                 console.log(`Auth check failed (attempt ${retryCount + 1}/${MAX_RETRIES}), retrying...`, {
@@ -156,7 +165,7 @@
                                 return false;
                             }
                         }
-                        
+
                         // No retries left or not a login redirect - redirect to login
                         console.error('Authentication check failed after retries:', {
                             isAuthenticated,
@@ -178,7 +187,7 @@
                                 if (document.body) {
                                     document.body.style.display = 'block';
                                     document.body.innerHTML = '<div style="font-family: Inter, sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; text-align: center;"><div><h1>Unauthorized Access</h1><p>Redirecting to login...</p></div></div>';
-                                    setTimeout(function() {
+                                    setTimeout(function () {
                                         window.location.href = '/index.html';
                                     }, 1000);
                                 }
@@ -186,19 +195,19 @@
                         }
                         return false;
                     }
-                    
+
                     // Authentication passed - return user data
                     return { user, isAuthenticated, hasValidUser };
                 }
-                
+
                 // Perform auth check with retry
                 const authResult = checkAuthWithRetry();
                 if (!authResult) {
                     return; // Redirect already handled
                 }
-                
+
                 const { user, isAuthenticated, hasValidUser } = authResult;
-                
+
                 // ADDITIONAL SECURITY: Double-check that we have valid data
                 // (Already validated in checkAuthWithRetry, but double-check for safety)
                 if (!user || !user.email || typeof user.email !== 'string' || user.email.trim() === '') {
@@ -207,21 +216,21 @@
                     window.location.replace('/index.html');
                     return;
                 }
-                
+
                 if (user.role !== 'admin') {
                     console.error('User role validation failed:', user.role);
                     clearAllAuthData();
                     window.location.replace('/index.html');
                     return;
                 }
-                
+
                 // Remove login redirect parameter from URL (clean URL)
                 if (window.location.search.includes('_login=')) {
                     const url = new URL(window.location);
                     url.searchParams.delete('_login');
                     window.history.replaceState({}, '', url.pathname + url.search);
                 }
-                
+
                 // Authentication passed - mark body as authenticated
                 // Use multiple methods to ensure the class is added reliably
                 function addAuthenticatedClass() {
@@ -239,35 +248,35 @@
                     }
                     return false;
                 }
-                
+
                 // Try immediately (body might exist if script runs after body tag)
                 addAuthenticatedClass();
-                
+
                 // Also set up listeners for when body becomes available
                 if (document.readyState === 'loading') {
                     // Document is still loading - wait for DOMContentLoaded
-                    document.addEventListener('DOMContentLoaded', function() {
+                    document.addEventListener('DOMContentLoaded', function () {
                         addAuthenticatedClass();
                     });
                 } else {
                     // Document is already loaded or interactive - try immediately and on next tick
                     addAuthenticatedClass();
-                    setTimeout(function() {
+                    setTimeout(function () {
                         addAuthenticatedClass();
                     }, 0);
                 }
-                
+
                 // Fallback: Use readystatechange for older browsers
                 if (document.attachEvent) {
-                    document.attachEvent('onreadystatechange', function() {
+                    document.attachEvent('onreadystatechange', function () {
                         if (document.readyState === 'complete' || document.readyState === 'interactive') {
                             addAuthenticatedClass();
                         }
                     });
                 }
-                
+
                 // Final fallback: Force show after a short delay if authentication passed
-                setTimeout(function() {
+                setTimeout(function () {
                     try {
                         if (document.body && !document.body.classList.contains('authenticated')) {
                             // Authentication passed but class wasn't added - add it now
@@ -277,7 +286,7 @@
                         // Ignore errors
                     }
                 }, 100);
-                
+
             } catch (error) {
                 // If any error occurs, show error message and redirect
                 console.error('Authentication check error:', error);
@@ -289,7 +298,7 @@
                         if (document.body) {
                             document.body.style.display = 'block';
                             document.body.innerHTML = '<div style="font-family: Inter, sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; text-align: center;"><div><h1>Error</h1><p>An error occurred. Redirecting to login...</p></div></div>';
-                            setTimeout(function() {
+                            setTimeout(function () {
                                 window.location.href = '/index.html';
                             }, 2000);
                         } else {
@@ -306,7 +315,7 @@
     <noscript>
         <meta http-equiv="refresh" content="0; url=/index.html">
     </noscript>
-    
+
     <!-- Dashboard (shown when authenticated) -->
     <div class="dashboard-container" id="dashboardContainer">
         <!-- Dashboard Header -->
@@ -315,7 +324,8 @@
                 <div class="dashboard-header-left">
                     <a href="/" class="dashboard-logo-link">
                         <div class="logo-graphic">
-                            <img src="/images/TirumakudaluProperties_Logo-2048x1858.png" alt="Tirumakudalu Properties Logo" class="logo-img">
+                            <img src="/images/TirumakudaluProperties_Logo-2048x1858.png"
+                                alt="Tirumakudalu Properties Logo" class="logo-img">
                         </div>
                     </a>
                     <!-- Dashboard Navigation -->
@@ -342,10 +352,16 @@
                                     <i class="fas fa-user"></i>
                                 </div>
                                 <div class="dashboard-profile-info">
-                                    <div class="dashboard-profile-fullname" id="dashboardProfileFullname">Seshadri T.S</div>
-                                    <div class="dashboard-profile-email" id="dashboardProfileEmail">seshvasu56@gmail.com</div>
+                                    <div class="dashboard-profile-fullname" id="dashboardProfileFullname">Seshadri T.S
+                                    </div>
+                                    <div class="dashboard-profile-email" id="dashboardProfileEmail">seshvasu56@gmail.com
+                                    </div>
                                 </div>
                             </div>
+                            <a href="/app-metrics.html" class="dashboard-profile-item" target="_blank">
+                                <i class="fas fa-cog"></i>
+                                <span>App Metrics</span>
+                            </a>
                             <a href="/settings.html" class="dashboard-profile-item" target="_blank">
                                 <i class="fas fa-cog"></i>
                                 <span>Settings</span>
@@ -373,12 +389,14 @@
                         <i class="fas fa-hand-sparkles"></i>
                         Welcome to Tirumakudalu Dashboard
                     </h1>
-                    <p class="dashboard-welcome-subtitle">Manage your properties, inquiries, and content from one central location</p>
+                    <p class="dashboard-welcome-subtitle">Manage your properties, inquiries, and content from one
+                        central location</p>
                 </div>
 
                 <!-- Dashboard Stats -->
                 <div class="dashboard-stats">
-                    <div class="dashboard-stat-card" data-stat-type="total_properties" data-stat-label="Total Properties">
+                    <div class="dashboard-stat-card" data-stat-type="total_properties"
+                        data-stat-label="Total Properties">
                         <div class="dashboard-stat-icon">
                             <i class="fas fa-building"></i>
                         </div>
@@ -421,17 +439,20 @@
                     <div class="section-header">
                         <h2>Properties</h2>
                     </div>
-                    <div class="dashboard-properties-actions" style="display: flex; gap: 1rem; align-items: center; justify-content: center; flex-wrap: wrap; margin-bottom: 1.5rem;">
+                    <div class="dashboard-properties-actions"
+                        style="display: flex; gap: 1rem; align-items: center; justify-content: center; flex-wrap: wrap; margin-bottom: 1.5rem;">
                         <div class="dashboard-search-box">
                             <i class="fas fa-search"></i>
                             <input type="text" id="propertySearch" placeholder="Search properties...">
                         </div>
                         <input type="file" id="importPropertiesFile" accept=".csv" style="display: none;">
-                        <button class="dashboard-export dashboard-import" id="importPropertiesBtn" title="Import Properties from CSV" style="white-space: nowrap;">
+                        <button class="dashboard-export dashboard-import" id="importPropertiesBtn"
+                            title="Import Properties from CSV" style="white-space: nowrap;">
                             <i class="fas fa-upload"></i>
                             IMPORT CSV
                         </button>
-                        <button class="dashboard-export" id="exportPropertiesBtn" title="Export Properties to CSV" style="white-space: nowrap;">
+                        <button class="dashboard-export" id="exportPropertiesBtn" title="Export Properties to CSV"
+                            style="white-space: nowrap;">
                             <i class="fas fa-download"></i>
                             EXPORT CSV
                         </button>
@@ -465,17 +486,20 @@
                     <div class="section-header">
                         <h2>Testimonials</h2>
                     </div>
-                    <div class="dashboard-properties-actions" style="display: flex; gap: 1rem; align-items: center; justify-content: center; flex-wrap: wrap; margin-bottom: 1.5rem;">
+                    <div class="dashboard-properties-actions"
+                        style="display: flex; gap: 1rem; align-items: center; justify-content: center; flex-wrap: wrap; margin-bottom: 1.5rem;">
                         <div class="dashboard-search-box">
                             <i class="fas fa-search"></i>
                             <input type="text" id="testimonialSearch" placeholder="Search testimonials...">
                         </div>
                         <input type="file" id="importTestimonialsFile" accept=".csv" style="display: none;">
-                        <button class="dashboard-export dashboard-import" id="importTestimonialsBtn" title="Import Testimonials from CSV" style="white-space: nowrap;">
+                        <button class="dashboard-export dashboard-import" id="importTestimonialsBtn"
+                            title="Import Testimonials from CSV" style="white-space: nowrap;">
                             <i class="fas fa-upload"></i>
                             IMPORT CSV
                         </button>
-                        <button class="dashboard-export" id="exportTestimonialsBtn" title="Export Testimonials to CSV" style="white-space: nowrap;">
+                        <button class="dashboard-export" id="exportTestimonialsBtn" title="Export Testimonials to CSV"
+                            style="white-space: nowrap;">
                             <i class="fas fa-download"></i>
                             EXPORT CSV
                         </button>
@@ -508,17 +532,20 @@
                     <div class="section-header">
                         <h2>Partners</h2>
                     </div>
-                    <div class="dashboard-properties-actions" style="display: flex; gap: 1rem; align-items: center; justify-content: center; flex-wrap: wrap; margin-bottom: 1.5rem;">
+                    <div class="dashboard-properties-actions"
+                        style="display: flex; gap: 1rem; align-items: center; justify-content: center; flex-wrap: wrap; margin-bottom: 1.5rem;">
                         <div class="dashboard-search-box">
                             <i class="fas fa-search"></i>
                             <input type="text" id="partnerSearch" placeholder="Search partners...">
                         </div>
                         <input type="file" id="importPartnersFile" accept=".csv" style="display: none;">
-                        <button class="dashboard-export dashboard-import" id="importPartnersBtn" title="Import Partners from CSV" style="white-space: nowrap;">
+                        <button class="dashboard-export dashboard-import" id="importPartnersBtn"
+                            title="Import Partners from CSV" style="white-space: nowrap;">
                             <i class="fas fa-upload"></i>
                             IMPORT CSV
                         </button>
-                        <button class="dashboard-export" id="exportPartnersBtn" title="Export Partners to CSV" style="white-space: nowrap;">
+                        <button class="dashboard-export" id="exportPartnersBtn" title="Export Partners to CSV"
+                            style="white-space: nowrap;">
                             <i class="fas fa-download"></i>
                             EXPORT CSV
                         </button>
@@ -550,17 +577,20 @@
                     <div class="section-header">
                         <h2>Blogs</h2>
                     </div>
-                    <div class="dashboard-properties-actions" style="display: flex; gap: 1rem; align-items: center; justify-content: center; flex-wrap: wrap; margin-bottom: 1.5rem;">
+                    <div class="dashboard-properties-actions"
+                        style="display: flex; gap: 1rem; align-items: center; justify-content: center; flex-wrap: wrap; margin-bottom: 1.5rem;">
                         <div class="dashboard-search-box">
                             <i class="fas fa-search"></i>
                             <input type="text" id="blogSearch" placeholder="Search blogs...">
                         </div>
                         <input type="file" id="importBlogsFile" accept=".csv" style="display: none;">
-                        <button class="dashboard-export dashboard-import" id="importBlogsBtn" title="Import Blogs from CSV" style="white-space: nowrap;">
+                        <button class="dashboard-export dashboard-import" id="importBlogsBtn"
+                            title="Import Blogs from CSV" style="white-space: nowrap;">
                             <i class="fas fa-upload"></i>
                             IMPORT CSV
                         </button>
-                        <button class="dashboard-export" id="exportBlogsBtn" title="Export Blogs to CSV" style="white-space: nowrap;">
+                        <button class="dashboard-export" id="exportBlogsBtn" title="Export Blogs to CSV"
+                            style="white-space: nowrap;">
                             <i class="fas fa-download"></i>
                             EXPORT CSV
                         </button>
@@ -595,17 +625,20 @@
                     <div class="section-header">
                         <h2>Schedule Visit Requests</h2>
                     </div>
-                    <div class="dashboard-properties-actions" style="display: flex; gap: 1rem; align-items: center; justify-content: center; flex-wrap: wrap; margin-bottom: 1.5rem;">
+                    <div class="dashboard-properties-actions"
+                        style="display: flex; gap: 1rem; align-items: center; justify-content: center; flex-wrap: wrap; margin-bottom: 1.5rem;">
                         <div class="dashboard-search-box">
                             <i class="fas fa-search"></i>
                             <input type="text" id="scheduleVisitSearch" placeholder="Search visit requests...">
                         </div>
                         <input type="file" id="importScheduleVisitsFile" accept=".csv" style="display: none;">
-                        <button class="dashboard-export dashboard-import" id="importScheduleVisitsBtn" title="Import Schedule Visit Requests from CSV" style="white-space: nowrap;">
+                        <button class="dashboard-export dashboard-import" id="importScheduleVisitsBtn"
+                            title="Import Schedule Visit Requests from CSV" style="white-space: nowrap;">
                             <i class="fas fa-upload"></i>
                             IMPORT CSV
                         </button>
-                        <button class="dashboard-export" id="exportScheduleVisitsBtn" title="Export Schedule Visit Requests to CSV" style="white-space: nowrap;">
+                        <button class="dashboard-export" id="exportScheduleVisitsBtn"
+                            title="Export Schedule Visit Requests to CSV" style="white-space: nowrap;">
                             <i class="fas fa-download"></i>
                             EXPORT CSV
                         </button>
@@ -637,17 +670,20 @@
                     <div class="section-header">
                         <h2>Contact Inquiries</h2>
                     </div>
-                    <div class="dashboard-properties-actions" style="display: flex; gap: 1rem; align-items: center; justify-content: center; flex-wrap: wrap; margin-bottom: 1.5rem;">
+                    <div class="dashboard-properties-actions"
+                        style="display: flex; gap: 1rem; align-items: center; justify-content: center; flex-wrap: wrap; margin-bottom: 1.5rem;">
                         <div class="dashboard-search-box">
                             <i class="fas fa-search"></i>
                             <input type="text" id="contactInquirySearch" placeholder="Search contact inquiries...">
                         </div>
                         <input type="file" id="importContactInquiriesFile" accept=".csv" style="display: none;">
-                        <button class="dashboard-export dashboard-import" id="importContactInquiriesBtn" title="Import Contact Inquiries from CSV" style="white-space: nowrap;">
+                        <button class="dashboard-export dashboard-import" id="importContactInquiriesBtn"
+                            title="Import Contact Inquiries from CSV" style="white-space: nowrap;">
                             <i class="fas fa-upload"></i>
                             IMPORT CSV
                         </button>
-                        <button class="dashboard-export" id="exportContactInquiriesBtn" title="Export Contact Inquiries to CSV" style="white-space: nowrap;">
+                        <button class="dashboard-export" id="exportContactInquiriesBtn"
+                            title="Export Contact Inquiries to CSV" style="white-space: nowrap;">
                             <i class="fas fa-download"></i>
                             EXPORT CSV
                         </button>
@@ -680,17 +716,20 @@
                     <div class="section-header">
                         <h2>Website Visitors</h2>
                     </div>
-                    <div class="dashboard-properties-actions" style="display: flex; gap: 1rem; align-items: center; justify-content: center; flex-wrap: wrap; margin-bottom: 1.5rem;">
+                    <div class="dashboard-properties-actions"
+                        style="display: flex; gap: 1rem; align-items: center; justify-content: center; flex-wrap: wrap; margin-bottom: 1.5rem;">
                         <div class="dashboard-search-box">
                             <i class="fas fa-search"></i>
                             <input type="text" id="visitorSearch" placeholder="Search visitors...">
                         </div>
                         <input type="file" id="importVisitorsFile" accept=".csv" style="display: none;">
-                        <button class="dashboard-export dashboard-import" id="importVisitorsBtn" title="Import Website Visitors from CSV" style="white-space: nowrap;">
+                        <button class="dashboard-export dashboard-import" id="importVisitorsBtn"
+                            title="Import Website Visitors from CSV" style="white-space: nowrap;">
                             <i class="fas fa-upload"></i>
                             IMPORT CSV
                         </button>
-                        <button class="dashboard-export" id="exportVisitorsBtn" title="Export Website Visitors to CSV" style="white-space: nowrap;">
+                        <button class="dashboard-export" id="exportVisitorsBtn" title="Export Website Visitors to CSV"
+                            style="white-space: nowrap;">
                             <i class="fas fa-download"></i>
                             EXPORT CSV
                         </button>
@@ -755,7 +794,7 @@
             </div>
             <form class="dashboard-property-form" id="partnerForm">
                 <input type="hidden" id="partnerId" name="id">
-                
+
                 <div class="dashboard-form-row">
                     <div class="dashboard-form-group">
                         <label for="partnerName">
@@ -769,7 +808,8 @@
                             <i class="fas fa-globe"></i>
                             Website URL
                         </label>
-                        <input type="url" id="partnerWebsite" name="website_url" placeholder="e.g., https://example.com">
+                        <input type="url" id="partnerWebsite" name="website_url"
+                            placeholder="e.g., https://example.com">
                     </div>
                 </div>
 
@@ -779,7 +819,8 @@
                             <i class="fas fa-sort-numeric-down"></i>
                             Display Order
                         </label>
-                        <input type="number" id="partnerDisplayOrder" name="display_order" placeholder="e.g., 1" min="0" value="0">
+                        <input type="number" id="partnerDisplayOrder" name="display_order" placeholder="e.g., 1" min="0"
+                            value="0">
                     </div>
                     <div class="dashboard-form-group">
                         <label style="display: flex; align-items: center; gap: 0.5rem; margin-top: 2rem;">
@@ -795,7 +836,8 @@
                         Partner Logo (PNG or SVG only, Max 2 files) *
                     </label>
                     <div class="dashboard-image-upload-area" id="partnerLogoUploadArea">
-                        <input type="file" id="partnerLogos" name="logos" multiple accept="image/png,image/svg+xml,.png,.svg" style="display: none;">
+                        <input type="file" id="partnerLogos" name="logos" multiple
+                            accept="image/png,image/svg+xml,.png,.svg" style="display: none;">
                         <div class="dashboard-image-upload-placeholder" id="partnerLogoUploadPlaceholder">
                             <i class="fas fa-cloud-upload-alt"></i>
                             <p>Click to upload logo(s) or drag and drop</p>
@@ -828,21 +870,23 @@
             </div>
             <form class="dashboard-property-form" id="testimonialForm">
                 <input type="hidden" id="testimonialId" name="id">
-                
+
                 <div class="dashboard-form-row">
                     <div class="dashboard-form-group">
                         <label for="testimonialClientName">
                             <i class="fas fa-user"></i>
                             Client Name *
                         </label>
-                        <input type="text" id="testimonialClientName" name="client_name" placeholder="e.g., John Doe" required>
+                        <input type="text" id="testimonialClientName" name="client_name" placeholder="e.g., John Doe"
+                            required>
                     </div>
                     <div class="dashboard-form-group">
                         <label for="testimonialClientEmail">
                             <i class="fas fa-envelope"></i>
                             Email
                         </label>
-                        <input type="email" id="testimonialClientEmail" name="client_email" placeholder="e.g., john@example.com">
+                        <input type="email" id="testimonialClientEmail" name="client_email"
+                            placeholder="e.g., john@example.com">
                     </div>
                 </div>
 
@@ -852,14 +896,16 @@
                             <i class="fas fa-phone"></i>
                             Phone
                         </label>
-                        <input type="text" id="testimonialClientPhone" name="client_phone" placeholder="e.g., +1234567890">
+                        <input type="text" id="testimonialClientPhone" name="client_phone"
+                            placeholder="e.g., +1234567890">
                     </div>
                     <div class="dashboard-form-group">
                         <label for="testimonialServiceType">
                             <i class="fas fa-briefcase"></i>
                             Service Type
                         </label>
-                        <input type="text" id="testimonialServiceType" name="service_type" placeholder="e.g., Property Purchase">
+                        <input type="text" id="testimonialServiceType" name="service_type"
+                            placeholder="e.g., Property Purchase">
                     </div>
                 </div>
 
@@ -885,7 +931,8 @@
                         <i class="fas fa-comment"></i>
                         Message *
                     </label>
-                    <textarea id="testimonialMessage" name="message" rows="5" placeholder="Enter testimonial message..." required></textarea>
+                    <textarea id="testimonialMessage" name="message" rows="5" placeholder="Enter testimonial message..."
+                        required></textarea>
                 </div>
 
                 <div class="dashboard-form-row">
@@ -921,14 +968,15 @@
             </div>
             <form class="dashboard-property-form" id="blogForm">
                 <input type="hidden" id="blogId" name="id">
-                
+
                 <div class="dashboard-form-row">
                     <div class="dashboard-form-group">
                         <label for="blogTitle">
                             <i class="fas fa-heading"></i>
                             Blog Title *
                         </label>
-                        <input type="text" id="blogTitle" name="title" placeholder="e.g., Top 10 Real Estate Investment Tips" required>
+                        <input type="text" id="blogTitle" name="title"
+                            placeholder="e.g., Top 10 Real Estate Investment Tips" required>
                     </div>
                     <div class="dashboard-form-group">
                         <label for="blogCategory">
@@ -953,7 +1001,8 @@
                             <i class="fas fa-user"></i>
                             Author
                         </label>
-                        <input type="text" id="blogAuthor" name="author" placeholder="e.g., Tirumakudalu Properties" value="Tirumakudalu Properties">
+                        <input type="text" id="blogAuthor" name="author" placeholder="e.g., Tirumakudalu Properties"
+                            value="Tirumakudalu Properties">
                     </div>
                 </div>
 
@@ -978,7 +1027,8 @@
                         <i class="fas fa-align-left"></i>
                         Excerpt *
                     </label>
-                    <textarea id="blogExcerpt" name="excerpt" rows="3" placeholder="Enter a brief summary of the blog post..." required></textarea>
+                    <textarea id="blogExcerpt" name="excerpt" rows="3"
+                        placeholder="Enter a brief summary of the blog post..." required></textarea>
                 </div>
 
                 <div class="dashboard-form-group">
@@ -997,7 +1047,8 @@
                     </label>
                     <div class="dashboard-features-container">
                         <div class="dashboard-features-input-wrapper">
-                            <input type="text" id="blogTagInput" placeholder="Add a tag (e.g., bengaluru, investment, etc.)">
+                            <input type="text" id="blogTagInput"
+                                placeholder="Add a tag (e.g., bengaluru, investment, etc.)">
                             <button type="button" class="dashboard-btn-add-feature" id="addBlogTagBtn">
                                 <i class="fas fa-plus"></i>
                                 Add
@@ -1045,7 +1096,7 @@
             </div>
             <form class="dashboard-property-form" id="residentialPropertyForm">
                 <input type="hidden" id="residentialPropertyId" name="id">
-                
+
                 <!-- Step Progress Indicator -->
                 <div class="dashboard-form-steps">
                     <div class="dashboard-step-indicator">
@@ -1074,7 +1125,8 @@
                                 <i class="fas fa-building"></i>
                                 Project Name *
                             </label>
-                            <input type="text" id="residentialPropertyName" name="property_name" placeholder="e.g., Prestige Shantiniketan" required>
+                            <input type="text" id="residentialPropertyName" name="property_name"
+                                placeholder="e.g., Prestige Shantiniketan" required>
                         </div>
                         <div class="dashboard-form-group">
                             <label for="residentialCity">
@@ -1093,14 +1145,16 @@
                                 <i class="fas fa-location-dot"></i>
                                 Locality/Area *
                             </label>
-                            <input type="text" id="residentialLocality" name="locality" placeholder="e.g., Whitefield" required>
+                            <input type="text" id="residentialLocality" name="locality" placeholder="e.g., Whitefield"
+                                required>
                         </div>
                         <div class="dashboard-form-group">
                             <label for="residentialLocationLink">
                                 <i class="fas fa-link"></i>
                                 Location Link
                             </label>
-                            <input type="url" id="residentialLocationLink" name="location_link" placeholder="e.g., https://maps.google.com/...">
+                            <input type="url" id="residentialLocationLink" name="location_link"
+                                placeholder="e.g., https://maps.google.com/...">
                         </div>
                     </div>
 
@@ -1123,7 +1177,8 @@
                                 <i class="fas fa-rupee-sign"></i>
                                 Price *
                             </label>
-                            <input type="text" id="residentialPrice" name="price" placeholder="e.g., Rs. 1.2 Cr" required>
+                            <input type="text" id="residentialPrice" name="price" placeholder="e.g., Rs. 1.2 Cr"
+                                required>
                         </div>
                     </div>
                 </div>
@@ -1143,7 +1198,8 @@
                         <div id="residentialGalleryContainer">
                             <!-- Gallery items will be dynamically added here -->
                         </div>
-                        <button type="button" class="dashboard-btn-secondary" id="residentialAddImageBtn" style="margin-top: 1rem;">
+                        <button type="button" class="dashboard-btn-secondary" id="residentialAddImageBtn"
+                            style="margin-top: 1rem;">
                             <i class="fas fa-plus"></i>
                             Add Image
                         </button>
@@ -1154,7 +1210,8 @@
                             <i class="fas fa-video"></i>
                             Video Preview Link
                         </label>
-                        <input type="url" id="residentialVideoPreviewLink" name="video_preview_link" placeholder="e.g., https://www.youtube.com/watch?v=... or https://vimeo.com/...">
+                        <input type="url" id="residentialVideoPreviewLink" name="video_preview_link"
+                            placeholder="e.g., https://www.youtube.com/watch?v=... or https://vimeo.com/...">
                     </div>
 
                     <div class="dashboard-form-group">
@@ -1162,13 +1219,15 @@
                             <i class="fas fa-align-left"></i>
                             Description
                         </label>
-                        <textarea id="residentialDescription" name="description" rows="5" placeholder="Enter property description..."></textarea>
+                        <textarea id="residentialDescription" name="description" rows="5"
+                            placeholder="Enter property description..."></textarea>
                     </div>
 
                     <div class="dashboard-form-row">
                         <div class="dashboard-form-group">
                             <label style="display: flex; align-items: center; gap: 0.5rem;">
-                                <input type="checkbox" id="residentialIsFeatured" name="is_featured" style="width: auto;">
+                                <input type="checkbox" id="residentialIsFeatured" name="is_featured"
+                                    style="width: auto;">
                                 <span>Featured</span>
                             </label>
                         </div>
@@ -1187,7 +1246,8 @@
                         Cancel
                     </button>
                     <div class="dashboard-step-buttons">
-                        <button type="button" class="dashboard-btn-secondary" id="residentialPrevStepBtn" style="display: none;">
+                        <button type="button" class="dashboard-btn-secondary" id="residentialPrevStepBtn"
+                            style="display: none;">
                             <i class="fas fa-arrow-left"></i>
                             Previous
                         </button>
@@ -1195,7 +1255,8 @@
                             Next
                             <i class="fas fa-arrow-right"></i>
                         </button>
-                        <button type="submit" class="dashboard-btn-primary" id="residentialSubmitBtn" style="display: none;">
+                        <button type="submit" class="dashboard-btn-primary" id="residentialSubmitBtn"
+                            style="display: none;">
                             <i class="fas fa-save"></i>
                             Save Property
                         </button>
@@ -1216,7 +1277,8 @@
                 </button>
             </div>
             <div class="dashboard-modal-body">
-                <p id="deleteModalMessage">Are you sure you want to delete this property? This action cannot be undone.</p>
+                <p id="deleteModalMessage">Are you sure you want to delete this property? This action cannot be undone.
+                </p>
             </div>
             <div class="dashboard-modal-actions">
                 <button type="button" class="dashboard-btn-secondary" id="cancelDeleteBtn">Cancel</button>
@@ -1268,7 +1330,8 @@
                             <div class="contact-inquiry-info-content">
                                 <label class="contact-inquiry-label">Email</label>
                                 <p class="contact-inquiry-value">
-                                    <a href="#" id="contactInquiryViewEmail" style="color: var(--primary-color); text-decoration: none;">-</a>
+                                    <a href="#" id="contactInquiryViewEmail"
+                                        style="color: var(--primary-color); text-decoration: none;">-</a>
                                 </p>
                             </div>
                         </div>
@@ -1346,12 +1409,14 @@
                     </div>
 
                     <!-- Status Update Section -->
-                    <div class="contact-inquiry-status-update" style="margin-top: 2rem; padding-top: 2rem; border-top: 2px solid var(--primary-lighter);">
+                    <div class="contact-inquiry-status-update"
+                        style="margin-top: 2rem; padding-top: 2rem; border-top: 2px solid var(--primary-lighter);">
                         <label class="contact-inquiry-label">
                             <i class="fas fa-edit" style="margin-right: 0.5rem;"></i>
                             Update Status
                         </label>
-                        <select class="dashboard-status-select" id="contactInquiryViewStatusSelect" style="width: 100%; max-width: 300px; margin-top: 0.5rem;">
+                        <select class="dashboard-status-select" id="contactInquiryViewStatusSelect"
+                            style="width: 100%; max-width: 300px; margin-top: 0.5rem;">
                             <option value="new">New</option>
                             <option value="read">Read</option>
                             <option value="replied">Replied</option>
@@ -1360,7 +1425,8 @@
                     </div>
                 </div>
             </div>
-            <div class="dashboard-modal-actions" style="padding: 1.5rem 2rem; border-top: 2px solid var(--primary-lighter);">
+            <div class="dashboard-modal-actions"
+                style="padding: 1.5rem 2rem; border-top: 2px solid var(--primary-lighter);">
                 <button type="button" class="dashboard-btn-secondary" id="contactInquiryViewCloseBtn">Close</button>
                 <button type="button" class="dashboard-btn-primary" id="contactInquiryViewUpdateBtn">
                     <i class="fas fa-save"></i>
@@ -1373,12 +1439,12 @@
     <script>
         // CRITICAL: Suppress browser extension errors IMMEDIATELY - must run before any other scripts
         // This prevents browser extension errors from cluttering the console
-        (function() {
+        (function () {
             'use strict';
-            
+
             // Suppress console errors from browser extensions
             const originalConsoleError = console.error;
-            console.error = function(...args) {
+            console.error = function (...args) {
                 const message = args.join(' ');
                 if (message && (
                     message.includes('message channel closed') ||
@@ -1394,9 +1460,9 @@
                 // Call original console.error for legitimate errors
                 originalConsoleError.apply(console, args);
             };
-            
+
             // Suppress window error events from browser extensions
-            window.addEventListener('error', function(event) {
+            window.addEventListener('error', function (event) {
                 const message = event.message || (event.error && event.error.message) || '';
                 if (message && (
                     message.includes('message channel closed') ||
@@ -1412,11 +1478,11 @@
                     return false;
                 }
             }, true);
-            
+
             // Suppress unhandled promise rejections from browser extensions
-            window.addEventListener('unhandledrejection', function(event) {
+            window.addEventListener('unhandledrejection', function (event) {
                 let message = '';
-                
+
                 if (event.reason) {
                     if (typeof event.reason === 'object' && event.reason.message) {
                         message = event.reason.message;
@@ -1426,7 +1492,7 @@
                         message = event.reason.toString();
                     }
                 }
-                
+
                 if (message && (
                     message.includes('message channel closed') ||
                     message.includes('Extension context invalidated') ||
@@ -1443,12 +1509,14 @@
         })();
     </script>
     <!-- Quill Editor - Load with fallback -->
-    <script src="https://cdn.quilljs.com/1.3.7/quill.js" onerror="console.warn('Quill.js CDN failed to load'); this.onerror=null; this.remove();"></script>
+    <script src="https://cdn.quilljs.com/1.3.7/quill.js"
+        onerror="console.warn('Quill.js CDN failed to load'); this.onerror=null; this.remove();"></script>
     <!-- Chart.js - Load with fallback -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js" onerror="console.warn('Chart.js CDN failed to load'); this.onerror=null; this.remove();"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"
+        onerror="console.warn('Chart.js CDN failed to load'); this.onerror=null; this.remove();"></script>
     <script src="/js/session-manager.js"></script>
     <script src="/js/dashboard.js?v=20250120120000"></script>
     <script src="/js/page-tracking.js"></script>
 </body>
-</html>
 
+</html>

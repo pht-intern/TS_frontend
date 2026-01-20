@@ -1493,22 +1493,17 @@ async function openResidentialPropertyModal(propertyId = null) {
         }
     }
     
-    // Reset unit type buttons
-    const unitTypeButtons = document.querySelectorAll('#residentialPropertyForm .dashboard-unit-type-btn');
-    unitTypeButtons.forEach(btn => btn.classList.remove('active'));
-    
-    // Set default to 1BHK
-    const defaultButton = document.getElementById('residentialUnitType1BHK');
-    const bedroomsInput = document.getElementById('residentialBedrooms');
-    const unitTypeInput = document.getElementById('residentialUnitType');
-    if (defaultButton) {
-        defaultButton.classList.add('active');
-        if (bedroomsInput) bedroomsInput.value = '1';
-        if (unitTypeInput) unitTypeInput.value = 'bhk';
-    }
+    // Reset unit type buttons - will be set after Step 2 is loaded
+    // Note: Default selection happens in initializeStep2EventListeners after buttons are generated
 
     // Load amenities if not already loaded
     await loadAmenitiesForResidentialForm();
+    
+    // Load cities for the dropdown
+    await loadCitiesForResidentialForm();
+    
+    // Load unit types for the form
+    await loadUnitTypesForResidentialForm();
 
     if (propertyId) {
         modalTitle.textContent = 'Edit Property';
@@ -1862,6 +1857,25 @@ function loadStep2Content(propertyType, container) {
 
 // Get HTML for Apartments Step 2
 function getApartmentsStep2HTML() {
+    // Get first unit type as default
+    const defaultUnitType = allUnitTypes && allUnitTypes.length > 0 
+        ? allUnitTypes.find(ut => {
+            const name = (ut.name || '').toUpperCase();
+            const bedrooms = ut.bedrooms || 0;
+            return name.includes('BHK') || (bedrooms >= 1 && bedrooms <= 4);
+        }) || allUnitTypes[0]
+        : null;
+    
+    const defaultBedrooms = defaultUnitType ? (defaultUnitType.bedrooms || 1) : 1;
+    const defaultUnitTypeValue = defaultUnitType ? (() => {
+        const nameUpper = (defaultUnitType.name || '').toUpperCase();
+        if (nameUpper.includes('RK') || nameUpper.includes('ROOM')) return 'rk';
+        if (nameUpper.includes('VILLA')) return 'villa';
+        if (nameUpper.includes('BHK')) return 'bhk';
+        if ((defaultUnitType.bedrooms || 0) >= 4) return '4plus';
+        return 'bhk';
+    })() : 'bhk';
+    
     return `
         <div class="dashboard-form-group">
             <label>
@@ -1869,13 +1883,10 @@ function getApartmentsStep2HTML() {
                 Unit Type *
             </label>
             <div class="dashboard-unit-type-buttons">
-                <button type="button" class="dashboard-unit-type-btn" id="residentialUnitType1BHK" data-bedrooms="1" data-unit-type="bhk">1 BHK</button>
-                <button type="button" class="dashboard-unit-type-btn" id="residentialUnitType2BHK" data-bedrooms="2" data-unit-type="bhk">2 BHK</button>
-                <button type="button" class="dashboard-unit-type-btn" id="residentialUnitType3BHK" data-bedrooms="3" data-unit-type="bhk">3 BHK</button>
-                <button type="button" class="dashboard-unit-type-btn" id="residentialUnitType4BHK" data-bedrooms="4" data-unit-type="bhk">4 BHK</button>
+                ${generateUnitTypeButtonsHTML('apartments')}
             </div>
-            <input type="hidden" id="residentialUnitType" name="unit_type" value="bhk">
-            <input type="hidden" id="residentialBedrooms" name="bedrooms" value="1">
+            <input type="hidden" id="residentialUnitType" name="unit_type" value="${defaultUnitTypeValue}">
+            <input type="hidden" id="residentialBedrooms" name="bedrooms" value="${defaultBedrooms}">
         </div>
 
         <div class="dashboard-form-row">
@@ -1984,9 +1995,7 @@ function getVillasStep2HTML() {
                 Unit Type *
             </label>
             <div class="dashboard-unit-type-buttons">
-                <button type="button" class="dashboard-unit-type-btn" id="residentialUnitType3BHK" data-bedrooms="3" data-unit-type="villa">3 BHK</button>
-                <button type="button" class="dashboard-unit-type-btn" id="residentialUnitType4BHK" data-bedrooms="4" data-unit-type="villa">4 BHK</button>
-                <button type="button" class="dashboard-unit-type-btn" id="residentialUnitType5PlusBHK" data-bedrooms="5" data-unit-type="villa">5+ BHK</button>
+                ${generateUnitTypeButtonsHTML('villas')}
             </div>
             <input type="hidden" id="residentialUnitType" name="unit_type" value="villa">
             <input type="hidden" id="residentialBedrooms" name="bedrooms" value="3">
@@ -2111,9 +2120,7 @@ function getIndividualHouseStep2HTML() {
                 Unit Type *
             </label>
             <div class="dashboard-unit-type-buttons">
-                <button type="button" class="dashboard-unit-type-btn" id="residentialUnitType3BHK" data-bedrooms="3" data-unit-type="villa">3 BHK</button>
-                <button type="button" class="dashboard-unit-type-btn" id="residentialUnitType4BHK" data-bedrooms="4" data-unit-type="villa">4 BHK</button>
-                <button type="button" class="dashboard-unit-type-btn" id="residentialUnitType5PlusBHK" data-bedrooms="5" data-unit-type="villa">5+ BHK</button>
+                ${generateUnitTypeButtonsHTML('villas')}
             </div>
             <input type="hidden" id="residentialUnitType" name="unit_type" value="villa">
             <input type="hidden" id="residentialBedrooms" name="bedrooms" value="3">
@@ -2233,6 +2240,27 @@ function getPlotPropertiesStep2HTML() {
 function initializeStep2EventListeners(propertyType) {
     // Initialize unit type buttons for apartments and villas
     const unitTypeButtons = document.querySelectorAll('#residentialStep2 .dashboard-unit-type-btn');
+    
+    // Set first button as active by default if no button is already active
+    if (unitTypeButtons.length > 0) {
+        const hasActiveButton = Array.from(unitTypeButtons).some(btn => btn.classList.contains('active'));
+        if (!hasActiveButton) {
+            const firstButton = unitTypeButtons[0];
+            firstButton.classList.add('active');
+            
+            // Update hidden input fields with first button's values
+            const bedroomsInput = document.getElementById('residentialBedrooms');
+            const unitTypeInput = document.getElementById('residentialUnitType');
+            
+            if (bedroomsInput && firstButton.dataset.bedrooms) {
+                bedroomsInput.value = firstButton.dataset.bedrooms;
+            }
+            if (unitTypeInput && firstButton.dataset.unitType) {
+                unitTypeInput.value = firstButton.dataset.unitType;
+            }
+        }
+    }
+    
     unitTypeButtons.forEach(btn => {
         btn.addEventListener('click', () => {
             // Remove active class from all buttons in Step 2
@@ -2316,6 +2344,216 @@ async function loadAmenitiesForResidentialForm() {
     }
 }
 
+// Load cities for residential property form dropdown
+async function loadCitiesForResidentialForm() {
+    try {
+        // Add cache-busting timestamp to ensure fresh data
+        const timestamp = new Date().getTime();
+        const response = await fetch(`/api/cities?_t=${timestamp}`, {
+            method: 'GET',
+            cache: 'no-cache',
+            headers: {
+                'Cache-Control': 'no-cache'
+            }
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            const citySelect = document.getElementById('residentialCity');
+            if (citySelect && data.cities && Array.isArray(data.cities)) {
+                // Store current selection before clearing
+                const currentValue = citySelect.value;
+                
+                // Clear existing options except the first "Select City" option
+                citySelect.innerHTML = '<option value="">Select City</option>';
+                
+                // If no active cities, show message
+                if (data.cities.length === 0) {
+                    const option = document.createElement('option');
+                    option.value = '';
+                    option.textContent = 'No active cities available';
+                    option.disabled = true;
+                    citySelect.appendChild(option);
+                    return;
+                }
+                
+                // Group cities by state
+                const citiesByState = {};
+                data.cities.forEach(city => {
+                    // Handle both string and object formats
+                    const cityName = typeof city === 'string' ? city : (city.name || '');
+                    const state = typeof city === 'object' ? (city.state || 'Other') : 'Other';
+                    
+                    if (cityName && cityName.trim()) {
+                        if (!citiesByState[state]) {
+                            citiesByState[state] = [];
+                        }
+                        citiesByState[state].push(cityName.trim());
+                    }
+                });
+                
+                // Sort states and cities
+                const sortedStates = Object.keys(citiesByState).sort();
+                sortedStates.forEach(state => {
+                    const cities = citiesByState[state].sort();
+                    cities.forEach(cityName => {
+                        const option = document.createElement('option');
+                        option.value = cityName;
+                        option.textContent = `${cityName}, ${state}`;
+                        citySelect.appendChild(option);
+                    });
+                });
+                
+                // Restore previous selection if it exists
+                if (currentValue && citySelect.querySelector(`option[value="${currentValue}"]`)) {
+                    citySelect.value = currentValue;
+                }
+            }
+        } else {
+            console.error('Failed to load cities:', response.status, response.statusText);
+            const citySelect = document.getElementById('residentialCity');
+            if (citySelect) {
+                const option = document.createElement('option');
+                option.value = '';
+                option.textContent = 'Error loading cities';
+                option.disabled = true;
+                citySelect.appendChild(option);
+            }
+        }
+    } catch (error) {
+        console.error('Error loading cities:', error);
+        const citySelect = document.getElementById('residentialCity');
+        if (citySelect) {
+            const option = document.createElement('option');
+            option.value = '';
+            option.textContent = 'Error loading cities';
+            option.disabled = true;
+            citySelect.appendChild(option);
+        }
+    }
+}
+
+// Store unit types globally
+let allUnitTypes = [];
+
+// Load unit types for residential property form
+async function loadUnitTypesForResidentialForm() {
+    try {
+        // Add cache-busting timestamp to ensure fresh data
+        const timestamp = new Date().getTime();
+        const response = await fetch(`/api/unit-types?_t=${timestamp}`, {
+            method: 'GET',
+            cache: 'no-cache',
+            headers: {
+                'Cache-Control': 'no-cache'
+            }
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            if (data.unit_types && Array.isArray(data.unit_types)) {
+                // Store unit types globally
+                allUnitTypes = data.unit_types.filter(ut => ut && ut.name && ut.display_name);
+                // Sort by bedrooms, then by name
+                allUnitTypes.sort((a, b) => {
+                    const bedroomsA = a.bedrooms || 0;
+                    const bedroomsB = b.bedrooms || 0;
+                    if (bedroomsA !== bedroomsB) {
+                        return bedroomsA - bedroomsB;
+                    }
+                    return (a.name || '').localeCompare(b.name || '');
+                });
+            }
+        } else {
+            console.error('Failed to load unit types:', response.status, response.statusText);
+            // Fallback to empty array
+            allUnitTypes = [];
+        }
+    } catch (error) {
+        console.error('Error loading unit types:', error);
+        // Fallback to empty array
+        allUnitTypes = [];
+    }
+}
+
+// Generate unit type buttons HTML based on property type
+function generateUnitTypeButtonsHTML(propertyType) {
+    if (!allUnitTypes || allUnitTypes.length === 0) {
+        // Fallback to default buttons if unit types not loaded
+        if (propertyType === 'apartments') {
+            return `
+                <button type="button" class="dashboard-unit-type-btn" id="residentialUnitType1BHK" data-bedrooms="1" data-unit-type="bhk">1 BHK</button>
+                <button type="button" class="dashboard-unit-type-btn" id="residentialUnitType2BHK" data-bedrooms="2" data-unit-type="bhk">2 BHK</button>
+                <button type="button" class="dashboard-unit-type-btn" id="residentialUnitType3BHK" data-bedrooms="3" data-unit-type="bhk">3 BHK</button>
+                <button type="button" class="dashboard-unit-type-btn" id="residentialUnitType4BHK" data-bedrooms="4" data-unit-type="bhk">4 BHK</button>
+            `;
+        } else if (propertyType === 'villas' || propertyType === 'individual_house') {
+            return `
+                <button type="button" class="dashboard-unit-type-btn" id="residentialUnitType3BHK" data-bedrooms="3" data-unit-type="villa">3 BHK</button>
+                <button type="button" class="dashboard-unit-type-btn" id="residentialUnitType4BHK" data-bedrooms="4" data-unit-type="villa">4 BHK</button>
+                <button type="button" class="dashboard-unit-type-btn" id="residentialUnitType5PlusBHK" data-bedrooms="5" data-unit-type="villa">5+ BHK</button>
+            `;
+        }
+        return '';
+    }
+    
+    // Filter unit types based on property type
+    let filteredUnitTypes = [];
+    
+    if (propertyType === 'apartments') {
+        // For apartments, show BHK types (typically 1-4 bedrooms)
+        filteredUnitTypes = allUnitTypes.filter(ut => {
+            const name = (ut.name || '').toUpperCase();
+            const bedrooms = ut.bedrooms || 0;
+            // Include BHK types and unit types with 1-4 bedrooms
+            return name.includes('BHK') || (bedrooms >= 1 && bedrooms <= 4);
+        });
+    } else if (propertyType === 'villas' || propertyType === 'individual_house') {
+        // For villas/houses, show larger unit types (typically 3+ bedrooms)
+        filteredUnitTypes = allUnitTypes.filter(ut => {
+            const bedrooms = ut.bedrooms || 0;
+            // Include unit types with 3+ bedrooms
+            return bedrooms >= 3;
+        });
+    } else {
+        // For other types, show all unit types
+        filteredUnitTypes = allUnitTypes;
+    }
+    
+    // If no filtered unit types, use all unit types as fallback
+    if (filteredUnitTypes.length === 0) {
+        filteredUnitTypes = allUnitTypes;
+    }
+    
+    // Generate buttons HTML
+    let buttonsHTML = '';
+    filteredUnitTypes.forEach((unitType, index) => {
+        const unitTypeName = unitType.name || '';
+        const displayName = unitType.display_name || unitTypeName;
+        const bedrooms = unitType.bedrooms || 0;
+        
+        // Determine unit_type value based on name
+        let unitTypeValue = 'bhk';
+        const nameUpper = unitTypeName.toUpperCase();
+        if (nameUpper.includes('RK') || nameUpper.includes('ROOM')) {
+            unitTypeValue = 'rk';
+        } else if (nameUpper.includes('VILLA')) {
+            unitTypeValue = 'villa';
+        } else if (nameUpper.includes('BHK')) {
+            unitTypeValue = 'bhk';
+        } else if (bedrooms >= 4) {
+            unitTypeValue = '4plus';
+        }
+        
+        // Create unique ID for button
+        const buttonId = `residentialUnitType${unitTypeName.replace(/[^a-zA-Z0-9]/g, '')}${index}`;
+        
+        buttonsHTML += `<button type="button" class="dashboard-unit-type-btn" id="${buttonId}" data-bedrooms="${bedrooms}" data-unit-type="${unitTypeValue}" data-unit-type-name="${unitTypeName}">${displayName}</button>`;
+    });
+    
+    return buttonsHTML || '<button type="button" class="dashboard-unit-type-btn" disabled>No unit types available</button>';
+}
+
 // Populate Residential Property Form
 function populateResidentialForm(property) {
     // Guard: Ensure property exists
@@ -2329,7 +2567,20 @@ function populateResidentialForm(property) {
     if (propertyIdInput) propertyIdInput.value = property.id || '';
     
     const cityInput = document.getElementById('residentialCity');
-    if (cityInput) cityInput.value = property.city || '';
+    if (cityInput && property.city) {
+        // Check if the city exists in the dropdown
+        const cityOption = cityInput.querySelector(`option[value="${property.city}"]`);
+        if (cityOption) {
+            cityInput.value = property.city;
+        } else {
+            // If city doesn't exist in dropdown (e.g., it was deactivated), add it as an option
+            const option = document.createElement('option');
+            option.value = property.city;
+            option.textContent = property.city;
+            cityInput.appendChild(option);
+            cityInput.value = property.city;
+        }
+    }
     
     const localityInput = document.getElementById('residentialLocality');
     if (localityInput) localityInput.value = property.locality || '';
@@ -2552,17 +2803,39 @@ function populateStep2Fields(property) {
             if (carpetInput) carpetInput.value = property.carpet_area;
         }
         
-        // Set unit type buttons
+        // Set unit type buttons - match by bedrooms and unit_type
         const bedrooms = property.bedrooms || 1;
+        const unitType = property.unit_type || 'bhk';
         const unitTypeButtons = document.querySelectorAll('#residentialStep2 .dashboard-unit-type-btn');
         unitTypeButtons.forEach(btn => btn.classList.remove('active'));
-        const activeButton = document.getElementById(`residentialUnitType${bedrooms}BHK`);
+        
+        // Find button matching bedrooms and unit_type
+        const activeButton = Array.from(unitTypeButtons).find(btn => {
+            const btnBedrooms = parseInt(btn.dataset.bedrooms) || 0;
+            const btnUnitType = btn.dataset.unitType || '';
+            return btnBedrooms === bedrooms && btnUnitType === unitType;
+        });
+        
         if (activeButton) {
             activeButton.classList.add('active');
             const bedroomsInput = document.getElementById('residentialBedrooms');
             const unitTypeInput = document.getElementById('residentialUnitType');
             if (bedroomsInput) bedroomsInput.value = bedrooms;
-            if (unitTypeInput) unitTypeInput.value = 'bhk';
+            if (unitTypeInput) unitTypeInput.value = unitType;
+        } else {
+            // Fallback: select first button if no match found
+            if (unitTypeButtons.length > 0) {
+                const firstButton = unitTypeButtons[0];
+                firstButton.classList.add('active');
+                const bedroomsInput = document.getElementById('residentialBedrooms');
+                const unitTypeInput = document.getElementById('residentialUnitType');
+                if (bedroomsInput && firstButton.dataset.bedrooms) {
+                    bedroomsInput.value = firstButton.dataset.bedrooms;
+                }
+                if (unitTypeInput && firstButton.dataset.unitType) {
+                    unitTypeInput.value = firstButton.dataset.unitType;
+                }
+            }
         }
         
         // Load amenities (wait for them to be loaded)
@@ -2637,22 +2910,39 @@ function populateStep2Fields(property) {
             if (bathroomsInput) bathroomsInput.value = property.bathrooms;
         }
         
-        // Set unit type buttons
+        // Set unit type buttons - match by bedrooms and unit_type
         const bedrooms = property.bedrooms || 3;
+        const unitType = property.unit_type || 'villa';
         const unitTypeButtons = document.querySelectorAll('#residentialStep2 .dashboard-unit-type-btn');
         unitTypeButtons.forEach(btn => btn.classList.remove('active'));
-        let activeButton = null;
-        if (bedrooms >= 5) {
-            activeButton = document.getElementById('residentialUnitType5PlusBHK');
-        } else {
-            activeButton = document.getElementById(`residentialUnitType${bedrooms}BHK`);
-        }
+        
+        // Find button matching bedrooms and unit_type
+        let activeButton = Array.from(unitTypeButtons).find(btn => {
+            const btnBedrooms = parseInt(btn.dataset.bedrooms) || 0;
+            const btnUnitType = btn.dataset.unitType || '';
+            return btnBedrooms === bedrooms && btnUnitType === unitType;
+        });
+        
         if (activeButton) {
             activeButton.classList.add('active');
             const bedroomsInput = document.getElementById('residentialBedrooms');
             const unitTypeInput = document.getElementById('residentialUnitType');
             if (bedroomsInput) bedroomsInput.value = bedrooms;
-            if (unitTypeInput) unitTypeInput.value = 'villa';
+            if (unitTypeInput) unitTypeInput.value = unitType;
+        } else {
+            // Fallback: select first button if no match found
+            if (unitTypeButtons.length > 0) {
+                const firstButton = unitTypeButtons[0];
+                firstButton.classList.add('active');
+                const bedroomsInput = document.getElementById('residentialBedrooms');
+                const unitTypeInput = document.getElementById('residentialUnitType');
+                if (bedroomsInput && firstButton.dataset.bedrooms) {
+                    bedroomsInput.value = firstButton.dataset.bedrooms;
+                }
+                if (unitTypeInput && firstButton.dataset.unitType) {
+                    unitTypeInput.value = firstButton.dataset.unitType;
+                }
+            }
         }
         
         // Load amenities (only for villas, not individual house)

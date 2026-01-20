@@ -141,8 +141,72 @@ function initializeActivityLogs() {
             console.warn('Import button or file input not found');
         }
         
-        // Logout button handler
-        const logoutBtn = document.getElementById('activityLogsLogout');
+        // Profile Dropdown Toggle - Complete Implementation
+        const profileBtn = document.getElementById('dashboardProfileBtn');
+        const profileDropdown = document.getElementById('dashboardProfileDropdown');
+        const userProfile = document.getElementById('dashboardUserProfile');
+        const profileName = document.getElementById('dashboardProfileName');
+        const profileFullname = document.getElementById('dashboardProfileFullname');
+        const profileEmail = document.getElementById('dashboardProfileEmail');
+        
+        // Initialize user profile data
+        if (profileName || profileFullname || profileEmail) {
+            const userStr = localStorage.getItem('user') || sessionStorage.getItem('user');
+            if (userStr) {
+                try {
+                    const userData = JSON.parse(userStr);
+                    const displayName = userData.full_name || userData.name || userData.email || 'Admin';
+                    const email = userData.email || 'admin@example.com';
+                    
+                    // Update profile display
+                    if (profileName) {
+                        profileName.textContent = displayName.length > 15 ? displayName.substring(0, 15) + '...' : displayName;
+                    }
+                    if (profileFullname) {
+                        profileFullname.textContent = displayName;
+                    }
+                    if (profileEmail) {
+                        profileEmail.textContent = email;
+                    }
+                } catch (e) {
+                    console.error('Error parsing user data:', e);
+                }
+            }
+        }
+        
+        // Toggle dropdown functionality
+        if (profileBtn && profileDropdown) {
+            profileBtn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                profileDropdown.classList.toggle('active');
+                if (userProfile) {
+                    userProfile.classList.toggle('active');
+                }
+            });
+
+            // Close dropdown when clicking outside
+            document.addEventListener('click', function(e) {
+                if (!profileBtn.contains(e.target) && !profileDropdown.contains(e.target)) {
+                    profileDropdown.classList.remove('active');
+                    if (userProfile) {
+                        userProfile.classList.remove('active');
+                    }
+                }
+            });
+            
+            // Close dropdown on Escape key
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape' && profileDropdown.classList.contains('active')) {
+                    profileDropdown.classList.remove('active');
+                    if (userProfile) {
+                        userProfile.classList.remove('active');
+                    }
+                }
+            });
+        }
+        
+        // Logout button handler (from profile dropdown)
+        const logoutBtn = document.getElementById('dashboardLogout');
         if (logoutBtn) {
             logoutBtn.addEventListener('click', handleLogout);
             console.log('Logout button initialized');

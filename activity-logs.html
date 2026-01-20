@@ -225,10 +225,48 @@
                     <a href="/dashboard.html" class="dashboard-view-site">
                         <i class="fas fa-arrow-left"></i>
                     </a>
-                    <button class="dashboard-logout" id="activityLogsLogout">
-                        <i class="fas fa-sign-out-alt"></i>
-                        LOGOUT
-                    </button>
+                    <!-- User Profile Dropdown -->
+                    <div class="dashboard-user-profile" id="dashboardUserProfile">
+                        <button class="dashboard-profile-btn" id="dashboardProfileBtn">
+                            <div class="dashboard-profile-avatar">
+                                <i class="fas fa-user"></i>
+                            </div>
+                            <span class="dashboard-profile-name" id="dashboardProfileName">Admin</span>
+                            <i class="fas fa-chevron-down dashboard-profile-chevron"></i>
+                        </button>
+                        <div class="dashboard-profile-dropdown" id="dashboardProfileDropdown">
+                            <div class="dashboard-profile-header">
+                                <div class="dashboard-profile-avatar-large">
+                                    <i class="fas fa-user"></i>
+                                </div>
+                                <div class="dashboard-profile-info">
+                                    <div class="dashboard-profile-fullname" id="dashboardProfileFullname">Admin User</div>
+                                    <div class="dashboard-profile-email" id="dashboardProfileEmail">admin@example.com</div>
+                                </div>
+                            </div>
+                            <div class="dashboard-profile-divider"></div>
+                            <a href="/dashboard.html" class="dashboard-profile-item">
+                                <i class="fas fa-tachometer-alt"></i>
+                                <span>Dashboard</span>
+                            </a>
+                            <a href="/settings.html" class="dashboard-profile-item" target="_blank">
+                                <i class="fas fa-cog"></i>
+                                <span>Settings</span>
+                            </a>
+                            <a href="/app-metrics.html" class="dashboard-profile-item" target="_blank">
+                                <i class="fas fa-chart-line"></i>
+                                <span>App Metrics</span>
+                            </a>
+                            <a href="/activity-logs.html" class="dashboard-profile-item" target="_blank">
+                                <i class="fas fa-history"></i>
+                                <span>Activity Logs</span>
+                            </a>
+                            <button class="dashboard-profile-item dashboard-profile-logout" id="dashboardLogout">
+                                <i class="fas fa-sign-out-alt"></i>
+                                <span>Logout</span>
+                            </button>
+                        </div>
+                    </div>
                 </div>
             </div>
         </header>

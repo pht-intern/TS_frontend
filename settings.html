@@ -277,27 +277,27 @@
                     <p class="dashboard-welcome-subtitle">Manage city activation, categories, and unit types</p>
                 </div>
 
-                <!-- City Activation Section -->
+                <!-- State Activation Section -->
                 <div class="dashboard-properties-section">
                     <div class="dashboard-section-header">
                         <h2>
-                            <i class="fas fa-city" style="margin-right: 0.5rem;"></i>
-                            City Activation
+                            <i class="fas fa-map-marked-alt" style="margin-right: 0.5rem;"></i>
+                            State Activation
                         </h2>
                         <div style="display: flex; gap: 1rem; align-items: center;">
                             <div class="dashboard-search-box">
                                 <i class="fas fa-search"></i>
-                                <input type="text" id="citySearch" placeholder="Search cities...">
+                                <input type="text" id="stateSearch" placeholder="Search states...">
                             </div>
-                            <button class="dashboard-btn-secondary" id="selectAllCitiesBtn">
+                            <button class="dashboard-btn-secondary" id="selectAllStatesBtn">
                                 <i class="fas fa-check-square"></i>
                                 Select All
                             </button>
-                            <button class="dashboard-btn-secondary" id="deselectAllCitiesBtn">
+                            <button class="dashboard-btn-secondary" id="deselectAllStatesBtn">
                                 <i class="fas fa-square"></i>
                                 Deselect All
                             </button>
-                            <button class="dashboard-btn-primary" id="saveCitiesBtn">
+                            <button class="dashboard-btn-primary" id="saveStatesBtn">
                                 <i class="fas fa-save"></i>
                                 Save Changes
                             </button>
@@ -308,16 +308,15 @@
                             <thead>
                                 <tr>
                                     <th style="width: 50px;">
-                                        <input type="checkbox" id="selectAllCitiesCheckbox" style="width: auto;">
+                                        <input type="checkbox" id="selectAllStatesCheckbox" style="width: auto;">
                                     </th>
-                                    <th>City Name</th>
-                                    <th>State</th>
+                                    <th>State Name</th>
                                     <th>Status</th>
                                     <th>Properties Count</th>
                                 </tr>
                             </thead>
-                            <tbody id="citiesTableBody">
-                                <!-- Cities will be loaded here -->
+                            <tbody id="statesTableBody">
+                                <!-- States will be loaded here -->
                             </tbody>
                         </table>
                     </div>
@@ -1192,53 +1191,31 @@
                 { name: 'Kargil', state: 'Ladakh' }
             ];
 
+            let allStates = [];
             let allCities = [];
-            let activeCities = new Set();
 
-            // Load Cities from backend and merge with comprehensive list
-            async function loadCities() {
+            // Load States from backend and merge with comprehensive list
+            async function loadStates() {
                 try {
-                    // Try to load active cities from backend
+                    // Load cities from backend to determine state activation
                     const response = await fetch('/api/admin/cities', {
                         method: 'GET',
                         headers: getAuthHeaders()
                     });
 
-                    if (response.ok) {
-                        const data = await response.json();
-                        if (data.cities && Array.isArray(data.cities)) {
-                            // Store active city names
-                            data.cities.forEach(city => {
-                                if (city.is_active) {
-                                    activeCities.add(city.name.toLowerCase());
-                                }
-                            });
-                        }
-                    }
-                } catch (error) {
-                    console.log('No existing cities found, starting fresh');
-                }
-
-                // Merge backend cities with comprehensive list
-                const cityMap = new Map();
-                
-                // Add all cities from comprehensive list
-                indianCities.forEach(city => {
-                    const key = city.name.toLowerCase();
-                    cityMap.set(key, {
-                        name: city.name,
-                        state: city.state,
-                        is_active: activeCities.has(key),
-                        properties_count: 0
+                    // Build city map from comprehensive list
+                    const cityMap = new Map();
+                    indianCities.forEach(city => {
+                        const key = city.name.toLowerCase();
+                        cityMap.set(key, {
+                            name: city.name,
+                            state: city.state,
+                            is_active: false,
+                            properties_count: 0
+                        });
                     });
-                });
 
-                // Update with backend data if available
-                try {
-                    const response = await fetch('/api/admin/cities', {
-                        method: 'GET',
-                        headers: getAuthHeaders()
-                    });
+                    // Update with backend data if available
                     if (response.ok) {
                         const data = await response.json();
                         if (data.cities && Array.isArray(data.cities)) {
@@ -1255,42 +1232,64 @@
                     console.log('Error loading city data from backend');
                 }
 
-                allCities = Array.from(cityMap.values()).sort((a, b) => {
-                    if (a.state !== b.state) return a.state.localeCompare(b.state);
+                // Store all cities for later use
+                allCities = Array.from(cityMap.values());
+
+                // Extract unique states and determine their activation status
+                const stateMap = new Map();
+                
+                allCities.forEach(city => {
+                    const stateName = city.state;
+                    if (!stateMap.has(stateName)) {
+                        stateMap.set(stateName, {
+                            name: stateName,
+                            is_active: false,
+                            properties_count: 0,
+                            cities: []
+                        });
+                    }
+                    const state = stateMap.get(stateName);
+                    state.cities.push(city);
+                    state.properties_count += city.properties_count || 0;
+                    // State is active if at least one city in it is active
+                    if (city.is_active) {
+                        state.is_active = true;
+                    }
+                });
+
+                allStates = Array.from(stateMap.values()).sort((a, b) => {
                     return a.name.localeCompare(b.name);
                 });
 
-                renderCities();
+                renderStates();
             }
 
-            // Render cities in table
-            function renderCities(filterText = '') {
-                const tbody = document.getElementById('citiesTableBody');
+            // Render states in table
+            function renderStates(filterText = '') {
+                const tbody = document.getElementById('statesTableBody');
                 tbody.innerHTML = '';
 
                 const filtered = filterText 
-                    ? allCities.filter(city => 
-                        city.name.toLowerCase().includes(filterText.toLowerCase()) ||
-                        city.state.toLowerCase().includes(filterText.toLowerCase())
+                    ? allStates.filter(state => 
+                        state.name.toLowerCase().includes(filterText.toLowerCase())
                       )
-                    : allCities;
+                    : allStates;
 
                 if (filtered.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="5" style="text-align: center;">No cities found</td></tr>';
+                    tbody.innerHTML = '<tr><td colspan="4" style="text-align: center;">No states found</td></tr>';
                     return;
                 }
 
-                filtered.forEach(city => {
+                filtered.forEach(state => {
                     const row = document.createElement('tr');
-                    const cityKey = city.name.toLowerCase();
+                    const stateKey = state.name.toLowerCase();
                     row.innerHTML = `
                         <td>
-                            <input type="checkbox" class="city-checkbox" data-city="${cityKey}" ${city.is_active ? 'checked' : ''}>
+                            <input type="checkbox" class="state-checkbox" data-state="${stateKey}" ${state.is_active ? 'checked' : ''}>
                         </td>
-                        <td>${city.name || '-'}</td>
-                        <td>${city.state || '-'}</td>
-                        <td><span class="status-badge ${city.is_active ? 'sale' : 'rent'}">${city.is_active ? 'Active' : 'Inactive'}</span></td>
-                        <td>${city.properties_count || 0}</td>
+                        <td>${state.name || '-'}</td>
+                        <td><span class="status-badge ${state.is_active ? 'sale' : 'rent'}">${state.is_active ? 'Active' : 'Inactive'}</span></td>
+                        <td>${state.properties_count || 0}</td>
                     `;
                     tbody.appendChild(row);
                 });
@@ -1301,8 +1300,8 @@
 
             // Update select all checkbox state
             function updateSelectAllCheckbox() {
-                const checkboxes = document.querySelectorAll('.city-checkbox');
-                const selectAllCheckbox = document.getElementById('selectAllCitiesCheckbox');
+                const checkboxes = document.querySelectorAll('.state-checkbox');
+                const selectAllCheckbox = document.getElementById('selectAllStatesCheckbox');
                 if (checkboxes.length === 0) return;
 
                 const checkedCount = Array.from(checkboxes).filter(cb => cb.checked).length;
@@ -1310,70 +1309,92 @@
                 selectAllCheckbox.indeterminate = checkedCount > 0 && checkedCount < checkboxes.length;
             }
 
-            // City search
-            document.getElementById('citySearch').addEventListener('input', (e) => {
-                renderCities(e.target.value);
+            // State search
+            document.getElementById('stateSearch').addEventListener('input', (e) => {
+                renderStates(e.target.value);
             });
 
-            // Select all cities
-            document.getElementById('selectAllCitiesBtn').addEventListener('click', () => {
-                document.querySelectorAll('.city-checkbox').forEach(cb => {
+            // Select all states
+            document.getElementById('selectAllStatesBtn').addEventListener('click', () => {
+                document.querySelectorAll('.state-checkbox').forEach(cb => {
                     cb.checked = true;
-                    const cityKey = cb.dataset.city;
-                    const city = allCities.find(c => c.name.toLowerCase() === cityKey);
-                    if (city) city.is_active = true;
+                    const stateKey = cb.dataset.state;
+                    const state = allStates.find(s => s.name.toLowerCase() === stateKey);
+                    if (state) {
+                        state.is_active = true;
+                        // Activate all cities in this state
+                        state.cities.forEach(city => {
+                            city.is_active = true;
+                        });
+                    }
                 });
                 updateSelectAllCheckbox();
-                renderCities(document.getElementById('citySearch').value);
+                renderStates(document.getElementById('stateSearch').value);
             });
 
-            // Deselect all cities
-            document.getElementById('deselectAllCitiesBtn').addEventListener('click', () => {
-                document.querySelectorAll('.city-checkbox').forEach(cb => {
+            // Deselect all states
+            document.getElementById('deselectAllStatesBtn').addEventListener('click', () => {
+                document.querySelectorAll('.state-checkbox').forEach(cb => {
                     cb.checked = false;
-                    const cityKey = cb.dataset.city;
-                    const city = allCities.find(c => c.name.toLowerCase() === cityKey);
-                    if (city) city.is_active = false;
+                    const stateKey = cb.dataset.state;
+                    const state = allStates.find(s => s.name.toLowerCase() === stateKey);
+                    if (state) {
+                        state.is_active = false;
+                        // Deactivate all cities in this state
+                        state.cities.forEach(city => {
+                            city.is_active = false;
+                        });
+                    }
                 });
                 updateSelectAllCheckbox();
-                renderCities(document.getElementById('citySearch').value);
+                renderStates(document.getElementById('stateSearch').value);
             });
 
             // Select all checkbox
-            document.getElementById('selectAllCitiesCheckbox').addEventListener('change', (e) => {
-                document.querySelectorAll('.city-checkbox').forEach(cb => {
+            document.getElementById('selectAllStatesCheckbox').addEventListener('change', (e) => {
+                document.querySelectorAll('.state-checkbox').forEach(cb => {
                     cb.checked = e.target.checked;
-                    const cityKey = cb.dataset.city;
-                    const city = allCities.find(c => c.name.toLowerCase() === cityKey);
-                    if (city) city.is_active = e.target.checked;
+                    const stateKey = cb.dataset.state;
+                    const state = allStates.find(s => s.name.toLowerCase() === stateKey);
+                    if (state) {
+                        state.is_active = e.target.checked;
+                        // Activate/deactivate all cities in this state
+                        state.cities.forEach(city => {
+                            city.is_active = e.target.checked;
+                        });
+                    }
                 });
             });
 
-            // Individual city checkbox change
+            // Individual state checkbox change
             document.addEventListener('change', (e) => {
-                if (e.target.classList.contains('city-checkbox')) {
-                    const cityKey = e.target.dataset.city;
-                    const city = allCities.find(c => c.name.toLowerCase() === cityKey);
-                    if (city) {
-                        city.is_active = e.target.checked;
+                if (e.target.classList.contains('state-checkbox')) {
+                    const stateKey = e.target.dataset.state;
+                    const state = allStates.find(s => s.name.toLowerCase() === stateKey);
+                    if (state) {
+                        state.is_active = e.target.checked;
+                        // Activate/deactivate all cities in this state
+                        state.cities.forEach(city => {
+                            city.is_active = e.target.checked;
+                        });
                         // Update status badge
                         const row = e.target.closest('tr');
                         const badge = row.querySelector('.status-badge');
                         if (badge) {
-                            badge.className = `status-badge ${city.is_active ? 'sale' : 'rent'}`;
-                            badge.textContent = city.is_active ? 'Active' : 'Inactive';
+                            badge.className = `status-badge ${state.is_active ? 'sale' : 'rent'}`;
+                            badge.textContent = state.is_active ? 'Active' : 'Inactive';
                         }
                     }
                     updateSelectAllCheckbox();
                 }
             });
 
-            // Save cities
-            document.getElementById('saveCitiesBtn').addEventListener('click', async () => {
-                const activeCityNames = allCities.filter(c => c.is_active).map(c => c.name);
+            // Save states (activates/deactivates all cities in each state)
+            document.getElementById('saveStatesBtn').addEventListener('click', async () => {
+                const activeStateNames = allStates.filter(s => s.is_active).map(s => s.name);
                 
                 try {
-                    // Save all cities (bulk update)
+                    // Save all cities (bulk update) - cities are activated/deactivated based on their state
                     const response = await fetch('/api/admin/cities/bulk', {
                         method: 'POST',
                         headers: getAuthHeaders(),
@@ -1388,14 +1409,14 @@
 
                     const data = await response.json();
                     if (response.ok) {
-                        showNotification(`Successfully saved ${activeCityNames.length} active cities`, 'success');
-                        loadCities();
+                        showNotification(`Successfully saved ${activeStateNames.length} active states`, 'success');
+                        loadStates();
                     } else {
-                        showNotification(data.message || 'Failed to save cities', 'error');
+                        showNotification(data.message || 'Failed to save states', 'error');
                     }
                 } catch (error) {
-                    console.error('Error saving cities:', error);
-                    showNotification('Error saving cities. Please try again.', 'error');
+                    console.error('Error saving states:', error);
+                    showNotification('Error saving states. Please try again.', 'error');
                 }
             });
 
@@ -1706,9 +1727,9 @@
                         // Normalize unit type name: uppercase and remove spaces
                         const normalizedName = unitTypeName.toUpperCase().replace(/\s+/g, '');
                         
-                        // Validate unit type name format (alphanumeric only, no spaces)
-                        if (!/^[A-Z0-9]+$/.test(normalizedName)) {
-                            showNotification('Unit type name can only contain uppercase letters and numbers', 'error');
+                        // Validate unit type name format (alphanumeric and + character, no spaces)
+                        if (!/^[A-Z0-9+]+$/.test(normalizedName)) {
+                            showNotification('Unit type name can only contain uppercase letters, numbers, and + character', 'error');
                             return;
                         }
                     }
@@ -1920,19 +1941,66 @@
                 }
             });
 
-            // Profile Dropdown Toggle
+            // Profile Dropdown Toggle - Complete Implementation
             const profileBtn = document.getElementById('dashboardProfileBtn');
             const profileDropdown = document.getElementById('dashboardProfileDropdown');
+            const userProfile = document.getElementById('dashboardUserProfile');
+            const profileName = document.getElementById('dashboardProfileName');
+            const profileFullname = document.getElementById('dashboardProfileFullname');
+            const profileEmail = document.getElementById('dashboardProfileEmail');
             
+            // Initialize user profile data
+            if (profileName || profileFullname || profileEmail) {
+                const userStr = localStorage.getItem('user') || sessionStorage.getItem('user');
+                if (userStr) {
+                    try {
+                        const userData = JSON.parse(userStr);
+                        const displayName = userData.full_name || userData.name || userData.email || 'Admin';
+                        const email = userData.email || 'admin@example.com';
+                        
+                        // Update profile display
+                        if (profileName) {
+                            profileName.textContent = displayName.length > 15 ? displayName.substring(0, 15) + '...' : displayName;
+                        }
+                        if (profileFullname) {
+                            profileFullname.textContent = displayName;
+                        }
+                        if (profileEmail) {
+                            profileEmail.textContent = email;
+                        }
+                    } catch (e) {
+                        console.error('Error parsing user data:', e);
+                    }
+                }
+            }
+            
+            // Toggle dropdown functionality
             if (profileBtn && profileDropdown) {
                 profileBtn.addEventListener('click', function(e) {
                     e.stopPropagation();
-                    profileDropdown.classList.toggle('show');
+                    profileDropdown.classList.toggle('active');
+                    if (userProfile) {
+                        userProfile.classList.toggle('active');
+                    }
                 });
 
+                // Close dropdown when clicking outside
                 document.addEventListener('click', function(e) {
                     if (!profileBtn.contains(e.target) && !profileDropdown.contains(e.target)) {
-                        profileDropdown.classList.remove('show');
+                        profileDropdown.classList.remove('active');
+                        if (userProfile) {
+                            userProfile.classList.remove('active');
+                        }
+                    }
+                });
+                
+                // Close dropdown on Escape key
+                document.addEventListener('keydown', function(e) {
+                    if (e.key === 'Escape' && profileDropdown.classList.contains('active')) {
+                        profileDropdown.classList.remove('active');
+                        if (userProfile) {
+                            userProfile.classList.remove('active');
+                        }
                     }
                 });
             }
@@ -1955,7 +2023,7 @@
 
             // Load data on page load
             window.addEventListener('load', function() {
-                loadCities();
+                loadStates();
                 loadCategories();
                 loadUnitTypes();
             });

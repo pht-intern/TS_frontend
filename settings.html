@@ -1196,8 +1196,16 @@
 
             // Load States from backend and merge with comprehensive list
             async function loadStates() {
-                // Build city map from comprehensive list (declare outside try-catch)
-                let cityMap = new Map();
+                // Build city map from comprehensive list (declare at function scope)
+                let cityMap;
+                
+                // Initialize cityMap immediately to avoid ReferenceError
+                try {
+                    cityMap = new Map();
+                } catch (e) {
+                    console.error('Error initializing cityMap:', e);
+                    cityMap = new Map();
+                }
                 
                 try {
                     // Build city map from comprehensive list first
@@ -1228,10 +1236,11 @@
                         const citiesData = await response.json();
                         // Handle both array response and object with cities property
                         const cities = Array.isArray(citiesData) ? citiesData : (citiesData.cities || []);
-                        if (Array.isArray(cities) && cityMap) {
+                        // Use typeof check to safely verify cityMap exists
+                        if (Array.isArray(cities) && typeof cityMap !== 'undefined' && cityMap instanceof Map) {
                             cities.forEach(city => {
                                 const key = city.name.toLowerCase();
-                                if (cityMap && cityMap.has(key)) {
+                                if (typeof cityMap !== 'undefined' && cityMap instanceof Map && cityMap.has(key)) {
                                     const cityEntry = cityMap.get(key);
                                     if (cityEntry) {
                                         cityEntry.is_active = city.is_active;
@@ -1244,7 +1253,7 @@
                 } catch (error) {
                     console.error('Error loading city data from backend:', error);
                     // If error occurs, still build city map from comprehensive list
-                    if (!cityMap) {
+                    if (typeof cityMap === 'undefined' || !(cityMap instanceof Map)) {
                         cityMap = new Map();
                     }
                     if (cityMap.size === 0 && typeof indianCities !== 'undefined' && Array.isArray(indianCities)) {
@@ -1262,7 +1271,7 @@
 
                 // Store all cities for later use
                 // Ensure cityMap is valid before using it
-                if (!cityMap) {
+                if (typeof cityMap === 'undefined' || !(cityMap instanceof Map)) {
                     cityMap = new Map();
                 }
                 if (cityMap.size === 0) {

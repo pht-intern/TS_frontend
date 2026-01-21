@@ -1,5 +1,12 @@
-# Minimal .htaccess for TSProperties
-# FastAPI/Passenger handles routing, so keep this minimal to avoid conflicts
+# .htaccess for TSProperties
+# Forward API routes to Passenger WSGI application
+
+# Enable rewrite engine
+RewriteEngine On
+
+# Forward /api/* routes to Passenger WSGI
+# This ensures Apache forwards API requests to Flask instead of looking for a physical /api folder
+RewriteRule ^api(/.*)?$ /passenger_wsgi.py [L]
 
 # Prevent directory browsing
 Options -Indexes

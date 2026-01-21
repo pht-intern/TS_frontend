@@ -1291,12 +1291,12 @@ function renderGallery(filterType, propertyTitle) {
     
     gallery.innerHTML = `
         <div class="property-main-image">
-            <img src="${escapeHtml(mainImage)}" alt="${escapedTitle}" onerror="this.src='/images/img1.jpg'">
+            <img src="${escapeHtml(mainImage)}" alt="${escapedTitle}" loading="lazy" onerror="this.src='/images/img1.jpg'">
         </div>
         <div class="property-thumbnails">
             ${filteredImages.map((img, index) => `
                 <div class="property-thumbnail ${index === 0 ? 'active' : ''}" data-image-type="${filterType}">
-                    <img src="${escapeHtml(img || '/images/img1.jpg')}" alt="${escapedTitle}" onerror="this.src='/images/img1.jpg'">
+                    <img src="${escapeHtml(img || '/images/img1.jpg')}" alt="${escapedTitle}" loading="lazy" onerror="this.src='/images/img1.jpg'">
                 </div>
             `).join('')}
         </div>

@@ -1,4 +1,5 @@
 // Dashboard JavaScript
+console.log('[DASHBOARD] dashboard.js script file loaded!');
 
 // Safe JSON parsing helper - checks response.ok before parsing
 async function safeJsonParse(response) {
@@ -110,32 +111,73 @@ if (typeof console !== 'undefined') {
     };
 }
 
-// Initialize
-document.addEventListener('DOMContentLoaded', () => {
+// Initialize - works regardless of when script loads
+function initializeDashboard() {
+    console.log('[DASHBOARD] Initializing...', 'readyState:', document.readyState);
+    
     // Only initialize dashboard if we're on the dashboard page
     const isDashboardPage = document.getElementById('loginScreen') || document.getElementById('dashboardContainer');
+    console.log('[DASHBOARD] isDashboardPage:', !!isDashboardPage);
+    
     if (isDashboardPage) {
+        console.log('[DASHBOARD] Dashboard page detected, starting initialization...');
         checkAuthentication();
         initDashboard();
-    }
-    
-    // Set up event delegation for edit buttons (fallback for inline onclick)
-    document.addEventListener('click', (e) => {
-        const editBtn = e.target.closest('.dashboard-action-btn.edit');
-        if (editBtn && editBtn.hasAttribute('data-property-id')) {
-            const propertyId = editBtn.getAttribute('data-property-id');
-            if (propertyId && typeof editProperty === 'function') {
-                e.preventDefault();
-                e.stopPropagation();
-                console.log('Event delegation: calling editProperty with id:', propertyId);
-                editProperty(parseInt(propertyId));
-            } else if (!propertyId) {
-                console.error('Edit button clicked but no property ID found');
-            } else {
-                console.error('editProperty function not available');
+        
+        // Set up event delegation for edit buttons (fallback for inline onclick)
+        document.addEventListener('click', (e) => {
+            const editBtn = e.target.closest('.dashboard-action-btn.edit');
+            if (editBtn && editBtn.hasAttribute('data-property-id')) {
+                const propertyId = editBtn.getAttribute('data-property-id');
+                if (propertyId && typeof editProperty === 'function') {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    console.log('Event delegation: calling editProperty with id:', propertyId);
+                    editProperty(parseInt(propertyId));
+                } else if (!propertyId) {
+                    console.error('Edit button clicked but no property ID found');
+                } else {
+                    console.error('editProperty function not available');
+                }
             }
-        }
+        });
+    } else {
+        console.warn('[DASHBOARD] Dashboard page not detected, skipping initialization');
+    }
+}
+
+// Try to initialize - handle all possible states
+console.log('[DASHBOARD] Script loaded, readyState:', document.readyState);
+
+if (document.readyState === 'loading') {
+    // DOM is still loading, wait for DOMContentLoaded
+    console.log('[DASHBOARD] DOM still loading, waiting for DOMContentLoaded...');
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log('[DASHBOARD] DOMContentLoaded fired');
+        initializeDashboard();
     });
+} else {
+    // DOM is already loaded or interactive, initialize immediately
+    console.log('[DASHBOARD] DOM already loaded, initializing immediately...');
+    // Use setTimeout to ensure all scripts are ready
+    setTimeout(function() {
+        initializeDashboard();
+    }, 0);
+}
+
+// Also try on window load as a fallback (in case script loads very late)
+window.addEventListener('load', function() {
+    console.log('[DASHBOARD] Window load event fired');
+    // Only initialize if not already done (check if functions exist)
+    const dashboardContainer = document.getElementById('dashboardContainer');
+    if (dashboardContainer && typeof initDashboard === 'function') {
+        // Check if already initialized by looking for a marker
+        if (!dashboardContainer.dataset.initialized) {
+            console.log('[DASHBOARD] Initializing on window load (fallback)');
+            dashboardContainer.dataset.initialized = 'true';
+            initializeDashboard();
+        }
+    }
 });
 
 // Check Authentication
@@ -291,6 +333,8 @@ function setupSessionCleanup() {
 
 // Initialize Dashboard
 function initDashboard() {
+    console.log('Initializing dashboard...');
+    
     // Initialize navigation active states
     initDashboardNavigation();
     
@@ -407,11 +451,24 @@ function initDashboard() {
     const residentialSubmitBtn = document.getElementById('residentialSubmitBtn');
     const residentialPropertyTypeSelect = document.getElementById('residentialPropertyType');
     
+    // Attach event listeners with proper event handling
     if (residentialNextStepBtn) {
-        residentialNextStepBtn.addEventListener('click', () => handleResidentialPropertyStepNavigation('next'));
+        // Remove any existing listeners by using once or by storing reference
+        residentialNextStepBtn.onclick = null; // Clear any inline handlers
+        residentialNextStepBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            console.log('Next button clicked');
+            handleResidentialPropertyStepNavigation('next');
+        }, { capture: false });
     }
     if (residentialPrevStepBtn) {
-        residentialPrevStepBtn.addEventListener('click', () => handleResidentialPropertyStepNavigation('prev'));
+        residentialPrevStepBtn.onclick = null;
+        residentialPrevStepBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            handleResidentialPropertyStepNavigation('prev');
+        }, { capture: false });
     }
     if (residentialPropertyTypeSelect) {
         residentialPropertyTypeSelect.addEventListener('change', handleResidentialPropertyTypeChange);
@@ -772,7 +829,8 @@ function initDashboard() {
 // When dashboard credentials are used, it redirects to dashboard.html
 
 // Initialize User Profile
-function initUserProfile() {
+function initUserProfile(retryCount = 0) {
+    const MAX_RETRIES = 5;
     const profileBtn = document.getElementById('dashboardProfileBtn');
     const profileDropdown = document.getElementById('dashboardProfileDropdown');
     const profileName = document.getElementById('dashboardProfileName');
@@ -782,11 +840,23 @@ function initUserProfile() {
     
     // Debug: Check if elements exist
     if (!profileBtn || !profileDropdown || !userProfile) {
-        console.error('Profile elements not found:', {
-            profileBtn: !!profileBtn,
-            profileDropdown: !!profileDropdown,
-            userProfile: !!userProfile
-        });
+        if (retryCount < MAX_RETRIES) {
+            console.warn(`Profile elements not found, retrying (${retryCount + 1}/${MAX_RETRIES})...`, {
+                profileBtn: !!profileBtn,
+                profileDropdown: !!profileDropdown,
+                userProfile: !!userProfile
+            });
+            // Retry after a short delay in case DOM isn't ready
+            setTimeout(() => {
+                initUserProfile(retryCount + 1);
+            }, 100);
+        } else {
+            console.error('Profile elements not found after retries:', {
+                profileBtn: !!profileBtn,
+                profileDropdown: !!profileDropdown,
+                userProfile: !!userProfile
+            });
+        }
         return;
     }
     
@@ -815,25 +885,66 @@ function initUserProfile() {
         }
     }
     
-    // Toggle dropdown
+    // Toggle dropdown - ensure event listener is properly attached
     if (profileBtn && profileDropdown) {
-        profileBtn.addEventListener('click', (e) => {
+        // Prevent multiple event listeners
+        if (profileBtn.dataset.listenerAttached === 'true') {
+            console.log('Profile button listener already attached');
+            return;
+        }
+        
+        // Mark as attached
+        profileBtn.dataset.listenerAttached = 'true';
+        
+        // Attach click event to toggle dropdown
+        profileBtn.addEventListener('click', function(e) {
+            e.preventDefault();
             e.stopPropagation();
-            profileDropdown.classList.toggle('active');
+            
+            console.log('Profile button clicked, toggling dropdown');
+            
+            // Toggle active class
+            const isActive = profileDropdown.classList.contains('active');
+            if (isActive) {
+                profileDropdown.classList.remove('active');
+                userProfile.classList.remove('active');
+            } else {
+                profileDropdown.classList.add('active');
+                userProfile.classList.add('active');
+            }
         });
         
         // Close dropdown when clicking outside
-        document.addEventListener('click', (e) => {
-            if (!profileBtn.contains(e.target) && !profileDropdown.contains(e.target)) {
+        let clickOutsideHandler = null;
+        clickOutsideHandler = (e) => {
+            if (profileBtn && profileDropdown && 
+                !profileBtn.contains(e.target) && 
+                !profileDropdown.contains(e.target)) {
                 profileDropdown.classList.remove('active');
+                if (userProfile) {
+                    userProfile.classList.remove('active');
+                }
             }
-        });
+        };
+        
+        // Use capture phase to ensure it works
+        document.addEventListener('click', clickOutsideHandler, true);
         
         // Close dropdown on Escape key
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape' && profileDropdown.classList.contains('active')) {
                 profileDropdown.classList.remove('active');
+                if (userProfile) {
+                    userProfile.classList.remove('active');
+                }
             }
+        });
+        
+        console.log('Profile button event listener attached successfully');
+    } else {
+        console.error('Profile button or dropdown not found:', {
+            profileBtn: !!profileBtn,
+            profileDropdown: !!profileDropdown
         });
     }
 }
@@ -1167,17 +1278,26 @@ function renderProperties(properties) {
         return;
     }
 
-    // Helper function to normalize image URLs
+    // Helper function to normalize image URLs - handles ALL formats, no restrictions
     function normalizeImageUrl(url) {
         if (!url) return null;
         
-        // If it's already a data URL (base64), return as is
-        if (url.startsWith('data:')) {
+        // Convert to string if it's not already (handles numbers, objects, etc.)
+        if (typeof url !== 'string') {
+            url = String(url);
+        }
+        
+        // Trim whitespace
+        url = url.trim();
+        if (!url) return null;
+        
+        // If it's already a data URL (base64), return as is - accept any data: format
+        if (url.toLowerCase().startsWith('data:')) {
             return url;
         }
         
-        // If it's an absolute URL (http/https), return as is (external image)
-        if (url.startsWith('http://') || url.startsWith('https://')) {
+        // If it's an absolute URL with any protocol, return as is (http, https, ftp, file, etc.)
+        if (/^[a-zA-Z][a-zA-Z0-9+.-]*:/.test(url)) {
             return url;
         }
         
@@ -1186,19 +1306,21 @@ function renderProperties(properties) {
             return url;
         }
         
-        // If it's a relative path without /, add /images/properties/ prefix
-        // This handles cases where just the filename is stored
-        if (url.includes('.jpeg') || url.includes('.jpg') || url.includes('.png') || url.includes('.gif') || url.includes('.webp')) {
-            // Check if it already has /images/ in the path
-            if (url.includes('/images/')) {
-                return url.startsWith('/') ? url : '/' + url;
-            }
-            // Otherwise, assume it's a property image
+        // Check if it already has /images/ in the path (anywhere in the path)
+        if (url.includes('/images/')) {
+            return '/' + url.replace(/^\/+/, ''); // Ensure single leading slash
+        }
+        
+        // For any other string (filename, path, etc.), try to make it work
+        // If it's a simple filename without path separators, assume it's in /images/properties/
+        if (!url.includes('/') && !url.includes('\\') && !url.includes(':')) {
             return '/images/properties/' + url;
         }
         
         // Default: return as relative path with leading /
-        return url.startsWith('/') ? url : '/' + url;
+        // This handles ANY other format - just make sure it starts with /
+        // Accept any string format - don't filter anything out
+        return '/' + url.replace(/^\/+/, '');
     }
 
     tbody.innerHTML = properties.map(property => {
@@ -1214,19 +1336,33 @@ function renderProperties(properties) {
         let imageUrl = placeholderSvg;
         
         // Guard: Handle primary_image
-        if (property.primary_image) {
-            imageUrl = normalizeImageUrl(property.primary_image) || placeholderSvg;
+        if (property.primary_image && typeof property.primary_image === 'string' && property.primary_image.trim()) {
+            const normalized = normalizeImageUrl(property.primary_image);
+            if (normalized && typeof normalized === 'string' && normalized.trim()) {
+                imageUrl = normalized;
+            }
         } else if (property.images && Array.isArray(property.images) && property.images.length > 0) {
             // Guard: Ensure images array has valid entries
             const firstImage = property.images[0];
             if (firstImage) {
                 // If images is array of objects
                 if (typeof firstImage === 'object' && firstImage !== null && firstImage.image_url) {
-                    imageUrl = normalizeImageUrl(firstImage.image_url) || placeholderSvg;
+                    const normalized = normalizeImageUrl(firstImage.image_url);
+                    if (normalized && typeof normalized === 'string' && normalized.trim()) {
+                        imageUrl = normalized;
+                    }
                 } else if (typeof firstImage === 'string' && firstImage.trim()) {
-                    imageUrl = normalizeImageUrl(firstImage) || placeholderSvg;
+                    const normalized = normalizeImageUrl(firstImage);
+                    if (normalized && typeof normalized === 'string' && normalized.trim()) {
+                        imageUrl = normalized;
+                    }
                 }
             }
+        }
+        
+        // Ensure imageUrl is always a valid string
+        if (!imageUrl || typeof imageUrl !== 'string' || !imageUrl.trim()) {
+            imageUrl = placeholderSvg;
         }
         
         // Handle type - ensure it's a string
@@ -1252,13 +1388,50 @@ function renderProperties(properties) {
             statusText = 'Under Construction';
         }
         
+        // Ensure imageUrl is properly escaped for use in HTML attribute
+        // For URLs, we need to escape quotes and special characters but preserve the URL structure
+        // Accept any format - don't restrict based on extension or protocol
+        // Make sure imageUrl is a string before calling replace
+        let safeImageUrl = placeholderSvg; // Default to placeholder
+        if (imageUrl && typeof imageUrl === 'string' && imageUrl.trim()) {
+            try {
+                safeImageUrl = imageUrl.trim()
+                    .replace(/"/g, '&quot;')
+                    .replace(/'/g, '&#39;')
+                    .replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;');
+            } catch (e) {
+                console.warn('Error processing image URL:', e, 'Using placeholder');
+                safeImageUrl = placeholderSvg;
+            }
+        }
+        
+        // Use a more robust error handler that ensures an image is always displayed
+        const placeholderImage = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iODAiIGhlaWdodD0iNjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjgwIiBoZWlnaHQ9IjYwIiBmaWxsPSIjZjNmNGY2Ii8+PHRleHQgeD0iNTA%2BIHk9IjUwJSIgZm9udC1mYW1pbHk9IkFyaWFsLCBzYW5zLXNlcmlmIiBmb250LXNpemU9IjEwIiBmaWxsPSIjOWNhM2FmIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkeT0iLjNlbSI+Tm8gSW1hZ2U8L3RleHQ+PC9zdmc+';
+        
+        // Final validation - ensure safeImageUrl is never empty
+        if (!safeImageUrl || !safeImageUrl.trim()) {
+            safeImageUrl = placeholderImage;
+        }
+        
+        // Create a unique ID for this image to handle errors properly
+        const imageId = `prop-img-${property.id || Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+        
         return `
         <tr>
             <td>
-                <div class="dashboard-table-image">
-                    <img src="${escapeHtml(imageUrl)}" 
-                         alt="${escapeHtml(property.title)}" 
-                         onerror="this.onerror=null; this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iODAiIGhlaWdodD0iNjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjgwIiBoZWlnaHQ9IjYwIiBmaWxsPSIjZjNmNGY2Ii8+PHRleHQgeD0iNTA%2BIHk9IjUwJSIgZm9udC1mYW1pbHk9IkFyaWFsLCBzYW5zLXNlcmlmIiBmb250LXNpemU9IjEwIiBmaWxsPSIjOWNhM2FmIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkeT0iLjNlbSI+Tm8gSW1hZ2U8L3RleHQ+PC9zdmc+'">
+                <div class="dashboard-table-image" style="width: 80px; height: 60px; overflow: hidden; border-radius: 4px; background: #f3f4f6; position: relative;">
+                    <img id="${imageId}" 
+                         src="${safeImageUrl}" 
+                         alt="" 
+                         style="width: 100%; height: 100%; object-fit: cover; display: block;"
+                         loading="lazy"
+                         onerror="(function(imgId) { const img = document.getElementById(imgId); if (img) { img.onerror = null; img.src = '${placeholderImage}'; img.alt = ''; img.style.display = 'block'; } })(this.id);">
+                    <noscript>
+                        <div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background: #f3f4f6; color: #9ca3af; font-size: 0.75rem;">
+                            <i class="fas fa-image"></i>
+                        </div>
+                    </noscript>
                 </div>
             </td>
             <td>
@@ -1473,6 +1646,9 @@ async function openResidentialPropertyModal(propertyId = null) {
     const propertyIdInput = document.getElementById('residentialPropertyId');
     const tempPropertyId = propertyId;
     
+    // Clear gallery first to avoid conflicts
+    clearResidentialImagePreviews();
+    
     // Reset form (this clears all inputs including hidden propertyId)
     form.reset();
     
@@ -1483,8 +1659,6 @@ async function openResidentialPropertyModal(propertyId = null) {
         propertyIdInput.value = '';
     }
     
-    clearResidentialImagePreviews();
-    
     // Initialize gallery (add one empty item if new property)
     if (!propertyId) {
         const galleryContainer = document.getElementById('residentialGalleryContainer');
@@ -1493,9 +1667,9 @@ async function openResidentialPropertyModal(propertyId = null) {
         }
     }
     
-    // Reset unit type buttons - will be set after Step 2 is loaded
-    // Note: Default selection happens in initializeStep2EventListeners after buttons are generated
-
+    // Reset to step 1 first to ensure clean state
+    resetResidentialPropertySteps();
+    
     // Load amenities if not already loaded
     await loadAmenitiesForResidentialForm();
     
@@ -1514,9 +1688,15 @@ async function openResidentialPropertyModal(propertyId = null) {
                 throw new Error('Failed to fetch property');
             }
             const property = await response.json();
-            populateResidentialForm(property);
-            // CRITICAL: Ensure property ID is set after populating form
+            
+            // CRITICAL: Ensure property ID is set BEFORE populating form
             const propertyIdInput = document.getElementById('residentialPropertyId');
+            if (propertyIdInput) propertyIdInput.value = property.id || propertyId;
+            
+            // Populate all form fields with cached data
+            populateResidentialForm(property);
+            
+            // Double-check property ID after population (in case form reset cleared it)
             if (propertyIdInput) propertyIdInput.value = property.id || propertyId;
         } catch (error) {
             console.error('Error loading property:', error);
@@ -1530,9 +1710,10 @@ async function openResidentialPropertyModal(propertyId = null) {
         modalTitle.textContent = 'Add Other Properties';
     }
 
-    // Reset to step 1
-    resetResidentialPropertySteps();
+    // Ensure buttons are in correct state for step 1
+    updateResidentialPropertyStepButtons(1);
 
+    // Show modal after everything is set up
     modal.classList.add('active');
     document.body.style.overflow = 'hidden';
 }
@@ -1550,42 +1731,132 @@ function closeResidentialPropertyModal() {
 
 // Reset Residential Property Form Steps
 function resetResidentialPropertySteps() {
+    // Hide all steps first
+    const allSteps = document.querySelectorAll('#residentialPropertyForm .dashboard-form-step');
+    allSteps.forEach(step => {
+        step.classList.remove('active');
+        step.style.display = 'none';
+    });
+    
+    // Show step 1
     const currentStep = 1;
-    showResidentialPropertyStep(currentStep);
+    const step1 = document.querySelector(`#residentialPropertyForm .dashboard-form-step[data-step="${currentStep}"]`);
+    if (step1) {
+        step1.style.display = '';
+        step1.classList.add('active');
+    }
+    
     updateResidentialPropertyStepIndicators(currentStep);
     updateResidentialPropertyStepButtons(currentStep);
 }
 
 // Show specific step in Residential Property Form
 function showResidentialPropertyStep(stepNumber) {
-    // Hide all steps with fade out
+    console.log('Showing step:', stepNumber);
+    
+    // Hide all steps immediately (no delay to prevent layout issues)
     const allSteps = document.querySelectorAll('#residentialPropertyForm .dashboard-form-step');
     allSteps.forEach(step => {
         step.classList.remove('active');
+        // Force immediate hide to prevent layout issues
+        step.style.display = 'none';
+        step.style.visibility = 'hidden';
+        step.style.opacity = '0';
         // Force reflow for smooth transition
         step.offsetHeight;
     });
     
-    // Show current step with fade in
+    // Show current step
     const currentStep = document.querySelector(`#residentialPropertyForm .dashboard-form-step[data-step="${stepNumber}"]`);
     if (currentStep) {
-        // Small delay for smooth transition
-        setTimeout(() => {
+        console.log('Step element found:', stepNumber, currentStep);
+        
+        // For step 3, make it immediately visible with explicit styles
+        if (stepNumber === 3) {
+            // Remove any inline styles that might conflict
+            currentStep.style.removeProperty('display');
+            currentStep.style.removeProperty('visibility');
+            currentStep.style.removeProperty('opacity');
+            
+            // Add active class first (CSS will handle display)
             currentStep.classList.add('active');
+            
+            // Then ensure it's visible with inline styles as backup
+            setTimeout(() => {
+                const computedStyle = window.getComputedStyle(currentStep);
+                if (computedStyle.display === 'none') {
+                    currentStep.style.setProperty('display', 'block', 'important');
+                }
+                if (computedStyle.visibility === 'hidden') {
+                    currentStep.style.setProperty('visibility', 'visible', 'important');
+                }
+                console.log('Step 3 made visible with active class and inline backup');
+            }, 10);
+        } else {
+            // For other steps, use CSS transitions
+            currentStep.style.display = '';
+            currentStep.style.visibility = '';
+            currentStep.style.opacity = '';
+            
+            // Small delay for smooth transition
+            setTimeout(() => {
+                currentStep.classList.add('active');
+            }, 50);
+        }
+        
+        // Ensure other steps are still hidden
+        setTimeout(() => {
+            allSteps.forEach(step => {
+                if (step !== currentStep) {
+                    step.classList.remove('active');
+                    step.style.display = 'none';
+                    step.style.visibility = 'hidden';
+                    step.style.opacity = '0';
+                }
+            });
+            
+            // Verify step 3 is actually visible
+            if (stepNumber === 3) {
+                const step3Check = document.querySelector(`#residentialPropertyForm .dashboard-form-step[data-step="3"]`);
+                if (step3Check) {
+                    const computedStyle = window.getComputedStyle(step3Check);
+                    console.log('Step 3 visibility check:', {
+                        hasActive: step3Check.classList.contains('active'),
+                        display: computedStyle.display,
+                        visibility: computedStyle.visibility,
+                        opacity: computedStyle.opacity,
+                        offsetHeight: step3Check.offsetHeight,
+                        offsetWidth: step3Check.offsetWidth
+                    });
+                    
+                    // Force visibility if still not visible
+                    if (computedStyle.display === 'none' || step3Check.offsetHeight === 0) {
+                        step3Check.style.display = 'block';
+                        step3Check.style.visibility = 'visible';
+                        step3Check.style.opacity = '1';
+                        step3Check.classList.add('active');
+                        console.log('Step 3 forced to be visible');
+                    }
+                }
+            }
             
             // Scroll to top of step content smoothly
             const form = document.getElementById('residentialPropertyForm');
             if (form) {
-                const formRect = form.getBoundingClientRect();
-                const stepRect = currentStep.getBoundingClientRect();
-                const scrollOffset = stepRect.top - formRect.top - 20;
-                
-                form.scrollTo({
-                    top: form.scrollTop + scrollOffset,
-                    behavior: 'smooth'
-                });
+                setTimeout(() => {
+                    const formRect = form.getBoundingClientRect();
+                    const stepRect = currentStep.getBoundingClientRect();
+                    const scrollOffset = stepRect.top - formRect.top - 20;
+                    
+                    form.scrollTo({
+                        top: form.scrollTop + scrollOffset,
+                        behavior: 'smooth'
+                    });
+                }, stepNumber === 3 ? 0 : 100);
             }
-        }, 50);
+        }, stepNumber === 3 ? 0 : 50);
+    } else {
+        console.error('Step element not found for step:', stepNumber);
     }
 }
 
@@ -1610,18 +1881,24 @@ function updateResidentialPropertyStepButtons(currentStep) {
     const prevBtn = document.getElementById('residentialPrevStepBtn');
     const submitBtn = document.getElementById('residentialSubmitBtn');
     
+    console.log('Updating step buttons:', { currentStep, nextBtn: !!nextBtn, prevBtn: !!prevBtn, submitBtn: !!submitBtn });
+    
     if (prevBtn) {
         prevBtn.style.display = currentStep > 1 ? 'inline-flex' : 'none';
     }
     
     if (nextBtn && submitBtn) {
         if (currentStep === 3) {
+            // On step 3, hide Next button and show Submit button
             nextBtn.style.display = 'none';
             submitBtn.style.display = 'inline-flex';
         } else {
+            // On steps 1 and 2, show Next button and hide Submit button
             nextBtn.style.display = 'inline-flex';
             submitBtn.style.display = 'none';
         }
+    } else {
+        console.error('Next or Submit button not found:', { nextBtn: !!nextBtn, submitBtn: !!submitBtn });
     }
 }
 
@@ -1630,9 +1907,14 @@ function handleResidentialPropertyStepNavigation(direction) {
     const currentStep = getCurrentResidentialPropertyStep();
     let newStep = currentStep;
     
+    console.log('Step navigation:', { direction, currentStep });
+    
     if (direction === 'next') {
         // Validate current step before proceeding
-        if (!validateResidentialPropertyStep(currentStep)) {
+        const isValid = validateResidentialPropertyStep(currentStep);
+        console.log('Step validation result:', { currentStep, isValid });
+        
+        if (!isValid) {
             // Add shake animation to indicate error
             const activeStep = document.querySelector('#residentialPropertyForm .dashboard-form-step.active');
             if (activeStep) {
@@ -1649,25 +1931,58 @@ function handleResidentialPropertyStepNavigation(direction) {
     }
     
     if (newStep !== currentStep) {
+        console.log('Moving from step', currentStep, 'to step', newStep);
+        
         // Update indicators first
         updateResidentialPropertyStepIndicators(newStep);
         
         // Then show the step (with transition)
         showResidentialPropertyStep(newStep);
         
-        // Update buttons
-        updateResidentialPropertyStepButtons(newStep);
+        // Update buttons - ensure this happens after step is shown
+        setTimeout(() => {
+            updateResidentialPropertyStepButtons(newStep);
+        }, 100);
         
-        // Focus first input in new step
+        // Focus first input in new step and ensure step 3 is accessible
         setTimeout(() => {
             const newStepElement = document.querySelector(`#residentialPropertyForm .dashboard-form-step[data-step="${newStep}"]`);
             if (newStepElement) {
+                // Ensure step 3 is visible and accessible
+                if (newStep === 3) {
+                    newStepElement.style.display = 'block';
+                    newStepElement.style.visibility = 'visible';
+                    newStepElement.style.opacity = '1';
+                    newStepElement.classList.add('active');
+                    
+                    // Double-check visibility
+                    const computedStyle = window.getComputedStyle(newStepElement);
+                    if (computedStyle.display === 'none' || newStepElement.offsetHeight === 0) {
+                        newStepElement.style.setProperty('display', 'block', 'important');
+                        newStepElement.style.setProperty('visibility', 'visible', 'important');
+                        newStepElement.style.setProperty('opacity', '1', 'important');
+                        console.log('Step 3 forced to be visible with !important');
+                    }
+                    
+                    console.log('Step 3 accessibility check:', {
+                        display: computedStyle.display,
+                        visibility: computedStyle.visibility,
+                        opacity: computedStyle.opacity,
+                        offsetHeight: newStepElement.offsetHeight,
+                        hasActive: newStepElement.classList.contains('active')
+                    });
+                }
+                
                 const firstInput = newStepElement.querySelector('input:not([type="hidden"]):not([type="file"]), select, textarea');
                 if (firstInput && firstInput.offsetParent !== null) {
                     firstInput.focus();
                 }
+            } else {
+                console.error('Step element not found after navigation:', newStep);
             }
-        }, 400);
+        }, newStep === 3 ? 150 : 400);
+    } else {
+        console.warn('Step navigation: newStep === currentStep, no navigation occurred');
     }
 }
 
@@ -1733,11 +2048,15 @@ function validateResidentialPropertyStep(stepNumber) {
         
         const propertyType = document.getElementById('residentialPropertyType')?.value;
         
+        if (!propertyType) {
+            showNotification('Please select a property type first', 'error');
+            return false;
+        }
+        
         if (propertyType === 'apartments') {
             // Validate apartments fields
             const status = document.getElementById('residentialStatus');
             const listingType = document.getElementById('residentialListingType');
-            const price = document.getElementById('residentialPrice');
             
             if (!status || !status.value) {
                 showNotification('Please select status', 'error');
@@ -1767,10 +2086,13 @@ function validateResidentialPropertyStep(stepNumber) {
             // Check if plot area is required (for independent villa)
             if (villaType.value === 'independent_villa') {
                 const plotArea = document.getElementById('residentialPlotArea');
-                if (!plotArea || !plotArea.value || parseFloat(plotArea.value) <= 0) {
-                    showNotification('Please enter plot area for independent villa', 'error');
-                    plotArea?.focus();
-                    return false;
+                if (plotArea && plotArea.offsetParent !== null) {
+                    // Only validate if plot area field is visible
+                    if (!plotArea.value || parseFloat(plotArea.value) <= 0) {
+                        showNotification('Please enter plot area for independent villa', 'error');
+                        plotArea?.focus();
+                        return false;
+                    }
                 }
             }
             
@@ -1794,8 +2116,23 @@ function validateResidentialPropertyStep(stepNumber) {
                 status?.focus();
                 return false;
             }
+            
+            // Plot area validation - only if field exists and is visible
+            const plotArea = document.getElementById('residentialPlotArea');
+            if (plotArea && plotArea.offsetParent !== null && plotArea.hasAttribute('required')) {
+                if (!plotArea.value || parseFloat(plotArea.value) <= 0) {
+                    showNotification('Please enter plot area', 'error');
+                    plotArea?.focus();
+                    return false;
+                }
+            }
+        } else {
+            // Unknown property type - allow navigation anyway
+            console.warn('Unknown property type in validation:', propertyType);
         }
         
+        // If we get here, validation passed
+        console.log('Step 2 validation passed');
         return true;
     }
     
@@ -1816,6 +2153,9 @@ function handleResidentialPropertyTypeChange() {
     
     const selectedType = propertyType.value;
     
+    // Get current step to ensure we're on step 1 or 2
+    const currentStep = getCurrentResidentialPropertyStep();
+    
     // Clear existing content
     step2Container.innerHTML = '';
     
@@ -1824,8 +2164,14 @@ function handleResidentialPropertyTypeChange() {
     }
     
     // Load Step 2 content based on property type
-    // This will be populated with the data the user provides in the next prompt
     loadStep2Content(selectedType, step2Container);
+    
+    // Ensure Step 3 is hidden after Step 2 content is loaded
+    const step3 = document.querySelector(`#residentialPropertyForm .dashboard-form-step[data-step="3"]`);
+    if (step3 && currentStep !== 3) {
+        step3.classList.remove('active');
+        step3.style.display = 'none';
+    }
 }
 
 // Load Step 2 content based on property type
@@ -1850,6 +2196,17 @@ function loadStep2Content(propertyType, container) {
     }
     
     container.innerHTML = html;
+    
+    // Ensure Step 3 is hidden after loading Step 2 content
+    // But only if we're not currently on step 3
+    const currentStep = getCurrentResidentialPropertyStep();
+    if (currentStep !== 3) {
+        const step3 = document.querySelector(`#residentialPropertyForm .dashboard-form-step[data-step="3"]`);
+        if (step3) {
+            step3.classList.remove('active');
+            step3.style.display = 'none';
+        }
+    }
     
     // Initialize event listeners after content is loaded
     initializeStep2EventListeners(propertyType);
@@ -1946,13 +2303,6 @@ function getApartmentsStep2HTML() {
         </div>
 
         <div class="dashboard-form-group">
-            <label style="display: flex; align-items: center; gap: 0.5rem;">
-                <input type="checkbox" id="residentialPriceNegotiable" name="price_negotiable" style="width: auto;">
-                <span>Price Negotiable</span>
-            </label>
-        </div>
-
-        <div class="dashboard-form-group">
             <label for="residentialAmenities">
                 <i class="fas fa-star"></i>
                 Amenities/Features
@@ -1997,7 +2347,7 @@ function getVillasStep2HTML() {
             <div class="dashboard-unit-type-buttons">
                 ${generateUnitTypeButtonsHTML('villas')}
             </div>
-            <input type="hidden" id="residentialUnitType" name="unit_type" value="villa">
+            <input type="hidden" id="residentialUnitType" name="unit_type" value="bhk">
             <input type="hidden" id="residentialBedrooms" name="bedrooms" value="3">
         </div>
 
@@ -2122,7 +2472,7 @@ function getIndividualHouseStep2HTML() {
             <div class="dashboard-unit-type-buttons">
                 ${generateUnitTypeButtonsHTML('villas')}
             </div>
-            <input type="hidden" id="residentialUnitType" name="unit_type" value="villa">
+            <input type="hidden" id="residentialUnitType" name="unit_type" value="bhk">
             <input type="hidden" id="residentialBedrooms" name="bedrooms" value="3">
         </div>
 
@@ -2208,11 +2558,28 @@ function getIndividualHouseStep2HTML() {
 function getPlotPropertiesStep2HTML() {
     return `
         <div class="dashboard-form-group">
-            <label for="residentialPlotSection">
-                <i class="fas fa-map-marked-alt"></i>
-                Plot Section
+            <label for="residentialPlotArea">
+                <i class="fas fa-map"></i>
+                Plot Area (sq.ft.) *
             </label>
-            <input type="text" id="residentialPlotSection" name="plot_section" placeholder="e.g., Section A, Block 5">
+            <input type="number" id="residentialPlotArea" name="plot_area" placeholder="e.g., 2400" step="0.01" min="0" required>
+        </div>
+
+        <div class="dashboard-form-row">
+            <div class="dashboard-form-group">
+                <label for="residentialLength">
+                    <i class="fas fa-arrows-alt-h"></i>
+                    Length (ft.)
+                </label>
+                <input type="number" id="residentialLength" name="length" placeholder="e.g., 30" step="0.01" min="0">
+            </div>
+            <div class="dashboard-form-group">
+                <label for="residentialBreadth">
+                    <i class="fas fa-arrows-alt-v"></i>
+                    Breadth (ft.)
+                </label>
+                <input type="number" id="residentialBreadth" name="breadth" placeholder="e.g., 40" step="0.01" min="0">
+            </div>
         </div>
 
         <div class="dashboard-form-group">
@@ -2225,13 +2592,6 @@ function getPlotPropertiesStep2HTML() {
                 <option value="ready_to_move">Ready to Move</option>
                 <option value="under_development">Under Development</option>
             </select>
-        </div>
-
-        <div class="dashboard-form-group">
-            <label style="display: flex; align-items: center; gap: 0.5rem;">
-                <input type="checkbox" id="residentialPriceNegotiable" name="price_negotiable" style="width: auto;">
-                <span>Price Negotiable</span>
-            </label>
         </div>
     `;
 }
@@ -2489,9 +2849,9 @@ function generateUnitTypeButtonsHTML(propertyType) {
             `;
         } else if (propertyType === 'villas' || propertyType === 'individual_house') {
             return `
-                <button type="button" class="dashboard-unit-type-btn" id="residentialUnitType3BHK" data-bedrooms="3" data-unit-type="villa">3 BHK</button>
-                <button type="button" class="dashboard-unit-type-btn" id="residentialUnitType4BHK" data-bedrooms="4" data-unit-type="villa">4 BHK</button>
-                <button type="button" class="dashboard-unit-type-btn" id="residentialUnitType5PlusBHK" data-bedrooms="5" data-unit-type="villa">5+ BHK</button>
+                <button type="button" class="dashboard-unit-type-btn" id="residentialUnitType3BHK" data-bedrooms="3" data-unit-type="bhk">3 BHK</button>
+                <button type="button" class="dashboard-unit-type-btn" id="residentialUnitType4BHK" data-bedrooms="4" data-unit-type="4plus">4 BHK</button>
+                <button type="button" class="dashboard-unit-type-btn" id="residentialUnitType5PlusBHK" data-bedrooms="5" data-unit-type="4plus">5+ BHK</button>
             `;
         }
         return '';
@@ -2533,16 +2893,20 @@ function generateUnitTypeButtonsHTML(propertyType) {
         const bedrooms = unitType.bedrooms || 0;
         
         // Determine unit_type value based on name
+        // Note: unit_type must be one of: 'rk', 'bhk', '4plus' (database constraint)
+        // 'villa' is NOT a valid unit_type - it should be in the 'type' field instead
         let unitTypeValue = 'bhk';
         const nameUpper = unitTypeName.toUpperCase();
         if (nameUpper.includes('RK') || nameUpper.includes('ROOM')) {
             unitTypeValue = 'rk';
-        } else if (nameUpper.includes('VILLA')) {
-            unitTypeValue = 'villa';
         } else if (nameUpper.includes('BHK')) {
             unitTypeValue = 'bhk';
         } else if (bedrooms >= 4) {
             unitTypeValue = '4plus';
+        } else if (nameUpper.includes('VILLA')) {
+            // For villas, use bhk or 4plus based on bedrooms
+            // The 'villa' type is set in the 'type' field, not 'unit_type'
+            unitTypeValue = bedrooms >= 4 ? '4plus' : 'bhk';
         }
         
         // Create unique ID for button
@@ -2594,26 +2958,30 @@ function populateResidentialForm(property) {
     const locationLinkInput = document.getElementById('residentialLocationLink');
     if (locationLinkInput) locationLinkInput.value = property.location_link || '';
     
-    // Set price in Step 1
-    if (property.price_text || property.price) {
-        const priceInput = document.getElementById('residentialPrice');
-        if (priceInput) {
-            if (property.price_text) {
-                priceInput.value = property.price_text;
-            } else if (property.price) {
+    // Set price in Step 1 - ensure it's always populated if available
+    const priceInput = document.getElementById('residentialPrice');
+    if (priceInput) {
+        if (property.price_text) {
+            priceInput.value = property.price_text;
+        } else if (property.price) {
+            // Format price if it's a number
+            if (typeof property.price === 'number') {
+                priceInput.value = 'Rs. ' + property.price.toLocaleString('en-IN');
+            } else {
                 priceInput.value = property.price;
             }
         }
     }
     
-    // Set price negotiable checkbox - Guard: This is in Step 2 which is dynamically loaded
-    // We'll set this in populateStep2Fields instead, but keep this as fallback
+    // Set price negotiable checkbox in Step 1 (right below price input)
     if (property.price_negotiable !== undefined) {
         const priceNegotiableInput = document.getElementById('residentialPriceNegotiable');
-        if (priceNegotiableInput && 
-            priceNegotiableInput.type === 'checkbox' && 
-            typeof priceNegotiableInput.checked !== 'undefined') {
-            priceNegotiableInput.checked = property.price_negotiable;
+        if (priceNegotiableInput) {
+            if (priceNegotiableInput.type === 'checkbox') {
+                priceNegotiableInput.checked = Boolean(property.price_negotiable);
+            } else {
+                priceNegotiableInput.value = property.price_negotiable ? '1' : '0';
+            }
         }
     }
     
@@ -2634,7 +3002,7 @@ function populateResidentialForm(property) {
                 'plot': 'plot_properties'
             };
             inferredPropertyType = typeMap[property.type] || property.type;
-        } else if (property.unit_type === 'villa') {
+        } else if (property.type === 'villa') {
             inferredPropertyType = 'villas';
         } else if (property.unit_type === 'bhk') {
             inferredPropertyType = 'apartments';
@@ -2645,40 +3013,51 @@ function populateResidentialForm(property) {
             // Trigger change to load Step 2 content
             handleResidentialPropertyTypeChange();
             
-            // Wait a bit for Step 2 content to load, then populate fields
-            setTimeout(() => {
-                populateStep2Fields(property);
-            }, 200);
+            // Wait for Step 2 content to load, then populate fields
+            // Use a more reliable approach with fewer retries
+            let attempts = 0;
+            const maxAttempts = 5;
+            const checkAndPopulate = () => {
+                attempts++;
+                const step2Content = document.getElementById('residentialStep2');
+                const hasContent = step2Content && step2Content.innerHTML.trim() !== '';
+                
+                if (hasContent) {
+                    // Step 2 content is loaded, populate all fields
+                    populateStep2Fields(property);
+                } else if (attempts < maxAttempts) {
+                    // Step 2 not ready yet, try again
+                    setTimeout(checkAndPopulate, 150);
+                } else {
+                    // Max attempts reached, try to populate anyway
+                    console.warn('Step 2 content may not be fully loaded, attempting to populate fields anyway');
+                    populateStep2Fields(property);
+                }
+            };
+            // Start checking after a short delay to allow Step 2 to start loading
+            setTimeout(checkAndPopulate, 200);
         }
     }
     
-    // Guard: Check if elements exist before setting values
-    // Note: These elements are in Step 3, so they should always exist, but we guard anyway
-    try {
-        const descriptionInput = document.getElementById('residentialDescription');
-        if (descriptionInput && descriptionInput.tagName === 'TEXTAREA') {
-            descriptionInput.value = property.description || '';
+    // Populate Step 3 fields - ensure all fields are set
+    // These fields should always exist, so populate them directly
+    const descriptionInput = document.getElementById('residentialDescription');
+    if (descriptionInput) {
+        descriptionInput.value = property.description || '';
+    }
+    
+    const videoLinkInput = document.getElementById('residentialVideoPreviewLink');
+    if (videoLinkInput) {
+        videoLinkInput.value = property.video_preview_link || '';
+    }
+    
+    const isFeaturedInput = document.getElementById('residentialIsFeatured');
+    if (isFeaturedInput) {
+        if (isFeaturedInput.type === 'checkbox') {
+            isFeaturedInput.checked = Boolean(property.is_featured);
+        } else {
+            isFeaturedInput.value = property.is_featured ? '1' : '0';
         }
-        
-        // Guard: residentialPriceIncludesRegistration may not exist in all form versions
-        // Only set if element exists and is a checkbox
-        const priceIncludesRegistrationInput = document.getElementById('residentialPriceIncludesRegistration');
-        if (priceIncludesRegistrationInput && 
-            priceIncludesRegistrationInput.type === 'checkbox' && 
-            typeof priceIncludesRegistrationInput.checked !== 'undefined') {
-            priceIncludesRegistrationInput.checked = property.price_includes_registration || false;
-        }
-        
-        // Guard: residentialIsFeatured is in Step 3, ensure it exists and is a checkbox before setting
-        const isFeaturedInput = document.getElementById('residentialIsFeatured');
-        if (isFeaturedInput && 
-            isFeaturedInput.type === 'checkbox' && 
-            typeof isFeaturedInput.checked !== 'undefined') {
-            isFeaturedInput.checked = property.is_featured || false;
-        }
-    } catch (error) {
-        console.warn('[Dashboard] Error setting Step 3 form values:', error);
-        // Don't throw - these are non-critical fields
     }
 
     // Set unit type buttons
@@ -2689,10 +3068,24 @@ function populateResidentialForm(property) {
     const unitType = property.unit_type || 'bhk';
     let activeButton = null;
     
-    if (unitType === 'villa') {
-        activeButton = document.getElementById('residentialUnitTypeVilla');
+    // unit_type can never be 'villa' - it must be 'rk', 'bhk', or '4plus'
+    // For villas, check the 'type' field instead
+    if (property.type === 'villa') {
+        // For villas, find button by bedrooms
+        activeButton = Array.from(unitTypeButtons).find(btn => 
+            parseInt(btn.dataset.bedrooms) === bedrooms
+        );
     } else {
-        activeButton = document.getElementById(`residentialUnitType${bedrooms}BHK`);
+        activeButton = Array.from(unitTypeButtons).find(btn => 
+            btn.dataset.unitType === unitType && parseInt(btn.dataset.bedrooms) === bedrooms
+        );
+    }
+    
+    if (!activeButton) {
+        // Fallback: find by bedrooms only
+        activeButton = Array.from(unitTypeButtons).find(btn => 
+            parseInt(btn.dataset.bedrooms) === bedrooms
+        );
     }
     
     if (activeButton) {
@@ -2732,12 +3125,6 @@ function populateResidentialForm(property) {
                 }
             }
         });
-    }
-
-    // Load video preview link
-    if (property.video_preview_link) {
-        const videoLinkInput = document.getElementById('residentialVideoPreviewLink');
-        if (videoLinkInput) videoLinkInput.value = property.video_preview_link;
     }
 
     // Load amenities/features (will be populated in Step 2 for apartments/villas)
@@ -2866,53 +3253,65 @@ function populateStep2Fields(property) {
             }, 200);
         }
     } else if (propertyType === 'villas' || propertyType === 'individual_house') {
-        if (property.villa_type) {
-            const villaTypeInput = document.getElementById('residentialVillaType');
-            if (villaTypeInput) {
-                villaTypeInput.value = property.villa_type;
-                // Trigger change to show/hide plot area
-                villaTypeInput.dispatchEvent(new Event('change'));
-            }
+        // Villa type
+        const villaTypeInput = document.getElementById('residentialVillaType');
+        if (villaTypeInput && property.villa_type) {
+            villaTypeInput.value = property.villa_type;
+            // Trigger change to show/hide plot area
+            villaTypeInput.dispatchEvent(new Event('change'));
         }
         
-        if (property.plot_area) {
-            const plotAreaInput = document.getElementById('residentialPlotArea');
-            if (plotAreaInput) plotAreaInput.value = property.plot_area;
+        // Plot area
+        const plotAreaInput = document.getElementById('residentialPlotArea');
+        if (plotAreaInput) {
+            plotAreaInput.value = property.plot_area || '';
         }
         
-        if (property.length) {
-            const lengthInput = document.getElementById('residentialLength');
-            if (lengthInput) lengthInput.value = property.length;
+        // Length
+        const lengthInput = document.getElementById('residentialLength');
+        if (lengthInput) {
+            lengthInput.value = property.length || property.plot_length || '';
         }
         
-        if (property.breadth) {
-            const breadthInput = document.getElementById('residentialBreadth');
-            if (breadthInput) breadthInput.value = property.breadth;
+        // Breadth
+        const breadthInput = document.getElementById('residentialBreadth');
+        if (breadthInput) {
+            breadthInput.value = property.breadth || property.plot_breadth || '';
         }
         
-        if (property.buildup_area) {
-            const buildupInput = document.getElementById('residentialBuildupArea');
-            if (buildupInput) buildupInput.value = property.buildup_area;
+        // Buildup area
+        const buildupInput = document.getElementById('residentialBuildupArea');
+        if (buildupInput) {
+            buildupInput.value = property.buildup_area || '';
         }
         
-        if (property.carpet_area) {
-            const carpetInput = document.getElementById('residentialCarpetArea');
-            if (carpetInput) carpetInput.value = property.carpet_area;
+        // Carpet area
+        const carpetInput = document.getElementById('residentialCarpetArea');
+        if (carpetInput) {
+            carpetInput.value = property.carpet_area || '';
         }
         
-        if (property.bedrooms_count) {
-            const bedroomsCountInput = document.getElementById('residentialBedroomsCount');
-            if (bedroomsCountInput) bedroomsCountInput.value = property.bedrooms_count;
+        // Bedrooms count (for villas)
+        const bedroomsCountInput = document.getElementById('residentialBedroomsCount');
+        if (bedroomsCountInput) {
+            bedroomsCountInput.value = property.bedrooms_count || property.bedrooms || '';
         }
         
-        if (property.bathrooms) {
-            const bathroomsInput = document.getElementById('residentialBathrooms');
-            if (bathroomsInput) bathroomsInput.value = property.bathrooms;
+        // Bedrooms (hidden field)
+        const bedroomsInput = document.getElementById('residentialBedrooms');
+        if (bedroomsInput) {
+            bedroomsInput.value = property.bedrooms || property.bedrooms_count || 1;
+        }
+        
+        // Bathrooms
+        const bathroomsInput = document.getElementById('residentialBathrooms');
+        if (bathroomsInput) {
+            bathroomsInput.value = property.bathrooms || '';
         }
         
         // Set unit type buttons - match by bedrooms and unit_type
         const bedrooms = property.bedrooms || 3;
-        const unitType = property.unit_type || 'villa';
+        const unitType = property.unit_type || 'bhk';
         const unitTypeButtons = document.querySelectorAll('#residentialStep2 .dashboard-unit-type-btn');
         unitTypeButtons.forEach(btn => btn.classList.remove('active'));
         
@@ -2973,9 +3372,22 @@ function populateStep2Fields(property) {
             }, 200);
         }
     } else if (propertyType === 'plot_properties') {
-        if (property.plot_section) {
-            const plotSectionInput = document.getElementById('residentialPlotSection');
-            if (plotSectionInput) plotSectionInput.value = property.plot_section;
+        // Plot area
+        const plotAreaInput = document.getElementById('residentialPlotArea');
+        if (plotAreaInput) {
+            plotAreaInput.value = property.plot_area || property.total_acres || '';
+        }
+        
+        // Length
+        const lengthInput = document.getElementById('residentialLength');
+        if (lengthInput) {
+            lengthInput.value = property.length || property.plot_length || '';
+        }
+        
+        // Breadth
+        const breadthInput = document.getElementById('residentialBreadth');
+        if (breadthInput) {
+            breadthInput.value = property.breadth || property.plot_breadth || '';
         }
     }
 }
@@ -3030,7 +3442,22 @@ async function handleResidentialPropertySubmit(e) {
         property_name: formData.get('property_name'),
         type: formData.get('type') || 'residential',
         property_type: propertyType, // New field for property type
-        unit_type: formData.get('unit_type') || 'bhk',
+        unit_type: (() => {
+            const unitType = formData.get('unit_type') || 'bhk';
+            // Ensure unit_type is always one of: 'rk', 'bhk', '4plus' (database constraint)
+            // 'villa' is NOT a valid unit_type - it should be in the 'type' field instead
+            if (unitType === 'villa') {
+                // For villas, determine unit_type based on bedrooms
+                const bedrooms = formData.get('bedrooms') ? parseInt(formData.get('bedrooms')) : 3;
+                return bedrooms >= 4 ? '4plus' : 'bhk';
+            }
+            // Validate against allowed values
+            if (['rk', 'bhk', '4plus'].includes(unitType)) {
+                return unitType;
+            }
+            // Default to 'bhk' if invalid
+            return 'bhk';
+        })(),
         bedrooms: formData.get('bedrooms') ? parseInt(formData.get('bedrooms')) : null,
         bedrooms_count: formData.get('bedrooms_count') ? parseInt(formData.get('bedrooms_count')) : null,
         bathrooms: formData.get('bathrooms') ? parseInt(formData.get('bathrooms')) : null,
@@ -3519,64 +3946,7 @@ function closeDeleteModal() {
     window.currentDeleteType = null;
 }
 
-// Confirm Delete
-async function confirmDelete() {
-    const id = window.currentDeleteId;
-    const type = window.currentDeleteType || 'property';
-    if (!id) return;
-
-    try {
-        let response;
-        if (type === 'testimonial') {
-            response = await authenticatedFetch(`/api/testimonials/${id}`, {
-                method: 'DELETE'
-            });
-        } else if (type === 'partner') {
-            response = await authenticatedFetch(`/api/partners/${id}`, {
-                method: 'DELETE'
-            });
-        } else {
-            response = await authenticatedFetch(`/api/properties/${id}`, {
-                method: 'DELETE'
-            });
-        }
-
-        if (!response.ok) {
-            const text = await response.text();
-            let errorMessage = `Failed to delete ${type}`;
-            try {
-                const errorData = JSON.parse(text);
-                errorMessage = errorData.detail || errorData.message || errorData.error || errorMessage;
-            } catch {
-                errorMessage = text || `HTTP ${response.status}: ${response.statusText}`;
-            }
-            throw new Error(errorMessage);
-        }
-
-        // Close modal and reload page instead of updating display immediately
-        closeDeleteModal();
-        showNotification(`${type.charAt(0).toUpperCase() + type.slice(1)} deleted successfully!`, 'success');
-        
-        // CRITICAL FIX: Set flag to indicate this is a page reload, not a tab closure
-        // This prevents the session manager from clearing the session during reload
-        // Set in BOTH sessionStorage and localStorage for maximum reliability
-        try {
-            sessionStorage.setItem('_page_reload', 'true');
-            localStorage.setItem('_page_reload', 'true');
-        } catch (e) {
-            console.error('Error setting reload flag:', e);
-        }
-        
-        // Reload the page after a short delay to show the notification
-        // Use a shorter delay to ensure flag is set before any cleanup runs
-        setTimeout(() => {
-            window.location.reload();
-        }, 100);
-    } catch (error) {
-        console.error(`Error deleting ${type}:`, error);
-        showNotification(error.message || `Failed to delete ${type}. Please try again.`, 'error');
-    }
-}
+// Confirm Delete (removed duplicate - see updated version below)
 
 // Image Handling
 let selectedImages = [];
@@ -3603,6 +3973,135 @@ function handleImageSelect(e) {
     handleImageFiles(files);
 }
 
+// Convert image to AVIF/WebP format for better compression
+// Note: AVIF encoding via canvas is not widely supported, so we primarily use WebP
+// which provides excellent compression (typically 25-35% smaller than JPEG)
+async function convertImageToAVIF(file, quality = 0.8) {
+    return new Promise((resolve, reject) => {
+        // Skip conversion for SVG files
+        if (file.type === 'image/svg+xml') {
+            const reader = new FileReader();
+            reader.onload = (e) => resolve(e.target.result);
+            reader.onerror = () => reject(new Error('Failed to read SVG file'));
+            reader.readAsDataURL(file);
+            return;
+        }
+
+        const img = new Image();
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+
+        img.onload = async () => {
+            try {
+                // Set canvas dimensions
+                canvas.width = img.width;
+                canvas.height = img.height;
+
+                // Draw image to canvas
+                ctx.drawImage(img, 0, 0);
+
+                // Try AVIF first (if supported), then fallback to WebP
+                let convertedBlob = null;
+                let convertedBase64 = null;
+                const originalSize = file.size;
+
+                // Check if AVIF encoding is supported
+                const avifSupported = await checkAVIFSupport();
+                
+                if (avifSupported) {
+                    try {
+                        // Try to convert to AVIF
+                        convertedBlob = await new Promise((resolve, reject) => {
+                            canvas.toBlob((blob) => {
+                                if (blob && blob.size > 0) resolve(blob);
+                                else reject(new Error('AVIF encoding not supported'));
+                            }, 'image/avif', quality);
+                        });
+                        
+                        if (convertedBlob && convertedBlob.size < originalSize) {
+                            // AVIF conversion successful and smaller
+                            convertedBase64 = await new Promise((resolve, reject) => {
+                                const reader = new FileReader();
+                                reader.onload = (e) => resolve(e.target.result);
+                                reader.onerror = () => reject(new Error('Failed to read AVIF'));
+                                reader.readAsDataURL(convertedBlob);
+                            });
+                            console.log(`Image optimized to AVIF: ${(originalSize / 1024).toFixed(2)}KB → ${(convertedBlob.size / 1024).toFixed(2)}KB (${((1 - convertedBlob.size / originalSize) * 100).toFixed(1)}% smaller)`);
+                            resolve(convertedBase64);
+                            return;
+                        }
+                    } catch (avifError) {
+                        // AVIF failed, will try WebP
+                        console.log('AVIF encoding not available, using WebP');
+                    }
+                }
+
+                // Convert to WebP (widely supported, excellent compression)
+                convertedBlob = await new Promise((resolve, reject) => {
+                    canvas.toBlob((blob) => {
+                        if (blob) resolve(blob);
+                        else reject(new Error('Failed to convert to WebP'));
+                    }, 'image/webp', quality);
+                });
+
+                convertedBase64 = await new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onload = (e) => resolve(e.target.result);
+                    reader.onerror = () => reject(new Error('Failed to read converted image'));
+                    reader.readAsDataURL(convertedBlob);
+                });
+
+                // Check if converted image is smaller than original
+                const convertedSize = convertedBlob.size;
+                
+                if (convertedSize < originalSize) {
+                    console.log(`Image optimized to WebP: ${(originalSize / 1024).toFixed(2)}KB → ${(convertedSize / 1024).toFixed(2)}KB (${((1 - convertedSize / originalSize) * 100).toFixed(1)}% smaller)`);
+                    resolve(convertedBase64);
+                } else {
+                    // If converted is larger, use original
+                    console.log('Converted image is larger, using original');
+                    const reader = new FileReader();
+                    reader.onload = (e) => resolve(e.target.result);
+                    reader.onerror = () => reject(new Error('Failed to read original file'));
+                    reader.readAsDataURL(file);
+                }
+            } catch (error) {
+                console.error('Error converting image:', error);
+                // Fallback to original
+                const reader = new FileReader();
+                reader.onload = (e) => resolve(e.target.result);
+                reader.onerror = () => reject(new Error('Failed to read file'));
+                reader.readAsDataURL(file);
+            }
+        };
+
+        img.onerror = () => {
+            reject(new Error('Failed to load image'));
+        };
+
+        // Load image from file
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            img.src = e.target.result;
+        };
+        reader.onerror = () => {
+            reject(new Error('Failed to read file'));
+        };
+        reader.readAsDataURL(file);
+    });
+}
+
+// Check if browser supports AVIF format
+async function checkAVIFSupport() {
+    return new Promise((resolve) => {
+        const avif = new Image();
+        avif.onload = avif.onerror = () => {
+            resolve(avif.height === 2);
+        };
+        avif.src = 'data:image/avif;base64,AAAAIGZ0eXBhdmlmAAAAAGF2aWZtaWYxbWlhZk1BMUIAAADybWV0YQAAAAAAAAAoaGRscgAAAAAAAAAAcGljdAAAAAAAAAAAAAAAAGxpYmF2aWYAAAAADnBpdG0AAAAAAAEAAAAeaWxvYwAAAABEAAABAAEAAAABAAABGgAAAB0AAAAoaWluZgAAAAAAAQAAABppbmZlAgAAAAABAABhdjAxQ29sb3IAAAAAamlwcnAAAABLaXBjbwAAABRpc3BlAAAAAAAAAAIAAAACAAAAEHBpeGkAAAAAAwgICAAAAAxhdjFDgQ0MAAAAABNjb2xybmNseAACAAIAAYAAAAAXaXBtYQAAAAAAAAABAAEEAQKDBAAAACVtZGF0EgAKCBgABogQEAwgMg8f8D///8WfhwB8+ErK42A=';
+    });
+}
+
 async function handleImageFiles(files, formType = 'property', imageCategory = 'project') {
     const maxFileSize = 5 * 1024 * 1024; // 5MB
     const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/svg+xml'];
@@ -3621,13 +4120,20 @@ async function handleImageFiles(files, formType = 'property', imageCategory = 'p
             continue;
         }
         
-        // Read file as base64
-        const base64Data = await new Promise((resolve, reject) => {
-            const reader = new FileReader();
-            reader.onload = (e) => resolve(e.target.result);
-            reader.onerror = () => reject(new Error(`Failed to read file "${file.name}"`));
-            reader.readAsDataURL(file);
-        });
+        // Convert image to AVIF (or WebP as fallback) for better compression
+        let base64Data;
+        try {
+            base64Data = await convertImageToAVIF(file, 0.8);
+        } catch (error) {
+            console.error('Error converting image:', error);
+            // Fallback to original if conversion fails
+            base64Data = await new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = (e) => resolve(e.target.result);
+                reader.onerror = () => reject(new Error(`Failed to read file "${file.name}"`));
+                reader.readAsDataURL(file);
+            });
+        }
         
         // Show temporary preview with loading indicator
         const tempPreviewId = addImagePreview(base64Data, false, formType, imageCategory, true);
@@ -3722,7 +4228,7 @@ function addImagePreview(imageSrc, isExisting, formType = 'property', imageCateg
     
     preview.innerHTML = `
         <div style="position: relative;">
-            <img src="${imageSrc}" alt="Property image">
+            <img src="${imageSrc}" alt="Property image" loading="lazy">
             ${loadingHtml}
         </div>
         <button type="button" class="dashboard-image-remove" onclick="removeImagePreview(this, '${formType}', '${imageCategory}')">
@@ -3959,7 +4465,7 @@ function updateGalleryItemNumbers() {
 }
 
 // Handle gallery image upload
-function handleResidentialGalleryImageUpload(itemId, fileInput) {
+async function handleResidentialGalleryImageUpload(itemId, fileInput) {
     const item = document.querySelector(`[data-item-id="${itemId}"]`);
     if (!item || !fileInput.files || fileInput.files.length === 0) return;
     
@@ -3975,14 +4481,31 @@ function handleResidentialGalleryImageUpload(itemId, fileInput) {
         return;
     }
     
-    const reader = new FileReader();
-    reader.onload = function(e) {
+    // Convert image to AVIF for better compression
+    try {
+        const convertedImage = await convertImageToAVIF(file, 0.8);
         const imageContainer = item.querySelector('.dashboard-gallery-item-image');
         if (imageContainer) {
-            imageContainer.innerHTML = `<img src="${e.target.result}" alt="Gallery Image">`;
+            imageContainer.innerHTML = `<img src="${convertedImage}" alt="Gallery Image" loading="lazy">`;
         }
-    };
-    reader.readAsDataURL(file);
+        // Store converted image in file input for later upload
+        const blob = await (await fetch(convertedImage)).blob();
+        const convertedFile = new File([blob], file.name.replace(/\.[^/.]+$/, '.avif'), { type: blob.type });
+        const dataTransfer = new DataTransfer();
+        dataTransfer.items.add(convertedFile);
+        fileInput.files = dataTransfer.files;
+    } catch (error) {
+        console.error('Error converting gallery image:', error);
+        // Fallback to original
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const imageContainer = item.querySelector('.dashboard-gallery-item-image');
+            if (imageContainer) {
+                imageContainer.innerHTML = `<img src="${e.target.result}" alt="Gallery Image" loading="lazy">`;
+            }
+        };
+        reader.readAsDataURL(file);
+    }
 }
 
 function clearPlotImagePreviews() {
@@ -4194,10 +4717,16 @@ async function loadTestimonials(forceRefresh = false) {
 function renderTestimonials(testimonials) {
     const tbody = document.getElementById('testimonialsTableBody');
     
-    if (!tbody) return;
+    if (!tbody) {
+        console.error('Testimonials table body not found!');
+        return;
+    }
+
+    console.log(`Rendering ${testimonials.length} testimonials...`);
 
     if (testimonials.length === 0) {
         tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 2rem;">No testimonials found</td></tr>';
+        console.log('No testimonials to render');
         return;
     }
 
@@ -4606,10 +5135,16 @@ async function loadPartners() {
 function renderPartners(partners) {
     const tbody = document.getElementById('partnersTableBody');
     
-    if (!tbody) return;
+    if (!tbody) {
+        console.error('Partners table body not found!');
+        return;
+    }
+
+    console.log(`Rendering ${partners.length} partners...`);
 
     if (partners.length === 0) {
         tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 2rem;">No partners found</td></tr>';
+        console.log('No partners to render');
         return;
     }
 
@@ -4620,7 +5155,7 @@ function renderPartners(partners) {
             <td>
                 <div class="dashboard-table-image">
                     ${partner.logo_url 
-                        ? `<img src="${escapeHtml(partner.logo_url)}" alt="${escapeHtml(partner.name)}" style="max-width: 80px; max-height: 60px; object-fit: contain;" onerror="this.style.display='none'; const fallback = this.nextElementSibling; if (fallback && fallback.style) fallback.style.display='flex';">
+                        ? `<img src="${escapeHtml(partner.logo_url)}" alt="${escapeHtml(partner.name)}" style="max-width: 80px; max-height: 60px; object-fit: contain;" loading="lazy" onerror="this.style.display='none'; const fallback = this.nextElementSibling; if (fallback && fallback.style) fallback.style.display='flex';">
                     <div style="width: 80px; height: 60px; background: #f3f4f6; display: none; align-items: center; justify-content: center; color: #9ca3af; border-radius: 4px;">No Logo</div>`
                         : '<div style="width: 80px; height: 60px; background: #f3f4f6; display: flex; align-items: center; justify-content: center; color: #9ca3af; border-radius: 4px;">No Logo</div>'
                     }
@@ -4942,7 +5477,7 @@ function handlePartnerLogoSelect(e) {
     handlePartnerLogoFiles(files);
 }
 
-function handlePartnerLogoFiles(files) {
+async function handlePartnerLogoFiles(files) {
     const maxFileSize = 5 * 1024 * 1024; // 5MB
     const allowedTypes = ['image/png', 'image/svg+xml'];
     const allowedExtensions = ['.png', '.svg'];
@@ -4958,30 +5493,50 @@ function handlePartnerLogoFiles(files) {
     
     const filesToProcess = Array.from(files).slice(0, remainingSlots);
     
-    filesToProcess.forEach(file => {
+    for (const file of filesToProcess) {
         // Validate file type
         const fileExtension = '.' + file.name.split('.').pop().toLowerCase();
         if (!allowedTypes.includes(file.type) && !allowedExtensions.includes(fileExtension)) {
             showNotification(`File "${file.name}" is not a valid format. Please use PNG or SVG only.`, 'error');
-            return;
+            continue;
         }
         
         // Validate file size
         if (file.size > maxFileSize) {
             showNotification(`File "${file.name}" is too large. Maximum size is 5MB.`, 'error');
-            return;
+            continue;
         }
         
-        // Read and preview logo
-        const reader = new FileReader();
-        reader.onload = (e) => {
-            addPartnerLogoPreview(e.target.result, false);
-        };
-        reader.onerror = () => {
-            showNotification(`Failed to read file "${file.name}".`, 'error');
-        };
-        reader.readAsDataURL(file);
-    });
+        // Convert PNG logos to AVIF/WebP (skip SVG as they're already optimized)
+        if (file.type === 'image/svg+xml' || fileExtension === '.svg') {
+            // Keep SVG as-is (already optimized format)
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                addPartnerLogoPreview(e.target.result, false);
+            };
+            reader.onerror = () => {
+                showNotification(`Failed to read file "${file.name}".`, 'error');
+            };
+            reader.readAsDataURL(file);
+        } else {
+            // Convert PNG to AVIF/WebP for better compression
+            try {
+                const convertedImage = await convertImageToAVIF(file, 0.9); // Higher quality for logos
+                addPartnerLogoPreview(convertedImage, false);
+            } catch (error) {
+                console.error('Error converting partner logo:', error);
+                // Fallback to original
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    addPartnerLogoPreview(e.target.result, false);
+                };
+                reader.onerror = () => {
+                    showNotification(`Failed to read file "${file.name}".`, 'error');
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+    }
 }
 
 function addPartnerLogoPreview(imageSrc, isExisting) {
@@ -5002,7 +5557,7 @@ function addPartnerLogoPreview(imageSrc, isExisting) {
     const preview = document.createElement('div');
     preview.className = 'dashboard-image-preview';
     preview.innerHTML = `
-        <img src="${imageSrc}" alt="Partner logo">
+        <img src="${imageSrc}" alt="Partner logo" loading="lazy">
         <button type="button" class="dashboard-image-remove" onclick="removePartnerLogoPreview(this)">
             <i class="fas fa-times"></i>
         </button>
@@ -5035,7 +5590,7 @@ function clearPartnerLogoPreviews() {
     if (fileInput) fileInput.value = '';
 }
 
-// Update confirmDelete to handle partners and blogs
+// Confirm Delete - Immediately updates UI without page reload
 async function confirmDelete() {
     const id = window.currentDeleteId;
     const type = window.currentDeleteType || 'property';
@@ -5087,25 +5642,36 @@ async function confirmDelete() {
             throw new Error(errorData.detail || `Failed to delete ${type}`);
         }
 
-        // Close modal and reload page instead of updating display immediately
+        // Close modal immediately
         closeDeleteModal();
-        showNotification(`${type.charAt(0).toUpperCase() + type.slice(1)} deleted successfully!`, 'success');
         
-        // CRITICAL FIX: Set flag to indicate this is a page reload, not a tab closure
-        // This prevents the session manager from clearing the session during reload
-        // Set in BOTH sessionStorage and localStorage for maximum reliability
-        try {
-            sessionStorage.setItem('_page_reload', 'true');
-            localStorage.setItem('_page_reload', 'true');
-        } catch (e) {
-            console.error('Error setting reload flag:', e);
+        // Immediately update the UI without page reload
+        if (type === 'property') {
+            // Remove from currentProperties array
+            currentProperties = currentProperties.filter(p => p.id !== sanitizedId);
+            // Re-render properties table
+            renderProperties(currentProperties);
+            // Reload stats to update counters
+            loadStats();
+        } else if (type === 'testimonial') {
+            // Remove from currentTestimonials array
+            currentTestimonials = currentTestimonials.filter(t => t.id !== sanitizedId);
+            // Re-render testimonials table
+            renderTestimonials(currentTestimonials);
+        } else if (type === 'partner') {
+            // Remove from currentPartners array
+            currentPartners = currentPartners.filter(p => p.id !== sanitizedId);
+            // Re-render partners table
+            renderPartners(currentPartners);
+        } else if (type === 'blog') {
+            // Remove from currentBlogs array
+            currentBlogs = currentBlogs.filter(b => b.id !== sanitizedId);
+            // Re-render blogs table
+            renderBlogs(currentBlogs);
         }
         
-        // Reload the page after a short delay to show the notification
-        // Use a shorter delay to ensure flag is set before any cleanup runs
-        setTimeout(() => {
-            window.location.reload();
-        }, 100);
+        // Show success notification
+        showNotification(`${type.charAt(0).toUpperCase() + type.slice(1)} deleted successfully!`, 'success');
     } catch (error) {
         console.error(`Error deleting ${type}:`, error);
         showNotification(error.message || `Failed to delete ${type}. Please try again.`, 'error');
@@ -5219,7 +5785,7 @@ function renderBlogs(blogs) {
             <td>
                 <div class="dashboard-table-image">
                     ${blog.image_url 
-                        ? `<img src="${escapeHtml(blog.image_url)}" alt="${escapeHtml(title)}" style="max-width: 80px; max-height: 60px; object-fit: cover; border-radius: 4px;" onerror="this.style.display='none'; const fallback = this.nextElementSibling; if (fallback && fallback.style) fallback.style.display='flex';">
+                        ? `<img src="${escapeHtml(blog.image_url)}" alt="${escapeHtml(title)}" style="max-width: 80px; max-height: 60px; object-fit: cover; border-radius: 4px;" loading="lazy" onerror="this.style.display='none'; const fallback = this.nextElementSibling; if (fallback && fallback.style) fallback.style.display='flex';">
                     <div style="width: 80px; height: 60px; background: #f3f4f6; display: none; align-items: center; justify-content: center; color: #9ca3af; border-radius: 4px; font-size: 0.75rem;">No Image</div>`
                         : '<div style="width: 80px; height: 60px; background: #f3f4f6; display: flex; align-items: center; justify-content: center; color: #9ca3af; border-radius: 4px; font-size: 0.75rem;">No Image</div>'
                     }
@@ -5275,6 +5841,32 @@ function initBlogContentEditor() {
     const editorContainer = document.getElementById('blogContentEditor');
     if (!editorContainer) return;
 
+    // Lazy load Quill if not already loaded
+    if (typeof Quill === 'undefined') {
+        if (window.loadQuillEditor) {
+            window.loadQuillEditor();
+            // Wait for Quill to load, then initialize
+            const checkQuill = setInterval(() => {
+                if (typeof Quill !== 'undefined') {
+                    clearInterval(checkQuill);
+                    initializeQuillEditor();
+                }
+            }, 100);
+            // Timeout after 5 seconds
+            setTimeout(() => clearInterval(checkQuill), 5000);
+        } else {
+            console.error('Quill.js not available');
+            return;
+        }
+    } else {
+        initializeQuillEditor();
+    }
+}
+
+function initializeQuillEditor() {
+    const editorContainer = document.getElementById('blogContentEditor');
+    if (!editorContainer) return;
+
     // Initialize Quill editor with formatting toolbar
     blogContentEditor = new Quill('#blogContentEditor', {
         theme: 'snow',
@@ -5310,6 +5902,11 @@ function openBlogModal(blogId = null) {
     const modalTitle = document.getElementById('blogModalTitle');
     
     if (!modal || !form) return;
+
+    // Lazy load Quill editor when modal opens
+    if (window.loadQuillEditor && typeof Quill === 'undefined') {
+        window.loadQuillEditor();
+    }
 
     // Get blog ID input reference BEFORE resetting form
     const blogIdInput = document.getElementById('blogId');
@@ -5742,7 +6339,7 @@ function handleBlogImageSelect(e) {
     handleBlogImageFiles(files);
 }
 
-function handleBlogImageFiles(files) {
+async function handleBlogImageFiles(files) {
     const maxFileSize = 5 * 1024 * 1024; // 5MB
     const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
     
@@ -5765,15 +6362,22 @@ function handleBlogImageFiles(files) {
     // Clear existing preview first (only one image allowed)
     clearBlogImagePreview();
     
-    // Read and preview image
-    const reader = new FileReader();
-    reader.onload = (e) => {
-        addBlogImagePreview(e.target.result, false);
-    };
-    reader.onerror = () => {
-        showNotification(`Failed to read file "${file.name}".`, 'error');
-    };
-    reader.readAsDataURL(file);
+    // Convert image to AVIF for better compression
+    try {
+        const convertedImage = await convertImageToAVIF(file, 0.8);
+        addBlogImagePreview(convertedImage, false);
+    } catch (error) {
+        console.error('Error converting blog image:', error);
+        // Fallback to original
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            addBlogImagePreview(e.target.result, false);
+        };
+        reader.onerror = () => {
+            showNotification(`Failed to read file "${file.name}".`, 'error');
+        };
+        reader.readAsDataURL(file);
+    }
 }
 
 function addBlogImagePreview(imageSrc, isExisting) {
@@ -5787,7 +6391,7 @@ function addBlogImagePreview(imageSrc, isExisting) {
     const preview = document.createElement('div');
     preview.className = 'dashboard-image-preview';
     preview.innerHTML = `
-        <img src="${imageSrc}" alt="Blog image">
+        <img src="${imageSrc}" alt="Blog image" loading="lazy">
         <button type="button" class="dashboard-image-remove" onclick="removeBlogImagePreview(this)">
             <i class="fas fa-times"></i>
         </button>
@@ -5846,6 +6450,7 @@ if (typeof window.editProperty === 'undefined') {
 // Load Inquiries from API
 async function loadInquiries(forceRefresh = false) {
     try {
+        console.log('Loading inquiries from API...');
         // Add cache-busting timestamp if force refresh is requested
         const cacheBuster = forceRefresh ? `?_t=${Date.now()}` : '';
         

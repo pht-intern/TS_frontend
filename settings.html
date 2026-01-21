@@ -210,7 +210,7 @@
                 <div class="dashboard-header-left">
                     <a href="/" class="dashboard-logo-link">
                         <div class="logo-graphic">
-                            <img src="/images/TirumakudaluProperties_Logo-2048x1858.png" alt="Tirumakudalu Properties Logo" class="logo-img">
+                            <img src="/images/TirumakudaluProperties_Logo-2048x1858.png" alt="Tirumakudalu Properties Logo" class="logo-img" loading="lazy">
                         </div>
                     </a>
                     <!-- Dashboard Navigation -->
@@ -523,7 +523,7 @@
             }
         });
     </script>
-    <script src="/js/session-manager.js"></script>
+    <script src="/js/session-manager.js" defer></script>
     <script>
         // Settings Page JavaScript
         (function() {
@@ -1196,30 +1196,40 @@
 
             // Load States from backend and merge with comprehensive list
             async function loadStates() {
+                // Build city map from comprehensive list (declare outside try-catch)
+                const cityMap = new Map();
+                
                 try {
+                    // Build city map from comprehensive list first
+                    // Check if indianCities is defined
+                    if (typeof indianCities !== 'undefined' && Array.isArray(indianCities)) {
+                        indianCities.forEach(city => {
+                            const key = city.name.toLowerCase();
+                            cityMap.set(key, {
+                                name: city.name,
+                                state: city.state,
+                                is_active: false,
+                                properties_count: 0
+                            });
+                        });
+                    } else {
+                        console.error('indianCities is not defined or is not an array');
+                    }
+
                     // Load cities from backend to determine state activation
                     const response = await fetch('/api/admin/cities', {
                         method: 'GET',
                         headers: getAuthHeaders()
                     });
 
-                    // Build city map from comprehensive list
-                    const cityMap = new Map();
-                    indianCities.forEach(city => {
-                        const key = city.name.toLowerCase();
-                        cityMap.set(key, {
-                            name: city.name,
-                            state: city.state,
-                            is_active: false,
-                            properties_count: 0
-                        });
-                    });
-
                     // Update with backend data if available
+                    // Note: /api/admin/cities returns an array directly, not an object with cities property
                     if (response.ok) {
-                        const data = await response.json();
-                        if (data.cities && Array.isArray(data.cities)) {
-                            data.cities.forEach(city => {
+                        const citiesData = await response.json();
+                        // Handle both array response and object with cities property
+                        const cities = Array.isArray(citiesData) ? citiesData : (citiesData.cities || []);
+                        if (Array.isArray(cities)) {
+                            cities.forEach(city => {
                                 const key = city.name.toLowerCase();
                                 if (cityMap.has(key)) {
                                     cityMap.get(key).is_active = city.is_active;
@@ -1229,10 +1239,42 @@
                         }
                     }
                 } catch (error) {
-                    console.log('Error loading city data from backend');
+                    console.error('Error loading city data from backend:', error);
+                    // If error occurs, still build city map from comprehensive list
+                    if (cityMap.size === 0 && typeof indianCities !== 'undefined' && Array.isArray(indianCities)) {
+                        indianCities.forEach(city => {
+                            const key = city.name.toLowerCase();
+                            cityMap.set(key, {
+                                name: city.name,
+                                state: city.state,
+                                is_active: false,
+                                properties_count: 0
+                            });
+                        });
+                    }
                 }
 
                 // Store all cities for later use
+                // Ensure cityMap is valid before using it
+                if (!cityMap || cityMap.size === 0) {
+                    console.error('cityMap is empty or invalid, initializing from indianCities');
+                    if (typeof indianCities !== 'undefined' && Array.isArray(indianCities)) {
+                        indianCities.forEach(city => {
+                            const key = city.name.toLowerCase();
+                            cityMap.set(key, {
+                                name: city.name,
+                                state: city.state,
+                                is_active: false,
+                                properties_count: 0
+                            });
+                        });
+                    } else {
+                        console.error('Cannot initialize cityMap: indianCities is not defined');
+                        // Return early if we can't build the city map
+                        return;
+                    }
+                }
+                
                 allCities = Array.from(cityMap.values());
 
                 // Extract unique states and determine their activation status

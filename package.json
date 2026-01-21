@@ -1,0 +1,21 @@
+{
+  "name": "tsproperties-frontend",
+  "version": "1.0.0",
+  "description": "TSProperties Frontend Build Tools",
+  "scripts": {
+    "build:css": "node build-css.js",
+    "build:js": "node build-js.js",
+    "build": "node build-css.js && node build-js.js"
+  },
+  "devDependencies": {
+    "@fullhuman/postcss-purgecss": "^6.0.0",
+    "cssnano": "^6.0.0",
+    "postcss": "^8.4.35",
+    "postcss-cli": "^11.0.0",
+    "terser": "^5.26.0",
+    "glob": "^10.3.10"
+  },
+  "engines": {
+    "node": ">=14.0.0"
+  }
+}

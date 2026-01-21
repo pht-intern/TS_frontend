@@ -711,7 +711,7 @@ function renderProperties(propertiesToRender = filteredProperties.slice(0, displ
         return `
         <div class="property-card" data-type="${propertyType}" data-status="${propertyStatus}" data-id="${propertyId}" data-property-id="${propertyId}">
             <div class="property-image">
-                <img src="${imageUrl}" alt="${title}" onerror="this.src='/images/img1.jpg'">
+                <img src="${imageUrl}" alt="${title}" loading="lazy" onerror="this.src='/images/img1.jpg'">
                 <div class="property-badge ${propertyStatus}">${propertyStatus === 'sale' ? 'For Sale' : 'For Rent'}</div>
                 <div class="property-actions">
                     <button class="property-action-btn" title="Share" aria-label="Share property" data-property-id="${propertyId}">

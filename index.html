@@ -45,11 +45,83 @@
         })();
     </script>
     <link rel="icon" type="image/png" href="/images/TirumakudaluProperties_Logo-2048x1858.png">
-    <link rel="stylesheet" href="/css/style.css">
-    <!-- Google Fonts - Load with fallback, no preconnect to avoid connection issues -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:wght@400;600;700&display=swap" rel="stylesheet" onerror="this.onerror=null; this.href='';">
-    <!-- Font Awesome - Load with fallback -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" onerror="this.onerror=null; this.remove();">
+    <!-- Critical CSS - Inlined for above-the-fold content -->
+    <style>
+/* Critical CSS - Above the fold styles only */
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--black:#000;--black-soft:#0a0a0a;--black-elevated:#1a1a1a;--grey-darkest:#2d2d2d;--grey-darker:#3d3d3d;--grey-dark:#4a4a4a;--grey-medium:#6b6b6b;--grey:#8a8a8a;--grey-light:#b0b0b0;--grey-lighter:#d0d0d0;--grey-lightest:#e5e5e5;--grey-pale:#f0f0f0;--grey-ultra-pale:#f8f8f8;--white:#fff;--white-off:#fafafa;--yellow-muted:#2C3E50;--yellow-soft:#1e2a36;--yellow-dull:#151c24;--yellow-warm:#8B2E3D;--yellow-pale:#f5f3f0;--yellow-subtle:#e8e5e0;--yellow-bright:#2C3E50;--yellow-gold:#8B2E3D;--purple:#9C27B0;--purple-pale:#f3e5f5;--purple-light:#e1bee7;--primary-color:#2C3E50;--primary-dark:#1e2a36;--primary-darker:#151c24;--primary-light:#8B2E3D;--primary-lighter:#e8e5e0;--primary-lightest:#f5f3f0;--secondary-color:#4a4a4a;--accent-color:#8B2E3D;--pastel-yellow:#f5f3f0;--pastel-grey-light:#f5f5f5;--pastel-grey:#eee;--pastel-grey-dark:#e0e0e0;--text-dark:#1a1a1a;--text-gray:#4a4a4a;--text-light:#6b6b6b;--light-bg:#fafafa;--border-color:#e5e5e5;--shadow-sm:0 1px 2px 0 rgba(0,0,0,.05);--shadow-md:0 4px 6px -1px rgba(0,0,0,.1);--shadow-lg:0 10px 15px -3px rgba(0,0,0,.1);--shadow-xl:0 20px 25px -5px rgba(0,0,0,.1);--shadow-2xl:0 25px 50px -12px rgba(0,0,0,.25)}
+html{overflow-x:hidden;width:100%;max-width:100%}
+body{font-family:'Inter',sans-serif;font-size:18px;line-height:1.6;color:var(--text-dark);overflow-x:hidden;width:100%;max-width:100%;box-sizing:border-box}
+*{box-sizing:border-box}
+p{font-size:18px}
+h1{font-size:28px}
+h2{font-size:26px}
+h3{font-size:22px}
+h4{font-size:22px}
+h5{font-size:22px}
+h6{font-size:22px}
+.container{max-width:1200px;margin:0 auto;padding:0 20px;overflow:visible;width:100%;box-sizing:border-box}
+@media (max-width:1366px){.container{max-width:100%;padding:0 15px}}
+@media (max-width:1280px){.container{padding:0 12px}}
+.top-bar{background:var(--black);color:var(--white);padding:.75rem 0;font-size:.875rem}
+.top-bar-content{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem}
+.top-bar-left{display:flex;gap:2rem;flex-wrap:wrap}
+.top-bar-left a{color:rgba(255,255,255,.8);text-decoration:none;transition:color .3s ease}
+.top-bar-left a:hover{color:var(--white)}
+.top-bar-left i{margin-right:.5rem;color:var(--accent-color)}
+.top-bar-right{display:flex;gap:1rem}
+.top-bar-right a{color:rgba(255,255,255,.8);width:30px;height:30px;display:flex;align-items:center;justify-content:center;border-radius:50%;transition:all .3s ease}
+.top-bar-right a:hover{background:var(--primary-color);color:var(--black);transform:translateY(-3px) scale(1.1)}
+.navbar{position:sticky;top:0;left:0;right:0;background:var(--white);box-shadow:0 2px 8px rgba(0,0,0,.1);z-index:1000;transition:all .3s ease}
+.nav-wrapper{display:flex;justify-content:flex-start;align-items:center;padding:1.25rem 0;gap:3rem;flex-wrap:nowrap;position:relative}
+.logo{display:flex;align-items:center;margin-right:3.5rem;flex-shrink:0;z-index:1001}
+.logo-link{display:flex;align-items:center;gap:1rem;text-decoration:none;transition:transform .3s ease}
+.logo-img{width:200px;height:auto;object-fit:contain;display:block;transition:width .3s ease}
+.nav-menu{display:flex;list-style:none;gap:2rem;align-items:center}
+.nav-menu a{text-decoration:none;color:var(--text-dark);font-weight:500;font-size:.95rem;transition:all .3s cubic-bezier(.68,-.55,.265,1.55);position:relative;display:inline-block}
+.nav-menu a::after{content:'';position:absolute;bottom:-5px;left:0;width:0;height:2px;background:var(--primary-color);transition:width .3s ease}
+.nav-menu a:hover::after,.nav-menu a.active::after{width:100%}
+.nav-menu a:hover,.nav-menu a.active{color:var(--primary-color);transform:translateY(-2px)}
+.nav-search{flex:1;max-width:300px;margin:0;min-width:0}
+.nav-search-wrapper{position:relative;display:flex;align-items:center;background:var(--light-bg);border:2px solid var(--border-color);border-radius:25px;padding:.5rem 1rem;transition:all .3s ease}
+.nav-search-wrapper:focus-within{border-color:var(--primary-color);box-shadow:0 0 0 3px rgba(171,184,195,.2)}
+.nav-search-input{flex:1;border:none;background:transparent;outline:none;font-size:.9rem;color:var(--text-dark);font-family:inherit;width:100%}
+.nav-actions{display:flex;align-items:center;gap:1rem;margin-left:auto;flex-shrink:0}
+.btn-login{display:inline-flex;align-items:center;gap:.5rem;padding:.625rem 1.25rem;background:linear-gradient(135deg,var(--primary-color),var(--primary-dark));color:var(--white);border:2px solid transparent;border-radius:8px;font-size:.9rem;font-weight:700;cursor:pointer;transition:all .3s cubic-bezier(.4,0,.2,1);font-family:inherit;box-shadow:0 2px 8px var(--primary-color);position:relative;overflow:hidden}
+.btn-login:hover{background:var(--primary-dark);transform:translateY(-3px);box-shadow:0 8px 25px rgba(171,184,195,.5)}
+.hero{position:relative;height:100vh;min-height:800px;overflow:hidden;display:flex;align-items:stretch}
+.hero-split-container{display:grid;grid-template-columns:1fr 2fr;width:100%;height:100%;position:relative}
+.hero-left-panel{background:linear-gradient(135deg,var(--text-dark) 0%,rgba(45,58,69,.95) 100%);display:flex;align-items:center;justify-content:center;position:relative;z-index:2;overflow:hidden}
+.hero-left-content{padding:4rem 3rem;text-align:center;display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;max-width:500px;position:relative;z-index:1}
+.hero-main-heading{font-family:'Playfair Display',serif;font-size:clamp(26px,4vw,28px);font-weight:400;color:var(--white);line-height:1.4;margin-bottom:2rem;text-transform:uppercase;letter-spacing:2px;position:relative}
+.hero-sub-heading{font-family:'Inter',sans-serif;font-size:18px;font-weight:300;color:var(--white);text-transform:uppercase;letter-spacing:3px;margin-bottom:3rem;line-height:1.6;text-align:left;max-width:400px;position:relative;padding-left:1.5rem}
+.hero-sub-heading::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--white);border-radius:2px}
+.hero-right-panel{position:relative;overflow:hidden}
+.hero-image-wrapper{position:relative;width:100%;height:100%;overflow:hidden}
+.hero-image-wrapper img{width:100%;height:100%;object-fit:cover;display:block}
+@media (max-width:768px){.top-bar{padding:.5rem 0;font-size:.75rem}.top-bar-left{gap:1rem;justify-content:center;width:100%}.logo{margin-right:auto}.logo-img{width:140px}.nav-wrapper{gap:1rem;padding:.875rem 0}.hero{min-height:100vh}.hero-left-panel{min-height:350px}.hero-left-content{padding:2rem 1.5rem}.hero-main-heading{font-size:1.5rem}.hero-sub-heading{font-size:.75rem;margin-bottom:2rem}}
+    </style>
+    <!-- Non-critical CSS - Load asynchronously -->
+    <script>
+        // Load non-critical CSS asynchronously
+        (function() {
+            const link = document.createElement('link');
+            link.rel = 'stylesheet';
+            link.href = '/css/style.css';
+            link.media = 'print';
+            link.onload = function() { this.media = 'all'; };
+            document.head.appendChild(link);
+        })();
+    </script>
+    <noscript><link rel="stylesheet" href="/css/style.css"></noscript>
+    <!-- Google Fonts - Load asynchronously -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:wght@400;600;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+    <noscript><link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:wght@400;600;700&display=swap" rel="stylesheet"></noscript>
+    <!-- Font Awesome - Load asynchronously -->
+    <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+    <noscript><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"></noscript>
 </head>
 <body>
     <!-- Top Bar -->
@@ -71,7 +143,7 @@
                 <div class="logo">
                     <a href="#home" class="logo-link">
                         <div class="logo-graphic">
-                            <img src="/images/TirumakudaluProperties_Logo-2048x1858.png" alt="Tirumakudalu Properties Logo" class="logo-img" >
+                            <img src="/images/TirumakudaluProperties_Logo-2048x1858.png" alt="Tirumakudalu Properties Logo" class="logo-img" loading="lazy">
                         </div>
                     </a>
                 </div>
@@ -136,27 +208,27 @@
                     <div class="hero-image-slider">
                         <div class="hero-slide">
                             <div class="hero-image-wrapper">
-                                <img src="/images/img1.jpg" alt="Modern Apartment">
+                                <img src="/images/img1.jpg" alt="Modern Apartment" loading="lazy">
                             </div>
                         </div>
                         <div class="hero-slide">
                             <div class="hero-image-wrapper">
-                                <img src="/images/img2.jpg" alt="Luxury Property">
+                                <img src="/images/img2.jpg" alt="Luxury Property" loading="lazy">
                             </div>
                         </div>
                         <div class="hero-slide">
                             <div class="hero-image-wrapper">
-                                <img src="/images/img3.jpg" alt="Premium Real Estate">
+                                <img src="/images/img3.jpg" alt="Premium Real Estate" loading="lazy">
                             </div>
                         </div>
                         <div class="hero-slide">
                             <div class="hero-image-wrapper">
-                                <img src="/images/img4.jpg" alt="Beautiful Home">
+                                <img src="/images/img4.jpg" alt="Beautiful Home" loading="lazy">
                             </div>
                         </div>
                         <div class="hero-slide">
                             <div class="hero-image-wrapper">
-                                <img src="/images/img5.jpg" alt="Elegant Property">
+                                <img src="/images/img5.jpg" alt="Elegant Property" loading="lazy">
                             </div>
                         </div>
                     </div>
@@ -772,7 +844,7 @@
         <div class="container">
             <div class="founder-compact-content">
                 <div class="founder-compact-image">
-                    <img src="images/Seshadri_TS_full.png" alt="Seshadri T S">
+                    <img src="images/Seshadri_TS_full.png" alt="Seshadri T S" loading="lazy">
                 </div>
                 <div class="founder-compact-info">
                     <div class="founder-compact-label">About Founder</div>
@@ -977,7 +1049,7 @@
                     <div class="footer-logo">
                         <a href="#home" class="logo-link">
                             <div class="logo-graphic">
-                                <img src="/images/TS_Logo_White.png" alt="Tirumakudalu Properties Logo" width="300px" height="auto" style="margin-left: 150px;">
+                                <img src="/images/TS_Logo_White.png" alt="Tirumakudalu Properties Logo" width="300px" height="auto" style="margin-left: 150px;" loading="lazy">
                             </div>
                         </a>
                     </div>
@@ -1022,12 +1094,30 @@
         <span class="floating-btn-text">Browse by Property Type</span>
     </button>
 
-    <script src="/js/session-manager.js"></script>
-    <script src="/js/script.js"></script>
-    <script src="/js/properties.js"></script>
-    <script src="/js/page-tracking.js"></script>
-    <script src="/js/login.js"></script>
-    <script src="/js/app-metrics-tracker.js"></script>
+    <!-- Critical JS - Load immediately -->
+    <script src="/js/session-manager.js" defer></script>
+    <script src="/js/login.js" defer></script>
+    <!-- Non-critical JS - Load after page is interactive -->
+    <script>
+        // Load non-critical scripts after page load
+        window.addEventListener('load', function() {
+            const scripts = [
+                '/js/script.js',
+                '/js/properties.js',
+                '/js/page-tracking.js',
+                '/js/app-metrics-tracker.js'
+            ];
+            scripts.forEach(function(src) {
+                const script = document.createElement('script');
+                script.src = src;
+                script.defer = true;
+                if (src.includes('page-tracking') || src.includes('app-metrics')) {
+                    script.async = true;
+                }
+                document.body.appendChild(script);
+            });
+        });
+    </script>
     <script>
         // Partners data and rendering for compact section
         (function() {
@@ -1144,6 +1234,7 @@
                                 <img src="${escapeHtml(partner.logo_url)}" 
                                      alt="${escapeHtml(partner.name)} Logo" 
                                      class="partner-logo-img"
+                                     loading="lazy"
                                      onerror="this.style.display='none'; const fallback = this.parentElement?.querySelector('.partner-compact-info'); if (fallback && fallback.style) fallback.style.display='flex';">
                             </div>` : ''}
                             <div class="partner-compact-info" ${partner.logo_url ? '' : 'style="display: flex; width: 100%;"'}>

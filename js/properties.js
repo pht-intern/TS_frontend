@@ -973,6 +973,105 @@ async function loadActiveCities() {
     }
 }
 
+// Load localities/areas for a selected city
+async function loadLocalitiesForCity(cityName) {
+    try {
+        if (!cityName || cityName.trim() === '') {
+            // Clear area dropdown if no city is selected
+            const areaSelect = document.getElementById('propertiesSearchArea') || document.getElementById('searchArea');
+            if (areaSelect) {
+                areaSelect.innerHTML = '<option value="">Any Area</option>';
+            }
+            return;
+        }
+        
+        // Add cache-busting timestamp to ensure fresh data
+        const timestamp = new Date().getTime();
+        const apiUrl = `/api/localities?city=${encodeURIComponent(cityName)}&_t=${timestamp}`;
+        console.log('Fetching localities from:', apiUrl);
+        const response = await fetch(apiUrl, {
+            method: 'GET',
+            cache: 'no-cache',
+            headers: {
+                'Cache-Control': 'no-cache'
+            }
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            console.log('Localities API response for city "' + cityName + '":', data);
+            console.log('Number of localities received:', data.localities ? data.localities.length : 0);
+            const areaSelect = document.getElementById('propertiesSearchArea') || document.getElementById('searchArea');
+            if (!areaSelect) {
+                console.error('Area select element not found: propertiesSearchArea or searchArea');
+                return;
+            }
+            
+            // Store current selection before clearing
+            const currentValue = areaSelect.value;
+            
+            // Clear existing options except the first "Any Area" option
+            areaSelect.innerHTML = '<option value="">Any Area</option>';
+            
+            if (data.localities && Array.isArray(data.localities)) {
+                console.log('Processing localities array:', data.localities);
+                // If no localities found, show message
+                if (data.localities.length === 0) {
+                    console.warn('No localities found for city:', cityName);
+                    const option = document.createElement('option');
+                    option.value = '';
+                    option.textContent = 'No areas available for this city';
+                    option.disabled = true;
+                    areaSelect.appendChild(option);
+                    return;
+                }
+                
+                // Sort localities alphabetically
+                const sortedLocalities = [...data.localities].sort();
+                console.log('Sorted localities:', sortedLocalities);
+                
+                // Add localities to select dropdown
+                let addedCount = 0;
+                sortedLocalities.forEach(locality => {
+                    if (locality && locality.trim()) {
+                        const option = document.createElement('option');
+                        option.value = locality.trim();
+                        option.textContent = locality.trim();
+                        areaSelect.appendChild(option);
+                        addedCount++;
+                    }
+                });
+                console.log(`Added ${addedCount} localities to dropdown`);
+                
+                // Restore previous selection if it still exists
+                if (currentValue && areaSelect.querySelector(`option[value="${currentValue}"]`)) {
+                    areaSelect.value = currentValue;
+                }
+            }
+        } else {
+            console.error('Failed to load localities:', response.status, response.statusText);
+            const areaSelect = document.getElementById('propertiesSearchArea') || document.getElementById('searchArea');
+            if (areaSelect) {
+                const option = document.createElement('option');
+                option.value = '';
+                option.textContent = 'Error loading areas';
+                option.disabled = true;
+                areaSelect.appendChild(option);
+            }
+        }
+    } catch (error) {
+        console.error('Error loading localities:', error);
+        const areaSelect = document.getElementById('propertiesSearchArea') || document.getElementById('searchArea');
+        if (areaSelect) {
+            const option = document.createElement('option');
+            option.value = '';
+            option.textContent = 'Error loading areas';
+            option.disabled = true;
+            areaSelect.appendChild(option);
+        }
+    }
+}
+
 // Load amenities and populate datalist
 async function loadAmenities() {
     try {
@@ -1143,7 +1242,13 @@ function initFilters() {
     // City select change handler
     const citySelect = document.getElementById('propertiesSearchCity') || document.getElementById('searchCity');
     if (citySelect) {
-        citySelect.addEventListener('change', () => {
+        citySelect.addEventListener('change', async () => {
+            // Load localities for the selected city
+            const selectedCity = citySelect.value;
+            // Extract city name if it's in format "City, State"
+            const cityName = selectedCity.includes(',') ? selectedCity.split(',')[0].trim() : selectedCity.trim();
+            console.log('City selected:', selectedCity, 'Extracted city name:', cityName);
+            await loadLocalitiesForCity(cityName);
             applyFilters();
         });
     }

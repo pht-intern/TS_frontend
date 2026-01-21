@@ -1360,6 +1360,23 @@ function renderProperties(properties) {
             }
         }
         
+        // Debug: Log image URL and property data for troubleshooting (only log first few to avoid spam)
+        if (property.id && properties.indexOf(property) < 3) {
+            console.log(`Property ${property.id} (${property.title || 'Untitled'}) image data:`, {
+                hasPrimaryImage: !!property.primary_image,
+                primaryImage: property.primary_image?.substring(0, 100),
+                hasImagesArray: Array.isArray(property.images),
+                imagesLength: property.images?.length || 0,
+                firstImage: property.images?.[0],
+                finalImageUrl: imageUrl !== placeholderSvg ? imageUrl.substring(0, 150) : 'placeholder',
+                normalized: imageUrl !== placeholderSvg,
+                rawProperty: {
+                    primary_image: property.primary_image,
+                    images: property.images
+                }
+            });
+        }
+        
         // Ensure imageUrl is always a valid string
         if (!imageUrl || typeof imageUrl !== 'string' || !imageUrl.trim()) {
             imageUrl = placeholderSvg;
@@ -1388,18 +1405,26 @@ function renderProperties(properties) {
             statusText = 'Under Construction';
         }
         
-        // Ensure imageUrl is properly escaped for use in HTML attribute
-        // For URLs, we need to escape quotes and special characters but preserve the URL structure
-        // Accept any format - don't restrict based on extension or protocol
-        // Make sure imageUrl is a string before calling replace
+        // Normalize status for CSS class (replace underscores with hyphens)
+        const statusClass = actualStatus ? actualStatus.replace(/_/g, '-') : 'sale';
+        
+        // Prepare image URL for use in HTML attribute
+        // Escape only what's needed for JavaScript template literal context
         let safeImageUrl = placeholderSvg; // Default to placeholder
+        let useSingleQuotes = false;
         if (imageUrl && typeof imageUrl === 'string' && imageUrl.trim()) {
             try {
-                safeImageUrl = imageUrl.trim()
-                    .replace(/"/g, '&quot;')
-                    .replace(/'/g, '&#39;')
-                    .replace(/</g, '&lt;')
-                    .replace(/>/g, '&gt;');
+                const trimmedUrl = imageUrl.trim();
+                // Check if URL contains double quotes - if so, use single quotes for attribute
+                if (trimmedUrl.includes('"')) {
+                    useSingleQuotes = true;
+                    // Escape backslashes and single quotes for JavaScript template literal
+                    safeImageUrl = trimmedUrl.replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/\$/g, '\\$').replace(/`/g, '\\`');
+                } else {
+                    // Use double quotes for attribute (default)
+                    // Escape backslashes, double quotes, and template literal special chars
+                    safeImageUrl = trimmedUrl.replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/\$/g, '\\$').replace(/`/g, '\\`');
+                }
             } catch (e) {
                 console.warn('Error processing image URL:', e, 'Using placeholder');
                 safeImageUrl = placeholderSvg;
@@ -1409,6 +1434,9 @@ function renderProperties(properties) {
         // Use a more robust error handler that ensures an image is always displayed
         const placeholderImage = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iODAiIGhlaWdodD0iNjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjgwIiBoZWlnaHQ9IjYwIiBmaWxsPSIjZjNmNGY2Ii8+PHRleHQgeD0iNTA%2BIHk9IjUwJSIgZm9udC1mYW1pbHk9IkFyaWFsLCBzYW5zLXNlcmlmIiBmb250LXNpemU9IjEwIiBmaWxsPSIjOWNhM2FmIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkeT0iLjNlbSI+Tm8gSW1hZ2U8L3RleHQ+PC9zdmc+';
         
+        // Check if we're already using the placeholder
+        const isPlaceholder = safeImageUrl === placeholderSvg || safeImageUrl === placeholderImage;
+        
         // Final validation - ensure safeImageUrl is never empty
         if (!safeImageUrl || !safeImageUrl.trim()) {
             safeImageUrl = placeholderImage;
@@ -1417,16 +1445,29 @@ function renderProperties(properties) {
         // Create a unique ID for this image to handle errors properly
         const imageId = `prop-img-${property.id || Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
         
+        // Enhanced error handler that logs the failed URL and prevents infinite loops
+        // Only set error handler if we're not already using the placeholder
+        const errorHandler = isPlaceholder ? '' : `(function(imgId, failedUrl) { 
+            const img = document.getElementById(imgId); 
+            if (img && !img.dataset.errorHandled) { 
+                img.dataset.errorHandled = 'true';
+                console.warn('Image failed to load:', failedUrl.substring(0, 100));
+                img.onerror = null; 
+                img.src = '${placeholderImage}'; 
+                img.alt = ''; 
+                img.style.display = 'block'; 
+            } 
+        })(this.id, '${safeImageUrl.replace(/'/g, "\\'").replace(/"/g, '&quot;')}');`;
+        
         return `
         <tr>
             <td>
                 <div class="dashboard-table-image" style="width: 80px; height: 60px; overflow: hidden; border-radius: 4px; background: #f3f4f6; position: relative;">
                     <img id="${imageId}" 
-                         src="${safeImageUrl}" 
+                         src=${useSingleQuotes ? `'${safeImageUrl}'` : `"${safeImageUrl}"`} 
                          alt="" 
                          style="width: 100%; height: 100%; object-fit: cover; display: block;"
-                         loading="lazy"
-                         onerror="(function(imgId) { const img = document.getElementById(imgId); if (img) { img.onerror = null; img.src = '${placeholderImage}'; img.alt = ''; img.style.display = 'block'; } })(this.id);">
+                         loading="lazy"${errorHandler ? ` onerror="${errorHandler}"` : ''}>
                     <noscript>
                         <div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background: #f3f4f6; color: #9ca3af; font-size: 0.75rem;">
                             <i class="fas fa-image"></i>
@@ -1456,7 +1497,7 @@ function renderProperties(properties) {
                 </div>
             </td>
             <td>
-                <span class="dashboard-table-status ${property.status}">${statusText}</span>
+                <span class="dashboard-table-status ${statusClass}">${statusText}</span>
             </td>
             <td>
                 <div class="dashboard-table-actions">
@@ -1676,8 +1717,37 @@ async function openResidentialPropertyModal(propertyId = null) {
     // Load cities for the dropdown
     await loadCitiesForResidentialForm();
     
+    // Add event listener for city change to load localities
+    // Re-attach listener each time modal opens to ensure it works
+    const citySelect = document.getElementById('residentialCity');
+    if (citySelect) {
+        // Remove any existing listener by cloning the element
+        const oldCitySelect = citySelect;
+        const newCitySelect = oldCitySelect.cloneNode(true);
+        oldCitySelect.parentNode.replaceChild(newCitySelect, oldCitySelect);
+        
+        // Add change event listener to the new element
+        newCitySelect.addEventListener('change', async function() {
+            const selectedCity = this.value;
+            // Extract city name if it's in format "City, State"
+            const cityName = selectedCity.includes(',') ? selectedCity.split(',')[0].trim() : selectedCity.trim();
+            console.log('City selected in modal:', selectedCity, 'Extracted city name:', cityName);
+            await loadLocalitiesForResidentialForm(cityName);
+        });
+    }
+    
     // Load unit types for the form
     await loadUnitTypesForResidentialForm();
+    
+    // If a city is already selected (e.g., from URL params or previous selection), load its localities
+    const citySelectAfterLoad = document.getElementById('residentialCity');
+    if (citySelectAfterLoad && citySelectAfterLoad.value) {
+        const selectedCity = citySelectAfterLoad.value;
+        const cityName = selectedCity.includes(',') ? selectedCity.split(',')[0].trim() : selectedCity.trim();
+        if (cityName) {
+            await loadLocalitiesForResidentialForm(cityName);
+        }
+    }
 
     if (propertyId) {
         modalTitle.textContent = 'Edit Property';
@@ -2793,6 +2863,105 @@ async function loadCitiesForResidentialForm() {
     }
 }
 
+// Load localities/areas for a selected city in residential form
+async function loadLocalitiesForResidentialForm(cityName) {
+    try {
+        if (!cityName || cityName.trim() === '') {
+            // Clear locality dropdown if no city is selected
+            const localitySelect = document.getElementById('residentialLocality');
+            if (localitySelect) {
+                localitySelect.innerHTML = '<option value="">Select Locality/Area</option>';
+            }
+            return;
+        }
+        
+        // Add cache-busting timestamp to ensure fresh data
+        const timestamp = new Date().getTime();
+        const apiUrl = `/api/localities?city=${encodeURIComponent(cityName)}&_t=${timestamp}`;
+        console.log('Fetching localities from:', apiUrl);
+        const response = await fetch(apiUrl, {
+            method: 'GET',
+            cache: 'no-cache',
+            headers: {
+                'Cache-Control': 'no-cache'
+            }
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            console.log('Localities API response for city "' + cityName + '":', data);
+            console.log('Number of localities received:', data.localities ? data.localities.length : 0);
+            const localitySelect = document.getElementById('residentialLocality');
+            if (!localitySelect) {
+                console.error('Locality select element not found: residentialLocality');
+                return;
+            }
+            
+            // Store current selection before clearing
+            const currentValue = localitySelect.value;
+            
+            // Clear existing options except the first "Select Locality/Area" option
+            localitySelect.innerHTML = '<option value="">Select Locality/Area</option>';
+            
+            if (data.localities && Array.isArray(data.localities)) {
+                console.log('Processing localities array:', data.localities);
+                // If no localities found, show message
+                if (data.localities.length === 0) {
+                    console.warn('No localities found for city:', cityName);
+                    const option = document.createElement('option');
+                    option.value = '';
+                    option.textContent = 'No areas available for this city';
+                    option.disabled = true;
+                    localitySelect.appendChild(option);
+                    return;
+                }
+                
+                // Sort localities alphabetically
+                const sortedLocalities = [...data.localities].sort();
+                console.log('Sorted localities:', sortedLocalities);
+                
+                // Add localities to select dropdown
+                let addedCount = 0;
+                sortedLocalities.forEach(locality => {
+                    if (locality && locality.trim()) {
+                        const option = document.createElement('option');
+                        option.value = locality.trim();
+                        option.textContent = locality.trim();
+                        localitySelect.appendChild(option);
+                        addedCount++;
+                    }
+                });
+                console.log(`Added ${addedCount} localities to dropdown`);
+                
+                // Restore previous selection if it still exists
+                if (currentValue && localitySelect.querySelector(`option[value="${currentValue}"]`)) {
+                    localitySelect.value = currentValue;
+                }
+            }
+        } else {
+            console.error('Failed to load localities:', response.status, response.statusText);
+            const localitySelect = document.getElementById('residentialLocality');
+            if (localitySelect) {
+                const option = document.createElement('option');
+                option.value = '';
+                option.textContent = 'Error loading areas';
+                option.disabled = true;
+                localitySelect.appendChild(option);
+            }
+        }
+    } catch (error) {
+        console.error('Error loading localities:', error);
+        const localitySelect = document.getElementById('residentialLocality');
+        if (localitySelect) {
+            const option = document.createElement('option');
+            option.value = '';
+            option.textContent = 'Error loading areas';
+            option.disabled = true;
+            localitySelect.appendChild(option);
+        }
+    }
+}
+
 // Store unit types globally
 let allUnitTypes = [];
 
@@ -2944,10 +3113,31 @@ function populateResidentialForm(property) {
             cityInput.appendChild(option);
             cityInput.value = property.city;
         }
+        
+        // Load localities for the selected city
+        const cityName = property.city.includes(',') ? property.city.split(',')[0].trim() : property.city.trim();
+        loadLocalitiesForResidentialForm(cityName).then(() => {
+            // Set locality value after localities are loaded
+            const localityInput = document.getElementById('residentialLocality');
+            if (localityInput && property.locality) {
+                // Check if the locality exists in the dropdown
+                const localityOption = localityInput.querySelector(`option[value="${property.locality}"]`);
+                if (localityOption) {
+                    localityInput.value = property.locality;
+                } else {
+                    // If locality doesn't exist in dropdown, add it as an option
+                    const option = document.createElement('option');
+                    option.value = property.locality;
+                    option.textContent = property.locality;
+                    localityInput.appendChild(option);
+                    localityInput.value = property.locality;
+                }
+            }
+        });
+    } else {
+        const localityInput = document.getElementById('residentialLocality');
+        if (localityInput) localityInput.value = property.locality || '';
     }
-    
-    const localityInput = document.getElementById('residentialLocality');
-    if (localityInput) localityInput.value = property.locality || '';
     
     const propertyNameInput = document.getElementById('residentialPropertyName');
     if (propertyNameInput) propertyNameInput.value = property.property_name || '';
@@ -3973,134 +4163,6 @@ function handleImageSelect(e) {
     handleImageFiles(files);
 }
 
-// Convert image to AVIF/WebP format for better compression
-// Note: AVIF encoding via canvas is not widely supported, so we primarily use WebP
-// which provides excellent compression (typically 25-35% smaller than JPEG)
-async function convertImageToAVIF(file, quality = 0.8) {
-    return new Promise((resolve, reject) => {
-        // Skip conversion for SVG files
-        if (file.type === 'image/svg+xml') {
-            const reader = new FileReader();
-            reader.onload = (e) => resolve(e.target.result);
-            reader.onerror = () => reject(new Error('Failed to read SVG file'));
-            reader.readAsDataURL(file);
-            return;
-        }
-
-        const img = new Image();
-        const canvas = document.createElement('canvas');
-        const ctx = canvas.getContext('2d');
-
-        img.onload = async () => {
-            try {
-                // Set canvas dimensions
-                canvas.width = img.width;
-                canvas.height = img.height;
-
-                // Draw image to canvas
-                ctx.drawImage(img, 0, 0);
-
-                // Try AVIF first (if supported), then fallback to WebP
-                let convertedBlob = null;
-                let convertedBase64 = null;
-                const originalSize = file.size;
-
-                // Check if AVIF encoding is supported
-                const avifSupported = await checkAVIFSupport();
-                
-                if (avifSupported) {
-                    try {
-                        // Try to convert to AVIF
-                        convertedBlob = await new Promise((resolve, reject) => {
-                            canvas.toBlob((blob) => {
-                                if (blob && blob.size > 0) resolve(blob);
-                                else reject(new Error('AVIF encoding not supported'));
-                            }, 'image/avif', quality);
-                        });
-                        
-                        if (convertedBlob && convertedBlob.size < originalSize) {
-                            // AVIF conversion successful and smaller
-                            convertedBase64 = await new Promise((resolve, reject) => {
-                                const reader = new FileReader();
-                                reader.onload = (e) => resolve(e.target.result);
-                                reader.onerror = () => reject(new Error('Failed to read AVIF'));
-                                reader.readAsDataURL(convertedBlob);
-                            });
-                            console.log(`Image optimized to AVIF: ${(originalSize / 1024).toFixed(2)}KB → ${(convertedBlob.size / 1024).toFixed(2)}KB (${((1 - convertedBlob.size / originalSize) * 100).toFixed(1)}% smaller)`);
-                            resolve(convertedBase64);
-                            return;
-                        }
-                    } catch (avifError) {
-                        // AVIF failed, will try WebP
-                        console.log('AVIF encoding not available, using WebP');
-                    }
-                }
-
-                // Convert to WebP (widely supported, excellent compression)
-                convertedBlob = await new Promise((resolve, reject) => {
-                    canvas.toBlob((blob) => {
-                        if (blob) resolve(blob);
-                        else reject(new Error('Failed to convert to WebP'));
-                    }, 'image/webp', quality);
-                });
-
-                convertedBase64 = await new Promise((resolve, reject) => {
-                    const reader = new FileReader();
-                    reader.onload = (e) => resolve(e.target.result);
-                    reader.onerror = () => reject(new Error('Failed to read converted image'));
-                    reader.readAsDataURL(convertedBlob);
-                });
-
-                // Check if converted image is smaller than original
-                const convertedSize = convertedBlob.size;
-                
-                if (convertedSize < originalSize) {
-                    console.log(`Image optimized to WebP: ${(originalSize / 1024).toFixed(2)}KB → ${(convertedSize / 1024).toFixed(2)}KB (${((1 - convertedSize / originalSize) * 100).toFixed(1)}% smaller)`);
-                    resolve(convertedBase64);
-                } else {
-                    // If converted is larger, use original
-                    console.log('Converted image is larger, using original');
-                    const reader = new FileReader();
-                    reader.onload = (e) => resolve(e.target.result);
-                    reader.onerror = () => reject(new Error('Failed to read original file'));
-                    reader.readAsDataURL(file);
-                }
-            } catch (error) {
-                console.error('Error converting image:', error);
-                // Fallback to original
-                const reader = new FileReader();
-                reader.onload = (e) => resolve(e.target.result);
-                reader.onerror = () => reject(new Error('Failed to read file'));
-                reader.readAsDataURL(file);
-            }
-        };
-
-        img.onerror = () => {
-            reject(new Error('Failed to load image'));
-        };
-
-        // Load image from file
-        const reader = new FileReader();
-        reader.onload = (e) => {
-            img.src = e.target.result;
-        };
-        reader.onerror = () => {
-            reject(new Error('Failed to read file'));
-        };
-        reader.readAsDataURL(file);
-    });
-}
-
-// Check if browser supports AVIF format
-async function checkAVIFSupport() {
-    return new Promise((resolve) => {
-        const avif = new Image();
-        avif.onload = avif.onerror = () => {
-            resolve(avif.height === 2);
-        };
-        avif.src = 'data:image/avif;base64,AAAAIGZ0eXBhdmlmAAAAAGF2aWZtaWYxbWlhZk1BMUIAAADybWV0YQAAAAAAAAAoaGRscgAAAAAAAAAAcGljdAAAAAAAAAAAAAAAAGxpYmF2aWYAAAAADnBpdG0AAAAAAAEAAAAeaWxvYwAAAABEAAABAAEAAAABAAABGgAAAB0AAAAoaWluZgAAAAAAAQAAABppbmZlAgAAAAABAABhdjAxQ29sb3IAAAAAamlwcnAAAABLaXBjbwAAABRpc3BlAAAAAAAAAAIAAAACAAAAEHBpeGkAAAAAAwgICAAAAAxhdjFDgQ0MAAAAABNjb2xybmNseAACAAIAAYAAAAAXaXBtYQAAAAAAAAABAAEEAQKDBAAAACVtZGF0EgAKCBgABogQEAwgMg8f8D///8WfhwB8+ErK42A=';
-    });
-}
 
 async function handleImageFiles(files, formType = 'property', imageCategory = 'project') {
     const maxFileSize = 5 * 1024 * 1024; // 5MB
@@ -4120,20 +4182,13 @@ async function handleImageFiles(files, formType = 'property', imageCategory = 'p
             continue;
         }
         
-        // Convert image to AVIF (or WebP as fallback) for better compression
-        let base64Data;
-        try {
-            base64Data = await convertImageToAVIF(file, 0.8);
-        } catch (error) {
-            console.error('Error converting image:', error);
-            // Fallback to original if conversion fails
-            base64Data = await new Promise((resolve, reject) => {
-                const reader = new FileReader();
-                reader.onload = (e) => resolve(e.target.result);
-                reader.onerror = () => reject(new Error(`Failed to read file "${file.name}"`));
-                reader.readAsDataURL(file);
-            });
-        }
+        // Read image file as base64
+        const base64Data = await new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = (e) => resolve(e.target.result);
+            reader.onerror = () => reject(new Error(`Failed to read file "${file.name}"`));
+            reader.readAsDataURL(file);
+        });
         
         // Show temporary preview with loading indicator
         const tempPreviewId = addImagePreview(base64Data, false, formType, imageCategory, true);
@@ -4481,31 +4536,18 @@ async function handleResidentialGalleryImageUpload(itemId, fileInput) {
         return;
     }
     
-    // Convert image to AVIF for better compression
-    try {
-        const convertedImage = await convertImageToAVIF(file, 0.8);
+    // Read image file as base64
+    const reader = new FileReader();
+    reader.onload = function(e) {
         const imageContainer = item.querySelector('.dashboard-gallery-item-image');
         if (imageContainer) {
-            imageContainer.innerHTML = `<img src="${convertedImage}" alt="Gallery Image" loading="lazy">`;
+            imageContainer.innerHTML = `<img src="${e.target.result}" alt="Gallery Image" loading="lazy">`;
         }
-        // Store converted image in file input for later upload
-        const blob = await (await fetch(convertedImage)).blob();
-        const convertedFile = new File([blob], file.name.replace(/\.[^/.]+$/, '.avif'), { type: blob.type });
-        const dataTransfer = new DataTransfer();
-        dataTransfer.items.add(convertedFile);
-        fileInput.files = dataTransfer.files;
-    } catch (error) {
-        console.error('Error converting gallery image:', error);
-        // Fallback to original
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            const imageContainer = item.querySelector('.dashboard-gallery-item-image');
-            if (imageContainer) {
-                imageContainer.innerHTML = `<img src="${e.target.result}" alt="Gallery Image" loading="lazy">`;
-            }
-        };
-        reader.readAsDataURL(file);
-    }
+    };
+    reader.onerror = function() {
+        showNotification('Failed to read image file', 'error');
+    };
+    reader.readAsDataURL(file);
 }
 
 function clearPlotImagePreviews() {
@@ -5507,35 +5549,15 @@ async function handlePartnerLogoFiles(files) {
             continue;
         }
         
-        // Convert PNG logos to AVIF/WebP (skip SVG as they're already optimized)
-        if (file.type === 'image/svg+xml' || fileExtension === '.svg') {
-            // Keep SVG as-is (already optimized format)
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                addPartnerLogoPreview(e.target.result, false);
-            };
-            reader.onerror = () => {
-                showNotification(`Failed to read file "${file.name}".`, 'error');
-            };
-            reader.readAsDataURL(file);
-        } else {
-            // Convert PNG to AVIF/WebP for better compression
-            try {
-                const convertedImage = await convertImageToAVIF(file, 0.9); // Higher quality for logos
-                addPartnerLogoPreview(convertedImage, false);
-            } catch (error) {
-                console.error('Error converting partner logo:', error);
-                // Fallback to original
-                const reader = new FileReader();
-                reader.onload = (e) => {
-                    addPartnerLogoPreview(e.target.result, false);
-                };
-                reader.onerror = () => {
-                    showNotification(`Failed to read file "${file.name}".`, 'error');
-                };
-                reader.readAsDataURL(file);
-            }
-        }
+        // Read image file as base64
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            addPartnerLogoPreview(e.target.result, false);
+        };
+        reader.onerror = () => {
+            showNotification(`Failed to read file "${file.name}".`, 'error');
+        };
+        reader.readAsDataURL(file);
     }
 }
 
@@ -6362,22 +6384,15 @@ async function handleBlogImageFiles(files) {
     // Clear existing preview first (only one image allowed)
     clearBlogImagePreview();
     
-    // Convert image to AVIF for better compression
-    try {
-        const convertedImage = await convertImageToAVIF(file, 0.8);
-        addBlogImagePreview(convertedImage, false);
-    } catch (error) {
-        console.error('Error converting blog image:', error);
-        // Fallback to original
-        const reader = new FileReader();
-        reader.onload = (e) => {
-            addBlogImagePreview(e.target.result, false);
-        };
-        reader.onerror = () => {
-            showNotification(`Failed to read file "${file.name}".`, 'error');
-        };
-        reader.readAsDataURL(file);
-    }
+    // Read image file as base64
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        addBlogImagePreview(e.target.result, false);
+    };
+    reader.onerror = () => {
+        showNotification(`Failed to read file "${file.name}".`, 'error');
+    };
+    reader.readAsDataURL(file);
 }
 
 function addBlogImagePreview(imageSrc, isExisting) {

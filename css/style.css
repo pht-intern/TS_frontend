@@ -14567,6 +14567,26 @@ section:not(.hero).section-visible .section-header {
     color: var(--purple);
 }
 
+.dashboard-table-status.resale {
+    background: #e3f2fd;
+    color: #1976d2;
+}
+
+.dashboard-table-status.new {
+    background: #e8f5e9;
+    color: #2e7d32;
+}
+
+.dashboard-table-status.ready-to-move {
+    background: #e1f5fe;
+    color: #0277bd;
+}
+
+.dashboard-table-status.under-construction {
+    background: #fff3e0;
+    color: #e65100;
+}
+
 .dashboard-table-actions {
     display: flex;
     gap: 0.5rem;

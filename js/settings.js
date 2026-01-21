@@ -305,7 +305,10 @@ let allStates = [];
             // Save all cities (bulk update) - cities are activated/deactivated based on their state
             const response = await fetch('/api/admin/cities/bulk', {
                 method: 'POST',
-                headers: getAuthHeaders(),
+                headers: {
+                    ...getAuthHeaders(),
+                    'Content-Type': 'application/json'
+                },
                 body: JSON.stringify({
                     cities: allCities.map(city => ({
                         name: city.name,
@@ -315,8 +318,25 @@ let allStates = [];
                 })
             });
 
+            // Check if response is OK before parsing JSON
+            if (!response.ok) {
+                // Try to get error message from response
+                let errorMessage = `Failed to save states (${response.status})`;
+                try {
+                    const errorData = await response.json();
+                    errorMessage = errorData.message || errorData.error || errorMessage;
+                } catch (e) {
+                    // If response is not JSON (e.g., HTML 404 page), get text
+                    const text = await response.text();
+                    console.error('Non-JSON error response:', text.substring(0, 200));
+                    errorMessage = `Server error: ${response.status} ${response.statusText}`;
+                }
+                showNotification(errorMessage, 'error');
+                return;
+            }
+
             const data = await response.json();
-            if (response.ok) {
+            if (data.success) {
                 showNotification(`Successfully saved ${activeStateNames.length} active states`, 'success');
                 loadStates();
             } else {

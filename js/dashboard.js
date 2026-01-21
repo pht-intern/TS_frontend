@@ -812,6 +812,7 @@ function initDashboard() {
     loadBlogs();
     loadInquiries();
     loadVisitorInfo();
+    loadPageVisitStats(true); // Load page visit stats with loading indicator
     
     // Initialize stat card click tracking
     initStatCardTracking();
@@ -1181,41 +1182,64 @@ async function loadProperties(forceRefresh = false) {
         // Fetch all properties (both active and inactive) for dashboard management
         // API limit is 100, so we need to fetch multiple pages if needed
         let allProperties = [];
-        let page = 1;
-        let hasMore = true;
         const limit = 100; // Maximum allowed by API
         
         // Add cache-busting timestamp if force refresh is requested
         const cacheBuster = forceRefresh ? `&_t=${Date.now()}` : '';
         
-        while (hasMore) {
-            const fetchOptions = forceRefresh ? {
-                cache: 'no-store',
-                headers: {
-                    'Cache-Control': 'no-cache'
-                }
-            } : {};
-            
-            const response = await fetch(`/api/properties?page=${page}&limit=${limit}${cacheBuster}`, fetchOptions);
-            if (!response.ok) {
-                const text = await response.text();
-                let errorMessage = 'Failed to fetch properties';
-                try {
-                    const errorData = JSON.parse(text);
-                    errorMessage = errorData.detail || errorData.message || errorData.error || errorMessage;
-                } catch {
-                    errorMessage = text || `HTTP ${response.status}: ${response.statusText}`;
-                }
-                throw new Error(errorMessage);
+        const fetchOptions = forceRefresh ? {
+            cache: 'no-store',
+            headers: {
+                'Cache-Control': 'no-cache'
             }
-            const data = await response.json();
-            const properties = data.items || [];
-            allProperties = allProperties.concat(properties);
+        } : {};
+        
+        // Helper function to fetch all pages for a given is_active status
+        async function fetchAllPages(isActive) {
+            const properties = [];
+            let page = 1;
+            let hasMore = true;
             
-            // Check if there are more pages
-            hasMore = page < data.pages;
-            page++;
+            while (hasMore) {
+                const url = `/api/properties?page=${page}&limit=${limit}&is_active=${isActive}${cacheBuster}`;
+                const response = await fetch(url, fetchOptions);
+                
+                if (!response.ok) {
+                    const text = await response.text();
+                    let errorMessage = 'Failed to fetch properties';
+                    try {
+                        const errorData = JSON.parse(text);
+                        errorMessage = errorData.detail || errorData.message || errorData.error || errorMessage;
+                    } catch {
+                        errorMessage = text || `HTTP ${response.status}: ${response.statusText}`;
+                    }
+                    throw new Error(errorMessage);
+                }
+                
+                const data = await response.json();
+                const pageProperties = data.items || [];
+                properties.push(...pageProperties);
+                
+                // Check if there are more pages
+                hasMore = page < data.pages;
+                page++;
+            }
+            
+            return properties;
         }
+        
+        // Fetch both active and inactive properties in parallel
+        const [activeProperties, inactiveProperties] = await Promise.all([
+            fetchAllPages('true'),
+            fetchAllPages('false')
+        ]);
+        
+        // Combine and sort by created_at (newest first)
+        allProperties = [...activeProperties, ...inactiveProperties].sort((a, b) => {
+            const dateA = a.created_at ? new Date(a.created_at) : new Date(0);
+            const dateB = b.created_at ? new Date(b.created_at) : new Date(0);
+            return dateB - dateA; // Descending order (newest first)
+        });
         
         // Store properties for search functionality
         currentProperties = allProperties;
@@ -1230,7 +1254,7 @@ async function loadProperties(forceRefresh = false) {
         currentProperties = properties;
         renderProperties(properties);
         loadStats();
-        loadPageVisitStats();
+        loadPageVisitStats(true); // Show loading indicator on initial load
         showNotification('Failed to load properties from server. Showing cached data.', 'warning');
     }
 }
@@ -1598,8 +1622,22 @@ function animateCounter(element, target, duration = 1500) {
     }, 16);
 }
 
-// Load and display page visit counts
-async function loadPageVisitStats() {
+// Load and display page visit counts with real-time updates
+async function loadPageVisitStats(showLoadingIndicator = false) {
+    const tableBody = document.getElementById('pageVisitsTableBody');
+    if (!tableBody) return;
+    
+    // Show loading indicator if requested (for initial load)
+    if (showLoadingIndicator) {
+        tableBody.innerHTML = `
+            <tr>
+                <td colspan="4" style="text-align: center; padding: 2rem;">
+                    <i class="fas fa-spinner fa-spin"></i> Loading page visit statistics...
+                </td>
+            </tr>
+        `;
+    }
+    
     try {
         const response = await authenticatedFetch('/api/admin/stats/page-visits');
         if (!response.ok) {
@@ -1614,9 +1652,6 @@ async function loadPageVisitStats() {
             throw new Error(errorMessage);
         }
         const data = await response.json();
-        
-        const tableBody = document.getElementById('pageVisitsTableBody');
-        if (!tableBody) return;
         
         // Validate that page_visits is an array
         if (!Array.isArray(data.page_visits)) {
@@ -1642,7 +1677,19 @@ async function loadPageVisitStats() {
             return;
         }
         
-        // Render page visits table with defensive checks
+        // Store previous data for comparison (for animation)
+        const previousRows = Array.from(tableBody.querySelectorAll('tr'));
+        const previousData = new Map();
+        previousRows.forEach(row => {
+            const cells = row.querySelectorAll('td');
+            if (cells.length >= 2) {
+                const pageName = cells[0].textContent.trim();
+                const visitCount = parseInt(cells[1].textContent.replace(/,/g, '')) || 0;
+                previousData.set(pageName, visitCount);
+            }
+        });
+        
+        // Render page visits table with defensive checks and real-time update animation
         tableBody.innerHTML = data.page_visits.map(page => {
             // Safely extract values with defaults
             const pageName = page.page || page.page_name || 'Unknown';
@@ -1650,19 +1697,34 @@ async function loadPageVisitStats() {
             const uniqueVisitors = Number(page.unique_visitors ?? 0);
             const authenticatedVisitors = Number(page.authenticated_visitors ?? 0);
             
+            // Check if this is a new or updated row for animation
+            const previousCount = previousData.get(pageName);
+            const isUpdated = previousCount !== undefined && previousCount !== visitCount;
+            const rowClass = isUpdated ? 'page-visit-updated' : '';
+            
             return `
-            <tr>
+            <tr class="${rowClass}">
                 <td><strong>${escapeHtml(pageName)}</strong></td>
-                <td>${visitCount.toLocaleString()}</td>
-                <td>${uniqueVisitors.toLocaleString()}</td>
-                <td>${authenticatedVisitors.toLocaleString()}</td>
+                <td class="visit-count">${visitCount.toLocaleString()}</td>
+                <td class="unique-visitors">${uniqueVisitors.toLocaleString()}</td>
+                <td class="authenticated-visitors">${authenticatedVisitors.toLocaleString()}</td>
             </tr>
         `;
         }).join('');
         
+        // Add CSS animation for updated rows
+        const updatedRows = tableBody.querySelectorAll('.page-visit-updated');
+        if (updatedRows.length > 0) {
+            // Remove animation class after animation completes
+            setTimeout(() => {
+                updatedRows.forEach(row => {
+                    row.classList.remove('page-visit-updated');
+                });
+            }, 1000);
+        }
+        
     } catch (error) {
         console.error('Error loading page visit statistics:', error);
-        const tableBody = document.getElementById('pageVisitsTableBody');
         if (tableBody) {
             tableBody.innerHTML = `
                 <tr>
@@ -3621,7 +3683,27 @@ async function handleResidentialPropertySubmit(e) {
     const originalBtnText = submitBtn ? submitBtn.innerHTML : '';
     
     // Extract form data from all steps
-    const propertyType = formData.get('property_type') || '';
+    let propertyType = formData.get('property_type') || '';
+    
+    // If property_type is not set, infer from other fields
+    if (!propertyType) {
+        // Try to infer from type field or other indicators
+        const typeField = formData.get('type');
+        if (typeField === 'villa') {
+            propertyType = 'villas';
+        } else if (typeField === 'house') {
+            propertyType = 'individual_house';
+        } else {
+            // Default to apartments if we have unit_type or bedrooms
+            const unitType = formData.get('unit_type');
+            const bedrooms = formData.get('bedrooms');
+            if (unitType || bedrooms) {
+                propertyType = 'apartments';
+            } else {
+                propertyType = 'apartments'; // Safe default
+            }
+        }
+    }
     
     // Extract form data
     const data = {
@@ -3631,7 +3713,7 @@ async function handleResidentialPropertySubmit(e) {
         directions: formData.get('directions') || null,
         property_name: formData.get('property_name'),
         type: formData.get('type') || 'residential',
-        property_type: propertyType, // New field for property type
+        property_type: propertyType, // Required by backend to identify property type
         unit_type: (() => {
             const unitType = formData.get('unit_type') || 'bhk';
             // Ensure unit_type is always one of: 'rk', 'bhk', '4plus' (database constraint)
@@ -3918,11 +4000,13 @@ async function handlePlotPropertySubmit(e) {
     
     // Extract form data
     const data = {
+        property_type: 'plot_properties', // Required by backend to identify plot properties
         city: formData.get('city'),
         locality: formData.get('locality'),
         location_link: formData.get('location_link') || null,
         directions: formData.get('directions') || null,
         project_name: formData.get('project_name'),
+        property_name: formData.get('project_name'), // Backend accepts both project_name and property_name
         plot_area: parseFloat(formData.get('plot_area') || '0'),
         plot_length: parseFloat(formData.get('plot_length') || '0'),
         plot_breadth: parseFloat(formData.get('plot_breadth') || '0'),
@@ -3949,6 +4033,8 @@ async function handlePlotPropertySubmit(e) {
             return null; // For 'sale' and 'rent', property_status is null
         })(),
         description: formData.get('description'),
+        builder: formData.get('builder') || null,
+        total_acres: formData.get('total_acres') ? parseFloat(formData.get('total_acres')) : null,
         is_featured: formData.get('is_featured') === 'on',
         is_active: true,
         images: [],
@@ -4803,11 +4889,6 @@ function renderTestimonials(testimonials) {
                     <button class="dashboard-action-btn edit" onclick="editTestimonial(${testimonial.id})" title="Edit">
                         <i class="fas fa-edit"></i>
                     </button>
-                    <button class="dashboard-action-btn ${testimonial.is_approved ? 'delete' : 'edit'}" 
-                            onclick="toggleTestimonialApproval(${testimonial.id}, ${!testimonial.is_approved})" 
-                            title="${testimonial.is_approved ? 'Unapprove' : 'Approve'}">
-                        <i class="fas fa-${testimonial.is_approved ? 'check-circle' : 'clock'}"></i>
-                    </button>
                     <button class="dashboard-action-btn delete" onclick="deleteTestimonial(${testimonial.id})" title="Delete">
                         <i class="fas fa-trash"></i>
                     </button>
@@ -5660,8 +5741,28 @@ async function confirmDelete() {
         }
 
         if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.detail || `Failed to delete ${type}`);
+            const text = await response.text();
+            let errorMessage = `Failed to delete ${type}`;
+            try {
+                const errorData = JSON.parse(text);
+                if (errorData.detail) {
+                    if (typeof errorData.detail === 'string') {
+                        errorMessage = errorData.detail;
+                    } else if (Array.isArray(errorData.detail)) {
+                        errorMessage = errorData.detail.map(err => {
+                            const field = err.loc ? err.loc.join('.') : 'field';
+                            return `${field}: ${err.msg}`;
+                        }).join(', ');
+                    } else {
+                        errorMessage = JSON.stringify(errorData.detail);
+                    }
+                } else {
+                    errorMessage = errorData.message || errorData.error || errorMessage;
+                }
+            } catch {
+                errorMessage = text || `HTTP ${response.status}: ${response.statusText}`;
+            }
+            throw new Error(errorMessage);
         }
 
         // Close modal immediately
@@ -5669,12 +5770,12 @@ async function confirmDelete() {
         
         // Immediately update the UI without page reload
         if (type === 'property') {
-            // Remove from currentProperties array
+            // Remove from currentProperties array for immediate UI update
             currentProperties = currentProperties.filter(p => p.id !== sanitizedId);
-            // Re-render properties table
+            // Re-render properties table immediately
             renderProperties(currentProperties);
-            // Reload stats to update counters
-            loadStats();
+            // Reload from database to ensure consistency and update stats
+            await loadProperties(true);
         } else if (type === 'testimonial') {
             // Remove from currentTestimonials array
             currentTestimonials = currentTestimonials.filter(t => t.id !== sanitizedId);
@@ -7286,6 +7387,14 @@ async function refreshVisitorInfoAndLogs() {
     } catch (error) {
         // Silently fail - don't show errors for background refresh
         console.debug('Background refresh of testimonials failed:', error);
+    }
+    
+    // Refresh page visit stats for real-time updates
+    try {
+        await loadPageVisitStats();
+    } catch (error) {
+        // Silently fail - don't show errors for background refresh
+        console.debug('Background refresh of page visit stats failed:', error);
     }
 }
 

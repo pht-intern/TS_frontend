@@ -14295,6 +14295,70 @@ section:not(.hero).section-visible .section-header {
     margin-bottom: 1rem;
 }
 
+/* Real-time indicator for page visit counts */
+.realtime-indicator {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-left: 1rem;
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: var(--primary-light);
+    vertical-align: middle;
+    font-family: 'Inter', sans-serif;
+    -webkit-text-fill-color: var(--primary-light);
+    background: none;
+    -webkit-background-clip: unset;
+    background-clip: unset;
+}
+
+.realtime-indicator i {
+    font-size: 0.5rem;
+    color: #10b981;
+    animation: pulse-dot 2s ease-in-out infinite;
+}
+
+.realtime-indicator .realtime-text {
+    font-size: 0.875rem;
+    color: var(--primary-light);
+    opacity: 0.9;
+}
+
+@keyframes pulse-dot {
+    0%, 100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+    50% {
+        opacity: 0.5;
+        transform: scale(0.8);
+    }
+}
+
+/* Animation for updated rows in page visit table */
+.page-visit-updated {
+    animation: highlight-update 1s ease-in-out;
+}
+
+@keyframes highlight-update {
+    0% {
+        background-color: transparent;
+    }
+    50% {
+        background-color: rgba(139, 46, 61, 0.1);
+    }
+    100% {
+        background-color: transparent;
+    }
+}
+
+.page-visit-updated td.visit-count,
+.page-visit-updated td.unique-visitors,
+.page-visit-updated td.authenticated-visitors {
+    font-weight: 600;
+    transition: font-weight 0.3s ease;
+}
+
 /* Remove top margin from first section */
 .dashboard-properties-section:first-child {
     margin-top: 0;

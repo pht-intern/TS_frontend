@@ -335,13 +335,15 @@ function renderLogs(logs) {
     
     tbody.innerHTML = logs.map((log, index) => {
         try {
-            // Format date - handle various date formats
+            // Format date - handle various date formats (Indian Standard Time)
             let dateStr = 'N/A';
             if (log.created_at) {
                 try {
                     const date = new Date(log.created_at);
                     if (!isNaN(date.getTime())) {
-                        dateStr = date.toLocaleDateString('en-US', {
+                        // Convert to Indian Standard Time (IST - UTC+5:30)
+                        dateStr = date.toLocaleString('en-IN', {
+                            timeZone: 'Asia/Kolkata',
                             year: 'numeric',
                             month: 'short',
                             day: 'numeric',

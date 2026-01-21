@@ -1197,7 +1197,7 @@
             // Load States from backend and merge with comprehensive list
             async function loadStates() {
                 // Build city map from comprehensive list (declare outside try-catch)
-                const cityMap = new Map();
+                let cityMap = new Map();
                 
                 try {
                     // Build city map from comprehensive list first
@@ -1228,12 +1228,15 @@
                         const citiesData = await response.json();
                         // Handle both array response and object with cities property
                         const cities = Array.isArray(citiesData) ? citiesData : (citiesData.cities || []);
-                        if (Array.isArray(cities)) {
+                        if (Array.isArray(cities) && cityMap) {
                             cities.forEach(city => {
                                 const key = city.name.toLowerCase();
-                                if (cityMap.has(key)) {
-                                    cityMap.get(key).is_active = city.is_active;
-                                    cityMap.get(key).properties_count = city.properties_count || 0;
+                                if (cityMap && cityMap.has(key)) {
+                                    const cityEntry = cityMap.get(key);
+                                    if (cityEntry) {
+                                        cityEntry.is_active = city.is_active;
+                                        cityEntry.properties_count = city.properties_count || 0;
+                                    }
                                 }
                             });
                         }
@@ -1241,6 +1244,9 @@
                 } catch (error) {
                     console.error('Error loading city data from backend:', error);
                     // If error occurs, still build city map from comprehensive list
+                    if (!cityMap) {
+                        cityMap = new Map();
+                    }
                     if (cityMap.size === 0 && typeof indianCities !== 'undefined' && Array.isArray(indianCities)) {
                         indianCities.forEach(city => {
                             const key = city.name.toLowerCase();
@@ -1256,7 +1262,10 @@
 
                 // Store all cities for later use
                 // Ensure cityMap is valid before using it
-                if (!cityMap || cityMap.size === 0) {
+                if (!cityMap) {
+                    cityMap = new Map();
+                }
+                if (cityMap.size === 0) {
                     console.error('cityMap is empty or invalid, initializing from indianCities');
                     if (typeof indianCities !== 'undefined' && Array.isArray(indianCities)) {
                         indianCities.forEach(city => {

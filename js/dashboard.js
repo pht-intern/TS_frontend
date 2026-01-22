@@ -3783,17 +3783,31 @@ async function handleResidentialPropertySubmit(e) {
         const imagePreview = item.querySelector('.dashboard-gallery-item-image img');
         const titleInput = item.querySelector('input[name="gallery_image_title"]');
         const categorySelect = item.querySelector('select[name="gallery_image_category"]');
+        const hiddenImageUrl = item.querySelector('input[type="hidden"][name="gallery_image_url"]');
         
         let imageUrl = null;
         let imageFile = null;
         
-        // Check if image is already uploaded (has preview)
-        if (imagePreview && imagePreview.src && !imagePreview.src.includes('data:')) {
+        // Priority: 1. data attribute, 2. hidden input, 3. preview src, 4. file input
+        // Check data-image-url attribute (set after successful upload)
+        if (item.hasAttribute('data-image-url')) {
+            imageUrl = item.getAttribute('data-image-url');
+        }
+        // Check hidden input (also set after successful upload)
+        else if (hiddenImageUrl && hiddenImageUrl.value) {
+            imageUrl = hiddenImageUrl.value;
+        }
+        // Check if image is already uploaded (has preview with non-data URL)
+        else if (imagePreview && imagePreview.src && !imagePreview.src.includes('data:')) {
             imageUrl = imagePreview.src;
-        } else if (imageInput && imageInput.files && imageInput.files.length > 0) {
+        }
+        // Fallback: check if there's a file selected but not yet uploaded
+        else if (imageInput && imageInput.files && imageInput.files.length > 0) {
+            // Note: Files should be uploaded immediately when selected, but this is a fallback
             imageFile = imageInput.files[0];
         }
         
+        // Only include items with uploaded images (imageUrl) or files ready to upload
         if (imageUrl || imageFile) {
             const galleryItem = {
                 title: titleInput ? titleInput.value : '',
@@ -4555,8 +4569,12 @@ function addResidentialGalleryItem(imageUrl = null, title = '', category = 'proj
     
     const itemId = 'gallery-item-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
     
+    // Escape imageUrl for HTML attribute
+    const safeImageUrl = imageUrl ? imageUrl.replace(/"/g, '&quot;') : '';
+    const dataImageUrlAttr = imageUrl ? `data-image-url="${safeImageUrl}"` : '';
+    
     const galleryItemHTML = `
-        <div class="dashboard-gallery-item" data-item-id="${itemId}">
+        <div class="dashboard-gallery-item" data-item-id="${itemId}" ${dataImageUrlAttr}>
             <div class="dashboard-gallery-item-header">
                 <span class="dashboard-gallery-item-title">Image ${galleryContainer.children.length + 1}</span>
                 <button type="button" class="dashboard-gallery-item-remove" onclick="removeResidentialGalleryItem('${itemId}')">
@@ -4566,7 +4584,7 @@ function addResidentialGalleryItem(imageUrl = null, title = '', category = 'proj
             <div class="dashboard-gallery-item-content">
                 <div class="dashboard-gallery-item-image">
                     ${imageUrl ? 
-                        `<img src="${imageUrl}" alt="Gallery Image">` : 
+                        `<img src="${imageUrl}" alt="Gallery Image" loading="lazy" style="width: 100%; height: auto; border-radius: 8px;">` : 
                         `<div class="dashboard-gallery-item-image-placeholder">
                             <i class="fas fa-image"></i>
                             <p>No image selected</p>
@@ -4574,12 +4592,13 @@ function addResidentialGalleryItem(imageUrl = null, title = '', category = 'proj
                     }
                 </div>
                 <div class="dashboard-gallery-item-fields">
+                    ${imageUrl ? `<input type="hidden" name="gallery_image_url" value="${safeImageUrl}">` : ''}
                     <div class="dashboard-form-group">
                         <label>
                             <i class="fas fa-heading"></i>
                             Image Title
                         </label>
-                        <input type="text" name="gallery_image_title" placeholder="e.g., Living Room View" value="${title}">
+                        <input type="text" name="gallery_image_title" placeholder="e.g., Living Room View" value="${(title || '').replace(/"/g, '&quot;').replace(/'/g, '&#39;')}">
                     </div>
                     <div class="dashboard-form-group">
                         <label>
@@ -4647,23 +4666,105 @@ async function handleResidentialGalleryImageUpload(itemId, fileInput) {
     }
     
     // Check file size (5MB max)
-    if (file.size > 5 * 1024 * 1024) {
+    const maxFileSize = 5 * 1024 * 1024; // 5MB
+    if (file.size > maxFileSize) {
         showNotification('Image size should be less than 5MB', 'error');
         return;
     }
     
-    // Read image file as base64
-    const reader = new FileReader();
-    reader.onload = function(e) {
-        const imageContainer = item.querySelector('.dashboard-gallery-item-image');
-        if (imageContainer) {
-            imageContainer.innerHTML = `<img src="${e.target.result}" alt="Gallery Image" loading="lazy">`;
+    // Validate file type
+    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/svg+xml'];
+    if (!allowedTypes.includes(file.type)) {
+        showNotification(`File "${file.name}" is not a valid image format. Please use JPG, PNG, SVG, or WebP.`, 'error');
+        return;
+    }
+    
+    const imageContainer = item.querySelector('.dashboard-gallery-item-image');
+    if (!imageContainer) return;
+    
+    // Show loading indicator
+    imageContainer.innerHTML = `
+        <div style="position: relative; width: 100%; height: 200px; display: flex; align-items: center; justify-content: center; background: #f3f4f6; border-radius: 8px;">
+            <div style="text-align: center;">
+                <i class="fas fa-spinner fa-spin" style="font-size: 2rem; color: #3b82f6; margin-bottom: 0.5rem;"></i>
+                <p style="color: #6b7280; font-size: 0.875rem;">Uploading image...</p>
+            </div>
+        </div>
+    `;
+    
+    try {
+        // Read image file as base64
+        const base64Data = await new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = (e) => resolve(e.target.result);
+            reader.onerror = () => reject(new Error(`Failed to read file "${file.name}"`));
+            reader.readAsDataURL(file);
+        });
+        
+        // Upload image to server
+        const response = await authenticatedFetch('/api/upload-image', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                image: base64Data
+            })
+        });
+        
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            throw new Error(errorData.message || 'Failed to upload image');
         }
-    };
-    reader.onerror = function() {
-        showNotification('Failed to read image file', 'error');
-    };
-    reader.readAsDataURL(file);
+        
+        const result = await response.json();
+        const uploadedUrl = result.image_url;
+        
+        if (!uploadedUrl) {
+            throw new Error('Server did not return image URL');
+        }
+        
+        // Store the uploaded URL in the gallery item as a data attribute
+        item.setAttribute('data-image-url', uploadedUrl);
+        
+        // Update the image preview with the uploaded URL
+        imageContainer.innerHTML = `<img src="${uploadedUrl}" alt="Gallery Image" loading="lazy" style="width: 100%; height: auto; border-radius: 8px;">`;
+        
+        // Also store in a hidden input for form submission (if needed)
+        let hiddenInput = item.querySelector('input[type="hidden"][name="gallery_image_url"]');
+        if (!hiddenInput) {
+            hiddenInput = document.createElement('input');
+            hiddenInput.type = 'hidden';
+            hiddenInput.name = 'gallery_image_url';
+            item.querySelector('.dashboard-gallery-item-fields')?.appendChild(hiddenInput);
+        }
+        hiddenInput.value = uploadedUrl;
+        
+        showNotification(`Image "${file.name}" uploaded successfully`, 'success');
+        
+    } catch (error) {
+        console.error('Error uploading image:', error);
+        
+        // Show error state in the image container
+        imageContainer.innerHTML = `
+            <div style="position: relative; width: 100%; height: 200px; display: flex; align-items: center; justify-content: center; background: #fee2e2; border: 2px dashed #ef4444; border-radius: 8px;">
+                <div style="text-align: center; padding: 1rem;">
+                    <i class="fas fa-exclamation-triangle" style="font-size: 2rem; color: #ef4444; margin-bottom: 0.5rem;"></i>
+                    <p style="color: #dc2626; font-size: 0.875rem; margin-bottom: 0.5rem;">Upload failed</p>
+                    <p style="color: #991b1b; font-size: 0.75rem;">${error.message || 'Please try again'}</p>
+                </div>
+            </div>
+        `;
+        
+        showNotification(`Failed to upload "${file.name}": ${error.message}`, 'error');
+        
+        // Clear the stored URL if upload failed
+        item.removeAttribute('data-image-url');
+        const hiddenInput = item.querySelector('input[type="hidden"][name="gallery_image_url"]');
+        if (hiddenInput) {
+            hiddenInput.value = '';
+        }
+    }
 }
 
 function clearPlotImagePreviews() {

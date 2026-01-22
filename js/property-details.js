@@ -346,6 +346,9 @@ function convertPropertyFromAPI(property) {
         convertedPropertyType = convertedPropertyType?.value || convertedPropertyType || 'apartment';
     }
     
+    // Create placeholder image for properties without images
+    const imagePlaceholder = 'data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'400\' height=\'300\'%3E%3Crect fill=\'%23ddd\' width=\'400\' height=\'300\'/%3E%3Ctext fill=\'%23999\' font-family=\'sans-serif\' font-size=\'18\' x=\'50%25\' y=\'50%25\' text-anchor=\'middle\' dy=\'.3em\'%3ENo Image Available%3C/text%3E%3C/svg%3E';
+    
     return {
         id: property.id,
         title: title,
@@ -357,7 +360,7 @@ function convertPropertyFromAPI(property) {
         bedrooms: bedrooms,
         bathrooms: bathrooms,
         area: area,
-        image: images.length > 0 ? images[0] : '/images/img1.jpg',
+        image: images.length > 0 ? images[0] : null,
         images: images,
         description: descriptionText,
         features: features,
@@ -390,10 +393,28 @@ function convertPropertyFromAPI(property) {
 function getPropertiesFromStorage() {
     const stored = localStorage.getItem('dashboard_properties');
     if (stored) {
-        return JSON.parse(stored);
+        const properties = JSON.parse(stored);
+        // Extract images from database fields - no hardcoded fallback
+        return properties.map(p => {
+            let imageUrl = null;
+            if (p.primary_image) {
+                imageUrl = p.primary_image;
+            } else if (p.images && p.images.length > 0) {
+                if (typeof p.images[0] === 'object' && p.images[0].image_url) {
+                    imageUrl = p.images[0].image_url;
+                } else if (typeof p.images[0] === 'string') {
+                    imageUrl = p.images[0];
+                }
+            }
+            return {
+                ...p,
+                image: imageUrl
+            };
+        });
     }
-    // Return default properties if none in storage
-    return getDefaultProperties();
+    // Return empty array instead of default properties with hardcoded images
+    // Properties should come from API, not hardcoded defaults
+    return [];
 }
 
 function getDefaultProperties() {
@@ -675,14 +696,12 @@ function renderPropertyDetails(property) {
             images = [String(property.image).trim()];
         }
         
-        // Final fallback
-        if (images.length === 0) {
-            images = ['/images/img1.jpg'];
-        }
+        // Create placeholder image for properties without images
+        const imagePlaceholder = 'data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'400\' height=\'300\'%3E%3Crect fill=\'%23ddd\' width=\'400\' height=\'300\'/%3E%3Ctext fill=\'%23999\' font-family=\'sans-serif\' font-size=\'18\' x=\'50%25\' y=\'50%25\' text-anchor=\'middle\' dy=\'.3em\'%3ENo Image Available%3C/text%3E%3C/svg%3E';
         
-        // Get main image (first image) - Guard: Always ensure we have a valid image
-        const mainImage = images[0] || '/images/img1.jpg';
-        const normalizedMainImage = normalizeImageUrl(mainImage) || '/images/img1.jpg';
+        // Get main image (first image) - use placeholder if no image available
+        const mainImage = images.length > 0 ? images[0] : imagePlaceholder;
+        const normalizedMainImage = normalizeImageUrl(mainImage) || imagePlaceholder;
         
         // Render Header Image Section
         const headerImageSection = document.getElementById('propertyHeaderImage');
@@ -1286,17 +1305,20 @@ function renderGallery(filterType, propertyTitle) {
         return;
     }
     
-    const mainImage = filteredImages[0] || '/images/img1.jpg';
+    // Create placeholder image for properties without images
+    const imagePlaceholder = 'data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'400\' height=\'300\'%3E%3Crect fill=\'%23ddd\' width=\'400\' height=\'300\'/%3E%3Ctext fill=\'%23999\' font-family=\'sans-serif\' font-size=\'18\' x=\'50%25\' y=\'50%25\' text-anchor=\'middle\' dy=\'.3em\'%3ENo Image Available%3C/text%3E%3C/svg%3E';
+    
+    const mainImage = filteredImages.length > 0 ? filteredImages[0] : imagePlaceholder;
     const escapedTitle = escapeHtml(propertyTitle || 'Property');
     
     gallery.innerHTML = `
         <div class="property-main-image">
-            <img src="${escapeHtml(mainImage)}" alt="${escapedTitle}" loading="lazy" onerror="this.src='/images/img1.jpg'">
+            <img src="${escapeHtml(mainImage)}" alt="${escapedTitle}" loading="lazy" onerror="this.src='${imagePlaceholder}'">
         </div>
         <div class="property-thumbnails">
             ${filteredImages.map((img, index) => `
                 <div class="property-thumbnail ${index === 0 ? 'active' : ''}" data-image-type="${filterType}">
-                    <img src="${escapeHtml(img || '/images/img1.jpg')}" alt="${escapedTitle}" loading="lazy" onerror="this.src='/images/img1.jpg'">
+                    <img src="${escapeHtml(img || imagePlaceholder)}" alt="${escapedTitle}" loading="lazy" onerror="this.src='${imagePlaceholder}'">
                 </div>
             `).join('')}
         </div>
@@ -1370,7 +1392,10 @@ function initImageLightbox() {
         const totalImages = currentLightboxImages.length;
         if (currentLightboxIndex < 0 || currentLightboxIndex >= totalImages) return;
         
-        const imageUrl = currentLightboxImages[currentLightboxIndex] || '/images/img1.jpg';
+        // Create placeholder image for properties without images
+        const imagePlaceholder = 'data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'400\' height=\'300\'%3E%3Crect fill=\'%23ddd\' width=\'400\' height=\'300\'/%3E%3Ctext fill=\'%23999\' font-family=\'sans-serif\' font-size=\'18\' x=\'50%25\' y=\'50%25\' text-anchor=\'middle\' dy=\'.3em\'%3ENo Image Available%3C/text%3E%3C/svg%3E';
+        
+        const imageUrl = currentLightboxImages[currentLightboxIndex] || imagePlaceholder;
         lightboxImage.src = imageUrl;
         lightboxImage.alt = `${currentLightboxTitle} - Image ${currentLightboxIndex + 1}`;
         if (lightboxCounter) {

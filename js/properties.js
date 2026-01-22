@@ -277,7 +277,7 @@ async function loadPropertiesFromAPI() {
         function convertPropertyToDisplayFormat(property) {
             // Helper function to normalize image URLs
             function normalizeImageUrl(url) {
-            if (!url) return '/images/img1.jpg';
+            if (!url) return null;
             
             // If it's already a data URL (base64), return as is
             if (url.startsWith('data:')) {
@@ -294,7 +294,7 @@ async function loadPropertiesFromAPI() {
                 return url;
             }
             
-            // If it's a relative path without /, add /frontend/assets/images/properties/ prefix
+            // If it's a relative path without /, add /images/properties/ prefix
             // This handles cases where just the filename is stored
             if (url.includes('.jpeg') || url.includes('.jpg') || url.includes('.png') || url.includes('.gif') || url.includes('.webp')) {
                 // Check if it already has /images/ in the path
@@ -310,7 +310,8 @@ async function loadPropertiesFromAPI() {
             }
             
             // Handle images - API returns array of objects with image_url, or primary_image string
-            let imageUrl = '/images/img1.jpg'; // Default fallback
+            // Get image from database - no hardcoded fallback
+            let imageUrl = null;
             if (property.primary_image) {
                 imageUrl = normalizeImageUrl(property.primary_image);
             } else if (property.images && property.images.length > 0) {
@@ -444,13 +445,27 @@ function getPropertiesFromStorage() {
     if (stored) {
         const properties = JSON.parse(stored);
         // Convert images array to single image for compatibility
-        return properties.map(p => ({
-            ...p,
-            image: p.images && p.images.length > 0 ? p.images[0] : '/images/img1.jpg'
-        }));
+        // Use dynamic image from database, no hardcoded fallback
+        return properties.map(p => {
+            let imageUrl = null;
+            if (p.primary_image) {
+                imageUrl = p.primary_image;
+            } else if (p.images && p.images.length > 0) {
+                if (typeof p.images[0] === 'object' && p.images[0].image_url) {
+                    imageUrl = p.images[0].image_url;
+                } else if (typeof p.images[0] === 'string') {
+                    imageUrl = p.images[0];
+                }
+            }
+            return {
+                ...p,
+                image: imageUrl
+            };
+        });
     }
-    // Return default properties if none in storage
-    return getDefaultProperties();
+    // Return empty array instead of default properties with hardcoded images
+    // Properties should come from API, not hardcoded defaults
+    return [];
 }
 
 function getDefaultProperties() {
@@ -699,7 +714,10 @@ function renderProperties(propertiesToRender = filteredProperties.slice(0, displ
         // Escape all user-generated content for security
         const title = escapeHtml(property.title || 'Untitled Property');
         const location = escapeHtml(property.location || 'Location not specified');
-        const imageUrl = escapeHtml(property.image || '/images/img1.jpg');
+        // Use dynamic image from database, or placeholder if no image available
+        const imageUrl = property.image ? escapeHtml(property.image) : '';
+        const imagePlaceholder = 'data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'400\' height=\'300\'%3E%3Crect fill=\'%23ddd\' width=\'400\' height=\'300\'/%3E%3Ctext fill=\'%23999\' font-family=\'sans-serif\' font-size=\'18\' x=\'50%25\' y=\'50%25\' text-anchor=\'middle\' dy=\'.3em\'%3ENo Image Available%3C/text%3E%3C/svg%3E';
+        const finalImageUrl = imageUrl || imagePlaceholder;
         const propertyType = escapeHtml(property.type || 'apartment');
         const propertyStatus = escapeHtml(property.status || 'sale');
         const bedrooms = property.bedrooms || 0;
@@ -711,7 +729,7 @@ function renderProperties(propertiesToRender = filteredProperties.slice(0, displ
         return `
         <div class="property-card" data-type="${propertyType}" data-status="${propertyStatus}" data-id="${propertyId}" data-property-id="${propertyId}">
             <div class="property-image">
-                <img src="${imageUrl}" alt="${title}" loading="lazy" onerror="this.src='/images/img1.jpg'">
+                <img src="${finalImageUrl}" alt="${title}" loading="lazy" onerror="this.src='${imagePlaceholder}'">
                 <div class="property-badge ${propertyStatus}">${propertyStatus === 'sale' ? 'For Sale' : 'For Rent'}</div>
                 <div class="property-actions">
                     <button class="property-action-btn" title="Share" aria-label="Share property" data-property-id="${propertyId}">

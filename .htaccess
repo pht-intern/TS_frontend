@@ -1,1 +1,3 @@
-# DO NOT REMOVE. CLOUDLINUX PASSENGER CONFIGURATION BEGIN PassengerAppRoot "/home/tirumakudaluprop/backend" PassengerBaseURI "/" PassengerPython "/home/tirumakudaluprop/virtualenv/backend/3.11/bin/python" PassengerAppLogFile "/home/tirumakudaluprop/logs/passenger.log" # DO NOT REMOVE. CLOUDLINUX PASSENGER CONFIGURATION END
+# DO NOT REMOVE. CLOUDLINUX PASSENGER CONFIGURATION BEGIN 
+PassengerAppRoot "/home/tirumakudaluprop/backend" PassengerBaseURI "/" PassengerPython "/home/tirumakudaluprop/virtualenv/backend/3.11/bin/python" PassengerAppLogFile "/home/tirumakudaluprop/logs/passenger.log" 
+# DO NOT REMOVE. CLOUDLINUX PASSENGER CONFIGURATION END

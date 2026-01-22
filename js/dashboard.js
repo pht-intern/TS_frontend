@@ -4299,10 +4299,6 @@ async function handleImageFiles(files, formType = 'property', imageCategory = 'p
             const result = await response.json();
             const uploadedUrl = result.image_url;
             
-            if (!uploadedUrl) {
-                throw new Error('No image URL returned from server');
-            }
-            
             // Update preview with uploaded URL
             updateImagePreview(tempPreviewId, uploadedUrl, formType, imageCategory);
             
@@ -4371,13 +4367,13 @@ function addImagePreview(imageSrc, isExisting, formType = 'property', imageCateg
     // Show loading indicator if uploading
     const loadingHtml = isUploading ? '<div class="dashboard-image-uploading" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(0,0,0,0.7); color: white; padding: 0.5rem 1rem; border-radius: 4px; z-index: 10;"><i class="fas fa-spinner fa-spin"></i> Uploading...</div>' : '';
     
+    // Create a unique ID for the image to handle errors properly
+    const imageId = 'preview-img-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
+    
     preview.innerHTML = `
         <div style="position: relative;">
-            <img src="${imageSrc}" alt="Property image" loading="lazy" 
-                 onerror="console.error('Image failed to load:', this.src); this.style.display='none'; this.nextElementSibling.style.display='flex';">
-            <div style="display: none; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: #f3f4f6; align-items: center; justify-content: center; color: #9ca3af; font-size: 0.75rem;">
-                <i class="fas fa-exclamation-triangle"></i> Image failed to load
-            </div>
+            <img id="${imageId}" src="${imageSrc}" alt="Property image" loading="lazy" 
+                 onerror="if (!this.dataset.errorHandled) { this.dataset.errorHandled = 'true'; console.warn('Image failed to load:', this.src.substring(0, 100)); this.style.display = 'none'; const errorDiv = document.createElement('div'); errorDiv.style.cssText = 'width: 100%; height: 100%; background: #f3f4f6; display: flex; align-items: center; justify-content: center; color: #9ca3af; font-size: 0.75rem; text-align: center; padding: 0.5rem;'; errorDiv.textContent = 'Image failed to load'; this.parentElement.appendChild(errorDiv); }">
             ${loadingHtml}
         </div>
         <button type="button" class="dashboard-image-remove" onclick="removeImagePreview(this, '${formType}', '${imageCategory}')">
@@ -4391,33 +4387,38 @@ function addImagePreview(imageSrc, isExisting, formType = 'property', imageCateg
 
 function updateImagePreview(previewId, newImageSrc, formType = 'property', imageCategory = 'project') {
     const preview = document.getElementById(previewId);
-    if (!preview) {
-        console.error(`Preview element not found: ${previewId}`);
-        return;
-    }
+    if (!preview) return;
     
     // Update the image source
     const img = preview.querySelector('img');
     if (img) {
-        // Add error handler to log failures
-        img.onerror = function() {
-            console.error('Failed to load image:', newImageSrc);
-            // Show error message
-            const errorDiv = preview.querySelector('div[style*="exclamation-triangle"]');
-            if (errorDiv) {
-                errorDiv.style.display = 'flex';
-            }
-        };
-        img.onload = function() {
-            // Hide error message if image loads successfully
-            const errorDiv = preview.querySelector('div[style*="exclamation-triangle"]');
-            if (errorDiv) {
-                errorDiv.style.display = 'none';
-            }
-        };
+        // Reset error handling flag when updating to new image
+        img.dataset.errorHandled = 'false';
+        img.style.display = 'block';
+        
+        // Remove any existing error divs
+        const errorDivs = preview.querySelectorAll('div[style*="Image failed to load"]');
+        errorDivs.forEach(div => div.remove());
+        
+        // Set new image source
         img.src = newImageSrc;
-    } else {
-        console.error('Image element not found in preview:', previewId);
+        
+        // Add error handler if not already present
+        if (!img.onerror || img.onerror.toString().indexOf('errorHandled') === -1) {
+            img.onerror = function() {
+                if (!this.dataset.errorHandled || this.dataset.errorHandled === 'false') {
+                    this.dataset.errorHandled = 'true';
+                    console.warn('Image failed to load:', this.src.substring(0, 100));
+                    this.style.display = 'none';
+                    
+                    // Create error message div
+                    const errorDiv = document.createElement('div');
+                    errorDiv.style.cssText = 'width: 100%; height: 100%; background: #f3f4f6; display: flex; align-items: center; justify-content: center; color: #9ca3af; font-size: 0.75rem; text-align: center; padding: 0.5rem; position: absolute; top: 0; left: 0;';
+                    errorDiv.textContent = 'Image failed to load';
+                    this.parentElement.appendChild(errorDiv);
+                }
+            };
+        }
     }
     
     // Update data attribute

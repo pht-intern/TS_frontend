@@ -12708,6 +12708,15 @@ section:not(.hero).section-visible .section-header {
     gap: 1.5rem;
 }
 
+.login-error-message {
+    margin-bottom: 0;
+    animation: slideDown 0.3s ease;
+}
+
+.login-error-message i {
+    margin-right: 0.5rem;
+}
+
 .login-form .form-group {
     display: flex;
     flex-direction: column;

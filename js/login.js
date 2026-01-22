@@ -180,8 +180,8 @@
                 if (loginModal) {
                     loginModal.classList.add('active');
                     document.body.style.overflow = 'hidden';
-                    // Clear any previous errors when modal opens
-                    hideLoginError();
+                    // Clear any previous error messages
+                    clearLoginError();
                     // Initialize Remember Me checkbox when modal opens
                     initializeRememberMe();
                 }
@@ -254,6 +254,8 @@
         if (loginModal) {
             loginModal.classList.remove('active');
             document.body.style.overflow = '';
+            // Clear any error messages when closing modal
+            clearLoginError();
         }
     }
 
@@ -351,103 +353,69 @@
             }
         });
     }
-
-    // Error message handler for login form
-    function showLoginError(message) {
-        // Remove existing error message if any
-        hideLoginError();
-        
-        // Create error message element
-        const errorDiv = document.createElement('div');
-        errorDiv.id = 'loginErrorMessage';
-        errorDiv.className = 'login-error-message';
-        errorDiv.innerHTML = `<i class="fas fa-exclamation-circle"></i> <span>${message}</span>`;
-        
-        // Add styles if not already added
-        if (!document.getElementById('loginErrorStyles')) {
-            const style = document.createElement('style');
-            style.id = 'loginErrorStyles';
-            style.textContent = `
-                .login-error-message {
-                    background-color: #fee;
-                    border: 1px solid #fcc;
-                    border-radius: 8px;
-                    color: #c33;
-                    padding: 12px 16px;
-                    margin-bottom: 20px;
-                    display: flex;
-                    align-items: center;
-                    gap: 10px;
-                    font-size: 14px;
-                    animation: slideDown 0.3s ease-out;
-                }
-                .login-error-message i {
-                    font-size: 16px;
-                    flex-shrink: 0;
-                }
-                .login-error-message span {
-                    flex: 1;
-                }
-                @keyframes slideDown {
-                    from {
-                        opacity: 0;
-                        transform: translateY(-10px);
-                    }
-                    to {
-                        opacity: 1;
-                        transform: translateY(0);
-                    }
-                }
-                .login-form .form-group input.error {
-                    border-color: #c33;
-                    background-color: #fff5f5;
-                }
-            `;
-            document.head.appendChild(style);
-        }
-        
-        // Insert error message at the top of the form
-        if (loginForm) {
-            loginForm.insertBefore(errorDiv, loginForm.firstChild);
-            
-            // Add error class to input fields
-            const emailInput = document.getElementById('loginEmail');
-            const passwordInput = document.getElementById('loginPassword');
-            if (emailInput) emailInput.classList.add('error');
-            if (passwordInput) passwordInput.classList.add('error');
-            
-            // Scroll to error message
-            errorDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-        }
+    
+    // Clear error message when user starts typing
+    const loginEmail = document.getElementById('loginEmail');
+    if (loginEmail) {
+        loginEmail.addEventListener('input', () => {
+            clearLoginError();
+        });
     }
     
-    function hideLoginError() {
-        const existingError = document.getElementById('loginErrorMessage');
+    if (loginPassword) {
+        loginPassword.addEventListener('input', () => {
+            clearLoginError();
+        });
+    }
+
+    // Helper function to show error message in login form
+    function showLoginError(message) {
+        // Remove any existing error message
+        const existingError = loginForm.querySelector('.login-error-message');
         if (existingError) {
             existingError.remove();
         }
         
-        // Remove error class from input fields
+        // Create error message element
+        const errorDiv = document.createElement('div');
+        errorDiv.className = 'login-error-message form-message error';
+        errorDiv.innerHTML = `<i class="fas fa-exclamation-circle"></i> ${message}`;
+        
+        // Insert error message at the top of the form
+        const firstFormGroup = loginForm.querySelector('.form-group');
+        if (firstFormGroup) {
+            loginForm.insertBefore(errorDiv, firstFormGroup);
+        } else {
+            loginForm.insertBefore(errorDiv, loginForm.firstChild);
+        }
+        
+        // Scroll to error message
+        errorDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        
+        // Focus on email input
         const emailInput = document.getElementById('loginEmail');
-        const passwordInput = document.getElementById('loginPassword');
-        if (emailInput) emailInput.classList.remove('error');
-        if (passwordInput) passwordInput.classList.remove('error');
+        if (emailInput) {
+            emailInput.focus();
+        }
+    }
+    
+    // Helper function to clear error message
+    function clearLoginError() {
+        const existingError = loginForm.querySelector('.login-error-message');
+        if (existingError) {
+            existingError.remove();
+        }
     }
 
     // Form submission
     // NOTE: Sessions are ONLY created here after successful login
     // No sessions are created before this point
     if (loginForm) {
-        // Clear error on input change
-        loginForm.addEventListener('input', () => {
-            hideLoginError();
-        });
-        
         loginForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             
-            // Clear any previous errors
-            hideLoginError();
+            // Clear any previous error messages
+            clearLoginError();
             
             // Get form values - email and password are required, remember me is OPTIONAL
             const email = document.getElementById('loginEmail').value.trim();
@@ -485,7 +453,13 @@
                     } catch {
                         errorMessage = text || `HTTP ${response.status}: ${response.statusText}`;
                     }
-                    showLoginError(errorMessage);
+                    
+                    // Show specific error message for incorrect credentials
+                    if (response.status === 401) {
+                        showLoginError('Invalid email or password. Please check your credentials and try again.');
+                    } else {
+                        showLoginError(errorMessage);
+                    }
                     return;
                 }
                 

@@ -4299,6 +4299,10 @@ async function handleImageFiles(files, formType = 'property', imageCategory = 'p
             const result = await response.json();
             const uploadedUrl = result.image_url;
             
+            if (!uploadedUrl) {
+                throw new Error('No image URL returned from server');
+            }
+            
             // Update preview with uploaded URL
             updateImagePreview(tempPreviewId, uploadedUrl, formType, imageCategory);
             
@@ -4369,7 +4373,11 @@ function addImagePreview(imageSrc, isExisting, formType = 'property', imageCateg
     
     preview.innerHTML = `
         <div style="position: relative;">
-            <img src="${imageSrc}" alt="Property image" loading="lazy">
+            <img src="${imageSrc}" alt="Property image" loading="lazy" 
+                 onerror="console.error('Image failed to load:', this.src); this.style.display='none'; this.nextElementSibling.style.display='flex';">
+            <div style="display: none; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: #f3f4f6; align-items: center; justify-content: center; color: #9ca3af; font-size: 0.75rem;">
+                <i class="fas fa-exclamation-triangle"></i> Image failed to load
+            </div>
             ${loadingHtml}
         </div>
         <button type="button" class="dashboard-image-remove" onclick="removeImagePreview(this, '${formType}', '${imageCategory}')">
@@ -4383,12 +4391,33 @@ function addImagePreview(imageSrc, isExisting, formType = 'property', imageCateg
 
 function updateImagePreview(previewId, newImageSrc, formType = 'property', imageCategory = 'project') {
     const preview = document.getElementById(previewId);
-    if (!preview) return;
+    if (!preview) {
+        console.error(`Preview element not found: ${previewId}`);
+        return;
+    }
     
     // Update the image source
     const img = preview.querySelector('img');
     if (img) {
+        // Add error handler to log failures
+        img.onerror = function() {
+            console.error('Failed to load image:', newImageSrc);
+            // Show error message
+            const errorDiv = preview.querySelector('div[style*="exclamation-triangle"]');
+            if (errorDiv) {
+                errorDiv.style.display = 'flex';
+            }
+        };
+        img.onload = function() {
+            // Hide error message if image loads successfully
+            const errorDiv = preview.querySelector('div[style*="exclamation-triangle"]');
+            if (errorDiv) {
+                errorDiv.style.display = 'none';
+            }
+        };
         img.src = newImageSrc;
+    } else {
+        console.error('Image element not found in preview:', previewId);
     }
     
     // Update data attribute

@@ -180,6 +180,8 @@
                 if (loginModal) {
                     loginModal.classList.add('active');
                     document.body.style.overflow = 'hidden';
+                    // Clear any previous errors when modal opens
+                    hideLoginError();
                     // Initialize Remember Me checkbox when modal opens
                     initializeRememberMe();
                 }
@@ -350,12 +352,102 @@
         });
     }
 
+    // Error message handler for login form
+    function showLoginError(message) {
+        // Remove existing error message if any
+        hideLoginError();
+        
+        // Create error message element
+        const errorDiv = document.createElement('div');
+        errorDiv.id = 'loginErrorMessage';
+        errorDiv.className = 'login-error-message';
+        errorDiv.innerHTML = `<i class="fas fa-exclamation-circle"></i> <span>${message}</span>`;
+        
+        // Add styles if not already added
+        if (!document.getElementById('loginErrorStyles')) {
+            const style = document.createElement('style');
+            style.id = 'loginErrorStyles';
+            style.textContent = `
+                .login-error-message {
+                    background-color: #fee;
+                    border: 1px solid #fcc;
+                    border-radius: 8px;
+                    color: #c33;
+                    padding: 12px 16px;
+                    margin-bottom: 20px;
+                    display: flex;
+                    align-items: center;
+                    gap: 10px;
+                    font-size: 14px;
+                    animation: slideDown 0.3s ease-out;
+                }
+                .login-error-message i {
+                    font-size: 16px;
+                    flex-shrink: 0;
+                }
+                .login-error-message span {
+                    flex: 1;
+                }
+                @keyframes slideDown {
+                    from {
+                        opacity: 0;
+                        transform: translateY(-10px);
+                    }
+                    to {
+                        opacity: 1;
+                        transform: translateY(0);
+                    }
+                }
+                .login-form .form-group input.error {
+                    border-color: #c33;
+                    background-color: #fff5f5;
+                }
+            `;
+            document.head.appendChild(style);
+        }
+        
+        // Insert error message at the top of the form
+        if (loginForm) {
+            loginForm.insertBefore(errorDiv, loginForm.firstChild);
+            
+            // Add error class to input fields
+            const emailInput = document.getElementById('loginEmail');
+            const passwordInput = document.getElementById('loginPassword');
+            if (emailInput) emailInput.classList.add('error');
+            if (passwordInput) passwordInput.classList.add('error');
+            
+            // Scroll to error message
+            errorDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+    }
+    
+    function hideLoginError() {
+        const existingError = document.getElementById('loginErrorMessage');
+        if (existingError) {
+            existingError.remove();
+        }
+        
+        // Remove error class from input fields
+        const emailInput = document.getElementById('loginEmail');
+        const passwordInput = document.getElementById('loginPassword');
+        if (emailInput) emailInput.classList.remove('error');
+        if (passwordInput) passwordInput.classList.remove('error');
+    }
+
     // Form submission
     // NOTE: Sessions are ONLY created here after successful login
     // No sessions are created before this point
     if (loginForm) {
+        // Clear error on input change
+        loginForm.addEventListener('input', () => {
+            hideLoginError();
+        });
+        
         loginForm.addEventListener('submit', async (e) => {
             e.preventDefault();
+            
+            // Clear any previous errors
+            hideLoginError();
             
             // Get form values - email and password are required, remember me is OPTIONAL
             const email = document.getElementById('loginEmail').value.trim();
@@ -363,7 +455,7 @@
             
             // Validate required fields (email and password only)
             if (!email || !password) {
-                alert('Please enter both email and password.');
+                showLoginError('Please enter both email and password.');
                 return;
             }
             
@@ -393,7 +485,7 @@
                     } catch {
                         errorMessage = text || `HTTP ${response.status}: ${response.statusText}`;
                     }
-                    alert(errorMessage);
+                    showLoginError(errorMessage);
                     return;
                 }
                 
@@ -402,7 +494,7 @@
                     data = await response.json();
                 } catch (parseError) {
                     console.error('Error parsing response:', parseError);
-                    alert('Server error. Please try again.');
+                    showLoginError('Server error. Please try again.');
                     return;
                 }
                 
@@ -413,14 +505,14 @@
                     // Ensure user data is valid before storing
                     if (!userData || !userData.email) {
                         console.error('Invalid user data received:', userData);
-                        alert('Server error: Invalid user data received. Please try again.');
+                        showLoginError('Server error: Invalid user data received. Please try again.');
                         return;
                     }
                     
                     // Verify user has admin role
                     if (userData.role !== 'admin') {
                         console.error('User does not have admin role:', userData);
-                        alert('Access denied: Admin role required. Please contact administrator.');
+                        showLoginError('Access denied: Admin role required. Please contact administrator.');
                         return;
                     }
                     
@@ -468,7 +560,7 @@
                         }
                     } catch (storageError) {
                         console.error('Error storing session data:', storageError);
-                        alert('Error saving session. Please check your browser settings and try again.');
+                        showLoginError('Error saving session. Please check your browser settings and try again.');
                         return;
                     }
                     
@@ -487,7 +579,7 @@
                             local: { user: !!storedUserLocal, auth: storedAuthLocal },
                             session: { user: !!storedUserSession, auth: storedAuthSession }
                         });
-                        alert('Error saving session. Please try again.');
+                        showLoginError('Error saving session. Please try again.');
                         return;
                     }
                     
@@ -496,12 +588,12 @@
                         const verifyUser = JSON.parse(storedUserLocal || storedUserSession || '{}');
                         if (!verifyUser.email || verifyUser.role !== 'admin') {
                             console.error('Stored user data is invalid:', verifyUser);
-                            alert('Error: Invalid user data stored. Please try again.');
+                            showLoginError('Error: Invalid user data stored. Please try again.');
                             return;
                         }
                     } catch (e) {
                         console.error('Error parsing stored user data:', e);
-                        alert('Error: Could not verify stored data. Please try again.');
+                        showLoginError('Error: Could not verify stored data. Please try again.');
                         return;
                     }
                     
@@ -554,7 +646,7 @@
                                 local: localStorage.getItem('dashboard_authenticated'),
                                 session: sessionStorage.getItem('dashboard_authenticated')
                             });
-                            alert('Session storage error. Please try logging in again.');
+                            showLoginError('Session storage error. Please try logging in again.');
                         }
                     }, 200); // Increased delay to 200ms for better reliability
                 } else {
@@ -574,15 +666,15 @@
                         errorMsg = data.detail || data.error || data.message || 'Login failed. Please try again.';
                     }
                     
-                    alert(errorMsg);
+                    showLoginError(errorMsg);
                 }
             } catch (error) {
                 // Network error - NO session created
                 console.error('Login error:', error);
                 if (error.name === 'TypeError' && error.message.includes('fetch')) {
-                    alert('Network error. Please check your connection and try again.');
+                    showLoginError('Network error. Please check your connection and try again.');
                 } else {
-                    alert('An error occurred. Please try again.');
+                    showLoginError('An error occurred. Please try again.');
                 }
             } finally {
                 // Reset button

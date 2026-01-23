@@ -4771,13 +4771,12 @@ function handleImageSelect(e) {
 
 async function handleImageFiles(files, formType = 'property', imageCategory = 'project') {
     const maxFileSize = 5 * 1024 * 1024; // 5MB
-    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/svg+xml'];
     
     // Process files sequentially to avoid overwhelming the server
     for (const file of Array.from(files)) {
-        // Validate file type
-        if (!file.type.startsWith('image/') || !allowedTypes.includes(file.type)) {
-            showNotification(`File "${file.name}" is not a valid image format. Please use JPG, PNG, SVG, or WebP.`, 'error');
+        // Validate file type - accept all image formats
+        if (!file.type.startsWith('image/')) {
+            showNotification(`File "${file.name}" is not a valid image file.`, 'error');
             continue;
         }
         
@@ -4806,20 +4805,33 @@ async function handleImageFiles(files, formType = 'property', imageCategory = 'p
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
-                    image: base64Data
+                    image: base64Data,
+                    image_category: imageCategory,
+                    property_category: formType === 'plot' ? 'plot' : 'residential'
                 })
             });
             
             if (!response.ok) {
                 const errorData = await response.json().catch(() => ({}));
-                throw new Error(errorData.message || 'Failed to upload image');
+                throw new Error(errorData.error || errorData.message || 'Failed to upload image');
             }
             
             const result = await response.json();
-            const uploadedUrl = result.data?.image_url || result.image_url;
+            
+            // Handle different response formats
+            let uploadedUrl = null;
+            if (result && typeof result === 'object') {
+                // Try multiple possible response structures
+                uploadedUrl = result.data?.image_url || 
+                             result.image_url || 
+                             result.url || 
+                             (result.data && result.data.url) ||
+                             (result.success && result.data && result.data.image_url);
+            }
             
             if (!uploadedUrl) {
-                throw new Error('Server did not return image URL');
+                console.error('Response structure:', result);
+                throw new Error('Server did not return image URL. Response: ' + JSON.stringify(result));
             }
             
             // Update preview with uploaded URL
@@ -5182,12 +5194,7 @@ async function handleResidentialGalleryImageUpload(itemId, fileInput) {
         return;
     }
     
-    // Validate file type
-    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/svg+xml'];
-    if (!allowedTypes.includes(file.type)) {
-        showNotification(`File "${file.name}" is not a valid image format. Please use JPG, PNG, SVG, or WebP.`, 'error');
-        return;
-    }
+    // Accept all image formats - validation will be done on the server
     
     const imageContainer = item.querySelector('.dashboard-gallery-item-image');
     if (!imageContainer) return;
@@ -5234,10 +5241,21 @@ async function handleResidentialGalleryImageUpload(itemId, fileInput) {
         }
         
         const result = await response.json();
-        const uploadedUrl = result.data?.image_url || result.image_url;
+        
+        // Handle different response formats
+        let uploadedUrl = null;
+        if (result && typeof result === 'object') {
+            // Try multiple possible response structures
+            uploadedUrl = result.data?.image_url || 
+                         result.image_url || 
+                         result.url || 
+                         (result.data && result.data.url) ||
+                         (result.success && result.data && result.data.image_url);
+        }
         
         if (!uploadedUrl) {
-            throw new Error('Server did not return image URL');
+            console.error('Response structure:', result);
+            throw new Error('Server did not return image URL. Response: ' + JSON.stringify(result));
         }
         
         // Store the uploaded URL in the gallery item as a data attribute

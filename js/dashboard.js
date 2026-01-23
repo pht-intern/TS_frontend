@@ -2900,7 +2900,7 @@ function getPlotPropertiesStep2HTML() {
             </label>
             <select id="residentialStatus" name="status" required>
                 <option value="">Select Status</option>
-                <option value="ready_to_move">Ready to Move</option>
+                <option value="ready_to_move">Ready to Register</option>
                 <option value="under_development">Under Development</option>
             </select>
         </div>
@@ -4816,7 +4816,11 @@ async function handleImageFiles(files, formType = 'property', imageCategory = 'p
             }
             
             const result = await response.json();
-            const uploadedUrl = result.image_url;
+            const uploadedUrl = result.data?.image_url || result.image_url;
+            
+            if (!uploadedUrl) {
+                throw new Error('Server did not return image URL');
+            }
             
             // Update preview with uploaded URL
             updateImagePreview(tempPreviewId, uploadedUrl, formType, imageCategory);
@@ -5074,9 +5078,10 @@ function addResidentialGalleryItem(imageUrl = null, title = '', category = 'proj
     
     const itemId = 'gallery-item-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
     
-    // Escape imageUrl for HTML attribute
-    const safeImageUrl = imageUrl ? imageUrl.replace(/"/g, '&quot;') : '';
-    const dataImageUrlAttr = imageUrl ? `data-image-url="${safeImageUrl}"` : '';
+    // Ensure imageUrl is a string and escape for HTML attribute
+    const imageUrlString = imageUrl ? String(imageUrl) : null;
+    const safeImageUrl = imageUrlString ? imageUrlString.replace(/"/g, '&quot;') : '';
+    const dataImageUrlAttr = imageUrlString ? `data-image-url="${safeImageUrl}"` : '';
     
     const galleryItemHTML = `
         <div class="dashboard-gallery-item" data-item-id="${itemId}" ${dataImageUrlAttr}>
@@ -5088,8 +5093,8 @@ function addResidentialGalleryItem(imageUrl = null, title = '', category = 'proj
             </div>
             <div class="dashboard-gallery-item-content">
                 <div class="dashboard-gallery-item-image">
-                    ${imageUrl ? 
-                        `<img src="${imageUrl}" alt="Gallery Image" loading="lazy" style="width: 100%; height: auto; border-radius: 8px;">` : 
+                    ${imageUrlString ? 
+                        `<img src="${imageUrlString}" alt="Gallery Image" loading="lazy" style="width: 100%; height: auto; border-radius: 8px;">` : 
                         `<div class="dashboard-gallery-item-image-placeholder">
                             <i class="fas fa-image"></i>
                             <p>No image selected</p>
@@ -5097,13 +5102,13 @@ function addResidentialGalleryItem(imageUrl = null, title = '', category = 'proj
                     }
                 </div>
                 <div class="dashboard-gallery-item-fields">
-                    ${imageUrl ? `<input type="hidden" name="gallery_image_url" value="${safeImageUrl}">` : ''}
+                    ${imageUrlString ? `<input type="hidden" name="gallery_image_url" value="${safeImageUrl}">` : ''}
                     <div class="dashboard-form-group">
                         <label>
                             <i class="fas fa-heading"></i>
                             Image Title
                         </label>
-                        <input type="text" name="gallery_image_title" placeholder="e.g., Living Room View" value="${(title || '').replace(/"/g, '&quot;').replace(/'/g, '&#39;')}">
+                        <input type="text" name="gallery_image_title" placeholder="e.g., Living Room View" value="${String(title || '').replace(/"/g, '&quot;').replace(/'/g, '&#39;')}">
                     </div>
                     <div class="dashboard-form-group">
                         <label>
@@ -5223,7 +5228,7 @@ async function handleResidentialGalleryImageUpload(itemId, fileInput) {
         }
         
         const result = await response.json();
-        const uploadedUrl = result.image_url;
+        const uploadedUrl = result.data?.image_url || result.image_url;
         
         if (!uploadedUrl) {
             throw new Error('Server did not return image URL');

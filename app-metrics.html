@@ -636,6 +636,7 @@
     <script src="/js/session-manager.js" defer></script>
     <script>
         let currentHours = 48;
+        let systemMetricsHours = 24; // 24 hours for CPU, RAM, and Bandwidth charts
         let requestMetricsChart = null;
         let responseTimeChart = null;
         let cpuChart = null;
@@ -663,11 +664,11 @@
         }
 
         // Fetch metrics data from database
-        async function fetchMetrics(hours = 48) {
+        async function fetchMetrics(hours = 48, systemHours = 24) {
             try {
                 // Add timestamp to prevent caching
                 const timestamp = new Date().getTime();
-                const response = await fetch(`/api/admin/application-metrics?hours=${hours}&_t=${timestamp}`, {
+                const response = await fetch(`/api/admin/application-metrics?hours=${hours}&system_hours=${systemHours}&_t=${timestamp}`, {
                     method: 'GET',
                     headers: getAuthHeaders(),
                     cache: 'no-cache'
@@ -1619,7 +1620,7 @@
             errorContainer.innerHTML = '';
 
             try {
-                const data = await fetchMetrics(hours);
+                const data = await fetchMetrics(hours, systemMetricsHours);
                 
                 updateCurrentStats(data);
                 updateCacheStats(data);
@@ -1805,6 +1806,9 @@
             loadMetrics(currentHours, true).catch(error => {
                 console.error('Error during initial metrics load:', error);
             });
+            
+            // Note: systemMetricsHours (24) is used for CPU, RAM, and Bandwidth charts
+            // currentHours (48) is used for other metrics like request counts, response times, etc.
             
             // Disable real-time updates (lightweight mode)
             toggleRealtime();

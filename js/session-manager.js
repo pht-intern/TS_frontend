@@ -535,6 +535,7 @@
      * Clear session data
      * CRITICAL: Always clears session when all tabs close, regardless of "Remember Me"
      * "Remember Me" only preserves saved email/password for autofill, not the active session
+     * Also calls backend logout endpoint to clear server-side session
      */
     function clearSession() {
         // DEBUG: Log when session is being cleared
@@ -545,6 +546,46 @@
             activeTabsCount: activeTabs.size,
             stackTrace: new Error().stack
         });
+        
+        // Get user email before clearing session (for backend logout)
+        let userEmail = null;
+        try {
+            const userStr = sessionStorage.getItem(USER_KEY) || sessionStorage.getItem('user') ||
+                           localStorage.getItem(USER_KEY) || localStorage.getItem('user');
+            if (userStr) {
+                const user = JSON.parse(userStr);
+                userEmail = user.email || null;
+            }
+        } catch (e) {
+            // Ignore parse errors
+        }
+        
+        // Call backend logout endpoint to clear server-side session
+        // Use fetch with keepalive for reliability during page unload
+        if (userEmail) {
+            try {
+                const logoutData = JSON.stringify({ email: userEmail });
+                
+                // Use fetch with keepalive flag - this ensures the request completes
+                // even if the page is unloading/closing
+                fetch('/api/auth/logout', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: logoutData,
+                    keepalive: true // Critical: keeps request alive even during page unload
+                }).catch(error => {
+                    // Ignore errors - session will be cleared on client side anyway
+                    // The backend will also clean up expired sessions automatically
+                    console.warn('Logout API call failed during tab close (this is normal if page is unloading):', error);
+                });
+            } catch (error) {
+                // Ignore errors - continue with client-side logout
+                // The backend will clean up expired sessions automatically
+                console.warn('Error calling logout endpoint:', error);
+            }
+        }
         
         // Always clear sessionStorage
         sessionStorage.removeItem(SESSION_KEY);

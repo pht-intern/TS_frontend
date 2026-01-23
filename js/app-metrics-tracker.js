@@ -4,8 +4,9 @@
 (function() {
     'use strict';
     
-    // Metrics collection interval (60 seconds)
-    const METRICS_COLLECTION_INTERVAL = 60000;
+    // Metrics collection - only on API calls (no periodic interval)
+    let lastMetricsCollection = 0;
+    const MIN_COLLECTION_INTERVAL = 10000; // Minimum 10 seconds between collections to avoid spam
     
     // Application metrics storage
     let appMetrics = {
@@ -284,6 +285,14 @@
                     bandwidthIn += responseSize;
                 }
                 
+                // Trigger metrics collection after API call completes (only for our domain)
+                if (shouldTrackExecution) {
+                    // Collect metrics asynchronously after API call
+                    setTimeout(() => {
+                        collectAndSendMetrics();
+                    }, 100); // Small delay to batch multiple rapid calls
+                }
+                
                 return response;
             } catch (error) {
                 // Mark execution end even on error (only for our domain requests)
@@ -354,6 +363,14 @@
                     bandwidthOut += requestSize;
                     bandwidthIn += responseSize;
                 }
+                
+                // Trigger metrics collection after API call completes (only for our domain)
+                const url = this._appMetricsUrl || '';
+                if (url && (url.startsWith('/') || url.includes(window.location.hostname))) {
+                    setTimeout(() => {
+                        collectAndSendMetrics();
+                    }, 100); // Small delay to batch multiple rapid calls
+                }
             });
             
             return originalSend.apply(this, arguments);
@@ -362,9 +379,17 @@
     
     /**
      * Collect and send application metrics to backend
+     * Only called when API calls are made (not on a timer)
      */
     async function collectAndSendMetrics() {
         try {
+            // Throttle: Don't collect too frequently (max once per 10 seconds)
+            const now = Date.now();
+            if (now - lastMetricsCollection < MIN_COLLECTION_INTERVAL) {
+                return; // Skip if too soon
+            }
+            lastMetricsCollection = now;
+            
             // Calculate CPU usage
             const cpuUsage = calculateCPUUsage();
             
@@ -393,30 +418,24 @@
                 bandwidthTotalMB: Math.round(bandwidthTotalMB * 100) / 100
             };
             
-            // Send metrics to backend
-            try {
-                const response = await fetch('/api/admin/metrics/collect-app', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        cpu_usage: appMetrics.cpuUsage,
-                        ram_usage: appMetrics.ramUsagePercent,
-                        ram_used_mb: appMetrics.ramUsedMB,
-                        ram_total_mb: appMetrics.ramTotalMB,
-                        bandwidth_in_mb: appMetrics.bandwidthInMB,
-                        bandwidth_out_mb: appMetrics.bandwidthOutMB,
-                        bandwidth_total_mb: appMetrics.bandwidthTotalMB
-                    })
-                });
-                
-                if (!response.ok) {
-                    // Metrics send failed - silently handled
-                }
-            } catch (error) {
-                // Error sending metrics - silently handled
-            }
+            // Send metrics to backend (fire and forget - don't block)
+            fetch('/api/admin/metrics/collect-app', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    cpu_usage: appMetrics.cpuUsage,
+                    ram_usage: appMetrics.ramUsagePercent,
+                    ram_used_mb: appMetrics.ramUsedMB,
+                    ram_total_mb: appMetrics.ramTotalMB,
+                    bandwidth_in_mb: appMetrics.bandwidthInMB,
+                    bandwidth_out_mb: appMetrics.bandwidthOutMB,
+                    bandwidth_total_mb: appMetrics.bandwidthTotalMB
+                })
+            }).catch(() => {
+                // Silently handle errors - metrics collection is non-critical
+            });
             
         } catch (error) {
             // Error collecting metrics - silently handled
@@ -425,6 +444,7 @@
     
     /**
      * Initialize application metrics tracking
+     * Metrics are now collected only when API calls are made (lightweight)
      */
     function initAppMetricsTracking() {
         // Initialize performance observer
@@ -434,13 +454,7 @@
         interceptFetch();
         interceptXHR();
         
-        // Collect metrics immediately
-        collectAndSendMetrics();
-        
-        // Set up interval to collect metrics every 60 seconds
-        setInterval(() => {
-            collectAndSendMetrics();
-        }, METRICS_COLLECTION_INTERVAL);
+        // No periodic collection - metrics will be collected automatically when API calls are made
     }
     
     // Initialize when DOM is ready

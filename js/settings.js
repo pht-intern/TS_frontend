@@ -561,6 +561,19 @@ let allStates = [];
                     categoryModal.classList.remove('active');
                     categoryForm.reset();
                     loadCategories();
+                    
+                    // Trigger event to refresh Property Type dropdown in dashboard
+                    // Use both custom event (for same-tab) and storage event (for cross-tab)
+                    window.dispatchEvent(new CustomEvent('categoriesUpdated'));
+                    try {
+                        localStorage.setItem('categories_updated', Date.now().toString());
+                        // Remove it immediately to allow future updates
+                        setTimeout(() => {
+                            localStorage.removeItem('categories_updated');
+                        }, 100);
+                    } catch (e) {
+                        console.error('Error updating localStorage for category refresh:', e);
+                    }
                 } else {
                     const errorMsg = data.error || data.message || 'Failed to save category';
                     showNotification(errorMsg, 'error');
@@ -790,6 +803,17 @@ let allStates = [];
                     if (response.ok) {
                         showNotification('Category deleted successfully', 'success');
                         loadCategories();
+                        
+                        // Trigger event to refresh Property Type dropdown in dashboard
+                        window.dispatchEvent(new CustomEvent('categoriesUpdated'));
+                        try {
+                            localStorage.setItem('categories_updated', Date.now().toString());
+                            setTimeout(() => {
+                                localStorage.removeItem('categories_updated');
+                            }, 100);
+                        } catch (e) {
+                            console.error('Error updating localStorage for category refresh:', e);
+                        }
                     } else {
                         const errorMsg = data.error || data.message || 'Failed to delete category';
                         showNotification(errorMsg, 'error');

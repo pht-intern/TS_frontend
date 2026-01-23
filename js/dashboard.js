@@ -474,6 +474,31 @@ function initDashboard() {
         residentialPropertyTypeSelect.addEventListener('change', handleResidentialPropertyTypeChange);
     }
 
+    // Location link validation with real-time feedback
+    const residentialLocationLink = document.getElementById('residentialLocationLink');
+    if (residentialLocationLink) {
+        // Validate on blur (when user leaves the field)
+        residentialLocationLink.addEventListener('blur', function() {
+            validateLocationLinkField(this);
+        });
+        
+        // Optional: Validate on input change (real-time feedback)
+        residentialLocationLink.addEventListener('input', function() {
+            // Clear previous error styling if URL becomes valid
+            if (this.value.trim()) {
+                const isValid = validateLocationLinkField(this, true); // true = silent mode (no notification)
+                if (isValid) {
+                    this.style.borderColor = '';
+                    this.style.borderWidth = '';
+                }
+            } else {
+                // Clear styling if field is empty
+                this.style.borderColor = '';
+                this.style.borderWidth = '';
+            }
+        });
+    }
+
     // Gallery management for residential property form
     const residentialAddImageBtn = document.getElementById('residentialAddImageBtn');
     if (residentialAddImageBtn) {
@@ -814,6 +839,22 @@ function initDashboard() {
     loadVisitorInfo();
     loadPageVisitStats(true); // Load page visit stats with loading indicator
     
+    // Load categories for Property Type dropdown
+    loadCategoriesForPropertyTypeDropdown();
+    
+    // Listen for category updates from settings page
+    window.addEventListener('storage', function(e) {
+        if (e.key === 'categories_updated') {
+            // Reload categories when they are updated in settings
+            loadCategoriesForPropertyTypeDropdown();
+        }
+    });
+    
+    // Also listen for custom event (for same-tab updates)
+    window.addEventListener('categoriesUpdated', function() {
+        loadCategoriesForPropertyTypeDropdown();
+    });
+    
     // Initialize stat card click tracking
     initStatCardTracking();
     
@@ -951,7 +992,7 @@ function initUserProfile(retryCount = 0) {
 }
 
 // Handle Logout
-function handleLogout() {
+async function handleLogout() {
     // Close profile dropdown
     const profileDropdown = document.getElementById('dashboardProfileDropdown');
     if (profileDropdown) {
@@ -969,6 +1010,20 @@ function handleLogout() {
             } catch (e) {
                 // Ignore parse errors
             }
+        }
+        
+        // Call backend logout endpoint to clear server-side session
+        try {
+            await fetch('/api/auth/logout', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ email: userEmail })
+            });
+        } catch (error) {
+            // Continue with logout even if API call fails
+            console.warn('Logout API call failed, continuing with client-side logout:', error);
         }
         
         // Track logout event before clearing session
@@ -1781,30 +1836,65 @@ async function openResidentialPropertyModal(propertyId = null) {
     
     // Add event listener for city change to load localities
     // Re-attach listener each time modal opens to ensure it works
-    const citySelect = document.getElementById('residentialCity');
-    if (citySelect) {
+    const cityInput = document.getElementById('residentialCity');
+    if (cityInput) {
         // Remove any existing listener by cloning the element
-        const oldCitySelect = citySelect;
-        const newCitySelect = oldCitySelect.cloneNode(true);
-        oldCitySelect.parentNode.replaceChild(newCitySelect, oldCitySelect);
+        const oldCityInput = cityInput;
+        const newCityInput = oldCityInput.cloneNode(true);
+        oldCityInput.parentNode.replaceChild(newCityInput, oldCityInput);
         
-        // Add change event listener to the new element
-        newCitySelect.addEventListener('change', async function() {
+        // Add input and blur event listeners to handle both typing and selection
+        let cityChangeTimeout;
+        newCityInput.addEventListener('input', async function() {
+            // Clear previous timeout
+            if (cityChangeTimeout) {
+                clearTimeout(cityChangeTimeout);
+            }
+            
+            // Debounce to avoid too many API calls while typing
+            cityChangeTimeout = setTimeout(async () => {
+                const selectedCity = this.value;
+                if (selectedCity && selectedCity.trim()) {
+                    // Extract city name if it's in format "City, State"
+                    const cityName = selectedCity.includes(',') ? selectedCity.split(',')[0].trim() : selectedCity.trim();
+                    console.log('City entered in modal:', selectedCity, 'Extracted city name:', cityName);
+                    await loadLocalitiesForResidentialForm(cityName);
+                } else {
+                    // Clear localities if city is cleared
+                    const localityDatalist = document.getElementById('residentialLocalityList');
+                    const localityInput = document.getElementById('residentialLocality');
+                    if (localityDatalist) {
+                        localityDatalist.innerHTML = '';
+                    }
+                    if (localityInput) {
+                        localityInput.value = '';
+                    }
+                }
+            }, 500); // Wait 500ms after user stops typing
+        });
+        
+        // Also listen for blur event to load localities when user selects from dropdown
+        newCityInput.addEventListener('blur', async function() {
             const selectedCity = this.value;
-            // Extract city name if it's in format "City, State"
-            const cityName = selectedCity.includes(',') ? selectedCity.split(',')[0].trim() : selectedCity.trim();
-            console.log('City selected in modal:', selectedCity, 'Extracted city name:', cityName);
-            await loadLocalitiesForResidentialForm(cityName);
+            if (selectedCity && selectedCity.trim()) {
+                // Extract city name if it's in format "City, State"
+                const cityName = selectedCity.includes(',') ? selectedCity.split(',')[0].trim() : selectedCity.trim();
+                console.log('City selected in modal:', selectedCity, 'Extracted city name:', cityName);
+                await loadLocalitiesForResidentialForm(cityName);
+            }
         });
     }
+    
+    // Load categories for Property Type dropdown
+    await loadCategoriesForPropertyTypeDropdown();
     
     // Load unit types for the form
     await loadUnitTypesForResidentialForm();
     
     // If a city is already selected (e.g., from URL params or previous selection), load its localities
-    const citySelectAfterLoad = document.getElementById('residentialCity');
-    if (citySelectAfterLoad && citySelectAfterLoad.value) {
-        const selectedCity = citySelectAfterLoad.value;
+    const cityInputAfterLoad = document.getElementById('residentialCity');
+    if (cityInputAfterLoad && cityInputAfterLoad.value) {
+        const selectedCity = cityInputAfterLoad.value;
         const cityName = selectedCity.includes(',') ? selectedCity.split(',')[0].trim() : selectedCity.trim();
         if (cityName) {
             await loadLocalitiesForResidentialForm(cityName);
@@ -2167,6 +2257,44 @@ function validateResidentialPropertyStep(stepNumber) {
             return false;
         }
         
+        // Validate location link if provided
+        const locationLink = document.getElementById('residentialLocationLink');
+        if (locationLink && locationLink.value.trim()) {
+            const linkValue = locationLink.value.trim();
+            
+            // Check if it's a valid URL
+            try {
+                const url = new URL(linkValue);
+                
+                // Validate URL scheme (must be http or https)
+                if (!['http:', 'https:'].includes(url.protocol)) {
+                    showNotification('Location link must be a valid HTTP or HTTPS URL', 'error');
+                    locationLink.focus();
+                    return false;
+                }
+                
+                // Optional: Check if it's a map service URL (Google Maps, Apple Maps, etc.)
+                const hostname = url.hostname.toLowerCase();
+                const isMapService = hostname.includes('google.com') || 
+                                   hostname.includes('maps.google.com') ||
+                                   hostname.includes('maps.apple.com') ||
+                                   hostname.includes('openstreetmap.org') ||
+                                   hostname.includes('bing.com/maps') ||
+                                   hostname.includes('mapbox.com');
+                
+                // If it's not a recognized map service, show a warning but allow it
+                // (user might be using a custom map service or shortened URL)
+                if (!isMapService) {
+                    console.warn('Location link does not appear to be from a recognized map service:', hostname);
+                }
+            } catch (error) {
+                // Invalid URL format
+                showNotification('Please enter a valid location link URL (e.g., https://maps.google.com/...)', 'error');
+                locationLink.focus();
+                return false;
+            }
+        }
+        
         return true;
     }
     
@@ -2274,6 +2402,57 @@ function validateResidentialPropertyStep(stepNumber) {
     }
     
     return true;
+}
+
+// Validate location link field with visual feedback
+function validateLocationLinkField(field, silent = false) {
+    if (!field) return true;
+    
+    const linkValue = field.value.trim();
+    
+    // If field is empty, it's valid (field is optional)
+    if (!linkValue) {
+        field.style.borderColor = '';
+        field.style.borderWidth = '';
+        return true;
+    }
+    
+    // Check if it's a valid URL
+    try {
+        const url = new URL(linkValue);
+        
+        // Validate URL scheme (must be http or https)
+        if (!['http:', 'https:'].includes(url.protocol)) {
+            if (!silent) {
+                showNotification('Location link must be a valid HTTP or HTTPS URL', 'error');
+            }
+            field.style.borderColor = '#dc3545';
+            field.style.borderWidth = '2px';
+            return false;
+        }
+        
+        // URL is valid
+        field.style.borderColor = '#28a745';
+        field.style.borderWidth = '2px';
+        
+        // Reset border color after a short delay to avoid permanent green border
+        setTimeout(() => {
+            if (field.value.trim() === linkValue) {
+                field.style.borderColor = '';
+                field.style.borderWidth = '';
+            }
+        }, 2000);
+        
+        return true;
+    } catch (error) {
+        // Invalid URL format
+        if (!silent) {
+            showNotification('Please enter a valid location link URL (e.g., https://maps.google.com/...)', 'error');
+        }
+        field.style.borderColor = '#dc3545';
+        field.style.borderWidth = '2px';
+        return false;
+    }
 }
 
 // Handle property type change - dynamically load Step 2 content
@@ -2793,6 +2972,186 @@ function initializeStep2EventListeners(propertyType) {
         });
     }
     
+    // Auto-calculate length and breadth from plot area
+    const plotAreaInput = document.getElementById('residentialPlotArea');
+    const lengthInput = document.getElementById('residentialLength');
+    const breadthInput = document.getElementById('residentialBreadth');
+    
+    if (plotAreaInput && lengthInput && breadthInput) {
+        // Track if user has manually edited length or breadth after form load
+        let lengthManuallyEdited = false;
+        let breadthManuallyEdited = false;
+        let isAutoCalculating = false; // Flag to prevent triggering manual edit during auto-calculation
+        let lastCalculatedPlotArea = null; // Track last calculated plot area to detect changes
+        
+        // Track manual changes to length (only if not auto-calculating)
+        lengthInput.addEventListener('input', () => {
+            if (!isAutoCalculating && lengthInput.value && lengthInput.value.trim() !== '') {
+                lengthManuallyEdited = true;
+            }
+        });
+        
+        // Track manual changes to breadth (only if not auto-calculating)
+        breadthInput.addEventListener('input', () => {
+            if (!isAutoCalculating && breadthInput.value && breadthInput.value.trim() !== '') {
+                breadthManuallyEdited = true;
+            }
+        });
+        
+        // Auto-calculate when plot area is entered or changed
+        plotAreaInput.addEventListener('input', () => {
+            const plotArea = parseFloat(plotAreaInput.value);
+            
+            if (plotArea && plotArea > 0) {
+                // Calculate assuming square plot: length = breadth = sqrt(plot_area)
+                const calculatedDimension = Math.sqrt(plotArea);
+                
+                // Check if plot area has changed (for existing properties)
+                const plotAreaChanged = lastCalculatedPlotArea === null || 
+                                       Math.abs(plotArea - lastCalculatedPlotArea) > 0.01;
+                lastCalculatedPlotArea = plotArea;
+                
+                // Set flag to prevent triggering manual edit detection
+                isAutoCalculating = true;
+                
+                // Auto-fill length if:
+                // 1. Field is empty, OR
+                // 2. Plot area changed and length hasn't been manually edited
+                if (lengthInput.value === '' || (plotAreaChanged && !lengthManuallyEdited)) {
+                    lengthInput.value = calculatedDimension.toFixed(2);
+                }
+                
+                // Auto-fill breadth if:
+                // 1. Field is empty, OR
+                // 2. Plot area changed and breadth hasn't been manually edited
+                if (breadthInput.value === '' || (plotAreaChanged && !breadthManuallyEdited)) {
+                    breadthInput.value = calculatedDimension.toFixed(2);
+                }
+                
+                // Reset flag after auto-calculation
+                setTimeout(() => {
+                    isAutoCalculating = false;
+                }, 0);
+            } else if (!plotArea || plotArea <= 0) {
+                // Clear length and breadth if plot area is cleared (only if not manually edited)
+                isAutoCalculating = true;
+                lastCalculatedPlotArea = null;
+                
+                if (!lengthManuallyEdited) {
+                    lengthInput.value = '';
+                }
+                if (!breadthManuallyEdited) {
+                    breadthInput.value = '';
+                }
+                
+                setTimeout(() => {
+                    isAutoCalculating = false;
+                }, 0);
+            }
+        });
+        
+        // Initialize last calculated plot area if plot area already has a value
+        if (plotAreaInput.value) {
+            const existingPlotArea = parseFloat(plotAreaInput.value);
+            if (existingPlotArea && existingPlotArea > 0) {
+                lastCalculatedPlotArea = existingPlotArea;
+            }
+        }
+        
+        // Reset manual edit flags when plot area is cleared completely
+        plotAreaInput.addEventListener('blur', () => {
+            const plotArea = parseFloat(plotAreaInput.value);
+            if (!plotArea || plotArea <= 0) {
+                // Reset flags when plot area is empty
+                if (lengthInput.value === '') {
+                    lengthManuallyEdited = false;
+                }
+                if (breadthInput.value === '') {
+                    breadthManuallyEdited = false;
+                }
+            }
+        });
+    }
+    
+    // Auto-calculate carpet area from super builtup area (75% of super builtup area)
+    const superBuildupAreaInput = document.getElementById('residentialSuperBuildupArea');
+    const carpetAreaInput = document.getElementById('residentialCarpetArea');
+    
+    if (superBuildupAreaInput && carpetAreaInput) {
+        // Track if user has manually edited carpet area after form load
+        let carpetAreaManuallyEdited = false;
+        let isAutoCalculating = false; // Flag to prevent triggering manual edit during auto-calculation
+        let lastCalculatedSuperBuildupArea = null; // Track last calculated super builtup area to detect changes
+        
+        // Track manual changes to carpet area (only if not auto-calculating)
+        carpetAreaInput.addEventListener('input', () => {
+            if (!isAutoCalculating && carpetAreaInput.value && carpetAreaInput.value.trim() !== '') {
+                carpetAreaManuallyEdited = true;
+            }
+        });
+        
+        // Auto-calculate when super builtup area is entered or changed
+        superBuildupAreaInput.addEventListener('input', () => {
+            const superBuildupArea = parseFloat(superBuildupAreaInput.value);
+            
+            if (superBuildupArea && superBuildupArea > 0) {
+                // Calculate carpet area as 75% of super builtup area
+                const calculatedCarpetArea = superBuildupArea * 0.75;
+                
+                // Check if super builtup area has changed (for existing properties)
+                const superBuildupAreaChanged = lastCalculatedSuperBuildupArea === null || 
+                                               Math.abs(superBuildupArea - lastCalculatedSuperBuildupArea) > 0.01;
+                lastCalculatedSuperBuildupArea = superBuildupArea;
+                
+                // Set flag to prevent triggering manual edit detection
+                isAutoCalculating = true;
+                
+                // Auto-fill carpet area if:
+                // 1. Field is empty, OR
+                // 2. Super builtup area changed and carpet area hasn't been manually edited
+                if (carpetAreaInput.value === '' || (superBuildupAreaChanged && !carpetAreaManuallyEdited)) {
+                    carpetAreaInput.value = calculatedCarpetArea.toFixed(2);
+                }
+                
+                // Reset flag after auto-calculation
+                setTimeout(() => {
+                    isAutoCalculating = false;
+                }, 0);
+            } else if (!superBuildupArea || superBuildupArea <= 0) {
+                // Clear carpet area if super builtup area is cleared (only if not manually edited)
+                isAutoCalculating = true;
+                lastCalculatedSuperBuildupArea = null;
+                
+                if (!carpetAreaManuallyEdited) {
+                    carpetAreaInput.value = '';
+                }
+                
+                setTimeout(() => {
+                    isAutoCalculating = false;
+                }, 0);
+            }
+        });
+        
+        // Initialize last calculated super builtup area if it already has a value
+        if (superBuildupAreaInput.value) {
+            const existingSuperBuildupArea = parseFloat(superBuildupAreaInput.value);
+            if (existingSuperBuildupArea && existingSuperBuildupArea > 0) {
+                lastCalculatedSuperBuildupArea = existingSuperBuildupArea;
+            }
+        }
+        
+        // Reset manual edit flag when super builtup area is cleared completely
+        superBuildupAreaInput.addEventListener('blur', () => {
+            const superBuildupArea = parseFloat(superBuildupAreaInput.value);
+            if (!superBuildupArea || superBuildupArea <= 0) {
+                // Reset flag when super builtup area is empty
+                if (carpetAreaInput.value === '') {
+                    carpetAreaManuallyEdited = false;
+                }
+            }
+        });
+    }
+    
     // Load amenities for apartments and villas
     if (propertyType === 'apartments' || propertyType === 'villas') {
         loadAmenitiesForResidentialForm().then(() => {
@@ -2851,21 +3210,21 @@ async function loadCitiesForResidentialForm() {
         
         if (response.ok) {
             const data = await response.json();
-            const citySelect = document.getElementById('residentialCity');
-            if (citySelect && data.cities && Array.isArray(data.cities)) {
-                // Store current selection before clearing
-                const currentValue = citySelect.value;
+            const cityInput = document.getElementById('residentialCity');
+            const cityDatalist = document.getElementById('residentialCityList');
+            if (cityInput && cityDatalist && data.cities && Array.isArray(data.cities)) {
+                // Store current value before clearing
+                const currentValue = cityInput.value;
                 
-                // Clear existing options except the first "Select City" option
-                citySelect.innerHTML = '<option value="">Select City</option>';
+                // Clear existing options
+                cityDatalist.innerHTML = '';
                 
                 // If no active cities, show message
                 if (data.cities.length === 0) {
                     const option = document.createElement('option');
                     option.value = '';
                     option.textContent = 'No active cities available';
-                    option.disabled = true;
-                    citySelect.appendChild(option);
+                    cityDatalist.appendChild(option);
                     return;
                 }
                 
@@ -2892,35 +3251,33 @@ async function loadCitiesForResidentialForm() {
                         const option = document.createElement('option');
                         option.value = cityName;
                         option.textContent = `${cityName}, ${state}`;
-                        citySelect.appendChild(option);
+                        cityDatalist.appendChild(option);
                     });
                 });
                 
-                // Restore previous selection if it exists
-                if (currentValue && citySelect.querySelector(`option[value="${currentValue}"]`)) {
-                    citySelect.value = currentValue;
+                // Restore previous value if it exists
+                if (currentValue) {
+                    cityInput.value = currentValue;
                 }
             }
         } else {
             console.error('Failed to load cities:', response.status, response.statusText);
-            const citySelect = document.getElementById('residentialCity');
-            if (citySelect) {
+            const cityDatalist = document.getElementById('residentialCityList');
+            if (cityDatalist) {
                 const option = document.createElement('option');
                 option.value = '';
                 option.textContent = 'Error loading cities';
-                option.disabled = true;
-                citySelect.appendChild(option);
+                cityDatalist.appendChild(option);
             }
         }
     } catch (error) {
         console.error('Error loading cities:', error);
-        const citySelect = document.getElementById('residentialCity');
-        if (citySelect) {
+        const cityDatalist = document.getElementById('residentialCityList');
+        if (cityDatalist) {
             const option = document.createElement('option');
             option.value = '';
             option.textContent = 'Error loading cities';
-            option.disabled = true;
-            citySelect.appendChild(option);
+            cityDatalist.appendChild(option);
         }
     }
 }
@@ -2929,10 +3286,14 @@ async function loadCitiesForResidentialForm() {
 async function loadLocalitiesForResidentialForm(cityName) {
     try {
         if (!cityName || cityName.trim() === '') {
-            // Clear locality dropdown if no city is selected
-            const localitySelect = document.getElementById('residentialLocality');
-            if (localitySelect) {
-                localitySelect.innerHTML = '<option value="">Select Locality/Area</option>';
+            // Clear locality datalist if no city is selected
+            const localityDatalist = document.getElementById('residentialLocalityList');
+            const localityInput = document.getElementById('residentialLocality');
+            if (localityDatalist) {
+                localityDatalist.innerHTML = '';
+            }
+            if (localityInput) {
+                localityInput.value = '';
             }
             return;
         }
@@ -2953,17 +3314,18 @@ async function loadLocalitiesForResidentialForm(cityName) {
             const data = await response.json();
             console.log('Localities API response for city "' + cityName + '":', data);
             console.log('Number of localities received:', data.localities ? data.localities.length : 0);
-            const localitySelect = document.getElementById('residentialLocality');
-            if (!localitySelect) {
-                console.error('Locality select element not found: residentialLocality');
+            const localityInput = document.getElementById('residentialLocality');
+            const localityDatalist = document.getElementById('residentialLocalityList');
+            if (!localityInput || !localityDatalist) {
+                console.error('Locality input or datalist element not found: residentialLocality');
                 return;
             }
             
-            // Store current selection before clearing
-            const currentValue = localitySelect.value;
+            // Store current value before clearing
+            const currentValue = localityInput.value;
             
-            // Clear existing options except the first "Select Locality/Area" option
-            localitySelect.innerHTML = '<option value="">Select Locality/Area</option>';
+            // Clear existing options
+            localityDatalist.innerHTML = '';
             
             if (data.localities && Array.isArray(data.localities)) {
                 console.log('Processing localities array:', data.localities);
@@ -2973,8 +3335,7 @@ async function loadLocalitiesForResidentialForm(cityName) {
                     const option = document.createElement('option');
                     option.value = '';
                     option.textContent = 'No areas available for this city';
-                    option.disabled = true;
-                    localitySelect.appendChild(option);
+                    localityDatalist.appendChild(option);
                     return;
                 }
                 
@@ -2982,50 +3343,112 @@ async function loadLocalitiesForResidentialForm(cityName) {
                 const sortedLocalities = [...data.localities].sort();
                 console.log('Sorted localities:', sortedLocalities);
                 
-                // Add localities to select dropdown
+                // Add localities to datalist
                 let addedCount = 0;
                 sortedLocalities.forEach(locality => {
                     if (locality && locality.trim()) {
                         const option = document.createElement('option');
                         option.value = locality.trim();
                         option.textContent = locality.trim();
-                        localitySelect.appendChild(option);
+                        localityDatalist.appendChild(option);
                         addedCount++;
                     }
                 });
-                console.log(`Added ${addedCount} localities to dropdown`);
+                console.log(`Added ${addedCount} localities to datalist`);
                 
-                // Restore previous selection if it still exists
-                if (currentValue && localitySelect.querySelector(`option[value="${currentValue}"]`)) {
-                    localitySelect.value = currentValue;
+                // Restore previous value if it exists
+                if (currentValue) {
+                    localityInput.value = currentValue;
                 }
             }
         } else {
             console.error('Failed to load localities:', response.status, response.statusText);
-            const localitySelect = document.getElementById('residentialLocality');
-            if (localitySelect) {
+            const localityDatalist = document.getElementById('residentialLocalityList');
+            if (localityDatalist) {
                 const option = document.createElement('option');
                 option.value = '';
                 option.textContent = 'Error loading areas';
-                option.disabled = true;
-                localitySelect.appendChild(option);
+                localityDatalist.appendChild(option);
             }
         }
     } catch (error) {
         console.error('Error loading localities:', error);
-        const localitySelect = document.getElementById('residentialLocality');
-        if (localitySelect) {
+        const localityDatalist = document.getElementById('residentialLocalityList');
+        if (localityDatalist) {
             const option = document.createElement('option');
             option.value = '';
             option.textContent = 'Error loading areas';
-            option.disabled = true;
-            localitySelect.appendChild(option);
+            localityDatalist.appendChild(option);
         }
     }
 }
 
 // Store unit types globally
 let allUnitTypes = [];
+
+// Store categories globally
+let allCategories = [];
+
+// Load categories and populate Property Type dropdown
+async function loadCategoriesForPropertyTypeDropdown() {
+    try {
+        // Add cache-busting timestamp to ensure fresh data
+        const timestamp = new Date().getTime();
+        const response = await fetch(`/api/categories?_t=${timestamp}`, {
+            method: 'GET',
+            cache: 'no-cache',
+            headers: {
+                'Cache-Control': 'no-cache'
+            }
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            if (data.categories && Array.isArray(data.categories)) {
+                // Store categories globally (only active categories are returned from /api/categories)
+                allCategories = data.categories.filter(cat => cat && cat.name && cat.display_name);
+                // Sort by display name
+                allCategories.sort((a, b) => {
+                    return (a.display_name || '').localeCompare(b.display_name || '');
+                });
+                
+                // Populate Property Type dropdown
+                const propertyTypeSelect = document.getElementById('residentialPropertyType');
+                if (propertyTypeSelect) {
+                    // Store current selection
+                    const currentValue = propertyTypeSelect.value;
+                    
+                    // Clear existing options except the first "Select Property Type" option
+                    propertyTypeSelect.innerHTML = '<option value="">Select Property Type</option>';
+                    
+                    // Add categories as options
+                    allCategories.forEach(category => {
+                        const option = document.createElement('option');
+                        option.value = category.name;
+                        option.textContent = category.display_name;
+                        propertyTypeSelect.appendChild(option);
+                    });
+                    
+                    // Restore previous selection if it still exists
+                    if (currentValue) {
+                        const optionExists = Array.from(propertyTypeSelect.options).some(opt => opt.value === currentValue);
+                        if (optionExists) {
+                            propertyTypeSelect.value = currentValue;
+                        }
+                    }
+                }
+            }
+        } else {
+            console.error('Failed to load categories:', response.status, response.statusText);
+            // Fallback to empty array
+            allCategories = [];
+        }
+    } catch (error) {
+        console.error('Error loading categories:', error);
+        // Fallback to empty array
+        allCategories = [];
+    }
+}
 
 // Load unit types for residential property form
 async function loadUnitTypesForResidentialForm() {
@@ -3162,18 +3585,20 @@ function populateResidentialForm(property) {
     if (propertyIdInput) propertyIdInput.value = property.id || '';
     
     const cityInput = document.getElementById('residentialCity');
+    const cityDatalist = document.getElementById('residentialCityList');
     if (cityInput && property.city) {
-        // Check if the city exists in the dropdown
-        const cityOption = cityInput.querySelector(`option[value="${property.city}"]`);
-        if (cityOption) {
-            cityInput.value = property.city;
-        } else {
-            // If city doesn't exist in dropdown (e.g., it was deactivated), add it as an option
-            const option = document.createElement('option');
-            option.value = property.city;
-            option.textContent = property.city;
-            cityInput.appendChild(option);
-            cityInput.value = property.city;
+        // Set the city value directly (input field allows free text)
+        cityInput.value = property.city;
+        
+        // If city doesn't exist in datalist, add it as a new option
+        if (cityDatalist) {
+            const existingOption = cityDatalist.querySelector(`option[value="${property.city}"]`);
+            if (!existingOption) {
+                const option = document.createElement('option');
+                option.value = property.city;
+                option.textContent = property.city;
+                cityDatalist.appendChild(option);
+            }
         }
         
         // Load localities for the selected city
@@ -3181,18 +3606,20 @@ function populateResidentialForm(property) {
         loadLocalitiesForResidentialForm(cityName).then(() => {
             // Set locality value after localities are loaded
             const localityInput = document.getElementById('residentialLocality');
+            const localityDatalist = document.getElementById('residentialLocalityList');
             if (localityInput && property.locality) {
-                // Check if the locality exists in the dropdown
-                const localityOption = localityInput.querySelector(`option[value="${property.locality}"]`);
-                if (localityOption) {
-                    localityInput.value = property.locality;
-                } else {
-                    // If locality doesn't exist in dropdown, add it as an option
-                    const option = document.createElement('option');
-                    option.value = property.locality;
-                    option.textContent = property.locality;
-                    localityInput.appendChild(option);
-                    localityInput.value = property.locality;
+                // Set the locality value directly (input field allows free text)
+                localityInput.value = property.locality;
+                
+                // If locality doesn't exist in datalist, add it as a new option
+                if (localityDatalist) {
+                    const existingOption = localityDatalist.querySelector(`option[value="${property.locality}"]`);
+                    if (!existingOption) {
+                        const option = document.createElement('option');
+                        option.value = property.locality;
+                        option.textContent = property.locality;
+                        localityDatalist.appendChild(option);
+                    }
                 }
             }
         });
@@ -3208,7 +3635,16 @@ function populateResidentialForm(property) {
     if (typeInput) typeInput.value = property.type || 'residential';
     
     const locationLinkInput = document.getElementById('residentialLocationLink');
-    if (locationLinkInput) locationLinkInput.value = property.location_link || '';
+    if (locationLinkInput) {
+        locationLinkInput.value = property.location_link || '';
+        // Validate location link after populating (in case existing data is invalid)
+        if (locationLinkInput.value.trim()) {
+            // Use setTimeout to ensure validation runs after DOM is ready
+            setTimeout(() => {
+                validateLocationLinkField(locationLinkInput, true); // Silent mode - no notification, just visual feedback
+            }, 100);
+        }
+    }
     
     // Set price in Step 1 - ensure it's always populated if available
     const priceInput = document.getElementById('residentialPrice');

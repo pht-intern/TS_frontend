@@ -7,7 +7,7 @@
     <!-- Cache control for HTML - allow short cache for updates -->
     <meta http-equiv="Cache-Control" content="public, max-age=3600, must-revalidate">
     <title>Dashboard - Tirumakudalu Properties</title>
-    <link rel="icon" type="image/png" href="/images/TirumakudaluProperties_Logo-2048x1858.png">
+    <link rel="icon" type="image/webp" href="/images/TS_logo.webp">
     <!-- Critical CSS - Inlined for above-the-fold content -->
     <style>
 /* Critical CSS - Dashboard above-the-fold */
@@ -350,7 +350,7 @@ body{font-family:'Inter',sans-serif;font-size:18px;line-height:1.6;color:var(--t
                 <div class="dashboard-header-left">
                     <a href="/" class="dashboard-logo-link">
                         <div class="logo-graphic">
-                            <img src="/images/TirumakudaluProperties_Logo-2048x1858.png"
+                            <img src="/images/TS_logo.webp"
                                 alt="Tirumakudalu Properties Logo" class="logo-img" loading="lazy">
                         </div>
                     </a>
@@ -1165,9 +1165,11 @@ body{font-family:'Inter',sans-serif;font-size:18px;line-height:1.6;color:var(--t
                                 <i class="fas fa-map-marker-alt"></i>
                                 City *
                             </label>
-                            <select id="residentialCity" name="city" required>
+                            <input type="text" id="residentialCity" name="city" list="residentialCityList" 
+                                placeholder="Type or select city" autocomplete="off" required>
+                            <datalist id="residentialCityList">
                                 <option value="">Select City</option>
-                            </select>
+                            </datalist>
                         </div>
                     </div>
 
@@ -1177,9 +1179,11 @@ body{font-family:'Inter',sans-serif;font-size:18px;line-height:1.6;color:var(--t
                                 <i class="fas fa-location-dot"></i>
                                 Locality/Area *
                             </label>
-                            <select id="residentialLocality" name="locality" required>
+                            <input type="text" id="residentialLocality" name="locality" list="residentialLocalityList" 
+                                placeholder="Type or select locality/area" autocomplete="off" required>
+                            <datalist id="residentialLocalityList">
                                 <option value="">Select Locality/Area</option>
-                            </select>
+                            </datalist>
                         </div>
                         <div class="dashboard-form-group">
                             <label for="residentialLocationLink">

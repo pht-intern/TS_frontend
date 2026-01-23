@@ -7,7 +7,7 @@
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
     <title>Application Metrics - Tirumakudalu Properties</title>
-    <link rel="icon" type="image/png" href="/images/TirumakudaluProperties_Logo-2048x1858.png">
+    <link rel="icon" type="image/webp" href="/images/TS_logo.webp">
     <link rel="stylesheet" href="/css/style.css">
     <!-- Google Fonts - Load with fallback, no preconnect to avoid connection issues -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:wght@400;600;700&display=swap" rel="stylesheet" onerror="this.onerror=null; this.href='';">
@@ -454,7 +454,7 @@
                 <div class="dashboard-header-left">
                     <a href="/" class="dashboard-logo-link">
                         <div class="logo-graphic">
-                            <img src="/images/TirumakudaluProperties_Logo-2048x1858.png" alt="Tirumakudalu Properties Logo" class="logo-img" loading="lazy">
+                            <img src="/images/TS_logo.webp" alt="Tirumakudalu Properties Logo" class="logo-img" loading="lazy">
                         </div>
                     </a>
                     <!-- Dashboard Navigation -->
@@ -518,9 +518,9 @@
                         Application Metrics
                     </h1>
                     <div style="display: flex; gap: 1rem; align-items: center; flex-wrap: wrap;">
-                        <button class="refresh-btn" id="realtimeToggle" title="Toggle Real-time Updates">
-                            <i class="fas fa-circle" id="realtimeIcon" style="color: #27ae60; font-size: 0.7rem;"></i>
-                            <span id="realtimeText">Real-time ON</span>
+                        <button class="refresh-btn realtime-off" id="realtimeToggle" title="Lightweight Mode - Updates only on API calls or manual refresh" disabled style="opacity: 0.6; cursor: not-allowed;">
+                            <i class="fas fa-circle" id="realtimeIcon" style="color: #95a5a6; font-size: 0.7rem;"></i>
+                            <span id="realtimeText">Lightweight Mode</span>
                         </button>
                         <button class="refresh-btn" id="refreshBtn">
                             <i class="fas fa-sync-alt"></i>
@@ -641,10 +641,9 @@
         let cpuChart = null;
         let ramChart = null;
         let bandwidthChart = null;
-        let realtimeEnabled = true;
+        let realtimeEnabled = false; // Disabled by default - lightweight mode
         let refreshInterval = null;
         let isUpdating = false;
-        let updateInterval = 5000; // 5 seconds for real-time updates
 
         // Get authentication headers
         function getAuthHeaders() {
@@ -996,236 +995,572 @@
 
         // Update CPU chart
         function updateCpuChart(data) {
+            const chartElement = document.getElementById('cpuChart');
+            if (!chartElement) {
+                console.warn('CPU chart element not found');
+                return;
+            }
+            
+            // Check if Chart.js is loaded
+            if (typeof Chart === 'undefined') {
+                console.error('Chart.js is not loaded');
+                chartElement.parentElement.innerHTML = '<div class="no-data">Chart.js library not loaded. Please refresh the page.</div>';
+                return;
+            }
+            
             const systemTimeSeries = data.system_metrics?.time_series || [];
+            
+            // Handle no data case
             if (systemTimeSeries.length === 0) {
-                const ctx = document.getElementById('cpuChart');
-                if (ctx && cpuChart) {
+                if (cpuChart) {
                     cpuChart.destroy();
                     cpuChart = null;
                 }
+                // Show no data message
+                const chartWrapper = chartElement.parentElement;
+                if (chartWrapper && !chartWrapper.querySelector('.no-data')) {
+                    chartElement.style.display = 'none';
+                    const noDataDiv = document.createElement('div');
+                    noDataDiv.className = 'no-data';
+                    noDataDiv.textContent = 'No CPU usage data available for the selected time range';
+                    chartWrapper.appendChild(noDataDiv);
+                }
                 return;
             }
+            
+            // Hide no data message if it exists
+            const chartWrapper = chartElement.parentElement;
+            const noDataDiv = chartWrapper.querySelector('.no-data');
+            if (noDataDiv) {
+                noDataDiv.remove();
+            }
+            chartElement.style.display = 'block';
 
             const labels = systemTimeSeries.map(m => formatTime(m.time));
-            const cpuUsage = systemTimeSeries.map(m => m.cpu_usage || 0);
+            const cpuUsage = systemTimeSeries.map(m => {
+                const usage = parseFloat(m.cpu_usage) || 0;
+                // Ensure CPU usage is between 0 and 100
+                return Math.max(0, Math.min(100, usage));
+            });
 
-            const chartElement = document.getElementById('cpuChart');
-            if (!chartElement) return;
-            
             const ctx = chartElement.getContext('2d');
             
+            // Update existing chart or create new one
             if (cpuChart) {
-                cpuChart.data.labels = labels;
-                cpuChart.data.datasets[0].data = cpuUsage;
-                cpuChart.update('none');
-            } else {
-                cpuChart = new Chart(ctx, {
-                    type: 'line',
-                    data: {
-                        labels: labels,
-                        datasets: [{
-                            label: 'Application CPU Usage (%)',
-                            data: cpuUsage,
-                            borderColor: 'rgb(255, 193, 7)',
-                            backgroundColor: 'rgba(255, 193, 7, 0.2)',
-                            tension: 0.4,
-                            fill: true
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        plugins: {
-                            legend: {
-                                position: 'top',
-                            },
-                            tooltip: {
-                                mode: 'index',
-                                intersect: false,
-                                callbacks: {
-                                    label: function(context) {
-                                        return context.dataset.label + ': ' + context.parsed.y.toFixed(2) + '%';
-                                    }
-                                }
-                            }
+                try {
+                    cpuChart.data.labels = labels;
+                    cpuChart.data.datasets[0].data = cpuUsage;
+                    cpuChart.update('none'); // 'none' mode for smooth updates
+                } catch (error) {
+                    console.error('Error updating CPU chart:', error);
+                    // Recreate chart if update fails
+                    cpuChart.destroy();
+                    cpuChart = null;
+                }
+            }
+            
+            // Create new chart if it doesn't exist
+            if (!cpuChart) {
+                try {
+                    cpuChart = new Chart(ctx, {
+                        type: 'line',
+                        data: {
+                            labels: labels,
+                            datasets: [{
+                                label: 'Application CPU Usage (%)',
+                                data: cpuUsage,
+                                borderColor: 'rgb(255, 193, 7)',
+                                backgroundColor: 'rgba(255, 193, 7, 0.2)',
+                                tension: 0.4,
+                                fill: true,
+                                pointRadius: 2,
+                                pointHoverRadius: 4,
+                                pointBackgroundColor: 'rgb(255, 193, 7)',
+                                pointBorderColor: '#fff',
+                                pointBorderWidth: 1
+                            }]
                         },
-                        scales: {
-                            y: {
-                                beginAtZero: true,
-                                max: 100,
-                                ticks: {
-                                    callback: function(value) {
-                                        return value.toFixed(0) + '%';
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            animation: {
+                                duration: 0 // Disable animation for real-time updates
+                            },
+                            plugins: {
+                                legend: {
+                                    position: 'top',
+                                    display: true,
+                                    labels: {
+                                        usePointStyle: true,
+                                        padding: 15,
+                                        font: {
+                                            size: 12,
+                                            weight: '500'
+                                        }
+                                    }
+                                },
+                                tooltip: {
+                                    mode: 'index',
+                                    intersect: false,
+                                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                                    padding: 12,
+                                    titleFont: {
+                                        size: 13,
+                                        weight: '600'
+                                    },
+                                    bodyFont: {
+                                        size: 12
+                                    },
+                                    callbacks: {
+                                        label: function(context) {
+                                            return context.dataset.label + ': ' + context.parsed.y.toFixed(2) + '%';
+                                        }
                                     }
                                 }
+                            },
+                            scales: {
+                                x: {
+                                    grid: {
+                                        display: true,
+                                        color: 'rgba(0, 0, 0, 0.05)'
+                                    },
+                                    ticks: {
+                                        maxRotation: 45,
+                                        minRotation: 0,
+                                        font: {
+                                            size: 10
+                                        }
+                                    }
+                                },
+                                y: {
+                                    beginAtZero: true,
+                                    max: 100,
+                                    grid: {
+                                        display: true,
+                                        color: 'rgba(0, 0, 0, 0.05)'
+                                    },
+                                    ticks: {
+                                        callback: function(value) {
+                                            return value.toFixed(0) + '%';
+                                        },
+                                        font: {
+                                            size: 10
+                                        }
+                                    },
+                                    title: {
+                                        display: true,
+                                        text: 'CPU Usage (%)',
+                                        font: {
+                                            size: 12,
+                                            weight: '600'
+                                        }
+                                    }
+                                }
+                            },
+                            interaction: {
+                                mode: 'nearest',
+                                axis: 'x',
+                                intersect: false
                             }
                         }
-                    }
-                });
+                    });
+                } catch (error) {
+                    console.error('Error creating CPU chart:', error);
+                    chartElement.parentElement.innerHTML = '<div class="error-message">Error rendering CPU usage chart. Please refresh the page.</div>';
+                }
             }
         }
 
         // Update RAM chart
         function updateRamChart(data) {
+            const chartElement = document.getElementById('ramChart');
+            if (!chartElement) {
+                console.warn('RAM chart element not found');
+                return;
+            }
+            
+            // Check if Chart.js is loaded
+            if (typeof Chart === 'undefined') {
+                console.error('Chart.js is not loaded');
+                chartElement.parentElement.innerHTML = '<div class="no-data">Chart.js library not loaded. Please refresh the page.</div>';
+                return;
+            }
+            
             const systemTimeSeries = data.system_metrics?.time_series || [];
+            
+            // Handle no data case
             if (systemTimeSeries.length === 0) {
-                const ctx = document.getElementById('ramChart');
-                if (ctx && ramChart) {
+                if (ramChart) {
                     ramChart.destroy();
                     ramChart = null;
                 }
+                // Show no data message
+                const chartWrapper = chartElement.parentElement;
+                if (chartWrapper && !chartWrapper.querySelector('.no-data')) {
+                    chartElement.style.display = 'none';
+                    const noDataDiv = document.createElement('div');
+                    noDataDiv.className = 'no-data';
+                    noDataDiv.textContent = 'No RAM usage data available for the selected time range';
+                    chartWrapper.appendChild(noDataDiv);
+                }
                 return;
             }
+            
+            // Hide no data message if it exists
+            const chartWrapper = chartElement.parentElement;
+            const noDataDiv = chartWrapper.querySelector('.no-data');
+            if (noDataDiv) {
+                noDataDiv.remove();
+            }
+            chartElement.style.display = 'block';
 
             const labels = systemTimeSeries.map(m => formatTime(m.time));
-            const ramUsage = systemTimeSeries.map(m => m.ram_usage || 0);
+            const ramUsage = systemTimeSeries.map(m => {
+                const usage = parseFloat(m.ram_usage) || 0;
+                // Ensure RAM usage is between 0 and 100
+                return Math.max(0, Math.min(100, usage));
+            });
 
-            const chartElement = document.getElementById('ramChart');
-            if (!chartElement) return;
-            
             const ctx = chartElement.getContext('2d');
             
+            // Update existing chart or create new one
             if (ramChart) {
-                ramChart.data.labels = labels;
-                ramChart.data.datasets[0].data = ramUsage;
-                ramChart.update('none');
-            } else {
-                ramChart = new Chart(ctx, {
-                    type: 'line',
-                    data: {
-                        labels: labels,
-                        datasets: [{
-                            label: 'Application RAM Usage (%)',
-                            data: ramUsage,
-                            borderColor: 'rgb(156, 39, 176)',
-                            backgroundColor: 'rgba(156, 39, 176, 0.2)',
-                            tension: 0.4,
-                            fill: true
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        plugins: {
-                            legend: {
-                                position: 'top',
-                            },
-                            tooltip: {
-                                mode: 'index',
-                                intersect: false,
-                                callbacks: {
-                                    label: function(context) {
-                                        return context.dataset.label + ': ' + context.parsed.y.toFixed(2) + '%';
-                                    }
-                                }
-                            }
+                try {
+                    ramChart.data.labels = labels;
+                    ramChart.data.datasets[0].data = ramUsage;
+                    ramChart.update('none'); // 'none' mode for smooth updates
+                } catch (error) {
+                    console.error('Error updating RAM chart:', error);
+                    // Recreate chart if update fails
+                    ramChart.destroy();
+                    ramChart = null;
+                }
+            }
+            
+            // Create new chart if it doesn't exist
+            if (!ramChart) {
+                try {
+                    ramChart = new Chart(ctx, {
+                        type: 'line',
+                        data: {
+                            labels: labels,
+                            datasets: [{
+                                label: 'Application RAM Usage (%)',
+                                data: ramUsage,
+                                borderColor: 'rgb(156, 39, 176)',
+                                backgroundColor: 'rgba(156, 39, 176, 0.2)',
+                                tension: 0.4,
+                                fill: true,
+                                pointRadius: 2,
+                                pointHoverRadius: 4,
+                                pointBackgroundColor: 'rgb(156, 39, 176)',
+                                pointBorderColor: '#fff',
+                                pointBorderWidth: 1
+                            }]
                         },
-                        scales: {
-                            y: {
-                                beginAtZero: true,
-                                max: 100,
-                                ticks: {
-                                    callback: function(value) {
-                                        return value.toFixed(0) + '%';
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            animation: {
+                                duration: 0 // Disable animation for real-time updates
+                            },
+                            plugins: {
+                                legend: {
+                                    position: 'top',
+                                    display: true,
+                                    labels: {
+                                        usePointStyle: true,
+                                        padding: 15,
+                                        font: {
+                                            size: 12,
+                                            weight: '500'
+                                        }
+                                    }
+                                },
+                                tooltip: {
+                                    mode: 'index',
+                                    intersect: false,
+                                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                                    padding: 12,
+                                    titleFont: {
+                                        size: 13,
+                                        weight: '600'
+                                    },
+                                    bodyFont: {
+                                        size: 12
+                                    },
+                                    callbacks: {
+                                        label: function(context) {
+                                            return context.dataset.label + ': ' + context.parsed.y.toFixed(2) + '%';
+                                        }
                                     }
                                 }
+                            },
+                            scales: {
+                                x: {
+                                    grid: {
+                                        display: true,
+                                        color: 'rgba(0, 0, 0, 0.05)'
+                                    },
+                                    ticks: {
+                                        maxRotation: 45,
+                                        minRotation: 0,
+                                        font: {
+                                            size: 10
+                                        }
+                                    }
+                                },
+                                y: {
+                                    beginAtZero: true,
+                                    max: 100,
+                                    grid: {
+                                        display: true,
+                                        color: 'rgba(0, 0, 0, 0.05)'
+                                    },
+                                    ticks: {
+                                        callback: function(value) {
+                                            return value.toFixed(0) + '%';
+                                        },
+                                        font: {
+                                            size: 10
+                                        }
+                                    },
+                                    title: {
+                                        display: true,
+                                        text: 'RAM Usage (%)',
+                                        font: {
+                                            size: 12,
+                                            weight: '600'
+                                        }
+                                    }
+                                }
+                            },
+                            interaction: {
+                                mode: 'nearest',
+                                axis: 'x',
+                                intersect: false
                             }
                         }
-                    }
-                });
+                    });
+                } catch (error) {
+                    console.error('Error creating RAM chart:', error);
+                    chartElement.parentElement.innerHTML = '<div class="error-message">Error rendering RAM usage chart. Please refresh the page.</div>';
+                }
             }
         }
 
         // Update Bandwidth chart
         function updateBandwidthChart(data) {
+            const chartElement = document.getElementById('bandwidthChart');
+            if (!chartElement) {
+                console.warn('Bandwidth chart element not found');
+                return;
+            }
+            
+            // Check if Chart.js is loaded
+            if (typeof Chart === 'undefined') {
+                console.error('Chart.js is not loaded');
+                chartElement.parentElement.innerHTML = '<div class="no-data">Chart.js library not loaded. Please refresh the page.</div>';
+                return;
+            }
+            
             const systemTimeSeries = data.system_metrics?.time_series || [];
+            
+            // Handle no data case
             if (systemTimeSeries.length === 0) {
-                const ctx = document.getElementById('bandwidthChart');
-                if (ctx && bandwidthChart) {
+                if (bandwidthChart) {
                     bandwidthChart.destroy();
                     bandwidthChart = null;
                 }
+                // Show no data message
+                const chartWrapper = chartElement.parentElement;
+                if (chartWrapper && !chartWrapper.querySelector('.no-data')) {
+                    chartElement.style.display = 'none';
+                    const noDataDiv = document.createElement('div');
+                    noDataDiv.className = 'no-data';
+                    noDataDiv.textContent = 'No bandwidth usage data available for the selected time range';
+                    chartWrapper.appendChild(noDataDiv);
+                }
                 return;
             }
+            
+            // Hide no data message if it exists
+            const chartWrapper = chartElement.parentElement;
+            const noDataDiv = chartWrapper.querySelector('.no-data');
+            if (noDataDiv) {
+                noDataDiv.remove();
+            }
+            chartElement.style.display = 'block';
 
             const labels = systemTimeSeries.map(m => formatTime(m.time));
-            const bandwidthIn = systemTimeSeries.map(m => m.bandwidth_in_mb || 0);
-            const bandwidthOut = systemTimeSeries.map(m => m.bandwidth_out_mb || 0);
-            const bandwidthTotal = systemTimeSeries.map(m => m.bandwidth_total_mb || 0);
+            const bandwidthIn = systemTimeSeries.map(m => {
+                const value = parseFloat(m.bandwidth_in_mb) || 0;
+                return Math.max(0, value); // Ensure non-negative
+            });
+            const bandwidthOut = systemTimeSeries.map(m => {
+                const value = parseFloat(m.bandwidth_out_mb) || 0;
+                return Math.max(0, value); // Ensure non-negative
+            });
+            const bandwidthTotal = systemTimeSeries.map(m => {
+                const value = parseFloat(m.bandwidth_total_mb) || 0;
+                return Math.max(0, value); // Ensure non-negative
+            });
 
-            const chartElement = document.getElementById('bandwidthChart');
-            if (!chartElement) return;
-            
             const ctx = chartElement.getContext('2d');
             
+            // Update existing chart or create new one
             if (bandwidthChart) {
-                bandwidthChart.data.labels = labels;
-                bandwidthChart.data.datasets[0].data = bandwidthIn;
-                bandwidthChart.data.datasets[1].data = bandwidthOut;
-                bandwidthChart.data.datasets[2].data = bandwidthTotal;
-                bandwidthChart.update('none');
-            } else {
-                bandwidthChart = new Chart(ctx, {
-                    type: 'line',
-                    data: {
-                        labels: labels,
-                        datasets: [
-                            {
-                                label: 'Application Bandwidth In (MB)',
-                                data: bandwidthIn,
-                                borderColor: 'rgb(76, 175, 80)',
-                                backgroundColor: 'rgba(76, 175, 80, 0.2)',
-                                tension: 0.4,
-                                fill: true
-                            },
-                            {
-                                label: 'Application Bandwidth Out (MB)',
-                                data: bandwidthOut,
-                                borderColor: 'rgb(244, 67, 54)',
-                                backgroundColor: 'rgba(244, 67, 54, 0.2)',
-                                tension: 0.4,
-                                fill: true
-                            },
-                            {
-                                label: 'Total Application Bandwidth (MB)',
-                                data: bandwidthTotal,
-                                borderColor: 'rgb(116, 136, 150)',
-                                backgroundColor: 'rgba(116, 136, 150, 0.2)',
-                                tension: 0.4,
-                                fill: false,
-                                borderDash: [5, 5]
-                            }
-                        ]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        plugins: {
-                            legend: {
-                                position: 'top',
-                            },
-                            tooltip: {
-                                mode: 'index',
-                                intersect: false,
-                                callbacks: {
-                                    label: function(context) {
-                                        return context.dataset.label + ': ' + context.parsed.y.toFixed(2) + ' MB';
-                                    }
+                try {
+                    bandwidthChart.data.labels = labels;
+                    bandwidthChart.data.datasets[0].data = bandwidthIn;
+                    bandwidthChart.data.datasets[1].data = bandwidthOut;
+                    bandwidthChart.data.datasets[2].data = bandwidthTotal;
+                    bandwidthChart.update('none'); // 'none' mode for smooth updates
+                } catch (error) {
+                    console.error('Error updating bandwidth chart:', error);
+                    // Recreate chart if update fails
+                    bandwidthChart.destroy();
+                    bandwidthChart = null;
+                }
+            }
+            
+            // Create new chart if it doesn't exist
+            if (!bandwidthChart) {
+                try {
+                    bandwidthChart = new Chart(ctx, {
+                        type: 'line',
+                        data: {
+                            labels: labels,
+                            datasets: [
+                                {
+                                    label: 'Application Bandwidth In (MB)',
+                                    data: bandwidthIn,
+                                    borderColor: 'rgb(76, 175, 80)',
+                                    backgroundColor: 'rgba(76, 175, 80, 0.2)',
+                                    tension: 0.4,
+                                    fill: true,
+                                    pointRadius: 2,
+                                    pointHoverRadius: 4,
+                                    pointBackgroundColor: 'rgb(76, 175, 80)',
+                                    pointBorderColor: '#fff',
+                                    pointBorderWidth: 1
+                                },
+                                {
+                                    label: 'Application Bandwidth Out (MB)',
+                                    data: bandwidthOut,
+                                    borderColor: 'rgb(244, 67, 54)',
+                                    backgroundColor: 'rgba(244, 67, 54, 0.2)',
+                                    tension: 0.4,
+                                    fill: true,
+                                    pointRadius: 2,
+                                    pointHoverRadius: 4,
+                                    pointBackgroundColor: 'rgb(244, 67, 54)',
+                                    pointBorderColor: '#fff',
+                                    pointBorderWidth: 1
+                                },
+                                {
+                                    label: 'Total Application Bandwidth (MB)',
+                                    data: bandwidthTotal,
+                                    borderColor: 'rgb(116, 136, 150)',
+                                    backgroundColor: 'rgba(116, 136, 150, 0.2)',
+                                    tension: 0.4,
+                                    fill: false,
+                                    borderDash: [5, 5],
+                                    pointRadius: 2,
+                                    pointHoverRadius: 4,
+                                    pointBackgroundColor: 'rgb(116, 136, 150)',
+                                    pointBorderColor: '#fff',
+                                    pointBorderWidth: 1
                                 }
-                            }
+                            ]
                         },
-                        scales: {
-                            y: {
-                                beginAtZero: true,
-                                ticks: {
-                                    callback: function(value) {
-                                        return value.toFixed(2) + ' MB';
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            animation: {
+                                duration: 0 // Disable animation for real-time updates
+                            },
+                            plugins: {
+                                legend: {
+                                    position: 'top',
+                                    display: true,
+                                    labels: {
+                                        usePointStyle: true,
+                                        padding: 15,
+                                        font: {
+                                            size: 12,
+                                            weight: '500'
+                                        }
+                                    }
+                                },
+                                tooltip: {
+                                    mode: 'index',
+                                    intersect: false,
+                                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                                    padding: 12,
+                                    titleFont: {
+                                        size: 13,
+                                        weight: '600'
+                                    },
+                                    bodyFont: {
+                                        size: 12
+                                    },
+                                    callbacks: {
+                                        label: function(context) {
+                                            return context.dataset.label + ': ' + context.parsed.y.toFixed(2) + ' MB';
+                                        }
                                     }
                                 }
+                            },
+                            scales: {
+                                x: {
+                                    grid: {
+                                        display: true,
+                                        color: 'rgba(0, 0, 0, 0.05)'
+                                    },
+                                    ticks: {
+                                        maxRotation: 45,
+                                        minRotation: 0,
+                                        font: {
+                                            size: 10
+                                        }
+                                    }
+                                },
+                                y: {
+                                    beginAtZero: true,
+                                    grid: {
+                                        display: true,
+                                        color: 'rgba(0, 0, 0, 0.05)'
+                                    },
+                                    ticks: {
+                                        callback: function(value) {
+                                            return value.toFixed(2) + ' MB';
+                                        },
+                                        font: {
+                                            size: 10
+                                        }
+                                    },
+                                    title: {
+                                        display: true,
+                                        text: 'Bandwidth (MB)',
+                                        font: {
+                                            size: 12,
+                                            weight: '600'
+                                        }
+                                    }
+                                }
+                            },
+                            interaction: {
+                                mode: 'nearest',
+                                axis: 'x',
+                                intersect: false
                             }
                         }
-                    }
-                });
+                    });
+                } catch (error) {
+                    console.error('Error creating bandwidth chart:', error);
+                    chartElement.parentElement.innerHTML = '<div class="error-message">Error rendering bandwidth usage chart. Please refresh the page.</div>';
+                }
             }
         }
 
@@ -1332,46 +1667,26 @@
             }
         }
         
-        // Start/Stop real-time updates
+        // Start/Stop real-time updates (disabled - lightweight mode)
         function toggleRealtime() {
-            realtimeEnabled = !realtimeEnabled;
+            // Real-time updates are disabled for lightweight operation
+            // Metrics only update on manual refresh or when API calls are made
             const toggleBtn = document.getElementById('realtimeToggle');
             const realtimeIcon = document.getElementById('realtimeIcon');
             const realtimeText = document.getElementById('realtimeText');
             
-            if (realtimeEnabled) {
-                toggleBtn.classList.remove('realtime-off');
-                realtimeIcon.style.color = '#27ae60';
-                realtimeText.textContent = 'Real-time ON';
-                startRealtimeUpdates();
-            } else {
+            if (toggleBtn) {
                 toggleBtn.classList.add('realtime-off');
-                realtimeIcon.style.color = '#95a5a6';
-                realtimeText.textContent = 'Real-time OFF';
-                stopRealtimeUpdates();
+                if (realtimeIcon) realtimeIcon.style.color = '#95a5a6';
+                if (realtimeText) realtimeText.textContent = 'Manual Refresh Only';
             }
+            
+            stopRealtimeUpdates();
         }
         
         function startRealtimeUpdates() {
-            stopRealtimeUpdates(); // Clear any existing interval
-            
-            // Only start if real-time is enabled
-            if (!realtimeEnabled) {
-                return;
-            }
-            
-            refreshInterval = setInterval(() => {
-                if (realtimeEnabled && !isUpdating) {
-                    // Silently update metrics without showing loading indicator
-                    loadMetrics(currentHours, false).catch(error => {
-                        console.error('Background metrics update failed:', error);
-                        // Don't show error to user for background updates
-                        // The error will be shown on next manual refresh
-                    });
-                }
-            }, updateInterval);
-            
-            console.log(`Real-time updates started (every ${updateInterval / 1000} seconds)`);
+            // Disabled - no periodic updates for lightweight operation
+            stopRealtimeUpdates();
         }
         
         function stopRealtimeUpdates() {
@@ -1487,36 +1802,19 @@
             }
 
             // Initial load
-            loadMetrics(currentHours, true).then(() => {
-                // Start real-time updates after initial load completes
-                if (realtimeEnabled) {
-                    startRealtimeUpdates();
-                }
-            }).catch(error => {
+            loadMetrics(currentHours, true).catch(error => {
                 console.error('Error during initial metrics load:', error);
-                // Still start real-time updates even if initial load fails
-                if (realtimeEnabled) {
-                    startRealtimeUpdates();
-                }
             });
+            
+            // Disable real-time updates (lightweight mode)
+            toggleRealtime();
             
             // Cleanup on page unload
             window.addEventListener('beforeunload', () => {
                 stopRealtimeUpdates();
             });
             
-            // Also handle page visibility changes to pause/resume updates
-            document.addEventListener('visibilitychange', () => {
-                if (document.hidden) {
-                    // Page is hidden, can pause updates to save resources
-                    // But we'll keep them running for real-time data
-                } else {
-                    // Page is visible again, ensure updates are running
-                    if (realtimeEnabled && !refreshInterval) {
-                        startRealtimeUpdates();
-                    }
-                }
-            });
+            // Page visibility changes - no action needed (lightweight mode, no auto-updates)
         });
     </script>
     <script src="/js/page-tracking.js" async></script>

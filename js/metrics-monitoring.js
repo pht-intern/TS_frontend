@@ -429,12 +429,8 @@ function initMetricsMonitoring() {
         });
     }
 
-    // Auto-refresh metrics every 30 seconds for accurate real-time updates
-    metricsUpdateInterval = setInterval(() => {
-        fetchMetrics();
-        // Also collect system metrics periodically
-        collectSystemMetrics();
-    }, 30000); // 30 seconds = 30000 milliseconds
+    // No auto-refresh - metrics update only when manually refreshed or when API calls are made
+    // This keeps the system lightweight
 }
 
 // Collect system metrics from server

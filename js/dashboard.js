@@ -1971,28 +1971,10 @@ async function openResidentialPropertyModal(propertyId = null) {
 // Close Residential Property Modal
 async function closeResidentialPropertyModal() {
     const modal = document.getElementById('residentialPropertyModal');
-    const form = document.getElementById('residentialPropertyForm');
     
     if (modal) {
-        // Reset form first to clear all inputs
-        if (form) {
-            form.reset();
-            // Clear any cached property type
-            const propertyTypeCacheInput = document.getElementById('residentialPropertyTypeCache');
-            if (propertyTypeCacheInput) {
-                propertyTypeCacheInput.value = '';
-            }
-            // Clear property ID
-            const propertyIdInput = document.getElementById('residentialPropertyId');
-            if (propertyIdInput) {
-                propertyIdInput.value = '';
-            }
-            // Clear gallery
-            clearResidentialImagePreviews();
-        }
-        
-        // Reset to step 1 when closing
-        resetResidentialPropertySteps();
+        // Reset modal state (form, steps, cache, etc.)
+        resetResidentialPropertyModalState();
         
         // Close modal
         modal.classList.remove('active');
@@ -2000,6 +1982,34 @@ async function closeResidentialPropertyModal() {
     }
     // Auto-refresh properties when modal closes
     await loadProperties(true);
+}
+
+// Reset Residential Property Modal State (Best Practice: Called after API success)
+function resetResidentialPropertyModalState() {
+    const form = document.getElementById('residentialPropertyForm');
+    
+    if (form) {
+        // Reset form to clear all inputs
+        form.reset();
+        
+        // Clear all cached values
+        const propertyTypeCacheInput = document.getElementById('residentialPropertyTypeCache');
+        if (propertyTypeCacheInput) {
+            propertyTypeCacheInput.value = '';
+        }
+        
+        // Clear property ID
+        const propertyIdInput = document.getElementById('residentialPropertyId');
+        if (propertyIdInput) {
+            propertyIdInput.value = '';
+        }
+        
+        // Clear gallery
+        clearResidentialImagePreviews();
+    }
+    
+    // Reset to step 1
+    resetResidentialPropertySteps();
 }
 
 // Reset Residential Property Form Steps
@@ -4465,9 +4475,21 @@ async function handleResidentialPropertySubmit(e) {
             throw new Error(errorMessage);
         }
 
+        // Best Practice Architecture Flow:
+        // 1. User Action ✓ (form submit)
+        // 2. Frontend opens modal ✓ (already open)
+        // 3. Frontend calls API ✓ (just completed)
+        // 4. API returns status/data ✓ (response.ok)
+        // 5. Frontend resets modal state (reset form, steps, cache)
+        resetResidentialPropertyModalState();
+        
+        // 6. Modal reopens (fresh) - Close modal so it's fresh when reopened
+        closeResidentialPropertyModal();
+        
         // Force refresh to bypass cache and show newly added/updated property
         await loadProperties(true);
-        closeResidentialPropertyModal();
+        
+        // Show success notification
         showNotification(propertyId ? 'Residential property updated successfully!' : 'Residential property added successfully!');
     } catch (error) {
         console.error('Error saving residential property:', error);
@@ -4537,9 +4559,33 @@ async function openPlotPropertyModal(propertyId = null) {
 }
 
 // Close Plot Property Modal
+// Reset Plot Property Modal State (Best Practice: Called after API success)
+function resetPlotPropertyModalState() {
+    const form = document.getElementById('plotPropertyForm');
+    
+    if (form) {
+        // Reset form to clear all inputs
+        form.reset();
+        
+        // Clear property ID
+        const propertyIdInput = document.getElementById('plotPropertyId');
+        if (propertyIdInput) {
+            propertyIdInput.value = '';
+        }
+        
+        // Clear gallery
+        clearPlotImagePreviews();
+    }
+}
+
 async function closePlotPropertyModal() {
     const modal = document.getElementById('plotPropertyModal');
+    
     if (modal) {
+        // Reset modal state (form, cache, etc.)
+        resetPlotPropertyModalState();
+        
+        // Close modal
         modal.classList.remove('active');
         document.body.style.overflow = '';
     }
@@ -4705,9 +4751,21 @@ async function handlePlotPropertySubmit(e) {
             throw new Error(errorMessage);
         }
 
+        // Best Practice Architecture Flow:
+        // 1. User Action ✓ (form submit)
+        // 2. Frontend opens modal ✓ (already open)
+        // 3. Frontend calls API ✓ (just completed)
+        // 4. API returns status/data ✓ (response.ok)
+        // 5. Frontend resets modal state (reset form, cache)
+        resetPlotPropertyModalState();
+        
+        // 6. Modal reopens (fresh) - Close modal so it's fresh when reopened
+        closePlotPropertyModal();
+        
         // Force refresh to bypass cache and show newly added/updated property
         await loadProperties(true);
-        closePlotPropertyModal();
+        
+        // Show success notification
         showNotification(propertyId ? 'Plot property updated successfully!' : 'Plot property added successfully!');
     } catch (error) {
         console.error('Error saving plot property:', error);
@@ -5664,9 +5722,26 @@ function openTestimonialModal(testimonialId = null) {
 }
 
 // Close Testimonial Modal
+// Reset Testimonial Modal State (Best Practice: Called after API success)
+function resetTestimonialModalState() {
+    const form = document.getElementById('testimonialForm');
+    if (form) {
+        form.reset();
+        // Clear testimonial ID
+        const testimonialIdInput = document.getElementById('testimonialId');
+        if (testimonialIdInput) {
+            testimonialIdInput.value = '';
+        }
+    }
+}
+
 function closeTestimonialModal() {
     const modal = document.getElementById('testimonialModal');
     if (modal) {
+        // Reset modal state (form, cache, etc.)
+        resetTestimonialModalState();
+        
+        // Close modal
         modal.classList.remove('active');
         document.body.style.overflow = '';
     }
@@ -5819,9 +5894,19 @@ async function handleTestimonialSubmit(e) {
             throw new Error(errorMessage);
         }
 
+        // Best Practice Architecture Flow:
+        // 1. User Action ✓ (form submit)
+        // 2. Frontend opens modal ✓ (already open)
+        // 3. Frontend calls API ✓ (just completed)
+        // 4. API returns status/data ✓ (response.ok)
+        // 5. Frontend resets modal state (reset form, cache)
+        resetTestimonialModalState();
+        
+        // 6. Modal reopens (fresh) - Close modal so it's fresh when reopened
+        closeTestimonialModal();
+        
         // Reload testimonials with force refresh to bypass cache
         await loadTestimonials(true);
-        closeTestimonialModal();
         
         // Show success message
         showNotification(testimonialId ? 'Testimonial updated successfully!' : 'Testimonial added successfully!');
@@ -6081,9 +6166,36 @@ function openPartnerModal(partnerId = null) {
 }
 
 // Close Partner Modal
+// Reset Partner Modal State (Best Practice: Called after API success)
+function resetPartnerModalState() {
+    const form = document.getElementById('partnerForm');
+    if (form) {
+        form.reset();
+        // Clear partner ID
+        const partnerIdInput = document.getElementById('partnerId');
+        if (partnerIdInput) {
+            partnerIdInput.value = '';
+        }
+        // Clear logo preview
+        const partnerLogoPreview = document.getElementById('partnerLogoPreview');
+        if (partnerLogoPreview) {
+            partnerLogoPreview.style.display = 'none';
+            partnerLogoPreview.src = '';
+        }
+        const partnerLogos = document.getElementById('partnerLogos');
+        if (partnerLogos) {
+            partnerLogos.value = '';
+        }
+    }
+}
+
 function closePartnerModal() {
     const modal = document.getElementById('partnerModal');
     if (modal) {
+        // Reset modal state (form, cache, etc.)
+        resetPartnerModalState();
+        
+        // Close modal
         modal.classList.remove('active');
         document.body.style.overflow = '';
     }
@@ -6240,9 +6352,19 @@ async function handlePartnerSubmit(e) {
             throw new Error(errorMessage);
         }
 
+        // Best Practice Architecture Flow:
+        // 1. User Action ✓ (form submit)
+        // 2. Frontend opens modal ✓ (already open)
+        // 3. Frontend calls API ✓ (just completed)
+        // 4. API returns status/data ✓ (response.ok)
+        // 5. Frontend resets modal state (reset form, cache)
+        resetPartnerModalState();
+        
+        // 6. Modal reopens (fresh) - Close modal so it's fresh when reopened
+        closePartnerModal();
+        
         // Reload partners
         await loadPartners();
-        closePartnerModal();
         
         // Show success message
         showNotification(partnerId ? 'Partner updated successfully!' : 'Partner added successfully!');
@@ -6795,9 +6917,45 @@ function openBlogModal(blogId = null) {
 }
 
 // Close Blog Modal
+// Reset Blog Modal State (Best Practice: Called after API success)
+function resetBlogModalState() {
+    const form = document.getElementById('blogForm');
+    if (form) {
+        form.reset();
+        // Clear blog ID
+        const blogIdInput = document.getElementById('blogId');
+        if (blogIdInput) {
+            blogIdInput.value = '';
+        }
+        // Clear blog content editor
+        if (window.blogQuillEditor) {
+            window.blogQuillEditor.setContents([]);
+        }
+        // Clear blog image preview
+        const blogImagePreview = document.getElementById('blogImagePreview');
+        if (blogImagePreview) {
+            blogImagePreview.style.display = 'none';
+            blogImagePreview.src = '';
+        }
+        const blogImage = document.getElementById('blogImage');
+        if (blogImage) {
+            blogImage.value = '';
+        }
+        // Clear blog tags
+        const blogTagsContainer = document.getElementById('blogTagsContainer');
+        if (blogTagsContainer) {
+            blogTagsContainer.innerHTML = '';
+        }
+    }
+}
+
 function closeBlogModal() {
     const modal = document.getElementById('blogModal');
     if (modal) {
+        // Reset modal state (form, cache, etc.)
+        resetBlogModalState();
+        
+        // Close modal
         modal.classList.remove('active');
         document.body.style.overflow = '';
     }
@@ -7071,9 +7229,19 @@ async function handleBlogSubmit(e) {
             throw new Error(errorMessage);
         }
 
+        // Best Practice Architecture Flow:
+        // 1. User Action ✓ (form submit)
+        // 2. Frontend opens modal ✓ (already open)
+        // 3. Frontend calls API ✓ (just completed)
+        // 4. API returns status/data ✓ (response.ok)
+        // 5. Frontend resets modal state (reset form, cache)
+        resetBlogModalState();
+        
+        // 6. Modal reopens (fresh) - Close modal so it's fresh when reopened
+        closeBlogModal();
+        
         // Reload blogs
         await loadBlogs();
-        closeBlogModal();
         
         // Show success message
         showNotification(blogId ? 'Blog updated successfully!' : 'Blog added successfully!');

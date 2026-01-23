@@ -1098,7 +1098,7 @@ body{font-family:'Inter',sans-serif;font-size:18px;line-height:1.6;color:var(--t
         <div class="dashboard-modal-content" style="max-width: 900px; max-height: 90vh; overflow-y: auto;">
             <div class="dashboard-modal-header">
                 <h2 id="residentialModalTitle">Add Other Properties</h2>
-                <button class="dashboard-modal-close" id="residentialPropertyModalClose">
+                <button class="dashboard-modal-close" id="residentialPropertyModalClose" onclick="closeResidentialPropertyModal()">
                     <i class="fas fa-times"></i>
                 </button>
             </div>
@@ -1251,7 +1251,7 @@ body{font-family:'Inter',sans-serif;font-size:18px;line-height:1.6;color:var(--t
 
                 <!-- Step Navigation Buttons -->
                 <div class="dashboard-modal-actions">
-                    <button type="button" class="dashboard-btn-secondary" id="cancelResidentialPropertyBtn">
+                    <button type="button" class="dashboard-btn-secondary" id="cancelResidentialPropertyBtn" onclick="closeResidentialPropertyModal()">
                         <i class="fas fa-times"></i>
                         Cancel
                     </button>
@@ -1266,7 +1266,7 @@ body{font-family:'Inter',sans-serif;font-size:18px;line-height:1.6;color:var(--t
                             <i class="fas fa-arrow-right"></i>
                         </button>
                         <button type="submit" class="dashboard-btn-primary" id="residentialSubmitBtn"
-                            style="display: none;">
+                            style="display: none;" onclick="event.preventDefault(); const form = document.getElementById('residentialPropertyForm'); if(form && typeof handleResidentialPropertySubmit === 'function') { const submitEvent = new Event('submit', { bubbles: true, cancelable: true }); submitEvent.target = form; handleResidentialPropertySubmit(submitEvent); }">
                             <i class="fas fa-save"></i>
                             Save Property
                         </button>

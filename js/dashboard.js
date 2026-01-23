@@ -3763,82 +3763,107 @@ function populateResidentialForm(property) {
     }
     
     // Set property type (if available) or infer from existing data
+    // This is critical for edit mode to dynamically set the select value from database
     const propertyTypeSelect = document.getElementById('residentialPropertyType');
     if (propertyTypeSelect) {
         // Try to get property_type from property, or infer from type and unit_type
         let inferredPropertyType = null;
         
+        // Priority 1: Use property_type directly from database (most accurate)
         if (property.property_type) {
-            inferredPropertyType = property.property_type;
-        } else if (property.type) {
+            // Map database property_type values to select option values
+            const propertyTypeMap = {
+                'apartment': 'apartments',
+                'apartments': 'apartments',
+                'villa': 'villas',
+                'villas': 'villas',
+                'house': 'apartments', // individual_house maps to apartments in select
+                'individual_house': 'apartments',
+                'plot': 'plot_properties',
+                'plot_properties': 'plot_properties'
+            };
+            inferredPropertyType = propertyTypeMap[property.property_type.toLowerCase()] || property.property_type;
+        } 
+        // Priority 2: Infer from type field
+        else if (property.type) {
             // Map DB type to frontend property_type
             const typeMap = {
                 'apartment': 'apartments',
                 'villa': 'villas',
-                'house': 'individual_house',
+                'house': 'apartments', // individual_house maps to apartments in select
                 'plot': 'plot_properties'
             };
-            inferredPropertyType = typeMap[property.type] || property.type;
-        } else if (property.type === 'villa') {
-            inferredPropertyType = 'villas';
-        } else if (property.unit_type === 'bhk') {
+            inferredPropertyType = typeMap[property.type.toLowerCase()] || property.type;
+        } 
+        // Priority 3: Infer from unit_type (fallback)
+        else if (property.unit_type === 'bhk') {
             inferredPropertyType = 'apartments';
         }
         
+        // Only set property type if we have a valid value (edit mode)
         if (inferredPropertyType) {
-            // CRITICAL: Store property type in cache field FIRST (before setting dropdown)
-            const propertyTypeCacheInput = document.getElementById('residentialPropertyTypeCache');
-            if (propertyTypeCacheInput) {
-                propertyTypeCacheInput.value = inferredPropertyType;
-            }
+            // Verify the value exists in the select options
+            const optionExists = Array.from(propertyTypeSelect.options).some(
+                option => option.value === inferredPropertyType
+            );
             
-            // CRITICAL: Set the dropdown value
-            propertyTypeSelect.value = inferredPropertyType;
-            
-            // CRITICAL: Double-check that the value is set (in case of timing issues)
-            if (propertyTypeSelect.value !== inferredPropertyType) {
-                // Force set it again
-                propertyTypeSelect.value = inferredPropertyType;
-            }
-            
-            // CRITICAL: Ensure cache is still set after dropdown value is set
-            if (propertyTypeCacheInput) {
-                propertyTypeCacheInput.value = inferredPropertyType;
-            }
-            
-            // Trigger change to load Step 2 content
-            handleResidentialPropertyTypeChange();
-            
-            // Wait for Step 2 content to load, then populate fields
-            // Use a more reliable approach - check for actual form fields, not just HTML
-            let attempts = 0;
-            const maxAttempts = 20; // Increased attempts for slower systems
-            const checkAndPopulate = () => {
-                attempts++;
-                const step2Content = document.getElementById('residentialStep2');
-                // Check for actual form fields, not just HTML content
-                // Look for common Step 2 fields that should exist
-                const hasFields = step2Content && (
-                    document.getElementById('residentialStatus') ||
-                    document.getElementById('residentialListingType') ||
-                    document.getElementById('residentialUnitType') ||
-                    document.getElementById('residentialBedrooms') ||
-                    step2Content.querySelector('input, select, textarea')
-                );
-                
-                if (hasFields) {
-                    // Step 2 content is loaded with actual form fields, populate all fields
-                    populateStep2Fields(property);
-                } else if (attempts < maxAttempts) {
-                    // Step 2 not ready yet, try again with longer delay
-                    setTimeout(checkAndPopulate, 200);
-                } else {
-                    // Max attempts reached, try to populate anyway (silently)
-                    populateStep2Fields(property);
+            if (optionExists) {
+                // CRITICAL: Store property type in cache field FIRST (before setting dropdown)
+                const propertyTypeCacheInput = document.getElementById('residentialPropertyTypeCache');
+                if (propertyTypeCacheInput) {
+                    propertyTypeCacheInput.value = inferredPropertyType;
                 }
-            };
-            // Start checking after a longer delay to allow Step 2 to fully load and initialize
-            setTimeout(checkAndPopulate, 300);
+                
+                // CRITICAL: Set the dropdown value dynamically from database
+                propertyTypeSelect.value = inferredPropertyType;
+                
+                // CRITICAL: Double-check that the value is set (in case of timing issues)
+                if (propertyTypeSelect.value !== inferredPropertyType) {
+                    // Force set it again
+                    propertyTypeSelect.value = inferredPropertyType;
+                }
+                
+                // CRITICAL: Ensure cache is still set after dropdown value is set
+                if (propertyTypeCacheInput) {
+                    propertyTypeCacheInput.value = inferredPropertyType;
+                }
+                
+                // Trigger change to load Step 2 content
+                handleResidentialPropertyTypeChange();
+                
+                // Wait for Step 2 content to load, then populate fields
+                // Use a more reliable approach - check for actual form fields, not just HTML
+                let attempts = 0;
+                const maxAttempts = 20; // Increased attempts for slower systems
+                const checkAndPopulate = () => {
+                    attempts++;
+                    const step2Content = document.getElementById('residentialStep2');
+                    // Check for actual form fields, not just HTML content
+                    // Look for common Step 2 fields that should exist
+                    const hasFields = step2Content && (
+                        document.getElementById('residentialStatus') ||
+                        document.getElementById('residentialListingType') ||
+                        document.getElementById('residentialUnitType') ||
+                        document.getElementById('residentialBedrooms') ||
+                        step2Content.querySelector('input, select, textarea')
+                    );
+                    
+                    if (hasFields) {
+                        // Step 2 content is loaded with actual form fields, populate all fields
+                        populateStep2Fields(property);
+                    } else if (attempts < maxAttempts) {
+                        // Step 2 not ready yet, try again with longer delay
+                        setTimeout(checkAndPopulate, 200);
+                    } else {
+                        // Max attempts reached, try to populate anyway (silently)
+                        populateStep2Fields(property);
+                    }
+                };
+                // Start checking after a longer delay to allow Step 2 to fully load and initialize
+                setTimeout(checkAndPopulate, 300);
+            } else {
+                console.warn(`[Dashboard] Property type "${inferredPropertyType}" does not exist in select options`);
+            }
         }
     }
     

@@ -151,18 +151,34 @@
         // Track navigation link clicks
         document.addEventListener('click', (e) => {
             const link = e.target.closest('a');
-            if (link && link.href) {
+            if (link) {
+                // Get href attribute (not the resolved href property)
                 const href = link.getAttribute('href');
-                // Only track internal links (same domain)
-                if (href && !href.startsWith('http') && !href.startsWith('mailto:') && !href.startsWith('tel:')) {
-                    const linkText = link.textContent?.trim() || link.getAttribute('title') || 'Link';
-                    const targetPage = href.split('/').pop() || href;
-                    trackEvent('navigation_click', `User clicked navigation link: ${linkText}`, {
-                        link_text: linkText,
-                        link_href: href,
-                        target_page: targetPage,
-                        link_url: link.href
-                    });
+                
+                // Validate href exists and is a string
+                if (href && typeof href === 'string' && href.trim() !== '') {
+                    // Only track internal links (same domain)
+                    if (!href.startsWith('http') && !href.startsWith('mailto:') && !href.startsWith('tel:') && !href.startsWith('#')) {
+                        const linkText = link.textContent?.trim() || link.getAttribute('title') || 'Link';
+                        const targetPage = href.split('/').pop() || href;
+                        
+                        // Safely get resolved URL, but validate it's a string
+                        let resolvedUrl = '';
+                        try {
+                            if (link.href && typeof link.href === 'string') {
+                                resolvedUrl = link.href;
+                            }
+                        } catch (err) {
+                            // Ignore errors getting href
+                        }
+                        
+                        trackEvent('navigation_click', `User clicked navigation link: ${linkText}`, {
+                            link_text: linkText,
+                            link_href: href,
+                            target_page: targetPage,
+                            link_url: resolvedUrl || href
+                        });
+                    }
                 }
             }
         });
@@ -246,5 +262,21 @@
     window.trackEvent = trackEvent;
     window.trackPropertyClick = trackPropertyClick;
     window.trackButtonClick = trackButtonClick;
+    
+    // Global error handler to prevent event objects from being used as URLs
+    // This catches cases where links might have invalid hrefs
+    document.addEventListener('click', (e) => {
+        const link = e.target.closest('a');
+        if (link) {
+            const href = link.getAttribute('href');
+            // Check if href is invalid (contains object or event)
+            if (href && (href.includes('[object') || href.includes('PointerEvent') || href.includes('Event'))) {
+                console.error('Invalid href detected on link:', href, link);
+                e.preventDefault();
+                e.stopPropagation();
+                return false;
+            }
+        }
+    }, true); // Use capture phase to catch early
 })();
 

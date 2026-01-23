@@ -3172,17 +3172,19 @@ function initializeStep2EventListeners(propertyType) {
                 // Check if super builtup area has changed (for existing properties)
                 const superBuildupAreaChanged = lastCalculatedSuperBuildupArea === null || 
                                                Math.abs(superBuildupArea - lastCalculatedSuperBuildupArea) > 0.01;
+                
+                // If super builtup area changed, reset manual edit flag to allow auto-calculation
+                if (superBuildupAreaChanged) {
+                    carpetAreaManuallyEdited = false;
+                }
+                
                 lastCalculatedSuperBuildupArea = superBuildupArea;
                 
                 // Set flag to prevent triggering manual edit detection
                 isAutoCalculating = true;
                 
-                // Auto-fill carpet area if:
-                // 1. Field is empty, OR
-                // 2. Super builtup area changed and carpet area hasn't been manually edited
-                if (carpetAreaInput.value === '' || (superBuildupAreaChanged && !carpetAreaManuallyEdited)) {
-                    carpetAreaInput.value = calculatedCarpetArea.toFixed(2);
-                }
+                // Always auto-calculate carpet area when super builtup area is entered or changed
+                carpetAreaInput.value = calculatedCarpetArea.toFixed(2);
                 
                 // Reset flag after auto-calculation
                 setTimeout(() => {
@@ -3467,8 +3469,7 @@ async function loadCategoriesForPropertyTypeDropdown() {
         const defaultPropertyTypes = [
             { value: 'apartments', label: 'Apartments' },
             { value: 'villas', label: 'Villas' },
-            { value: 'plot_properties', label: 'Plot Properties' },
-            { value: 'individual_house', label: 'Individual House' }
+            { value: 'plot_properties', label: 'Plot Properties' }
         ];
         
         // Add cache-busting timestamp to ensure fresh data
@@ -3564,8 +3565,7 @@ async function loadCategoriesForPropertyTypeDropdown() {
             const defaultPropertyTypes = [
                 { value: 'apartments', label: 'Apartments' },
                 { value: 'villas', label: 'Villas' },
-                { value: 'plot_properties', label: 'Plot Properties' },
-                { value: 'individual_house', label: 'Individual House' }
+                { value: 'plot_properties', label: 'Plot Properties' }
             ];
             
             const currentValue = propertyTypeSelect.value;
@@ -3893,14 +3893,6 @@ function populateResidentialForm(property) {
         videoLinkInput.value = property.video_preview_link || '';
     }
     
-    const isFeaturedInput = document.getElementById('residentialIsFeatured');
-    if (isFeaturedInput) {
-        if (isFeaturedInput.type === 'checkbox') {
-            isFeaturedInput.checked = Boolean(property.is_featured);
-        } else {
-            isFeaturedInput.value = property.is_featured ? '1' : '0';
-        }
-    }
 
     // Set unit type buttons
     const unitTypeButtons = document.querySelectorAll('#residentialPropertyForm .dashboard-unit-type-btn');
@@ -4396,7 +4388,7 @@ async function handleResidentialPropertySubmit(e) {
             return null; // For 'sale' and 'rent', property_status is null
         })(),
         description: formData.get('description') || null,
-        is_featured: formData.get('is_featured') === 'on',
+        is_featured: false,
         is_active: true,
         images: [],
         features: []
@@ -4695,7 +4687,7 @@ async function handlePlotPropertySubmit(e) {
         description: formData.get('description'),
         builder: formData.get('builder') || null,
         total_acres: formData.get('total_acres') ? parseFloat(formData.get('total_acres')) : null,
-        is_featured: formData.get('is_featured') === 'on',
+        is_featured: false,
         is_active: true,
         images: [],
         features: []

@@ -1266,7 +1266,7 @@ body{font-family:'Inter',sans-serif;font-size:18px;line-height:1.6;color:var(--t
                             <i class="fas fa-arrow-right"></i>
                         </button>
                         <button type="submit" class="dashboard-btn-primary" id="residentialSubmitBtn"
-                            style="display: none;" onclick="event.preventDefault(); const form = document.getElementById('residentialPropertyForm'); if(form && typeof handleResidentialPropertySubmit === 'function') { const submitEvent = new Event('submit', { bubbles: true, cancelable: true }); submitEvent.target = form; handleResidentialPropertySubmit(submitEvent); }">
+                            style="display: none;" onclick="event.preventDefault(); const form = document.getElementById('residentialPropertyForm'); if(form && typeof handleResidentialPropertySubmit === 'function') { const submitEvent = { preventDefault: function() {}, target: form, currentTarget: form }; handleResidentialPropertySubmit(submitEvent); }">
                             <i class="fas fa-save"></i>
                             Save Property
                         </button>

@@ -765,10 +765,27 @@
                 });
             }
 
-            // Form submission
+            // Form submission - prevent duplicate submissions
+            let isSubmitting = false;
             if (visitorForm) {
-                visitorForm.addEventListener('submit', async (e) => {
+                // Remove any existing event listener first to prevent duplicates
+                const submitHandler = async (e) => {
                     e.preventDefault();
+                    e.stopImmediatePropagation();
+                    
+                    // Prevent duplicate submissions
+                    if (isSubmitting) {
+                        console.log('Form submission already in progress, ignoring duplicate request');
+                        return;
+                    }
+                    
+                    // Check if form was already submitted in this session
+                    if (isFormSubmitted()) {
+                        showVisitorMessage('Form has already been submitted.', 'error');
+                        return;
+                    }
+                    
+                    isSubmitting = true;
                     
                     const submitBtn = visitorForm.querySelector('.btn-visitor-submit');
                     const btnText = submitBtn.querySelector('.btn-text');
@@ -785,6 +802,7 @@
                     // Validate required fields
                     if (!formData.full_name || !formData.email || !formData.phone) {
                         showVisitorMessage('Please fill in all required fields.', 'error');
+                        isSubmitting = false;
                         return;
                     }
                     
@@ -792,6 +810,7 @@
                     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
                     if (!emailRegex.test(formData.email)) {
                         showVisitorMessage('Please enter a valid email address.', 'error');
+                        isSubmitting = false;
                         return;
                     }
                     
@@ -820,13 +839,16 @@
                                 errorMessage = text || `HTTP ${response.status}: ${response.statusText}`;
                             }
                             showVisitorMessage(errorMessage, 'error');
+                            isSubmitting = false;
                             return;
                         }
                         
                         const data = await response.json();
-                        // Success - mark as submitted
+                        // Success - mark as submitted immediately to prevent duplicate submissions
                         markFormSubmitted();
                         showVisitorMessage('Thank you! We will get in touch with you soon.', 'success');
+                        // Reset isSubmitting after successful submission (sessionStorage check will prevent duplicates)
+                        isSubmitting = false;
                         // Close modal after 2 seconds
                         setTimeout(() => {
                             closeVisitorModal();
@@ -835,13 +857,17 @@
                     } catch (error) {
                         console.error('Error submitting visitor form:', error);
                         showVisitorMessage('Network error. Please check your connection and try again.', 'error');
-                    } finally {
-                        // Reset button state
+                        // Reset button state on error
                         submitBtn.disabled = false;
                         if (btnText) btnText.style.display = 'inline';
                         if (btnLoader) btnLoader.style.display = 'none';
+                        isSubmitting = false;
                     }
-                });
+                };
+                
+                // Remove any existing listener before adding new one
+                visitorForm.removeEventListener('submit', submitHandler);
+                visitorForm.addEventListener('submit', submitHandler);
             }
 
             // Helper function to show messages

@@ -530,7 +530,7 @@ let allStates = [];
             
             const categoryId = categoryIdInput ? categoryIdInput.value : '';
             const url = categoryId ? `/api/admin/categories/${categoryId}` : '/api/admin/categories';
-            const method = 'POST';
+            const method = categoryId ? 'PUT' : 'POST';
 
             try {
                 // Show loading state

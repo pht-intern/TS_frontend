@@ -1794,6 +1794,9 @@ async function loadPageVisitStats(showLoadingIndicator = false) {
 
 // Property modal functions removed
 async function openResidentialPropertyModal(propertyId = null) {
+    // Auto-refresh properties when modal opens
+    await loadProperties(true);
+    
     const modal = document.getElementById('residentialPropertyModal');
     const form = document.getElementById('residentialPropertyForm');
     const modalTitle = document.getElementById('residentialModalTitle');
@@ -1941,7 +1944,7 @@ async function openResidentialPropertyModal(propertyId = null) {
 }
 
 // Close Residential Property Modal
-function closeResidentialPropertyModal() {
+async function closeResidentialPropertyModal() {
     const modal = document.getElementById('residentialPropertyModal');
     if (modal) {
         modal.classList.remove('active');
@@ -1949,6 +1952,8 @@ function closeResidentialPropertyModal() {
         // Reset to step 1 when closing
         resetResidentialPropertySteps();
     }
+    // Auto-refresh properties when modal closes
+    await loadProperties(true);
 }
 
 // Reset Residential Property Form Steps
@@ -4428,6 +4433,9 @@ async function handleResidentialPropertySubmit(e) {
 
 // Open Plot Property Modal
 async function openPlotPropertyModal(propertyId = null) {
+    // Auto-refresh properties when modal opens
+    await loadProperties(true);
+    
     const modal = document.getElementById('plotPropertyModal');
     const form = document.getElementById('plotPropertyForm');
     const modalTitle = document.getElementById('plotModalTitle');
@@ -4480,12 +4488,14 @@ async function openPlotPropertyModal(propertyId = null) {
 }
 
 // Close Plot Property Modal
-function closePlotPropertyModal() {
+async function closePlotPropertyModal() {
     const modal = document.getElementById('plotPropertyModal');
     if (modal) {
         modal.classList.remove('active');
         document.body.style.overflow = '';
     }
+    // Auto-refresh properties when modal closes
+    await loadProperties(true);
 }
 
 // Handle Plot Property Submit

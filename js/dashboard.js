@@ -1808,13 +1808,14 @@ async function openResidentialPropertyModal(propertyId = null) {
     const propertyTypeCacheInput = document.getElementById('residentialPropertyTypeCache');
     const tempPropertyId = propertyId;
     
-    // Store property type cache before reset (if it exists)
-    const tempPropertyType = propertyTypeCacheInput ? propertyTypeCacheInput.value : '';
+    // Store property type cache before reset (if it exists) - only for edit mode
+    // For new properties, we don't need to preserve cache
+    const tempPropertyType = (propertyId && propertyTypeCacheInput) ? propertyTypeCacheInput.value : '';
     
     // Clear gallery first to avoid conflicts
     clearResidentialImagePreviews();
     
-    // Reset form (this clears all inputs including hidden propertyId)
+    // Reset form (this clears all inputs including hidden propertyId and cache)
     form.reset();
     
     // CRITICAL FIX: Restore property ID immediately after reset if in edit mode
@@ -1824,8 +1825,9 @@ async function openResidentialPropertyModal(propertyId = null) {
         propertyIdInput.value = '';
     }
     
-    // CRITICAL FIX: Restore property type cache immediately after reset
-    if (tempPropertyType && propertyTypeCacheInput) {
+    // CRITICAL FIX: For edit mode, restore property type cache immediately after reset
+    // This ensures the cache is available when populateResidentialForm runs
+    if (propertyId && tempPropertyType && propertyTypeCacheInput) {
         propertyTypeCacheInput.value = tempPropertyType;
         // Also restore the property type select value from cache
         const propertyTypeSelect = document.getElementById('residentialPropertyType');
@@ -1833,6 +1835,7 @@ async function openResidentialPropertyModal(propertyId = null) {
             propertyTypeSelect.value = tempPropertyType;
         }
     } else if (propertyTypeCacheInput) {
+        // For new properties, ensure cache is empty
         propertyTypeCacheInput.value = '';
     }
     
@@ -1934,20 +1937,32 @@ async function openResidentialPropertyModal(propertyId = null) {
             const propertyIdInput = document.getElementById('residentialPropertyId');
             if (propertyIdInput) propertyIdInput.value = property.id || propertyId;
             
-            // Populate all form fields with cached data
+            // Populate all form fields with property data
             populateResidentialForm(property);
             
             // Double-check property ID after population (in case form reset cleared it)
             if (propertyIdInput) propertyIdInput.value = property.id || propertyId;
             
-            // Restore property type from cache if it exists
-            const propertyTypeCacheInput = document.getElementById('residentialPropertyTypeCache');
-            const propertyTypeSelect = document.getElementById('residentialPropertyType');
-            if (propertyTypeCacheInput && propertyTypeCacheInput.value && propertyTypeSelect) {
-                propertyTypeSelect.value = propertyTypeCacheInput.value;
-                // Trigger change to ensure Step 2 content is loaded
-                handleResidentialPropertyTypeChange();
-            }
+            // CRITICAL: After populateResidentialForm sets the property type, ensure it's properly cached and displayed
+            // Wait a bit for populateResidentialForm to complete (it's async due to Step 2 loading)
+            setTimeout(() => {
+                const propertyTypeCacheInput = document.getElementById('residentialPropertyTypeCache');
+                const propertyTypeSelect = document.getElementById('residentialPropertyType');
+                
+                // Ensure property type is properly cached and displayed
+                if (propertyTypeSelect && propertyTypeSelect.value) {
+                    // If dropdown has a value, ensure cache is set
+                    if (propertyTypeCacheInput) {
+                        propertyTypeCacheInput.value = propertyTypeSelect.value;
+                    }
+                }
+                // If cache is set, ensure dropdown reflects it
+                else if (propertyTypeCacheInput && propertyTypeCacheInput.value && propertyTypeSelect) {
+                    propertyTypeSelect.value = propertyTypeCacheInput.value;
+                    // Trigger change to load Step 2 if needed
+                    handleResidentialPropertyTypeChange();
+                }
+            }, 500); // Give time for Step 2 content to load and property type to be set
         } catch (error) {
             console.error('Error loading property:', error);
             showNotification('Failed to load property details.', 'error');
@@ -3771,10 +3786,22 @@ function populateResidentialForm(property) {
         }
         
         if (inferredPropertyType) {
+            // CRITICAL: Store property type in cache field FIRST (before setting dropdown)
+            const propertyTypeCacheInput = document.getElementById('residentialPropertyTypeCache');
+            if (propertyTypeCacheInput) {
+                propertyTypeCacheInput.value = inferredPropertyType;
+            }
+            
+            // CRITICAL: Set the dropdown value
             propertyTypeSelect.value = inferredPropertyType;
             
-            // Store property type in cache field
-            const propertyTypeCacheInput = document.getElementById('residentialPropertyTypeCache');
+            // CRITICAL: Double-check that the value is set (in case of timing issues)
+            if (propertyTypeSelect.value !== inferredPropertyType) {
+                // Force set it again
+                propertyTypeSelect.value = inferredPropertyType;
+            }
+            
+            // CRITICAL: Ensure cache is still set after dropdown value is set
             if (propertyTypeCacheInput) {
                 propertyTypeCacheInput.value = inferredPropertyType;
             }

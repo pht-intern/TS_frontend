@@ -428,7 +428,7 @@ function getDefaultProperties() {
         bedrooms: 3,
         bathrooms: 2,
         area: 1800,
-        image: "/images/img1.jpg",
+        image: "/images/img1.webp",
         status: "sale",
         description: "This stunning modern apartment offers a perfect blend of luxury and comfort. Located in the heart of Downtown District, this property features spacious rooms, high-end finishes, and breathtaking city views. The open-concept living area is perfect for entertaining, while the master suite provides a private retreat. The building includes premium amenities such as a fitness center, rooftop terrace, and 24/7 security.",
         features: ["Air Conditioning", "Balcony", "Parking", "Security", "Elevator", "Gym", "Swimming Pool", "Garden", "Rooftop Terrace", "24/7 Security"]
@@ -442,7 +442,7 @@ function getDefaultProperties() {
         bedrooms: 4,
         bathrooms: 3,
         area: 2500,
-        image: "/images/img2.jpg",
+        image: "/images/img2.webp",
         status: "sale",
         description: "Perfect for growing families, this spacious house offers ample living space and a beautiful backyard. The property features a modern kitchen, large family room, and multiple bedrooms with walk-in closets. The master bedroom includes an ensuite bathroom and private balcony. The backyard is perfect for outdoor activities and gardening.",
         features: ["Garage", "Garden", "Fireplace", "Central Heating", "Storage", "Patio", "Security System", "Pet Friendly", "Walk-in Closets", "Modern Kitchen"]
@@ -498,7 +498,7 @@ function getDefaultProperties() {
         bedrooms: 3,
         bathrooms: 2,
         area: 2000,
-        image: "/images/img1.jpg",
+        image: "/images/img1.webp",
         status: "sale",
         description: "A premium apartment suite with stunning waterfront views. This property features luxury finishes, spacious rooms, and access to exclusive building amenities. The location offers easy access to the waterfront promenade and nearby attractions.",
         features: ["Waterfront View", "Balcony", "Parking", "Security", "Elevator", "Gym", "Swimming Pool", "Concierge"]
@@ -512,7 +512,7 @@ function getDefaultProperties() {
         bedrooms: 5,
         bathrooms: 4,
         area: 3500,
-        image: "/images/img2.jpg",
+        image: "/images/img2.webp",
         status: "sale",
         description: "A magnificent estate in a prestigious gated community. This property offers unparalleled luxury with extensive grounds, multiple living areas, and premium finishes. The estate includes a private pool, tennis court, and guest accommodations.",
         features: ["Swimming Pool", "Tennis Court", "Garage", "Garden", "Security", "Home Theater", "Guest House", "Wine Cellar"]
@@ -568,7 +568,7 @@ function getDefaultProperties() {
         bedrooms: 6,
         bathrooms: 5,
         area: 4500,
-        image: "/images/img1.jpg",
+        image: "/images/img1.webp",
         status: "sale",
         description: "An executive villa in a prestigious area, designed for luxury living and entertaining. This property features grand architecture, premium materials, and extensive grounds. Perfect for high-profile individuals and families.",
         features: ["Swimming Pool", "Garden", "Garage", "Security", "Home Theater", "Wine Cellar", "Guest House", "Helipad"]
@@ -582,7 +582,7 @@ function getDefaultProperties() {
         bedrooms: 2,
         bathrooms: 2,
         area: 1300,
-        image: "/images/img2.jpg",
+        image: "/images/img2.webp",
         status: "rent",
         description: "A modern condo with spectacular city skyline views. This property offers contemporary design, premium finishes, and access to building amenities. The location provides easy access to urban attractions and transportation.",
         features: ["City View", "Balcony", "Parking", "Security", "Elevator", "Gym", "Rooftop Terrace", "Concierge"]

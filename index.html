@@ -1834,7 +1834,7 @@ h6{font-size:22px}
                         const areaInput = document.getElementById('indexSearchArea');
                         const areaDatalist = document.getElementById('indexSearchAreaList');
                         if (areaDatalist) {
-                            areaDatalist.innerHTML = '';
+                            areaDatalist.innerHTML = '<option value="">Any Area</option>';
                         }
                         if (areaInput) {
                             areaInput.value = '';
@@ -1873,8 +1873,8 @@ h6{font-size:22px}
                         // Store current value before clearing
                         const currentValue = areaInput.value;
                         
-                        // Clear existing options
-                        areaDatalist.innerHTML = '';
+                        // Clear existing options but keep "Any Area" option
+                        areaDatalist.innerHTML = '<option value="">Any Area</option>';
                         
                         if (data.localities && Array.isArray(data.localities)) {
                             console.log('Processing localities array:', data.localities);
@@ -2054,47 +2054,57 @@ h6{font-size:22px}
                 const cityInput = document.getElementById('indexSearchCity');
                 if (cityInput) {
                     let cityChangeTimeout;
-                    cityInput.addEventListener('input', async () => {
-                        // Clear previous timeout
+                    let lastProcessedCity = '';
+                    
+                    // Function to load localities for a city
+                    const loadLocalitiesForCity = async (cityValue) => {
+                        if (!cityValue || !cityValue.trim()) {
+                            // Clear localities if city is cleared
+                            const areaDatalist = document.getElementById('indexSearchAreaList');
+                            const areaInput = document.getElementById('indexSearchArea');
+                            if (areaDatalist) {
+                                areaDatalist.innerHTML = '<option value="">Any Area</option>';
+                            }
+                            if (areaInput) {
+                                areaInput.value = '';
+                            }
+                            lastProcessedCity = '';
+                            indexApplyFilters(false);
+                            return;
+                        }
+                        
+                        // Extract city name if it's in format "City, State"
+                        const cityName = cityValue.includes(',') ? cityValue.split(',')[0].trim() : cityValue.trim();
+                        
+                        // Only load if city name changed
+                        if (cityName !== lastProcessedCity) {
+                            lastProcessedCity = cityName;
+                            console.log('Loading localities for city:', cityValue, 'Extracted city name:', cityName);
+                            await loadLocalitiesForIndexCity(cityName);
+                            indexApplyFilters(false);
+                        }
+                    };
+                    
+                    // Handle input event with debounce for typing
+                    cityInput.addEventListener('input', () => {
                         if (cityChangeTimeout) {
                             clearTimeout(cityChangeTimeout);
                         }
                         
-                        // Debounce to avoid too many API calls while typing
-                        cityChangeTimeout = setTimeout(async () => {
-                            // Load localities for the entered city
-                            const selectedCity = cityInput.value;
-                            if (selectedCity && selectedCity.trim()) {
-                                // Extract city name if it's in format "City, State"
-                                const cityName = selectedCity.includes(',') ? selectedCity.split(',')[0].trim() : selectedCity.trim();
-                                console.log('City entered in index:', selectedCity, 'Extracted city name:', cityName);
-                                await loadLocalitiesForIndexCity(cityName);
-                                indexApplyFilters(false);
-                            } else {
-                                // Clear localities if city is cleared
-                                const areaDatalist = document.getElementById('indexSearchAreaList');
-                                const areaInput = document.getElementById('indexSearchArea');
-                                if (areaDatalist) {
-                                    areaDatalist.innerHTML = '';
-                                }
-                                if (areaInput) {
-                                    areaInput.value = '';
-                                }
-                                indexApplyFilters(false);
-                            }
-                        }, 500); // Wait 500ms after user stops typing
+                        cityChangeTimeout = setTimeout(() => {
+                            loadLocalitiesForCity(cityInput.value);
+                        }, 300); // 300ms debounce for typing
                     });
                     
-                    // Also listen for blur event to load localities when user selects from dropdown
-                    cityInput.addEventListener('blur', async () => {
-                        const selectedCity = cityInput.value;
-                        if (selectedCity && selectedCity.trim()) {
-                            // Extract city name if it's in format "City, State"
-                            const cityName = selectedCity.includes(',') ? selectedCity.split(',')[0].trim() : selectedCity.trim();
-                            console.log('City selected in index:', selectedCity, 'Extracted city name:', cityName);
-                            await loadLocalitiesForIndexCity(cityName);
-                            indexApplyFilters(false);
+                    // Handle blur event - fires when user selects from datalist or clicks away
+                    cityInput.addEventListener('blur', () => {
+                        // Clear any pending timeout
+                        if (cityChangeTimeout) {
+                            clearTimeout(cityChangeTimeout);
+                            cityChangeTimeout = null;
                         }
+                        // Load immediately on blur (when datalist option is selected)
+                        loadLocalitiesForCity(cityInput.value);
                     });
                 }
                 

@@ -137,8 +137,8 @@ async function loadBlogsFromAPI() {
                         content: blog.content || '',
                         category: blog.category || 'general',
                         tags: tags,
-                        image: blog.image_url || blog.image || '/images/img1.jpg',
-                        image_url: blog.image_url || blog.image || '/images/img1.jpg',
+                        image: blog.image_url || blog.image || '/images/img1.webp',
+                        image_url: blog.image_url || blog.image || '/images/img1.webp',
                         author: blog.author || 'Tirumakudalu Properties',
                         views: blog.views || 0,
                         is_featured: blog.is_featured || false,
@@ -283,7 +283,7 @@ function getMockBlogs() {
             content: "Full content here...",
             category: "investment",
             tags: ["investment", "bengaluru", "property-tips"],
-            image: "/images/img1.jpg",
+            image: "/images/img1.webp",
             author: "Tirumakudalu Properties",
             date: "2025-01-15",
             created_at: "2025-01-15T10:00:00",
@@ -297,7 +297,7 @@ function getMockBlogs() {
             content: "Full content here...",
             category: "property-management",
             tags: ["property-management", "bengaluru", "tips"],
-            image: "/images/img2.jpg",
+            image: "/images/img2.webp",
             author: "Tirumakudalu Properties",
             date: "2025-01-12",
             created_at: "2025-01-12T10:00:00",
@@ -353,7 +353,7 @@ function getMockBlogs() {
             content: "Full content here...",
             category: "news",
             tags: ["bengaluru", "apartments", "news"],
-            image: "/images/img1.jpg",
+            image: "/images/img1.webp",
             author: "Tirumakudalu Properties",
             date: "2025-01-03",
             created_at: "2025-01-03T10:00:00",
@@ -367,7 +367,7 @@ function getMockBlogs() {
             content: "Full content here...",
             category: "tips",
             tags: ["property-tips", "bengaluru", "tax"],
-            image: "/images/img2.jpg",
+            image: "/images/img2.webp",
             author: "Tirumakudalu Properties",
             date: "2024-12-28",
             created_at: "2024-12-28T10:00:00",
@@ -416,7 +416,7 @@ function renderLatestBlog() {
     // If no blogs, show a message
     if (allBlogs.length === 0) {
         if (latestBlogImage) {
-            latestBlogImage.src = '/images/img1.jpg';
+            latestBlogImage.src = '/images/img1.webp';
             latestBlogImage.alt = 'No blogs available';
         }
         
@@ -453,7 +453,7 @@ function renderLatestBlog() {
     
     // Update elements only if they exist
     if (latestBlogImage) {
-        latestBlogImage.src = latestBlog.image || latestBlog.image_url || '/images/img1.jpg';
+        latestBlogImage.src = latestBlog.image || latestBlog.image_url || '/images/img1.webp';
         latestBlogImage.alt = latestBlog.title || 'Latest Blog';
     }
     
@@ -541,7 +541,7 @@ function renderBlogs() {
     blogsGrid.innerHTML = blogsToDisplay.map(blog => `
         <article class="blog-card">
             <div class="blog-card-image">
-                <img src="${escapeHtml(blog.image || blog.image_url || '/images/img1.jpg')}" alt="${escapeHtml(blog.title)}">
+                <img src="${escapeHtml(blog.image || blog.image_url || '/images/img1.webp')}" alt="${escapeHtml(blog.title)}">
                 <div class="blog-card-overlay">
                     <a href="/blog-details.html?id=${blog.id}" class="blog-card-link" data-blog-id="${blog.id}">
                         <i class="fas fa-arrow-right"></i>
@@ -709,7 +709,7 @@ function renderRecentPosts() {
         <li class="recent-post-item">
             <a href="/blog-details.html?id=${blog.id}" class="recent-post-link" data-blog-id="${blog.id}">
                 <div class="recent-post-image">
-                    <img src="${escapeHtml(blog.image || blog.image_url || '/images/img1.jpg')}" alt="${escapeHtml(blog.title)}">
+                    <img src="${escapeHtml(blog.image || blog.image_url || '/images/img1.webp')}" alt="${escapeHtml(blog.title)}">
                 </div>
                 <div class="recent-post-info">
                     <h4 class="recent-post-title">${escapeHtml(blog.title)}</h4>
@@ -742,7 +742,7 @@ function renderPopularPosts() {
         <li class="popular-post-item">
             <a href="/blog-details.html?id=${blog.id}" class="popular-post-link" data-blog-id="${blog.id}">
                 <div class="popular-post-image">
-                    <img src="${escapeHtml(blog.image || blog.image_url || '/images/img1.jpg')}" alt="${escapeHtml(blog.title)}">
+                    <img src="${escapeHtml(blog.image || blog.image_url || '/images/img1.webp')}" alt="${escapeHtml(blog.title)}">
                 </div>
                 <div class="popular-post-info">
                     <h4 class="popular-post-title">${escapeHtml(blog.title)}</h4>

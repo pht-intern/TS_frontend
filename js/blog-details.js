@@ -24,7 +24,7 @@ async function loadBlogFromAPI(blogId) {
         return {
             ...blog,
             date: blog.created_at || blog.date,
-            image: blog.image_url || blog.image || '/images/img1.jpg'
+            image: blog.image_url || blog.image || '/images/img1.webp'
         };
     } catch (error) {
         console.error('Error loading blog from API:', error);
@@ -43,13 +43,13 @@ async function loadAllBlogs() {
                 allBlogs = data.items.map(blog => ({
                     ...blog,
                     date: blog.created_at || blog.date,
-                    image: blog.image_url || blog.image || '/images/img1.jpg'
+                    image: blog.image_url || blog.image || '/images/img1.webp'
                 }));
             } else if (Array.isArray(data)) {
                 allBlogs = data.map(blog => ({
                     ...blog,
                     date: blog.created_at || blog.date,
-                    image: blog.image_url || blog.image || '/images/img1.jpg'
+                    image: blog.image_url || blog.image || '/images/img1.webp'
                 }));
             }
         } else {
@@ -109,7 +109,7 @@ function getMockBlogs() {
             <p>By following these tips and working with trusted partners like Tirumakudalu Properties, you can make smart real estate investment decisions in Bengaluru's dynamic market.</p>`,
             category: "investment",
             tags: ["investment", "bengaluru", "property-tips"],
-            image: "/images/img1.jpg",
+            image: "/images/img1.webp",
             author: "Tirumakudalu Properties",
             date: "2025-01-15",
             created_at: "2025-01-15T10:00:00",
@@ -137,7 +137,7 @@ function getMockBlogs() {
             <p>At Tirumakudalu Properties, we provide comprehensive property management services to help you maximize your investment returns.</p>`,
             category: "property-management",
             tags: ["property-management", "bengaluru", "tips"],
-            image: "/images/img2.jpg",
+            image: "/images/img2.webp",
             author: "Tirumakudalu Properties",
             date: "2025-01-12",
             created_at: "2025-01-12T10:00:00",
@@ -199,7 +199,7 @@ function getMockBlogs() {
             content: `<p>Bengaluru continues to see exciting new property developments across residential and commercial segments.</p>`,
             category: "news",
             tags: ["bengaluru", "apartments", "news"],
-            image: "/images/img1.jpg",
+            image: "/images/img1.webp",
             author: "Tirumakudalu Properties",
             date: "2025-01-03",
             created_at: "2025-01-03T10:00:00",
@@ -213,7 +213,7 @@ function getMockBlogs() {
             content: `<p>Property tax is an important annual obligation for all property owners in Bengaluru. Understanding how it works can help you plan your finances better.</p>`,
             category: "tips",
             tags: ["property-tips", "bengaluru", "tax"],
-            image: "/images/img2.jpg",
+            image: "/images/img2.webp",
             author: "Tirumakudalu Properties",
             date: "2024-12-28",
             created_at: "2024-12-28T10:00:00",
@@ -289,7 +289,7 @@ function renderBlogImage(blog) {
     if (!blogImage) return;
     
     blogImage.innerHTML = `
-        <img src="${escapeHtml(blog.image || blog.image_url || '/images/img1.jpg')}" alt="${escapeHtml(blog.title)}">
+        <img src="${escapeHtml(blog.image || blog.image_url || '/images/img1.webp')}" alt="${escapeHtml(blog.title)}">
     `;
 }
 

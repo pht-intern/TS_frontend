@@ -479,7 +479,7 @@ function getDefaultProperties() {
         bedrooms: 3,
         bathrooms: 2,
         area: 1800,
-        image: "/images/img1.jpg",
+        image: "/images/img1.webp",
         status: "sale"
     },
     {
@@ -491,7 +491,7 @@ function getDefaultProperties() {
         bedrooms: 4,
         bathrooms: 3,
         area: 2500,
-        image: "/images/img2.jpg",
+        image: "/images/img2.webp",
         status: "sale"
     },
     {
@@ -539,7 +539,7 @@ function getDefaultProperties() {
         bedrooms: 3,
         bathrooms: 2,
         area: 2000,
-        image: "/images/img1.jpg",
+        image: "/images/img1.webp",
         status: "sale"
     },
     {
@@ -551,7 +551,7 @@ function getDefaultProperties() {
         bedrooms: 5,
         bathrooms: 4,
         area: 3500,
-        image: "/images/img2.jpg",
+        image: "/images/img2.webp",
         status: "sale"
     },
     {
@@ -599,7 +599,7 @@ function getDefaultProperties() {
         bedrooms: 6,
         bathrooms: 5,
         area: 4500,
-        image: "/images/img1.jpg",
+        image: "/images/img1.webp",
         status: "sale"
     },
     {
@@ -611,7 +611,7 @@ function getDefaultProperties() {
         bedrooms: 2,
         bathrooms: 2,
         area: 1300,
-        image: "/images/img2.jpg",
+        image: "/images/img2.webp",
         status: "rent"
     }
     ];

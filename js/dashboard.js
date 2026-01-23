@@ -1331,7 +1331,7 @@ function getProperties() {
             bedrooms: 3,
             bathrooms: 2,
             area: 1800,
-            images: ["/images/img1.jpg"],
+            images: ["/images/img1.webp"],
             status: "sale",
             description: "This stunning modern apartment offers a perfect blend of luxury and comfort. Located in the heart of Downtown District, this property features spacious rooms, high-end finishes, and breathtaking city views.",
             features: ["Air Conditioning", "Balcony", "Parking", "Security", "Elevator", "Gym", "Swimming Pool"]
@@ -3392,6 +3392,14 @@ let allCategories = [];
 // Load categories and populate Property Type dropdown
 async function loadCategoriesForPropertyTypeDropdown() {
     try {
+        // Define default property types (original categories)
+        const defaultPropertyTypes = [
+            { value: 'apartments', label: 'Apartments' },
+            { value: 'villas', label: 'Villas' },
+            { value: 'plot_properties', label: 'Plot Properties' },
+            { value: 'individual_house', label: 'Individual House' }
+        ];
+        
         // Add cache-busting timestamp to ensure fresh data
         const timestamp = new Date().getTime();
         const response = await fetch(`/api/categories?_t=${timestamp}`, {
@@ -3421,12 +3429,26 @@ async function loadCategoriesForPropertyTypeDropdown() {
                     // Clear existing options except the first "Select Property Type" option
                     propertyTypeSelect.innerHTML = '<option value="">Select Property Type</option>';
                     
-                    // Add categories as options
-                    allCategories.forEach(category => {
+                    // Get default values to avoid duplicates
+                    const defaultValues = defaultPropertyTypes.map(d => d.value);
+                    
+                    // First, add default property types
+                    defaultPropertyTypes.forEach(defaultType => {
                         const option = document.createElement('option');
-                        option.value = category.name;
-                        option.textContent = category.display_name;
+                        option.value = defaultType.value;
+                        option.textContent = defaultType.label;
                         propertyTypeSelect.appendChild(option);
+                    });
+                    
+                    // Then, add categories from API (excluding any that match default values)
+                    allCategories.forEach(category => {
+                        // Skip if category name matches any default property type
+                        if (!defaultValues.includes(category.name)) {
+                            const option = document.createElement('option');
+                            option.value = category.name;
+                            option.textContent = category.display_name;
+                            propertyTypeSelect.appendChild(option);
+                        }
                     });
                     
                     // Restore previous selection if it still exists
@@ -3440,11 +3462,58 @@ async function loadCategoriesForPropertyTypeDropdown() {
             }
         } else {
             console.error('Failed to load categories:', response.status, response.statusText);
+            // Fallback: ensure default property types are present
+            const propertyTypeSelect = document.getElementById('residentialPropertyType');
+            if (propertyTypeSelect) {
+                const currentValue = propertyTypeSelect.value;
+                propertyTypeSelect.innerHTML = '<option value="">Select Property Type</option>';
+                
+                defaultPropertyTypes.forEach(defaultType => {
+                    const option = document.createElement('option');
+                    option.value = defaultType.value;
+                    option.textContent = defaultType.label;
+                    propertyTypeSelect.appendChild(option);
+                });
+                
+                if (currentValue) {
+                    const optionExists = Array.from(propertyTypeSelect.options).some(opt => opt.value === currentValue);
+                    if (optionExists) {
+                        propertyTypeSelect.value = currentValue;
+                    }
+                }
+            }
             // Fallback to empty array
             allCategories = [];
         }
     } catch (error) {
         console.error('Error loading categories:', error);
+        // Fallback: ensure default property types are present
+        const propertyTypeSelect = document.getElementById('residentialPropertyType');
+        if (propertyTypeSelect) {
+            const defaultPropertyTypes = [
+                { value: 'apartments', label: 'Apartments' },
+                { value: 'villas', label: 'Villas' },
+                { value: 'plot_properties', label: 'Plot Properties' },
+                { value: 'individual_house', label: 'Individual House' }
+            ];
+            
+            const currentValue = propertyTypeSelect.value;
+            propertyTypeSelect.innerHTML = '<option value="">Select Property Type</option>';
+            
+            defaultPropertyTypes.forEach(defaultType => {
+                const option = document.createElement('option');
+                option.value = defaultType.value;
+                option.textContent = defaultType.label;
+                propertyTypeSelect.appendChild(option);
+            });
+            
+            if (currentValue) {
+                const optionExists = Array.from(propertyTypeSelect.options).some(opt => opt.value === currentValue);
+                if (optionExists) {
+                    propertyTypeSelect.value = currentValue;
+                }
+            }
+        }
         // Fallback to empty array
         allCategories = [];
     }

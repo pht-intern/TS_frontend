@@ -4818,24 +4818,17 @@ async function handleImageFiles(files, formType = 'property', imageCategory = 'p
             
             const result = await response.json();
             
-            // Handle different response formats
-            let uploadedUrl = null;
-            if (result && typeof result === 'object') {
-                // Try multiple possible response structures
-                uploadedUrl = result.data?.image_url || 
-                             result.image_url || 
-                             result.url || 
-                             (result.data && result.data.url) ||
-                             (result.success && result.data && result.data.image_url);
-            }
+            // Extract image URL from response
+            const imageUrl = result.data?.image_url || result.image_url || result.message?.image_url;
             
-            if (!uploadedUrl) {
-                console.error('Response structure:', result);
-                throw new Error('Server did not return image URL. Response: ' + JSON.stringify(result));
+            if (!imageUrl) {
+                throw new Error(
+                    "Server did not return image URL. Response: " + JSON.stringify(result)
+                );
             }
             
             // Update preview with uploaded URL
-            updateImagePreview(tempPreviewId, uploadedUrl, formType, imageCategory);
+            updateImagePreview(tempPreviewId, imageUrl, formType, imageCategory);
             
             showNotification(`Image "${file.name}" uploaded successfully`, 'success');
         } catch (error) {
@@ -5242,27 +5235,20 @@ async function handleResidentialGalleryImageUpload(itemId, fileInput) {
         
         const result = await response.json();
         
-        // Handle different response formats
-        let uploadedUrl = null;
-        if (result && typeof result === 'object') {
-            // Try multiple possible response structures
-            uploadedUrl = result.data?.image_url || 
-                         result.image_url || 
-                         result.url || 
-                         (result.data && result.data.url) ||
-                         (result.success && result.data && result.data.image_url);
-        }
+        // Extract image URL from response
+        const imageUrl = result.data?.image_url || result.image_url || result.message?.image_url;
         
-        if (!uploadedUrl) {
-            console.error('Response structure:', result);
-            throw new Error('Server did not return image URL. Response: ' + JSON.stringify(result));
+        if (!imageUrl) {
+            throw new Error(
+                "Server did not return image URL. Response: " + JSON.stringify(result)
+            );
         }
         
         // Store the uploaded URL in the gallery item as a data attribute
-        item.setAttribute('data-image-url', uploadedUrl);
+        item.setAttribute('data-image-url', imageUrl);
         
         // Update the image preview with the uploaded URL
-        imageContainer.innerHTML = `<img src="${uploadedUrl}" alt="Gallery Image" loading="lazy" style="width: 100%; height: auto; border-radius: 8px;">`;
+        imageContainer.innerHTML = `<img src="${imageUrl}" alt="Gallery Image" loading="lazy" style="width: 100%; height: auto; border-radius: 8px;">`;
         
         // Also store in a hidden input for form submission (if needed)
         let hiddenInput = item.querySelector('input[type="hidden"][name="gallery_image_url"]');
@@ -5272,7 +5258,7 @@ async function handleResidentialGalleryImageUpload(itemId, fileInput) {
             hiddenInput.name = 'gallery_image_url';
             item.querySelector('.dashboard-gallery-item-fields')?.appendChild(hiddenInput);
         }
-        hiddenInput.value = uploadedUrl;
+        hiddenInput.value = imageUrl;
         
         showNotification(`Image "${file.name}" uploaded successfully`, 'success');
         

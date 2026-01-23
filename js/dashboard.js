@@ -5203,6 +5203,10 @@ async function handleResidentialGalleryImageUpload(itemId, fileInput) {
     `;
     
     try {
+        // Get category from the form before uploading
+        const categorySelect = item.querySelector('select[name="gallery_image_category"]');
+        const imageCategory = categorySelect ? categorySelect.value : 'project';
+        
         // Read image file as base64
         const base64Data = await new Promise((resolve, reject) => {
             const reader = new FileReader();
@@ -5211,20 +5215,22 @@ async function handleResidentialGalleryImageUpload(itemId, fileInput) {
             reader.readAsDataURL(file);
         });
         
-        // Upload image to server
+        // Upload image to server with category
         const response = await authenticatedFetch('/api/upload-image', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-                image: base64Data
+                image: base64Data,
+                image_category: imageCategory,
+                property_category: 'residential'
             })
         });
         
         if (!response.ok) {
             const errorData = await response.json().catch(() => ({}));
-            throw new Error(errorData.message || 'Failed to upload image');
+            throw new Error(errorData.error || errorData.message || 'Failed to upload image');
         }
         
         const result = await response.json();

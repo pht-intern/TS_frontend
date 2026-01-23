@@ -98,7 +98,9 @@ let allStates = [];
                             const cityEntry = cityMap.get(key);
                             if (cityEntry) {
                                 cityEntry.is_active = city.is_active;
-                                cityEntry.properties_count = city.properties_count || 0;
+                                // Ensure properties_count is a number
+                                const count = parseInt(city.properties_count || 0, 10);
+                                cityEntry.properties_count = isNaN(count) ? 0 : count;
                             }
                         }
                     });
@@ -158,7 +160,9 @@ let allStates = [];
             }
             const state = stateMap.get(stateName);
             state.cities.push(city);
-            state.properties_count += city.properties_count || 0;
+            // Ensure properties_count is a number before adding
+            const cityCount = parseInt(city.properties_count || 0, 10);
+            state.properties_count += isNaN(cityCount) ? 0 : cityCount;
             // State is active if at least one city in it is active
             if (city.is_active) {
                 state.is_active = true;
@@ -191,13 +195,16 @@ let allStates = [];
         filtered.forEach(state => {
             const row = document.createElement('tr');
             const stateKey = state.name.toLowerCase();
+            // Ensure properties_count is a number and format it nicely
+            const propertiesCount = parseInt(state.properties_count || 0, 10);
+            const formattedCount = isNaN(propertiesCount) ? 0 : propertiesCount.toLocaleString();
             row.innerHTML = `
                 <td>
                     <input type="checkbox" class="state-checkbox" data-state="${stateKey}" ${state.is_active ? 'checked' : ''}>
                 </td>
                 <td>${state.name || '-'}</td>
                 <td><span class="status-badge ${state.is_active ? 'sale' : 'rent'}">${state.is_active ? 'Active' : 'Inactive'}</span></td>
-                <td>${state.properties_count || 0}</td>
+                <td>${formattedCount}</td>
             `;
             tbody.appendChild(row);
         });

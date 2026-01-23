@@ -1971,11 +1971,32 @@ async function openResidentialPropertyModal(propertyId = null) {
 // Close Residential Property Modal
 async function closeResidentialPropertyModal() {
     const modal = document.getElementById('residentialPropertyModal');
+    const form = document.getElementById('residentialPropertyForm');
+    
     if (modal) {
-        modal.classList.remove('active');
-        document.body.style.overflow = '';
+        // Reset form first to clear all inputs
+        if (form) {
+            form.reset();
+            // Clear any cached property type
+            const propertyTypeCacheInput = document.getElementById('residentialPropertyTypeCache');
+            if (propertyTypeCacheInput) {
+                propertyTypeCacheInput.value = '';
+            }
+            // Clear property ID
+            const propertyIdInput = document.getElementById('residentialPropertyId');
+            if (propertyIdInput) {
+                propertyIdInput.value = '';
+            }
+            // Clear gallery
+            clearResidentialImagePreviews();
+        }
+        
         // Reset to step 1 when closing
         resetResidentialPropertySteps();
+        
+        // Close modal
+        modal.classList.remove('active');
+        document.body.style.overflow = '';
     }
     // Auto-refresh properties when modal closes
     await loadProperties(true);
@@ -1996,14 +2017,15 @@ function resetResidentialPropertySteps() {
         step2Container.innerHTML = '';
     }
     
-    // Reset property type to empty to clear Step 2, but restore from cache if it exists
+    // Reset property type to empty to clear Step 2
     const propertyTypeSelect = document.getElementById('residentialPropertyType');
     const propertyTypeCacheInput = document.getElementById('residentialPropertyTypeCache');
     if (propertyTypeSelect) {
-        // Clear the select first
+        // Clear the select
         propertyTypeSelect.value = '';
-        // Restore from cache if it exists
-        if (propertyTypeCacheInput && propertyTypeCacheInput.value) {
+        // Only restore from cache if cache exists and has a value (for edit mode preservation)
+        // When closing/canceling, cache should already be cleared, so this will stay empty
+        if (propertyTypeCacheInput && propertyTypeCacheInput.value && propertyTypeCacheInput.value.trim() !== '') {
             propertyTypeSelect.value = propertyTypeCacheInput.value;
         }
     }

@@ -1965,6 +1965,18 @@ function resetResidentialPropertySteps() {
         step.style.display = 'none';
     });
     
+    // Clear Step 2 content to ensure clean state
+    const step2Container = document.getElementById('residentialStep2');
+    if (step2Container) {
+        step2Container.innerHTML = '';
+    }
+    
+    // Reset property type to empty to clear Step 2
+    const propertyTypeSelect = document.getElementById('residentialPropertyType');
+    if (propertyTypeSelect) {
+        propertyTypeSelect.value = '';
+    }
+    
     // Show step 1
     const currentStep = 1;
     const step1 = document.querySelector(`#residentialPropertyForm .dashboard-form-step[data-step="${currentStep}"]`);
@@ -2375,10 +2387,17 @@ function validateResidentialPropertyStep(stepNumber) {
         } else if (propertyType === 'plot_properties') {
             // Validate plot properties fields
             const status = document.getElementById('residentialStatus');
+            const listingType = document.getElementById('residentialListingType');
             
             if (!status || !status.value) {
                 showNotification('Please select status', 'error');
                 status?.focus();
+                return false;
+            }
+            
+            if (!listingType || !listingType.value) {
+                showNotification('Please select listing type', 'error');
+                listingType?.focus();
                 return false;
             }
             
@@ -2570,8 +2589,8 @@ function getApartmentsStep2HTML() {
                 </label>
                 <select id="residentialStatus" name="status" required>
                     <option value="">Select Status</option>
-                    <option value="sale">Sale</option>
-                    <option value="rent">Rent</option>
+                    <option value="new">New</option>
+                    <option value="resell">Resell</option>
                 </select>
             </div>
             <div class="dashboard-form-group">
@@ -2581,8 +2600,8 @@ function getApartmentsStep2HTML() {
                 </label>
                 <select id="residentialListingType" name="listing_type" required>
                     <option value="">Select Listing Type</option>
-                    <option value="new">New</option>
-                    <option value="resell">Resell</option>
+                    <option value="sale">Sale</option>
+                    <option value="rent">Rent</option>
                 </select>
             </div>
         </div>
@@ -2675,8 +2694,8 @@ function getVillasStep2HTML() {
                 </label>
                 <select id="residentialListingType" name="listing_type" required>
                     <option value="">Select Listing Type</option>
-                    <option value="new">New</option>
-                    <option value="resell">Resell</option>
+                    <option value="under_construction">Under Construction</option>
+                    <option value="ready_to_move">Ready to Move</option>
                 </select>
             </div>
             <div class="dashboard-form-group">
@@ -2686,8 +2705,8 @@ function getVillasStep2HTML() {
                 </label>
                 <select id="residentialStatus" name="status" required>
                     <option value="">Select Status</option>
-                    <option value="under_construction">Under Construction</option>
-                    <option value="ready_to_move">Ready to Move</option>
+                    <option value="new">New</option>
+                    <option value="resell">Resell</option>
                 </select>
             </div>
         </div>
@@ -2800,8 +2819,8 @@ function getIndividualHouseStep2HTML() {
                 </label>
                 <select id="residentialListingType" name="listing_type" required>
                     <option value="">Select Listing Type</option>
-                    <option value="new">New</option>
-                    <option value="resell">Resell</option>
+                    <option value="under_construction">Under Construction</option>
+                    <option value="ready_to_move">Ready to Move</option>
                 </select>
             </div>
             <div class="dashboard-form-group">
@@ -2811,8 +2830,8 @@ function getIndividualHouseStep2HTML() {
                 </label>
                 <select id="residentialStatus" name="status" required>
                     <option value="">Select Status</option>
-                    <option value="under_construction">Under Construction</option>
-                    <option value="ready_to_move">Ready to Move</option>
+                    <option value="new">New</option>
+                    <option value="resell">Resell</option>
                 </select>
             </div>
         </div>
@@ -2905,6 +2924,17 @@ function getPlotPropertiesStep2HTML() {
             </label>
             <select id="residentialStatus" name="status" required>
                 <option value="">Select Status</option>
+                <option value="new">New</option>
+                <option value="resell">Resell</option>
+            </select>
+        </div>
+        <div class="dashboard-form-group">
+            <label for="residentialListingType">
+                <i class="fas fa-list"></i>
+                Listing Type *
+            </label>
+            <select id="residentialListingType" name="listing_type" required>
+                <option value="">Select Listing Type</option>
                 <option value="ready_to_move">Ready to Register</option>
                 <option value="under_development">Under Development</option>
             </select>
@@ -3776,28 +3806,35 @@ function populateResidentialForm(property) {
             handleResidentialPropertyTypeChange();
             
             // Wait for Step 2 content to load, then populate fields
-            // Use a more reliable approach with fewer retries
+            // Use a more reliable approach - check for actual form fields, not just HTML
             let attempts = 0;
-            const maxAttempts = 5;
+            const maxAttempts = 20; // Increased attempts for slower systems
             const checkAndPopulate = () => {
                 attempts++;
                 const step2Content = document.getElementById('residentialStep2');
-                const hasContent = step2Content && step2Content.innerHTML.trim() !== '';
+                // Check for actual form fields, not just HTML content
+                // Look for common Step 2 fields that should exist
+                const hasFields = step2Content && (
+                    document.getElementById('residentialStatus') ||
+                    document.getElementById('residentialListingType') ||
+                    document.getElementById('residentialUnitType') ||
+                    document.getElementById('residentialBedrooms') ||
+                    step2Content.querySelector('input, select, textarea')
+                );
                 
-                if (hasContent) {
-                    // Step 2 content is loaded, populate all fields
+                if (hasFields) {
+                    // Step 2 content is loaded with actual form fields, populate all fields
                     populateStep2Fields(property);
                 } else if (attempts < maxAttempts) {
-                    // Step 2 not ready yet, try again
-                    setTimeout(checkAndPopulate, 150);
+                    // Step 2 not ready yet, try again with longer delay
+                    setTimeout(checkAndPopulate, 200);
                 } else {
-                    // Max attempts reached, try to populate anyway
-                    console.warn('Step 2 content may not be fully loaded, attempting to populate fields anyway');
+                    // Max attempts reached, try to populate anyway (silently)
                     populateStep2Fields(property);
                 }
             };
-            // Start checking after a short delay to allow Step 2 to start loading
-            setTimeout(checkAndPopulate, 200);
+            // Start checking after a longer delay to allow Step 2 to fully load and initialize
+            setTimeout(checkAndPopulate, 300);
         }
     }
     
@@ -3903,35 +3940,42 @@ function populateStep2Fields(property) {
     
     const propertyType = document.getElementById('residentialPropertyType')?.value;
     
-    // Common fields
-    if (property.status) {
-        const statusInput = document.getElementById('residentialStatus');
-        if (statusInput) {
-            // Map property_status to status if status is sale/rent
-            if (property.property_status && (property.status === 'sale' || property.status === 'rent')) {
-                statusInput.value = property.property_status;
-            } else {
-                statusInput.value = property.status;
-            }
+    // Common fields - Note: dropdowns are swapped
+    // Status dropdown now shows new/resell (what was in listing_type)
+    // Listing Type dropdown now shows sale/rent/under_construction/ready_to_move (what was in status)
+    
+    // Populate Status field (now contains new/resell)
+    const statusInput = document.getElementById('residentialStatus');
+    if (statusInput) {
+        // Check listing_type first (new/resell)
+        if (property.listing_type === 'new' || property.listing_type === 'resell') {
+            statusInput.value = property.listing_type;
+        }
+        // Check property_status (new/resale map to new/resell)
+        else if (property.property_status === 'new') {
+            statusInput.value = 'new';
+        } else if (property.property_status === 'resale') {
+            statusInput.value = 'resell';
+        }
+        // If status field has new/resale, use that
+        else if (property.status === 'new' || property.status === 'resale') {
+            statusInput.value = property.status === 'resale' ? 'resell' : 'new';
         }
     }
     
-    // Infer listing_type from property_status
-    if (property.property_status) {
-        const listingTypeMap = {
-            'new': 'new',
-            'resell': 'resell',
-            'ready_to_move': 'new',
-            'under_construction': 'new'
-        };
-        const listingType = listingTypeMap[property.property_status];
-        if (listingType) {
-            const listingTypeInput = document.getElementById('residentialListingType');
-            if (listingTypeInput) listingTypeInput.value = listingType;
+    // Populate Listing Type field (now contains sale/rent/under_construction/ready_to_move)
+    const listingTypeInput = document.getElementById('residentialListingType');
+    if (listingTypeInput) {
+        // Check status field first (sale/rent)
+        if (property.status === 'sale' || property.status === 'rent') {
+            listingTypeInput.value = property.status;
         }
-    } else if (property.listing_type) {
-        const listingTypeInput = document.getElementById('residentialListingType');
-        if (listingTypeInput) listingTypeInput.value = property.listing_type;
+        // Check property_status (under_construction/ready_to_move/under_development)
+        else if (property.property_status === 'under_construction' || 
+                 property.property_status === 'ready_to_move' || 
+                 property.property_status === 'under_development') {
+            listingTypeInput.value = property.property_status;
+        }
     }
     
     // Price is now in Step 1, so it's already populated
@@ -4252,27 +4296,51 @@ async function handleResidentialPropertySubmit(e) {
         direction: formData.get('direction') || null,
         villa_type: formData.get('villa_type') || null,
         plot_section: formData.get('plot_section') || null,
-        listing_type: formData.get('listing_type') || null,
+        listing_type: (() => {
+            // listing_type field now contains what was previously in status (sale/rent/under_construction/ready_to_move)
+            const listingTypeValue = formData.get('listing_type');
+            if (!listingTypeValue) return null;
+            // Map sale/rent to null (they don't go to listing_type)
+            // Map under_construction/ready_to_move to null (they go to property_status)
+            // Only new/resell should go to listing_type, but those are now in status field
+            // So we need to get listing_type from status field instead
+            const statusValue = formData.get('status');
+            if (statusValue === 'new' || statusValue === 'resell') {
+                return statusValue === 'resell' ? 'resell' : 'new';
+            }
+            return null;
+        })(),
         price: formData.get('price') ? parseFloat(formData.get('price')?.replace(/[^\d.]/g, '') || '0') : 0,
         price_text: formData.get('price') || null,
         price_negotiable: formData.get('price_negotiable') === 'on',
         price_includes_registration: formData.get('price_includes_registration') === 'on',
         status: (() => {
-            const statusValue = formData.get('status');
-            if (!statusValue) return 'sale';
-            // status field only accepts: sale, rent, resale, new
-            // Map ready_to_move and under_construction to 'sale' for status field
-            if (statusValue === 'ready_to_move' || statusValue === 'under_construction' || statusValue === 'under_development') {
+            // status field now contains what was previously in listing_type (new/resell)
+            // listing_type field now contains what was previously in status (sale/rent/under_construction/ready_to_move)
+            const listingTypeValue = formData.get('listing_type'); // This now has sale/rent/under_construction/ready_to_move
+            if (!listingTypeValue) return 'sale';
+            // Map the listing_type values to status field
+            if (listingTypeValue === 'sale' || listingTypeValue === 'rent') {
+                return listingTypeValue;
+            }
+            // For under_construction/ready_to_move, default to 'sale'
+            if (listingTypeValue === 'under_construction' || listingTypeValue === 'ready_to_move' || listingTypeValue === 'under_development') {
                 return 'sale';
             }
-            return statusValue; // sale, rent, resale, or new
+            return 'sale'; // Default
         })(),
         property_status: (() => {
-            const statusValue = formData.get('status');
             // property_status stores: resale, new, ready_to_move, under_construction, under_development
-            if (statusValue === 'ready_to_move' || statusValue === 'under_construction' || 
-                statusValue === 'under_development' || statusValue === 'resale' || statusValue === 'new') {
-                return statusValue;
+            const statusValue = formData.get('status'); // This now has new/resell
+            const listingTypeValue = formData.get('listing_type'); // This now has sale/rent/under_construction/ready_to_move
+            
+            // First check listing_type for under_construction/ready_to_move/under_development
+            if (listingTypeValue === 'ready_to_move' || listingTypeValue === 'under_construction' || listingTypeValue === 'under_development') {
+                return listingTypeValue;
+            }
+            // Then check status field for new/resell (which map to new/resale)
+            if (statusValue === 'new' || statusValue === 'resell') {
+                return statusValue === 'resell' ? 'resale' : 'new';
             }
             return null; // For 'sale' and 'rent', property_status is null
         })(),
@@ -4543,23 +4611,35 @@ async function handlePlotPropertySubmit(e) {
         price_text: formData.get('price'),
         price_negotiable: formData.get('price_negotiable') === 'on',
         price_includes_registration: formData.get('price_includes_registration') === 'on',
-        status: (() => {
+        listing_type: (() => {
+            // For plot properties, listing_type field now has ready_to_move/under_development
+            const listingTypeValue = formData.get('listing_type');
+            // Get from status field instead (which now has new/resell)
             const statusValue = formData.get('status');
-            // status field only accepts: sale, rent, resale, new
-            // Map ready_to_move and under_construction to 'sale' for status field
-            if (statusValue === 'ready_to_move' || statusValue === 'under_construction') {
-                return 'sale';
+            if (statusValue === 'new' || statusValue === 'resell') {
+                return statusValue === 'resell' ? 'resell' : 'new';
             }
-            return statusValue; // sale, rent, resale, or new
+            return null;
+        })(),
+        status: (() => {
+            // For plot properties, status field now has new/resell, listing_type has ready_to_move/under_development
+            // status field should be 'sale' for plot properties
+            return 'sale';
         })(),
         property_status: (() => {
-            const statusValue = formData.get('status');
-            // property_status stores: resale, new, ready_to_move, under_construction
-            if (statusValue === 'ready_to_move' || statusValue === 'under_construction' || 
-                statusValue === 'resale' || statusValue === 'new') {
-                return statusValue;
+            // property_status stores: resale, new, ready_to_move, under_construction, under_development
+            const listingTypeValue = formData.get('listing_type'); // This now has ready_to_move/under_development
+            const statusValue = formData.get('status'); // This now has new/resell
+            
+            // First check listing_type for ready_to_move/under_development
+            if (listingTypeValue === 'ready_to_move' || listingTypeValue === 'under_development') {
+                return listingTypeValue;
             }
-            return null; // For 'sale' and 'rent', property_status is null
+            // Then check status field for new/resell (which map to new/resale)
+            if (statusValue === 'new' || statusValue === 'resell') {
+                return statusValue === 'resell' ? 'resale' : 'new';
+            }
+            return null;
         })(),
         description: formData.get('description'),
         builder: formData.get('builder') || null,
@@ -5620,7 +5700,6 @@ function populateTestimonialForm(testimonial) {
     document.getElementById('testimonialServiceType').value = testimonial.service_type || '';
     document.getElementById('testimonialRating').value = testimonial.rating || '';
     document.getElementById('testimonialMessage').value = testimonial.message || '';
-    document.getElementById('testimonialIsApproved').checked = testimonial.is_approved || false;
 }
 
 // Handle Testimonial Submit
@@ -5700,7 +5779,6 @@ async function handleTestimonialSubmit(e) {
         service_type: serviceType,
         rating: rating,
         message: message,
-        is_approved: formData.get('is_approved') === 'on',
         is_featured: false
     };
 
@@ -6707,7 +6785,6 @@ function openBlogModal(blogId = null) {
     }
     
     document.getElementById('blogAuthor').value = 'Tirumakudalu Properties';
-    document.getElementById('blogIsActive').checked = true;
     clearBlogTags();
     clearBlogImagePreview();
     
@@ -6764,9 +6841,6 @@ function populateBlogForm(blog) {
     } else if (blogContentEditor) {
         blogContentEditor.setContents([]);
     }
-    
-    document.getElementById('blogIsFeatured').checked = blog.is_featured || false;
-    document.getElementById('blogIsActive').checked = blog.is_active !== undefined ? blog.is_active : true;
     
     // Load image if exists
     if (blog.image_url) {
@@ -6959,8 +7033,6 @@ async function handleBlogSubmit(e) {
     // Get optional fields
     const category = formData.get('category')?.trim() || null;
     const author = formData.get('author')?.trim() || 'Tirumakudalu Properties';
-    const isFeatured = formData.get('is_featured') === 'on';
-    const isActive = formData.get('is_active') === 'on';
     
     const blogData = {
         title: title,
@@ -6969,9 +7041,7 @@ async function handleBlogSubmit(e) {
         category: category,
         tags: tags,
         author: author,
-        image_url: imageUrl,
-        is_featured: isFeatured,
-        is_active: isActive
+        image_url: imageUrl
     };
 
     // Show loading state

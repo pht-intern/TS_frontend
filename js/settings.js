@@ -475,9 +475,6 @@ let allStates = [];
                 categoryNameInput.value = '';
             }
             categoryForm.reset();
-            // Ensure is_active checkbox is checked by default
-            const categoryIsActiveInput = document.getElementById('categoryIsActive');
-            if (categoryIsActiveInput) categoryIsActiveInput.checked = true;
             categoryModal.classList.add('active');
         });
     }
@@ -497,10 +494,9 @@ let allStates = [];
             e.preventDefault();
             const categoryNameInput = document.getElementById('categoryName');
             const categoryDisplayNameInput = document.getElementById('categoryDisplayName');
-            const categoryIsActiveInput = document.getElementById('categoryIsActive');
             const categoryIdInput = document.getElementById('categoryId');
             
-            if (!categoryNameInput || !categoryDisplayNameInput || !categoryIsActiveInput) {
+            if (!categoryNameInput || !categoryDisplayNameInput) {
                 showNotification('Form fields not found', 'error');
                 return;
             }
@@ -524,8 +520,7 @@ let allStates = [];
             
             const formData = {
                 name: normalizedName,
-                display_name: displayName,
-                is_active: categoryIsActiveInput.checked
+                display_name: displayName
             };
             
             const categoryId = categoryIdInput ? categoryIdInput.value : '';
@@ -612,12 +607,6 @@ let allStates = [];
                 unitTypeNameInput.value = '';
             }
             unitTypeForm.reset();
-            // Ensure is_active checkbox is checked by default
-            const unitTypeIsActiveInput = document.getElementById('unitTypeIsActive');
-            if (unitTypeIsActiveInput) unitTypeIsActiveInput.checked = true;
-            // Set default bedrooms to 0
-            const unitTypeBedroomsInput = document.getElementById('unitTypeBedrooms');
-            if (unitTypeBedroomsInput) unitTypeBedroomsInput.value = '0';
             unitTypeModal.classList.add('active');
         });
     }
@@ -637,11 +626,9 @@ let allStates = [];
             e.preventDefault();
             const unitTypeNameInput = document.getElementById('unitTypeName');
             const unitTypeDisplayNameInput = document.getElementById('unitTypeDisplayName');
-            const unitTypeBedroomsInput = document.getElementById('unitTypeBedrooms');
-            const unitTypeIsActiveInput = document.getElementById('unitTypeIsActive');
             const unitTypeIdInput = document.getElementById('unitTypeId');
             
-            if (!unitTypeNameInput || !unitTypeDisplayNameInput || !unitTypeBedroomsInput || !unitTypeIsActiveInput) {
+            if (!unitTypeNameInput || !unitTypeDisplayNameInput) {
                 showNotification('Form fields not found', 'error');
                 return;
             }
@@ -650,7 +637,6 @@ let allStates = [];
             const isEdit = !!unitTypeId;
             const unitTypeName = unitTypeNameInput.value.trim();
             const displayName = unitTypeDisplayNameInput.value.trim();
-            const bedrooms = parseInt(unitTypeBedroomsInput.value);
             
             // Validate display name (always required)
             if (!displayName) {
@@ -675,11 +661,6 @@ let allStates = [];
                 }
             }
             
-            if (isNaN(bedrooms) || bedrooms < 0) {
-                showNotification('Bedrooms must be a valid non-negative number', 'error');
-                return;
-            }
-            
             // Build form data based on whether we're creating or editing
             let formData;
             if (!isEdit) {
@@ -687,16 +668,12 @@ let allStates = [];
                 const normalizedName = unitTypeName.toUpperCase().replace(/\s+/g, '');
                 formData = {
                     name: normalizedName,
-                    display_name: displayName,
-                    bedrooms: bedrooms,
-                    is_active: unitTypeIsActiveInput.checked
+                    display_name: displayName
                 };
             } else {
                 // When editing, don't send name (backend doesn't update it anyway)
                 formData = {
-                    display_name: displayName,
-                    bedrooms: bedrooms,
-                    is_active: unitTypeIsActiveInput.checked
+                    display_name: displayName
                 };
             }
             
@@ -767,7 +744,6 @@ let allStates = [];
                     categoryNameInput.value = data.category.name || '';
                     categoryNameInput.disabled = true; // Prevent changing category name to avoid breaking references
                     document.getElementById('categoryDisplayName').value = data.category.display_name || '';
-                    document.getElementById('categoryIsActive').checked = data.category.is_active !== false;
                     categoryModal.classList.add('active');
                 } else {
                     showNotification(data?.error || data?.message || 'Failed to load category data', 'error');
@@ -842,8 +818,6 @@ let allStates = [];
                     unitTypeNameInput.value = data.unit_type.name || '';
                     unitTypeNameInput.disabled = true; // Prevent changing unit type name to avoid breaking references
                     document.getElementById('unitTypeDisplayName').value = data.unit_type.display_name || '';
-                    document.getElementById('unitTypeBedrooms').value = data.unit_type.bedrooms || 0;
-                    document.getElementById('unitTypeIsActive').checked = data.unit_type.is_active !== false;
                     unitTypeModal.classList.add('active');
                 } else {
                     showNotification(data?.error || data?.message || 'Failed to load unit type data', 'error');

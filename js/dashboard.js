@@ -3030,82 +3030,98 @@ function initializeStep2EventListeners(propertyType) {
         });
     }
     
-    // Auto-calculate carpet area from super builtup area (75% of super builtup area)
+    // Auto-calculate carpet area from super builtup area or buildup area (75% of source area)
+    // This works for all property types that have these fields (both add and edit modes)
     const superBuildupAreaInput = document.getElementById('residentialSuperBuildupArea');
+    const buildupAreaInput = document.getElementById('residentialBuildupArea');
     const carpetAreaInput = document.getElementById('residentialCarpetArea');
     
-    if (superBuildupAreaInput && carpetAreaInput) {
-        // Track if user has manually edited carpet area after form load
-        let carpetAreaManuallyEdited = false;
-        let isAutoCalculating = false; // Flag to prevent triggering manual edit during auto-calculation
-        let lastCalculatedSuperBuildupArea = null; // Track last calculated super builtup area to detect changes
+    // Use super builtup area if available, otherwise use buildup area
+    const sourceAreaInput = superBuildupAreaInput || buildupAreaInput;
+    
+    if (sourceAreaInput && carpetAreaInput) {
+        // Store tracking variables in a way that can be accessed after field population
+        const trackingData = {
+            carpetAreaManuallyEdited: false,
+            isAutoCalculating: false,
+            lastCalculatedSourceArea: null
+        };
+        
+        // Initialize last calculated source area if it already has a value (for edit mode)
+        const initializeTracking = () => {
+            if (sourceAreaInput.value) {
+                const existingSourceArea = parseFloat(sourceAreaInput.value);
+                if (existingSourceArea && existingSourceArea > 0) {
+                    trackingData.lastCalculatedSourceArea = existingSourceArea;
+                }
+            }
+        };
+        
+        // Initialize immediately if value exists
+        initializeTracking();
+        
+        // Also expose initialization function for use after field population in edit mode
+        sourceAreaInput.dataset.initializeTracking = 'true';
+        window.reinitializeCarpetAreaTracking = initializeTracking;
         
         // Track manual changes to carpet area (only if not auto-calculating)
         carpetAreaInput.addEventListener('input', () => {
-            if (!isAutoCalculating && carpetAreaInput.value && carpetAreaInput.value.trim() !== '') {
-                carpetAreaManuallyEdited = true;
+            if (!trackingData.isAutoCalculating && carpetAreaInput.value && carpetAreaInput.value.trim() !== '') {
+                trackingData.carpetAreaManuallyEdited = true;
             }
         });
         
-        // Auto-calculate when super builtup area is entered or changed
-        superBuildupAreaInput.addEventListener('input', () => {
-            const superBuildupArea = parseFloat(superBuildupAreaInput.value);
+        // Auto-calculate when source area (super builtup or buildup) is entered or changed
+        sourceAreaInput.addEventListener('input', () => {
+            const sourceArea = parseFloat(sourceAreaInput.value);
             
-            if (superBuildupArea && superBuildupArea > 0) {
-                // Calculate carpet area as 75% of super builtup area
-                const calculatedCarpetArea = superBuildupArea * 0.75;
+            if (sourceArea && sourceArea > 0) {
+                // Calculate carpet area as 75% of source area
+                const calculatedCarpetArea = sourceArea * 0.75;
                 
-                // Check if super builtup area has changed (for existing properties)
-                const superBuildupAreaChanged = lastCalculatedSuperBuildupArea === null || 
-                                               Math.abs(superBuildupArea - lastCalculatedSuperBuildupArea) > 0.01;
+                // Check if source area has changed (for existing properties in edit mode)
+                const sourceAreaChanged = trackingData.lastCalculatedSourceArea === null || 
+                                        Math.abs(sourceArea - trackingData.lastCalculatedSourceArea) > 0.01;
                 
-                // If super builtup area changed, reset manual edit flag to allow auto-calculation
-                if (superBuildupAreaChanged) {
-                    carpetAreaManuallyEdited = false;
+                // If source area changed, reset manual edit flag to allow auto-calculation
+                if (sourceAreaChanged) {
+                    trackingData.carpetAreaManuallyEdited = false;
                 }
                 
-                lastCalculatedSuperBuildupArea = superBuildupArea;
+                trackingData.lastCalculatedSourceArea = sourceArea;
                 
                 // Set flag to prevent triggering manual edit detection
-                isAutoCalculating = true;
+                trackingData.isAutoCalculating = true;
                 
-                // Always auto-calculate carpet area when super builtup area is entered or changed
+                // Always auto-calculate carpet area when source area is entered or changed
                 carpetAreaInput.value = calculatedCarpetArea.toFixed(2);
                 
                 // Reset flag after auto-calculation
                 setTimeout(() => {
-                    isAutoCalculating = false;
+                    trackingData.isAutoCalculating = false;
                 }, 0);
-            } else if (!superBuildupArea || superBuildupArea <= 0) {
-                // Clear carpet area if super builtup area is cleared (only if not manually edited)
-                isAutoCalculating = true;
-                lastCalculatedSuperBuildupArea = null;
+            } else if (!sourceArea || sourceArea <= 0) {
+                // Clear carpet area if source area is cleared (only if not manually edited)
+                trackingData.isAutoCalculating = true;
+                trackingData.lastCalculatedSourceArea = null;
                 
-                if (!carpetAreaManuallyEdited) {
+                if (!trackingData.carpetAreaManuallyEdited) {
                     carpetAreaInput.value = '';
                 }
                 
                 setTimeout(() => {
-                    isAutoCalculating = false;
+                    trackingData.isAutoCalculating = false;
                 }, 0);
             }
         });
         
-        // Initialize last calculated super builtup area if it already has a value
-        if (superBuildupAreaInput.value) {
-            const existingSuperBuildupArea = parseFloat(superBuildupAreaInput.value);
-            if (existingSuperBuildupArea && existingSuperBuildupArea > 0) {
-                lastCalculatedSuperBuildupArea = existingSuperBuildupArea;
-            }
-        }
-        
-        // Reset manual edit flag when super builtup area is cleared completely
-        superBuildupAreaInput.addEventListener('blur', () => {
-            const superBuildupArea = parseFloat(superBuildupAreaInput.value);
-            if (!superBuildupArea || superBuildupArea <= 0) {
-                // Reset flag when super builtup area is empty
+        // Reset manual edit flag when source area is cleared completely
+        sourceAreaInput.addEventListener('blur', () => {
+            const sourceArea = parseFloat(sourceAreaInput.value);
+            if (!sourceArea || sourceArea <= 0) {
+                // Reset flag when source area is empty
                 if (carpetAreaInput.value === '') {
-                    carpetAreaManuallyEdited = false;
+                    trackingData.carpetAreaManuallyEdited = false;
                 }
             }
         });
@@ -3925,6 +3941,13 @@ function populateStep2Fields(property) {
             if (carpetInput) carpetInput.value = property.carpet_area;
         }
         
+        // Re-initialize carpet area tracking after populating fields (for edit mode)
+        if (typeof window.reinitializeCarpetAreaTracking === 'function') {
+            setTimeout(() => {
+                window.reinitializeCarpetAreaTracking();
+            }, 100);
+        }
+        
         // Set unit type buttons - match by bedrooms and unit_type
         const bedrooms = property.bedrooms || 1;
         const unitType = property.unit_type || 'bhk';
@@ -4024,6 +4047,13 @@ function populateStep2Fields(property) {
         const carpetInput = document.getElementById('residentialCarpetArea');
         if (carpetInput) {
             carpetInput.value = property.carpet_area || '';
+        }
+        
+        // Re-initialize carpet area tracking after populating fields (for edit mode)
+        if (typeof window.reinitializeCarpetAreaTracking === 'function') {
+            setTimeout(() => {
+                window.reinitializeCarpetAreaTracking();
+            }, 100);
         }
         
         // Bedrooms count (for villas)

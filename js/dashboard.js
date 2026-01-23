@@ -1805,7 +1805,11 @@ async function openResidentialPropertyModal(propertyId = null) {
 
     // Get property ID input reference BEFORE resetting form
     const propertyIdInput = document.getElementById('residentialPropertyId');
+    const propertyTypeCacheInput = document.getElementById('residentialPropertyTypeCache');
     const tempPropertyId = propertyId;
+    
+    // Store property type cache before reset (if it exists)
+    const tempPropertyType = propertyTypeCacheInput ? propertyTypeCacheInput.value : '';
     
     // Clear gallery first to avoid conflicts
     clearResidentialImagePreviews();
@@ -1818,6 +1822,18 @@ async function openResidentialPropertyModal(propertyId = null) {
         propertyIdInput.value = tempPropertyId;
     } else if (propertyIdInput) {
         propertyIdInput.value = '';
+    }
+    
+    // CRITICAL FIX: Restore property type cache immediately after reset
+    if (tempPropertyType && propertyTypeCacheInput) {
+        propertyTypeCacheInput.value = tempPropertyType;
+        // Also restore the property type select value from cache
+        const propertyTypeSelect = document.getElementById('residentialPropertyType');
+        if (propertyTypeSelect && tempPropertyType) {
+            propertyTypeSelect.value = tempPropertyType;
+        }
+    } else if (propertyTypeCacheInput) {
+        propertyTypeCacheInput.value = '';
     }
     
     // Initialize gallery (add one empty item if new property)
@@ -1923,6 +1939,15 @@ async function openResidentialPropertyModal(propertyId = null) {
             
             // Double-check property ID after population (in case form reset cleared it)
             if (propertyIdInput) propertyIdInput.value = property.id || propertyId;
+            
+            // Restore property type from cache if it exists
+            const propertyTypeCacheInput = document.getElementById('residentialPropertyTypeCache');
+            const propertyTypeSelect = document.getElementById('residentialPropertyType');
+            if (propertyTypeCacheInput && propertyTypeCacheInput.value && propertyTypeSelect) {
+                propertyTypeSelect.value = propertyTypeCacheInput.value;
+                // Trigger change to ensure Step 2 content is loaded
+                handleResidentialPropertyTypeChange();
+            }
         } catch (error) {
             console.error('Error loading property:', error);
             showNotification('Failed to load property details.', 'error');
@@ -1971,10 +1996,16 @@ function resetResidentialPropertySteps() {
         step2Container.innerHTML = '';
     }
     
-    // Reset property type to empty to clear Step 2
+    // Reset property type to empty to clear Step 2, but restore from cache if it exists
     const propertyTypeSelect = document.getElementById('residentialPropertyType');
+    const propertyTypeCacheInput = document.getElementById('residentialPropertyTypeCache');
     if (propertyTypeSelect) {
+        // Clear the select first
         propertyTypeSelect.value = '';
+        // Restore from cache if it exists
+        if (propertyTypeCacheInput && propertyTypeCacheInput.value) {
+            propertyTypeSelect.value = propertyTypeCacheInput.value;
+        }
     }
     
     // Show step 1
@@ -2488,6 +2519,12 @@ function handleResidentialPropertyTypeChange() {
     
     const selectedType = propertyType.value;
     
+    // Store property type in cache field
+    const propertyTypeCacheInput = document.getElementById('residentialPropertyTypeCache');
+    if (propertyTypeCacheInput) {
+        propertyTypeCacheInput.value = selectedType || '';
+    }
+    
     // Get current step to ensure we're on step 1 or 2
     const currentStep = getCurrentResidentialPropertyStep();
     
@@ -2925,7 +2962,6 @@ function getPlotPropertiesStep2HTML() {
             <select id="residentialStatus" name="status" required>
                 <option value="">Select Status</option>
                 <option value="new">New</option>
-                <option value="resell">Resell</option>
             </select>
         </div>
         <div class="dashboard-form-group">
@@ -3802,6 +3838,13 @@ function populateResidentialForm(property) {
         
         if (inferredPropertyType) {
             propertyTypeSelect.value = inferredPropertyType;
+            
+            // Store property type in cache field
+            const propertyTypeCacheInput = document.getElementById('residentialPropertyTypeCache');
+            if (propertyTypeCacheInput) {
+                propertyTypeCacheInput.value = inferredPropertyType;
+            }
+            
             // Trigger change to load Step 2 content
             handleResidentialPropertyTypeChange();
             
@@ -3944,22 +3987,30 @@ function populateStep2Fields(property) {
     // Status dropdown now shows new/resell (what was in listing_type)
     // Listing Type dropdown now shows sale/rent/under_construction/ready_to_move (what was in status)
     
-    // Populate Status field (now contains new/resell)
+    // Populate Status field (now contains new/resell, but only new for plot properties)
     const statusInput = document.getElementById('residentialStatus');
     if (statusInput) {
-        // Check listing_type first (new/resell)
-        if (property.listing_type === 'new' || property.listing_type === 'resell') {
-            statusInput.value = property.listing_type;
-        }
-        // Check property_status (new/resale map to new/resell)
-        else if (property.property_status === 'new') {
-            statusInput.value = 'new';
-        } else if (property.property_status === 'resale') {
-            statusInput.value = 'resell';
-        }
-        // If status field has new/resale, use that
-        else if (property.status === 'new' || property.status === 'resale') {
-            statusInput.value = property.status === 'resale' ? 'resell' : 'new';
+        // For plot properties, only allow 'new'
+        if (propertyType === 'plot_properties') {
+            if (property.listing_type === 'new' || property.property_status === 'new' || property.status === 'new') {
+                statusInput.value = 'new';
+            }
+        } else {
+            // For other property types, allow both new and resell
+            // Check listing_type first (new/resell)
+            if (property.listing_type === 'new' || property.listing_type === 'resell') {
+                statusInput.value = property.listing_type;
+            }
+            // Check property_status (new/resale map to new/resell)
+            else if (property.property_status === 'new') {
+                statusInput.value = 'new';
+            } else if (property.property_status === 'resale') {
+                statusInput.value = 'resell';
+            }
+            // If status field has new/resale, use that
+            else if (property.status === 'new' || property.status === 'resale') {
+                statusInput.value = property.status === 'resale' ? 'resell' : 'new';
+            }
         }
     }
     
@@ -4614,10 +4665,10 @@ async function handlePlotPropertySubmit(e) {
         listing_type: (() => {
             // For plot properties, listing_type field now has ready_to_move/under_development
             const listingTypeValue = formData.get('listing_type');
-            // Get from status field instead (which now has new/resell)
+            // Get from status field instead (which now only has new for plot properties)
             const statusValue = formData.get('status');
-            if (statusValue === 'new' || statusValue === 'resell') {
-                return statusValue === 'resell' ? 'resell' : 'new';
+            if (statusValue === 'new') {
+                return 'new';
             }
             return null;
         })(),
@@ -4629,15 +4680,15 @@ async function handlePlotPropertySubmit(e) {
         property_status: (() => {
             // property_status stores: resale, new, ready_to_move, under_construction, under_development
             const listingTypeValue = formData.get('listing_type'); // This now has ready_to_move/under_development
-            const statusValue = formData.get('status'); // This now has new/resell
+            const statusValue = formData.get('status'); // This now only has new for plot properties
             
             // First check listing_type for ready_to_move/under_development
             if (listingTypeValue === 'ready_to_move' || listingTypeValue === 'under_development') {
                 return listingTypeValue;
             }
-            // Then check status field for new/resell (which map to new/resale)
-            if (statusValue === 'new' || statusValue === 'resell') {
-                return statusValue === 'resell' ? 'resale' : 'new';
+            // Then check status field for new (which maps to new)
+            if (statusValue === 'new') {
+                return 'new';
             }
             return null;
         })(),

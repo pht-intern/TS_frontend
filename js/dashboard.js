@@ -499,6 +499,17 @@ function initDashboard() {
         });
     }
 
+    // Persist Direction selection (apartments)
+    const directionSelect = document.getElementById('residentialDirection');
+    if (directionSelect) {
+        directionSelect.addEventListener('change', () => {
+            const directionCacheInput = document.getElementById('residentialDirectionCache');
+            if (directionCacheInput) {
+                directionCacheInput.value = directionSelect.value || '';
+            }
+        });
+    }
+
     // Gallery management for residential property form
     const residentialAddImageBtn = document.getElementById('residentialAddImageBtn');
     if (residentialAddImageBtn) {
@@ -847,12 +858,22 @@ function initDashboard() {
         if (e.key === 'categories_updated') {
             // Reload categories when they are updated in settings
             loadCategoriesForPropertyTypeDropdown();
+        } else if (e.key === 'unit_types_updated') {
+            // Reload unit types when they are updated in settings
+            console.log('Dashboard: Unit types storage event received, refreshing unit types...');
+            loadUnitTypesForResidentialForm();
         }
     });
     
     // Also listen for custom event (for same-tab updates)
     window.addEventListener('categoriesUpdated', function() {
         loadCategoriesForPropertyTypeDropdown();
+    });
+    
+    // Listen for unit types updates (for same-tab updates)
+    window.addEventListener('unitTypesUpdated', function() {
+        console.log('Dashboard: Unit types updated event received, refreshing unit types...');
+        loadUnitTypesForResidentialForm();
     });
     
     // Initialize stat card click tracking
@@ -1864,44 +1885,35 @@ async function openResidentialPropertyModal(propertyId = null) {
         const oldCityInput = cityInput;
         const newCityInput = oldCityInput.cloneNode(true);
         oldCityInput.parentNode.replaceChild(newCityInput, oldCityInput);
-        
-        // Add input and blur event listeners to handle both typing and selection
+
         let cityChangeTimeout;
         newCityInput.addEventListener('input', async function() {
-            // Clear previous timeout
             if (cityChangeTimeout) {
                 clearTimeout(cityChangeTimeout);
             }
-            
-            // Debounce to avoid too many API calls while typing
+
             cityChangeTimeout = setTimeout(async () => {
                 const selectedCity = this.value;
                 if (selectedCity && selectedCity.trim()) {
-                    // Extract city name if it's in format "City, State"
                     const cityName = selectedCity.includes(',') ? selectedCity.split(',')[0].trim() : selectedCity.trim();
-                    console.log('City entered in modal:', selectedCity, 'Extracted city name:', cityName);
                     await loadLocalitiesForResidentialForm(cityName);
                 } else {
-                    // Clear localities if city is cleared
                     const localityDatalist = document.getElementById('residentialLocalityList');
                     const localityInput = document.getElementById('residentialLocality');
                     if (localityDatalist) {
-                        localityDatalist.innerHTML = '';
+                        localityDatalist.innerHTML = '<option value="">Select Locality/Area</option>';
                     }
                     if (localityInput) {
                         localityInput.value = '';
                     }
                 }
-            }, 500); // Wait 500ms after user stops typing
+            }, 500);
         });
-        
-        // Also listen for blur event to load localities when user selects from dropdown
+
         newCityInput.addEventListener('blur', async function() {
             const selectedCity = this.value;
             if (selectedCity && selectedCity.trim()) {
-                // Extract city name if it's in format "City, State"
                 const cityName = selectedCity.includes(',') ? selectedCity.split(',')[0].trim() : selectedCity.trim();
-                console.log('City selected in modal:', selectedCity, 'Extracted city name:', cityName);
                 await loadLocalitiesForResidentialForm(cityName);
             }
         });
@@ -2172,6 +2184,29 @@ function showResidentialPropertyStep(stepNumber) {
                 }, stepNumber === 3 ? 0 : 100);
             }
         }, stepNumber === 3 ? 0 : 50);
+        
+        // Check if unit types need refresh when showing Step 2
+        if (stepNumber === 2) {
+            const residentialPropertyForm = document.getElementById('residentialPropertyForm');
+            if (residentialPropertyForm && residentialPropertyForm.getAttribute('data-unit-types-refresh-needed') === 'true') {
+                // Remove the flag
+                residentialPropertyForm.removeAttribute('data-unit-types-refresh-needed');
+                
+                // Refresh unit type buttons
+                const propertyTypeSelect = document.getElementById('residentialPropertyType');
+                const currentPropertyType = propertyTypeSelect ? propertyTypeSelect.value : 'apartments';
+                
+                const unitTypeButtonsContainer = currentStep.querySelector('.dashboard-unit-type-buttons');
+                if (unitTypeButtonsContainer) {
+                    unitTypeButtonsContainer.innerHTML = generateUnitTypeButtonsHTML(currentPropertyType);
+                    
+                    // Re-initialize event listeners for the new buttons
+                    setTimeout(() => {
+                        initializeStep2EventListeners(currentPropertyType);
+                    }, 100);
+                }
+            }
+        }
     } else {
         console.error('Step element not found for step:', stepNumber);
     }
@@ -2629,6 +2664,25 @@ function loadStep2Content(propertyType, container) {
     
     // Initialize event listeners after content is loaded
     initializeStep2EventListeners(propertyType);
+
+    // Restore cached direction after Step 2 is re-rendered
+    if (propertyType === 'apartments') {
+        const directionCacheInput = document.getElementById('residentialDirectionCache');
+        const directionSelect = document.getElementById('residentialDirection');
+        if (directionCacheInput && directionSelect && directionCacheInput.value) {
+            safeSetSelectValueFromCandidates(directionSelect, [directionCacheInput.value]);
+        }
+    }
+
+    // Restore cached villa type after Step 2 is re-rendered
+    if (propertyType === 'villas' || propertyType === 'individual_house') {
+        const villaTypeCacheInput = document.getElementById('residentialVillaTypeCache');
+        const villaTypeSelect = document.getElementById('residentialVillaType');
+        if (villaTypeCacheInput && villaTypeSelect && villaTypeCacheInput.value) {
+            safeSetSelectValueFromCandidates(villaTypeSelect, [villaTypeCacheInput.value]);
+            villaTypeSelect.dispatchEvent(new Event('change'));
+        }
+    }
 }
 
 // Get HTML for Apartments Step 2
@@ -2960,6 +3014,10 @@ function initializeStep2EventListeners(propertyType) {
     const villaTypeSelect = document.getElementById('residentialVillaType');
     if (villaTypeSelect) {
         villaTypeSelect.addEventListener('change', () => {
+            const villaTypeCacheInput = document.getElementById('residentialVillaTypeCache');
+            if (villaTypeCacheInput) {
+                villaTypeCacheInput.value = villaTypeSelect.value || '';
+            }
             const plotAreaContainer = document.getElementById('residentialPlotAreaContainer');
             const plotAreaInput = document.getElementById('residentialPlotArea');
             
@@ -2976,17 +3034,19 @@ function initializeStep2EventListeners(propertyType) {
         });
     }
     
-    // Auto-calculate length and breadth from plot area
+    // Auto-calculate length and breadth from plot area / carpet area
     const plotAreaInput = document.getElementById('residentialPlotArea');
     const lengthInput = document.getElementById('residentialLength');
     const breadthInput = document.getElementById('residentialBreadth');
+    const carpetAreaForDimensionsInput = document.getElementById('residentialCarpetArea');
     
-    if (plotAreaInput && lengthInput && breadthInput) {
+    if (lengthInput && breadthInput) {
         // Track if user has manually edited length or breadth after form load
         let lengthManuallyEdited = false;
         let breadthManuallyEdited = false;
         let isAutoCalculating = false; // Flag to prevent triggering manual edit during auto-calculation
         let lastCalculatedPlotArea = null; // Track last calculated plot area to detect changes
+        let lastCalculatedCarpetArea = null; // Track last calculated carpet area to detect changes
         
         // Track manual changes to length (only if not auto-calculating)
         lengthInput.addEventListener('input', () => {
@@ -3002,79 +3062,111 @@ function initializeStep2EventListeners(propertyType) {
             }
         });
         
-        // Auto-calculate when plot area is entered or changed
-        plotAreaInput.addEventListener('input', () => {
-            const plotArea = parseFloat(plotAreaInput.value);
-            
-            if (plotArea && plotArea > 0) {
-                // Calculate assuming square plot: length = breadth = sqrt(plot_area)
-                const calculatedDimension = Math.sqrt(plotArea);
-                
-                // Check if plot area has changed (for existing properties)
-                const plotAreaChanged = lastCalculatedPlotArea === null || 
-                                       Math.abs(plotArea - lastCalculatedPlotArea) > 0.01;
-                lastCalculatedPlotArea = plotArea;
-                
-                // Set flag to prevent triggering manual edit detection
-                isAutoCalculating = true;
-                
-                // Auto-fill length if:
-                // 1. Field is empty, OR
-                // 2. Plot area changed and length hasn't been manually edited
-                if (lengthInput.value === '' || (plotAreaChanged && !lengthManuallyEdited)) {
-                    lengthInput.value = calculatedDimension.toFixed(2);
-                }
-                
-                // Auto-fill breadth if:
-                // 1. Field is empty, OR
-                // 2. Plot area changed and breadth hasn't been manually edited
-                if (breadthInput.value === '' || (plotAreaChanged && !breadthManuallyEdited)) {
-                    breadthInput.value = calculatedDimension.toFixed(2);
-                }
-                
-                // Reset flag after auto-calculation
-                setTimeout(() => {
-                    isAutoCalculating = false;
-                }, 0);
-            } else if (!plotArea || plotArea <= 0) {
-                // Clear length and breadth if plot area is cleared (only if not manually edited)
-                isAutoCalculating = true;
-                lastCalculatedPlotArea = null;
-                
-                if (!lengthManuallyEdited) {
-                    lengthInput.value = '';
-                }
-                if (!breadthManuallyEdited) {
-                    breadthInput.value = '';
-                }
-                
-                setTimeout(() => {
-                    isAutoCalculating = false;
-                }, 0);
-            }
-        });
+        // Helper to decide if plot area should drive dimensions
+        const getPlotAreaValue = () => {
+            if (!plotAreaInput) return null;
+            const v = parseFloat(plotAreaInput.value);
+            return v && v > 0 ? v : null;
+        };
         
-        // Initialize last calculated plot area if plot area already has a value
-        if (plotAreaInput.value) {
-            const existingPlotArea = parseFloat(plotAreaInput.value);
-            if (existingPlotArea && existingPlotArea > 0) {
-                lastCalculatedPlotArea = existingPlotArea;
+        // Auto-calculate from plot area when plot area is entered or changed
+        if (plotAreaInput) {
+            plotAreaInput.addEventListener('input', () => {
+                const plotArea = parseFloat(plotAreaInput.value);
+                
+                if (plotArea && plotArea > 0) {
+                    // Calculate assuming square plot: length = breadth = sqrt(plot_area)
+                    const calculatedDimension = Math.sqrt(plotArea);
+                    
+                    // Check if plot area has changed (for existing properties)
+                    const plotAreaChanged = lastCalculatedPlotArea === null || 
+                                           Math.abs(plotArea - lastCalculatedPlotArea) > 0.01;
+                    lastCalculatedPlotArea = plotArea;
+                    
+                    // Set flag to prevent triggering manual edit detection
+                    isAutoCalculating = true;
+                    
+                    // Auto-fill length if:
+                    // 1. Field is empty, OR
+                    // 2. Plot area changed and length hasn't been manually edited
+                    if (lengthInput.value === '' || (plotAreaChanged && !lengthManuallyEdited)) {
+                        lengthInput.value = calculatedDimension.toFixed(2);
+                    }
+                    
+                    // Auto-fill breadth if:
+                    // 1. Field is empty, OR
+                    // 2. Plot area changed and breadth hasn't been manually edited
+                    if (breadthInput.value === '' || (plotAreaChanged && !breadthManuallyEdited)) {
+                        breadthInput.value = calculatedDimension.toFixed(2);
+                    }
+                    
+                    // Reset flag after auto-calculation
+                    setTimeout(() => {
+                        isAutoCalculating = false;
+                    }, 0);
+                } else if (!plotArea || plotArea <= 0) {
+                    // When plot area is cleared, allow carpet area to drive dimensions again
+                    lastCalculatedPlotArea = null;
+                }
+            });
+            
+            // Initialize last calculated plot area if plot area already has a value
+            if (plotAreaInput.value) {
+                const existingPlotArea = parseFloat(plotAreaInput.value);
+                if (existingPlotArea && existingPlotArea > 0) {
+                    lastCalculatedPlotArea = existingPlotArea;
+                }
             }
+            
+            // Reset manual edit flags when plot area is cleared completely
+            plotAreaInput.addEventListener('blur', () => {
+                const plotArea = parseFloat(plotAreaInput.value);
+                if (!plotArea || plotArea <= 0) {
+                    // Reset flags when plot area is empty
+                    if (lengthInput.value === '') {
+                        lengthManuallyEdited = false;
+                    }
+                    if (breadthInput.value === '') {
+                        breadthManuallyEdited = false;
+                    }
+                }
+            });
         }
         
-        // Reset manual edit flags when plot area is cleared completely
-        plotAreaInput.addEventListener('blur', () => {
-            const plotArea = parseFloat(plotAreaInput.value);
-            if (!plotArea || plotArea <= 0) {
-                // Reset flags when plot area is empty
-                if (lengthInput.value === '') {
-                    lengthManuallyEdited = false;
+        // Auto-calculate from carpet area when plot area is not provided
+        if (carpetAreaForDimensionsInput) {
+            carpetAreaForDimensionsInput.addEventListener('input', () => {
+                // If plot area exists and has a value, don't override plot-based dimensions
+                if (getPlotAreaValue() !== null) {
+                    return;
                 }
-                if (breadthInput.value === '') {
-                    breadthManuallyEdited = false;
+                
+                const carpetArea = parseFloat(carpetAreaForDimensionsInput.value);
+                if (carpetArea && carpetArea > 0) {
+                    // Approximate dimensions assuming rectangle close to square
+                    const calculatedDimension = Math.sqrt(carpetArea);
+                    
+                    const carpetAreaChanged = lastCalculatedCarpetArea === null ||
+                                             Math.abs(carpetArea - lastCalculatedCarpetArea) > 0.01;
+                    lastCalculatedCarpetArea = carpetArea;
+                    
+                    isAutoCalculating = true;
+                    
+                    if (lengthInput.value === '' || (carpetAreaChanged && !lengthManuallyEdited)) {
+                        lengthInput.value = calculatedDimension.toFixed(2);
+                    }
+                    if (breadthInput.value === '' || (carpetAreaChanged && !breadthManuallyEdited)) {
+                        breadthInput.value = calculatedDimension.toFixed(2);
+                    }
+                    
+                    setTimeout(() => {
+                        isAutoCalculating = false;
+                    }, 0);
+                } else {
+                    lastCalculatedCarpetArea = null;
                 }
-            }
-        });
+            });
+        }
     }
     
     // Auto-calculate carpet area from super builtup area or buildup area (75% of source area)
@@ -3235,13 +3327,14 @@ async function loadCitiesForResidentialForm() {
             const cityInput = document.getElementById('residentialCity');
             const cityDatalist = document.getElementById('residentialCityList');
             if (cityInput && cityDatalist && data.cities && Array.isArray(data.cities)) {
-                // Store current value before clearing
                 const currentValue = cityInput.value;
-                
-                // Clear existing options
+
                 cityDatalist.innerHTML = '';
-                
-                // If no active cities, show message
+                const placeholder = document.createElement('option');
+                placeholder.value = '';
+                placeholder.textContent = 'Select City';
+                cityDatalist.appendChild(placeholder);
+
                 if (data.cities.length === 0) {
                     const option = document.createElement('option');
                     option.value = '';
@@ -3249,14 +3342,12 @@ async function loadCitiesForResidentialForm() {
                     cityDatalist.appendChild(option);
                     return;
                 }
-                
-                // Group cities by state
+
                 const citiesByState = {};
                 data.cities.forEach(city => {
-                    // Handle both string and object formats
                     const cityName = typeof city === 'string' ? city : (city.name || '');
                     const state = typeof city === 'object' ? (city.state || 'Other') : 'Other';
-                    
+
                     if (cityName && cityName.trim()) {
                         if (!citiesByState[state]) {
                             citiesByState[state] = [];
@@ -3264,8 +3355,7 @@ async function loadCitiesForResidentialForm() {
                         citiesByState[state].push(cityName.trim());
                     }
                 });
-                
-                // Sort states and cities
+
                 const sortedStates = Object.keys(citiesByState).sort();
                 sortedStates.forEach(state => {
                     const cities = citiesByState[state].sort();
@@ -3276,16 +3366,22 @@ async function loadCitiesForResidentialForm() {
                         cityDatalist.appendChild(option);
                     });
                 });
-                
-                // Restore previous value if it exists
+
                 if (currentValue) {
                     cityInput.value = currentValue;
+                    if (!cityDatalist.querySelector(`option[value="${CSS.escape(currentValue)}"]`)) {
+                        const option = document.createElement('option');
+                        option.value = currentValue;
+                        option.textContent = currentValue;
+                        cityDatalist.appendChild(option);
+                    }
                 }
             }
         } else {
             console.error('Failed to load cities:', response.status, response.statusText);
             const cityDatalist = document.getElementById('residentialCityList');
             if (cityDatalist) {
+                cityDatalist.innerHTML = '';
                 const option = document.createElement('option');
                 option.value = '';
                 option.textContent = 'Error loading cities';
@@ -3296,6 +3392,7 @@ async function loadCitiesForResidentialForm() {
         console.error('Error loading cities:', error);
         const cityDatalist = document.getElementById('residentialCityList');
         if (cityDatalist) {
+            cityDatalist.innerHTML = '';
             const option = document.createElement('option');
             option.value = '';
             option.textContent = 'Error loading cities';
@@ -3308,11 +3405,10 @@ async function loadCitiesForResidentialForm() {
 async function loadLocalitiesForResidentialForm(cityName) {
     try {
         if (!cityName || cityName.trim() === '') {
-            // Clear locality datalist if no city is selected
             const localityDatalist = document.getElementById('residentialLocalityList');
             const localityInput = document.getElementById('residentialLocality');
             if (localityDatalist) {
-                localityDatalist.innerHTML = '';
+                localityDatalist.innerHTML = '<option value="">Select Locality/Area</option>';
             }
             if (localityInput) {
                 localityInput.value = '';
@@ -3334,59 +3430,54 @@ async function loadLocalitiesForResidentialForm(cityName) {
         
         if (response.ok) {
             const data = await response.json();
-            console.log('Localities API response for city "' + cityName + '":', data);
-            console.log('Number of localities received:', data.localities ? data.localities.length : 0);
             const localityInput = document.getElementById('residentialLocality');
             const localityDatalist = document.getElementById('residentialLocalityList');
             if (!localityInput || !localityDatalist) {
                 console.error('Locality input or datalist element not found: residentialLocality');
                 return;
             }
-            
-            // Store current value before clearing
+
             const currentValue = localityInput.value;
-            
-            // Clear existing options
             localityDatalist.innerHTML = '';
-            
+            const placeholder = document.createElement('option');
+            placeholder.value = '';
+            placeholder.textContent = 'Select Locality/Area';
+            localityDatalist.appendChild(placeholder);
+
             if (data.localities && Array.isArray(data.localities)) {
-                console.log('Processing localities array:', data.localities);
-                // If no localities found, show message
                 if (data.localities.length === 0) {
-                    console.warn('No localities found for city:', cityName);
                     const option = document.createElement('option');
                     option.value = '';
                     option.textContent = 'No areas available for this city';
                     localityDatalist.appendChild(option);
                     return;
                 }
-                
-                // Sort localities alphabetically
+
                 const sortedLocalities = [...data.localities].sort();
-                console.log('Sorted localities:', sortedLocalities);
-                
-                // Add localities to datalist
-                let addedCount = 0;
                 sortedLocalities.forEach(locality => {
                     if (locality && locality.trim()) {
                         const option = document.createElement('option');
                         option.value = locality.trim();
                         option.textContent = locality.trim();
                         localityDatalist.appendChild(option);
-                        addedCount++;
                     }
                 });
-                console.log(`Added ${addedCount} localities to datalist`);
-                
-                // Restore previous value if it exists
+
                 if (currentValue) {
                     localityInput.value = currentValue;
+                    if (!localityDatalist.querySelector(`option[value="${CSS.escape(currentValue)}"]`)) {
+                        const option = document.createElement('option');
+                        option.value = currentValue;
+                        option.textContent = currentValue;
+                        localityDatalist.appendChild(option);
+                    }
                 }
             }
         } else {
             console.error('Failed to load localities:', response.status, response.statusText);
             const localityDatalist = document.getElementById('residentialLocalityList');
             if (localityDatalist) {
+                localityDatalist.innerHTML = '';
                 const option = document.createElement('option');
                 option.value = '';
                 option.textContent = 'Error loading areas';
@@ -3397,6 +3488,7 @@ async function loadLocalitiesForResidentialForm(cityName) {
         console.error('Error loading localities:', error);
         const localityDatalist = document.getElementById('residentialLocalityList');
         if (localityDatalist) {
+            localityDatalist.innerHTML = '';
             const option = document.createElement('option');
             option.value = '';
             option.textContent = 'Error loading areas';
@@ -3566,6 +3658,31 @@ async function loadUnitTypesForResidentialForm() {
                     }
                     return (a.name || '').localeCompare(b.name || '');
                 });
+                
+                // If residential property modal is open, refresh the unit type buttons
+                const modal = document.getElementById('residentialPropertyModal');
+                if (modal && modal.classList.contains('active')) {
+                    const step2 = document.getElementById('residentialStep2');
+                    if (step2 && step2.style.display !== 'none') {
+                        const propertyTypeSelect = document.getElementById('residentialPropertyType');
+                        const currentPropertyType = propertyTypeSelect ? propertyTypeSelect.value : 'apartments';
+                        
+                        // Refresh unit type buttons
+                        const unitTypeButtonsContainer = step2.querySelector('.dashboard-unit-type-buttons');
+                        if (unitTypeButtonsContainer) {
+                            unitTypeButtonsContainer.innerHTML = generateUnitTypeButtonsHTML(currentPropertyType);
+                            
+                            // Re-initialize event listeners for the new buttons
+                            initializeStep2EventListeners(currentPropertyType);
+                        }
+                    } else {
+                        // If Step 2 is not currently visible, mark that unit types need refresh when Step 2 is shown
+                        const residentialPropertyForm = document.getElementById('residentialPropertyForm');
+                        if (residentialPropertyForm) {
+                            residentialPropertyForm.setAttribute('data-unit-types-refresh-needed', 'true');
+                        }
+                    }
+                }
             }
         } else {
             console.error('Failed to load unit types:', response.status, response.statusText);
@@ -3668,53 +3785,46 @@ function populateResidentialForm(property) {
         console.error('[Dashboard] populateResidentialForm: property is null or undefined');
         return;
     }
+
+    // Ensure gallery population is idempotent in edit mode
+    // populateResidentialForm can be triggered more than once due to async Step 2 loading
+    const galleryContainer = document.getElementById('residentialGalleryContainer');
+    if (galleryContainer) {
+        galleryContainer.innerHTML = '';
+    }
     
     // Guard: Check if elements exist before setting values
     const propertyIdInput = document.getElementById('residentialPropertyId');
     if (propertyIdInput) propertyIdInput.value = property.id || '';
     
-    const cityInput = document.getElementById('residentialCity');
-    const cityDatalist = document.getElementById('residentialCityList');
-    if (cityInput && property.city) {
-        // Set the city value directly (input field allows free text)
-        cityInput.value = property.city;
-        
-        // If city doesn't exist in datalist, add it as a new option
-        if (cityDatalist) {
-            const existingOption = cityDatalist.querySelector(`option[value="${property.city}"]`);
-            if (!existingOption) {
-                const option = document.createElement('option');
-                option.value = property.city;
-                option.textContent = property.city;
-                cityDatalist.appendChild(option);
-            }
+    const cityInput2 = document.getElementById('residentialCity');
+    const cityDatalist2 = document.getElementById('residentialCityList');
+    if (cityInput2 && property.city) {
+        cityInput2.value = property.city;
+        if (cityDatalist2 && !cityDatalist2.querySelector(`option[value="${CSS.escape(property.city)}"]`)) {
+            const option = document.createElement('option');
+            option.value = property.city;
+            option.textContent = property.city;
+            cityDatalist2.appendChild(option);
         }
-        
-        // Load localities for the selected city
+
         const cityName = property.city.includes(',') ? property.city.split(',')[0].trim() : property.city.trim();
         loadLocalitiesForResidentialForm(cityName).then(() => {
-            // Set locality value after localities are loaded
-            const localityInput = document.getElementById('residentialLocality');
-            const localityDatalist = document.getElementById('residentialLocalityList');
-            if (localityInput && property.locality) {
-                // Set the locality value directly (input field allows free text)
-                localityInput.value = property.locality;
-                
-                // If locality doesn't exist in datalist, add it as a new option
-                if (localityDatalist) {
-                    const existingOption = localityDatalist.querySelector(`option[value="${property.locality}"]`);
-                    if (!existingOption) {
-                        const option = document.createElement('option');
-                        option.value = property.locality;
-                        option.textContent = property.locality;
-                        localityDatalist.appendChild(option);
-                    }
+            const localityInput2 = document.getElementById('residentialLocality');
+            const localityDatalist2 = document.getElementById('residentialLocalityList');
+            if (localityInput2 && property.locality) {
+                localityInput2.value = property.locality;
+                if (localityDatalist2 && !localityDatalist2.querySelector(`option[value="${CSS.escape(property.locality)}"]`)) {
+                    const option = document.createElement('option');
+                    option.value = property.locality;
+                    option.textContent = property.locality;
+                    localityDatalist2.appendChild(option);
                 }
             }
         });
     } else {
-        const localityInput = document.getElementById('residentialLocality');
-        if (localityInput) localityInput.value = property.locality || '';
+        const localityInput2 = document.getElementById('residentialLocality');
+        if (localityInput2) localityInput2.value = property.locality || '';
     }
     
     const propertyNameInput = document.getElementById('residentialPropertyName');
@@ -3917,38 +4027,142 @@ function populateResidentialForm(property) {
     }
 
     // Load gallery images
-    // Guard: Handle image_gallery with null checks for image_category/image_type
-    if (property.image_gallery && Array.isArray(property.image_gallery) && property.image_gallery.length > 0) {
-        // Load gallery items with titles and categories
-        property.image_gallery.forEach(galleryItem => {
-            // Guard: Ensure galleryItem exists and has image_url
-            if (galleryItem && galleryItem.image_url) {
-                // Guard: Handle missing category/image_type gracefully
-                const category = galleryItem.category || galleryItem.image_type || galleryItem.image_category || 'project';
-                addResidentialGalleryItem(
-                    galleryItem.image_url,
-                    galleryItem.title || '',
-                    category
-                );
+    // Deduplicate by image_url (some legacy data can contain the same url in multiple categories)
+    const categoryPriority = { masterplan: 3, floorplan: 2, project: 1 };
+    const normalizeGalleryCategory = (c) => {
+        const v = (c || '').toString().trim().toLowerCase();
+        if (v === 'master_plan') return 'masterplan';
+        if (v === 'floor_plan') return 'floorplan';
+        if (v === 'masterplan' || v === 'floorplan' || v === 'project') return v;
+        return 'project';
+    };
+    const dedupeGallery = (rawItems) => {
+        const byUrl = new Map();
+        (rawItems || []).forEach((raw) => {
+            if (!raw) return;
+            const url = (raw.image_url || '').toString().trim();
+            if (!url) return;
+            const category = normalizeGalleryCategory(raw.category || raw.image_type || raw.image_category);
+            const title = (raw.title || '').toString();
+
+            const existing = byUrl.get(url);
+            if (!existing) {
+                byUrl.set(url, { image_url: url, category, title });
+                return;
+            }
+
+            const existingPri = categoryPriority[existing.category] || 0;
+            const newPri = categoryPriority[category] || 0;
+            if (newPri > existingPri) {
+                existing.category = category;
+            }
+            if (!existing.title && title) {
+                existing.title = title;
             }
         });
+        return Array.from(byUrl.values());
+    };
+
+    if (property.image_gallery && Array.isArray(property.image_gallery) && property.image_gallery.length > 0) {
+        const uniqueGallery = dedupeGallery(property.image_gallery);
+        uniqueGallery.forEach((g) => {
+            addResidentialGalleryItem(g.image_url, g.title || '', g.category || 'project');
+        });
     } else if (property.images && Array.isArray(property.images) && property.images.length > 0) {
-        // Fallback: Load images in old format (for backward compatibility)
-        property.images.forEach(img => {
-            // Guard: Handle both string URLs and image objects
-            if (img) {
+        const normalized = property.images
+            .map(img => {
+                if (!img) return null;
                 const imageUrl = typeof img === 'string' ? img : (img.image_url || null);
-                if (imageUrl) {
-                    // Guard: Handle missing category/image_type
-                    const category = (img.category || img.image_type || img.image_category || 'project');
-                    addResidentialGalleryItem(imageUrl, '', category);
-                }
-            }
+                if (!imageUrl) return null;
+                const category = normalizeGalleryCategory(img.category || img.image_type || img.image_category);
+                return { image_url: imageUrl, category, title: '' };
+            })
+            .filter(Boolean);
+
+        const uniqueGallery = dedupeGallery(normalized);
+        uniqueGallery.forEach((g) => {
+            addResidentialGalleryItem(g.image_url, '', g.category || 'project');
         });
     }
 
     // Load amenities/features (will be populated in Step 2 for apartments/villas)
     // This is handled in populateStep2Fields
+}
+
+function safeSetSelectValue(selectEl, value) {
+    if (!selectEl) return false;
+    const strValue = value === null || value === undefined ? '' : String(value);
+    if (strValue === '') {
+        selectEl.value = '';
+        return true;
+    }
+    const optionExists = Array.from(selectEl.options || []).some(opt => opt.value === strValue);
+    if (optionExists) {
+        selectEl.value = strValue;
+        return true;
+    }
+    return false;
+}
+
+function safeSetSelectValueFromCandidates(selectEl, candidates) {
+    if (!selectEl || !Array.isArray(candidates)) return false;
+    for (const candidate of candidates) {
+        if (candidate === null || candidate === undefined) continue;
+        if (safeSetSelectValue(selectEl, candidate)) return true;
+    }
+    return false;
+}
+
+function normalizeVillaTypeValue(villaType) {
+    if (!villaType) return null;
+    const raw = String(villaType).trim();
+    const normalized = raw.toLowerCase().replace(/\s+/g, '_');
+    if (normalized.includes('independent') && normalized.includes('villa')) return 'independent_villa';
+    if (normalized.includes('row') && normalized.includes('villa')) return 'row_villa';
+    if (normalized.includes('villament')) return 'villament';
+    if (normalized === 'independent_villa' || normalized === 'row_villa' || normalized === 'villament') return normalized;
+    return normalized;
+}
+
+function normalizeListingTypeValue(listingType) {
+    if (!listingType) return null;
+    const raw = String(listingType).trim();
+    const normalized = raw.toLowerCase().replace(/\s+/g, '_');
+    if (normalized === 'under_construction' || normalized === 'ready_to_move' || normalized === 'under_development') {
+        return normalized;
+    }
+    if (normalized === 'underconstruction') return 'under_construction';
+    if (normalized === 'readytomove') return 'ready_to_move';
+    if (normalized === 'ready_to_register') return 'ready_to_move';
+    return normalized;
+}
+
+function normalizeSaleRentStatus(value) {
+    if (!value) return null;
+    const v = String(value).trim().toLowerCase();
+    if (v === 'sale' || v === 'sell') return 'sale';
+    if (v === 'rent' || v === 'rental') return 'rent';
+    return v;
+}
+
+function normalizeNewResellValue(value) {
+    if (!value) return null;
+    const v = String(value).trim().toLowerCase();
+    if (v === 'new') return 'new';
+    if (v === 'resell' || v === 'resale' || v === 'reselling') return 'resell';
+    return v;
+}
+
+function toFeatureNameList(features) {
+    if (!features || !Array.isArray(features)) return [];
+    return features
+        .map(f => {
+            if (!f) return null;
+            if (typeof f === 'string') return f.trim();
+            if (typeof f === 'object' && f.feature_name) return String(f.feature_name).trim();
+            return null;
+        })
+        .filter(v => v && v.trim() !== '');
 }
 
 // Populate Step 2 fields after content is loaded
@@ -3965,53 +4179,48 @@ function populateStep2Fields(property) {
     // Status dropdown now shows new/resell (what was in listing_type)
     // Listing Type dropdown now shows sale/rent/under_construction/ready_to_move (what was in status)
     
-    // Populate Status field (now contains new/resell, but only new for plot properties)
     const statusInput = document.getElementById('residentialStatus');
     if (statusInput) {
-        // For plot properties, only allow 'new'
         if (propertyType === 'plot_properties') {
-            if (property.listing_type === 'new' || property.property_status === 'new' || property.status === 'new') {
-                statusInput.value = 'new';
-            }
+            safeSetSelectValue(statusInput, 'new');
         } else {
-            // For other property types, allow both new and resell
-            // Check listing_type first (new/resell)
-            if (property.listing_type === 'new' || property.listing_type === 'resell') {
-                statusInput.value = property.listing_type;
-            }
-            // Check property_status (new/resale map to new/resell)
-            else if (property.property_status === 'new') {
-                statusInput.value = 'new';
-            } else if (property.property_status === 'resale') {
-                statusInput.value = 'resell';
-            }
-            // If status field has new/resale, use that
-            else if (property.status === 'new' || property.status === 'resale') {
-                statusInput.value = property.status === 'resale' ? 'resell' : 'new';
-            }
+            safeSetSelectValueFromCandidates(statusInput, [
+                normalizeNewResellValue(property.listing_type),
+                normalizeNewResellValue(property.property_status),
+                normalizeNewResellValue(property.status)
+            ]);
         }
     }
-    
-    // Populate Listing Type field (now contains sale/rent/under_construction/ready_to_move)
+
     const listingTypeInput = document.getElementById('residentialListingType');
     if (listingTypeInput) {
-        // Check status field first (sale/rent)
-        if (property.status === 'sale' || property.status === 'rent') {
-            listingTypeInput.value = property.status;
-        }
-        // Check property_status (under_construction/ready_to_move/under_development)
-        else if (property.property_status === 'under_construction' || 
-                 property.property_status === 'ready_to_move' || 
-                 property.property_status === 'under_development') {
-            listingTypeInput.value = property.property_status;
-        }
+        const apartmentCandidates = [
+            normalizeSaleRentStatus(property.status),
+            normalizeSaleRentStatus(property.property_status),
+            normalizeSaleRentStatus(property.listing_type),
+            normalizeListingTypeValue(property.property_status),
+            normalizeListingTypeValue(property.listing_type)
+        ];
+        const villaPlotCandidates = [
+            normalizeListingTypeValue(property.property_status),
+            normalizeListingTypeValue(property.listing_type),
+            normalizeSaleRentStatus(property.status)
+        ];
+        const candidates = (propertyType === 'apartments') ? apartmentCandidates : villaPlotCandidates;
+        safeSetSelectValueFromCandidates(listingTypeInput, candidates);
     }
     
     // Price is now in Step 1, so it's already populated
     
-    if (property.direction) {
-        const directionInput = document.getElementById('residentialDirection');
-        if (directionInput) directionInput.value = property.direction;
+    const directionInput = document.getElementById('residentialDirection');
+    if (directionInput) {
+        const dirValue = property.direction || property.facing || null;
+        safeSetSelectValueFromCandidates(directionInput, [dirValue]);
+
+        const directionCacheInput = document.getElementById('residentialDirectionCache');
+        if (directionCacheInput) {
+            directionCacheInput.value = directionInput.value || '';
+        }
     }
     
     // Property type specific fields
@@ -4067,38 +4276,42 @@ function populateStep2Fields(property) {
             }
         }
         
-        // Load amenities (wait for them to be loaded)
-        // Guard: Ensure features is an array and filter out null/undefined/empty values
-        const safeFeatures = property.features && Array.isArray(property.features) 
-            ? property.features.filter(f => f && (typeof f === 'string' ? f.trim() : true))
-            : [];
-        
-        if (safeFeatures.length > 0) {
-            // Wait a bit for amenities to load, then select them
-            setTimeout(() => {
+        const featureNames = toFeatureNameList(property.features);
+        if (featureNames.length > 0) {
+            const applyAmenities = (attempt = 0) => {
                 const amenitiesSelect = document.getElementById('residentialAmenities');
-                if (amenitiesSelect && amenitiesSelect.options.length > 0) {
-                    safeFeatures.forEach(feature => {
-                        // Guard: Handle both string features and feature objects
-                        const featureValue = typeof feature === 'string' 
-                            ? feature.trim() 
-                            : (feature && feature.feature_name ? String(feature.feature_name).trim() : null);
-                        
-                        if (featureValue) {
-                            const option = Array.from(amenitiesSelect.options).find(opt => opt.value === featureValue);
-                            if (option) {
-                                option.selected = true;
-                            }
-                        }
-                    });
+                if (!amenitiesSelect) return;
+
+                if (!amenitiesSelect.options || amenitiesSelect.options.length === 0) {
+                    if (attempt < 20) {
+                        setTimeout(() => applyAmenities(attempt + 1), 150);
+                    }
+                    return;
                 }
-            }, 200);
+
+                Array.from(amenitiesSelect.options).forEach(opt => {
+                    opt.selected = false;
+                });
+
+                featureNames.forEach(name => {
+                    const opt = Array.from(amenitiesSelect.options).find(o => o.value === name);
+                    if (opt) opt.selected = true;
+                });
+            };
+
+            applyAmenities();
         }
     } else if (propertyType === 'villas' || propertyType === 'individual_house') {
         // Villa type
         const villaTypeInput = document.getElementById('residentialVillaType');
         if (villaTypeInput && property.villa_type) {
-            villaTypeInput.value = property.villa_type;
+            const villaTypeValue = normalizeVillaTypeValue(property.villa_type);
+            safeSetSelectValueFromCandidates(villaTypeInput, [villaTypeValue, property.villa_type]);
+
+            const villaTypeCacheInput = document.getElementById('residentialVillaTypeCache');
+            if (villaTypeCacheInput) {
+                villaTypeCacheInput.value = villaTypeInput.value || '';
+            }
             // Trigger change to show/hide plot area
             villaTypeInput.dispatchEvent(new Event('change'));
         }
@@ -4193,32 +4406,30 @@ function populateStep2Fields(property) {
             }
         }
         
-        // Load amenities (only for villas, not individual house)
-        // Guard: Ensure features is an array and filter out null/undefined/empty values
-        const safeVillaFeatures = property.features && Array.isArray(property.features) 
-            ? property.features.filter(f => f && (typeof f === 'string' ? f.trim() : true))
-            : [];
-        
-        if (propertyType === 'villas' && safeVillaFeatures.length > 0) {
-            // Wait a bit for amenities to load, then select them
-            setTimeout(() => {
+        const villaFeatureNames = toFeatureNameList(property.features);
+        if (propertyType === 'villas' && villaFeatureNames.length > 0) {
+            const applyAmenities = (attempt = 0) => {
                 const amenitiesSelect = document.getElementById('residentialAmenities');
-                if (amenitiesSelect && amenitiesSelect.options.length > 0) {
-                    safeVillaFeatures.forEach(feature => {
-                        // Guard: Handle both string features and feature objects
-                        const featureValue = typeof feature === 'string' 
-                            ? feature.trim() 
-                            : (feature && feature.feature_name ? String(feature.feature_name).trim() : null);
-                        
-                        if (featureValue) {
-                            const option = Array.from(amenitiesSelect.options).find(opt => opt.value === featureValue);
-                            if (option) {
-                                option.selected = true;
-                            }
-                        }
-                    });
+                if (!amenitiesSelect) return;
+
+                if (!amenitiesSelect.options || amenitiesSelect.options.length === 0) {
+                    if (attempt < 20) {
+                        setTimeout(() => applyAmenities(attempt + 1), 150);
+                    }
+                    return;
                 }
-            }, 200);
+
+                Array.from(amenitiesSelect.options).forEach(opt => {
+                    opt.selected = false;
+                });
+
+                villaFeatureNames.forEach(name => {
+                    const opt = Array.from(amenitiesSelect.options).find(o => o.value === name);
+                    if (opt) opt.selected = true;
+                });
+            };
+
+            applyAmenities();
         }
     } else if (propertyType === 'plot_properties') {
         // Plot area
@@ -5312,7 +5523,7 @@ function addResidentialGalleryItem(imageUrl = null, title = '', category = 'proj
                             <i class="fas fa-upload"></i>
                             Upload Image
                         </label>
-                        <div class="dashboard-gallery-item-upload-btn" onclick="document.getElementById('${itemId}-file-input').click()">
+                        <div class="dashboard-gallery-item-upload-btn" onclick="handleResidentialGalleryUploadClick(event, '${itemId}-file-input')">
                             <i class="fas fa-cloud-upload-alt"></i>
                             <span>Click to upload or drag and drop</span>
                             <input type="file" id="${itemId}-file-input" accept="image/*" onchange="handleResidentialGalleryImageUpload('${itemId}', this)">
@@ -5350,16 +5561,44 @@ function updateGalleryItemNumbers() {
     });
 }
 
+function handleResidentialGalleryUploadClick(e, inputId) {
+    try {
+        if (e && e.target && (e.target.tagName === 'INPUT' || e.target.closest('input[type="file"]'))) {
+            return;
+        }
+        const input = document.getElementById(inputId);
+        if (input) {
+            input.click();
+        }
+    } catch (_err) {
+        const input = document.getElementById(inputId);
+        if (input) {
+            input.click();
+        }
+    }
+}
+
 // Handle gallery image upload
 async function handleResidentialGalleryImageUpload(itemId, fileInput) {
     const item = document.querySelector(`[data-item-id="${itemId}"]`);
     if (!item || !fileInput.files || fileInput.files.length === 0) return;
+
+    if (item.dataset.uploading === 'true') {
+        return;
+    }
     
     const file = fileInput.files[0];
     if (!file.type.startsWith('image/')) {
         showNotification('Please select a valid image file', 'error');
         return;
     }
+
+    const uploadToken = `${file.name}:${file.size}:${file.lastModified}`;
+    if (item.dataset.lastUploadToken === uploadToken && item.getAttribute('data-image-url')) {
+        return;
+    }
+    item.dataset.lastUploadToken = uploadToken;
+    item.dataset.uploading = 'true';
     
     // Check file size (5MB max)
     const maxFileSize = 5 * 1024 * 1024; // 5MB
@@ -5465,6 +5704,8 @@ async function handleResidentialGalleryImageUpload(itemId, fileInput) {
         if (hiddenInput) {
             hiddenInput.value = '';
         }
+    } finally {
+        item.dataset.uploading = 'false';
     }
 }
 

@@ -716,6 +716,21 @@ let allStates = [];
                     unitTypeModal.classList.remove('active');
                     unitTypeForm.reset();
                     loadUnitTypes();
+                    
+                    // Trigger event to refresh Unit Type dropdown in dashboard
+                    // Use both custom event (for same-tab) and storage event (for cross-tab)
+                    console.log('Settings: Dispatching unitTypesUpdated event...');
+                    window.dispatchEvent(new CustomEvent('unitTypesUpdated'));
+                    try {
+                        localStorage.setItem('unit_types_updated', Date.now().toString());
+                        console.log('Settings: Set unit_types_updated in localStorage');
+                        // Remove it immediately to allow future updates
+                        setTimeout(() => {
+                            localStorage.removeItem('unit_types_updated');
+                        }, 100);
+                    } catch (e) {
+                        console.error('Error updating localStorage for unit type refresh:', e);
+                    }
                 } else {
                     const errorMsg = data.error || data.message || 'Failed to save unit type';
                     showNotification(errorMsg, 'error');
@@ -860,6 +875,19 @@ let allStates = [];
                     if (response.ok) {
                         showNotification('Unit type deleted successfully', 'success');
                         loadUnitTypes();
+                        
+                        // Trigger event to refresh Unit Type dropdown in dashboard
+                        console.log('Settings: Dispatching unitTypesUpdated event after deletion...');
+                        window.dispatchEvent(new CustomEvent('unitTypesUpdated'));
+                        try {
+                            localStorage.setItem('unit_types_updated', Date.now().toString());
+                            console.log('Settings: Set unit_types_updated in localStorage after deletion');
+                            setTimeout(() => {
+                                localStorage.removeItem('unit_types_updated');
+                            }, 100);
+                        } catch (e) {
+                            console.error('Error updating localStorage for unit type refresh:', e);
+                        }
                     } else {
                         const errorMsg = data.error || data.message || 'Failed to delete unit type';
                         showNotification(errorMsg, 'error');

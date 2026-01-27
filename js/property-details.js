@@ -385,7 +385,7 @@ function convertPropertyFromAPI(property) {
         price_negotiable: property.price_negotiable || false,
         video_link: property.video_link || '',
         location_link: property.location_link || '',
-        direction: property.direction || property.facing || property.orientation || ''
+        direction: property.directions || property.facing || property.orientation || ''
     };
 }
 
@@ -720,7 +720,7 @@ function renderPropertyDetails(property) {
     const amenitiesCount = features.length;
     const bhk = property.bedrooms || 0;
     const displayPropertyType = property.type || 'N/A';
-    const direction = property.facing || property.orientation || property.direction || 'N/A';
+    const direction = property.directions || property.facing || property.orientation || 'N/A';
     
     // Format property type
     const formatPropertyType = (type) => {

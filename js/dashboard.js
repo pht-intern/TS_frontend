@@ -4518,7 +4518,7 @@ async function handleResidentialPropertySubmit(e) {
         city: formData.get('city'),
         locality: formData.get('locality'),
         location_link: formData.get('location_link') || null,
-        directions: formData.get('directions') || null,
+        directions: formData.get('direction') || null,
         property_name: formData.get('property_name'),
         type: formData.get('type') || 'residential',
         property_type: propertyType, // Required by backend to identify property type
@@ -4547,7 +4547,6 @@ async function handleResidentialPropertySubmit(e) {
         plot_area: formData.get('plot_area') ? parseFloat(formData.get('plot_area')) : null,
         length: formData.get('length') ? parseFloat(formData.get('length')) : null,
         breadth: formData.get('breadth') ? parseFloat(formData.get('breadth')) : null,
-        direction: formData.get('direction') || null,
         villa_type: formData.get('villa_type') || null,
         plot_section: formData.get('plot_section') || null,
         listing_type: (() => {

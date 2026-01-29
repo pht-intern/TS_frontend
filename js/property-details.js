@@ -752,14 +752,6 @@ function renderPropertyDetails(property) {
                     <span>${location}</span>
                 </div>
             </div>
-            ${features.length > 0 ? `
-            <div class="property-header-amenities">
-                ${features.filter(f => f && typeof f === 'string' && f.trim()).map(feature => {
-                    const featureName = escapeHtml(String(feature).trim());
-                    return `<button class="amenity-btn">${featureName}</button>`;
-                }).join('')}
-            </div>
-            ` : ''}
             <div class="property-header-stats">
                 <div class="property-stat-item">
                     <span class="stat-label">Amenities</span>

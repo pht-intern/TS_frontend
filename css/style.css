@@ -78,6 +78,11 @@
     --shadow-2xl: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
 }
 
+/* Smooth scroll for anchor links and programmatic scroll */
+html {
+    scroll-behavior: smooth;
+}
+
 html {
     overflow-x: hidden;
     width: 100%;
@@ -980,6 +985,13 @@ hr {
     cursor: pointer;
     transition: all 0.3s ease;
     position: relative;
+    /* Anchor reset – looks like button, scroll via CSS (html { scroll-behavior: smooth }) */
+    background: transparent;
+    padding: 0;
+    font: inherit;
+    text-decoration: none;
+    -webkit-appearance: none;
+    appearance: none;
 }
 
 .hero-scroll-indicator::before {
@@ -998,8 +1010,6 @@ hr {
 }
 
 .hero-scroll-indicator:hover {
-    background: var(--primary-color);
-    color: var(--white);
     transform: scale(1.2) rotate(360deg);
     animation: pulse 0.5s ease;
     box-shadow: 0 5px 20px rgba(171, 184, 195, 0.4);
@@ -9273,6 +9283,7 @@ section:not(.hero).section-visible .section-header {
     background: var(--white);
     padding: 1.5rem;
     border-radius: 12px;
+    scroll-margin-top: 100px; /* for hero-scroll-indicator scroll-into-view (fixed nav) */
     box-shadow: var(--shadow-md);
     margin-bottom: 3rem;
     width: 100%;
@@ -12174,6 +12185,12 @@ section:not(.hero).section-visible .section-header {
     box-shadow: var(--shadow-md);
 }
 
+.property-info-card {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
 .property-price-large {
     font-size: 2.5rem;
     font-weight: 700;
@@ -12181,8 +12198,9 @@ section:not(.hero).section-visible .section-header {
     margin-bottom: 1rem;
 }
 
-.property-status-badge {
-    margin-bottom: 1.5rem;
+.property-price-large > div:last-child {
+    display: inline;
+    white-space: normal;
 }
 
 .status-badge {
@@ -12245,14 +12263,12 @@ section:not(.hero).section-visible .section-header {
     display: flex;
     flex-direction: column;
     gap: 1rem;
-    margin-bottom: 2rem;
-    padding-bottom: 2rem;
+    padding-bottom: 1.5rem;
     border-bottom: 2px solid var(--border-color);
 }
 
 .property-location-links {
-    margin-bottom: 2rem;
-    padding-bottom: 2rem;
+    padding-bottom: 1.5rem;
     border-bottom: 2px solid var(--border-color);
 }
 

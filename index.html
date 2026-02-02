@@ -196,9 +196,9 @@ h6{font-size:22px}
                         <span class="hero-heading-line">SOLUTIONS</span>
                     </h1>
                     <p class="hero-sub-heading">YOUR TRUSTED PARTNER IN PROPERTY INVESTMENT & RENTAL SERVICES.</p>
-                    <div class="hero-scroll-indicator">
+                    <a href="#indexPropertiesFilters" class="hero-scroll-indicator" aria-label="Scroll to filter section">
                         <i class="fas fa-chevron-down"></i>
-                    </div>
+                    </a>
                 </div>
             </div>
             
@@ -237,10 +237,46 @@ h6{font-size:22px}
         </div>
     </section>
     <hr>
- 
+
+    <!-- Property Types -->
+    <section class="property-types">
+        <div class="container">
+            <div class="section-header">
+                <h2>Browse by Property Type</h2>
+            </div>
+            <div class="types-grid">
+                <div class="type-card" data-type="apartment">
+                    <div class="type-icon">
+                        <i class="fas fa-building"></i>
+                    </div>
+                    <h3>Apartments</h3>
+                    <p class="type-count">0 Properties</p>
+                </div>
+                <div class="type-card" data-type="plot">
+                    <div class="type-icon">
+                        <i class="fas fa-map"></i>
+                    </div>
+                    <h3>Plots</h3>
+                    <p class="type-count">0 Properties</p>
+                </div>
+                <div class="type-card" data-type="villa">
+                    <div class="type-icon">
+                        <i class="fas fa-igloo"></i>
+                    </div>
+                    <h3>Villas</h3>
+                    <p class="type-count">0 Properties</p>
+                </div>
+            </div>
+        </div>
+    </section>
+    <hr>
+
     <!-- Main Search Bar -->
     <section class="properties-section">
         <div class="container">
+            <div class="section-header">
+                <h2>Browse by specifications</h2>
+            </div>
             <!-- Filters and Search -->
             <div class="properties-filters" id="indexPropertiesFilters">
                 <!-- Category Filter with Subcategories -->
@@ -256,7 +292,6 @@ h6{font-size:22px}
                             <button type="button" class="filter-button subcategory-button" data-property-type="apartment" data-parent-category="residential" id="indexFilterApartments">Apartments</button>
                             <button type="button" class="filter-button subcategory-button" data-property-type="house" data-parent-category="residential" id="indexFilterIndividualHouse">Individual House</button>
                             <button type="button" class="filter-button subcategory-button" data-property-type="villa" data-parent-category="residential" id="indexFilterVillas">Villas</button>
-                            <button type="button" class="filter-button subcategory-button" data-property-type="row-house" data-parent-category="residential" id="indexFilterRowHouses">Row Houses</button>
                         </div>
                         <div class="subcategory-buttons" data-category="commercial">
                             <button type="button" class="filter-button subcategory-button" data-property-type="office-space" data-parent-category="commercial" id="indexFilterOfficeSpace">Office Space</button>
@@ -270,9 +305,9 @@ h6{font-size:22px}
                 <div class="properties-search">
                     <form class="search-form" id="indexPropertiesSearchForm">
                         <div class="filters-two-column">
-                            <!-- Left Column: Filter 1 -->
+                            <!-- Left Column: Filter 1 - common + residential-only fields -->
                             <div class="filter1">
-                                <div class="search-group">
+                                <div class="search-group filter-group" data-filter-for="common">
                                     <label><i class="fas fa-map-marker-alt"></i> City</label>
                                     <input type="text" id="indexSearchCity" list="indexSearchCityList" 
                                         placeholder="Type or select city" autocomplete="off">
@@ -280,7 +315,7 @@ h6{font-size:22px}
                                         <option value="">Any City</option>
                                     </datalist>
                                 </div>
-                                <div class="search-group">
+                                <div class="search-group filter-group" data-filter-for="common">
                                     <label><i class="fas fa-map-marker-alt"></i> Area</label>
                                     <input type="text" id="indexSearchArea" list="indexSearchAreaList" 
                                         placeholder="Type or select area" autocomplete="off">
@@ -288,13 +323,13 @@ h6{font-size:22px}
                                         <option value="">Any Area</option>
                                     </datalist>
                                 </div>
-                                <div class="search-group">
+                                <div class="search-group filter-group" data-filter-for="residential">
                                     <label><i class="fas fa-star"></i> Amenities</label>
                                     <select id="indexSearchAmenities">
                                         <option value="">Any Amenity</option>
                                     </select>
                                 </div>
-                                <div class="search-group">
+                                <div class="search-group filter-group" data-filter-for="residential">
                                     <label><i class="fas fa-home"></i> Unit Type</label>
                                     <select id="indexSearchUnitType">
                                         <option value="">Any Unit Type</option>
@@ -304,7 +339,7 @@ h6{font-size:22px}
                             
                             <!-- Right Column: Filter 2 -->
                             <div class="filter2">
-                                <div class="search-group">
+                                <div class="search-group filter-group" data-filter-for="common">
                                     <label><i class="fas fa-exchange-alt"></i> Transaction Type</label>
                                     <select id="indexSearchTransactionType">
                                         <option value="all">All Properties</option>
@@ -312,15 +347,15 @@ h6{font-size:22px}
                                         <option value="rent">Rent</option>
                                     </select>
                                 </div>
-                                <div class="search-group">
-                                    <label><i class="fas fa-check-circle"></i> Property Condition</label>
+                                <div class="search-group filter-group" data-filter-for="common">
+                                    <label><i class="fas fa-check-circle"></i> Status</label>
                                     <select id="indexSearchPropertyCondition">
-                                        <option value="">Any Condition</option>
+                                        <option value="">Any Status</option>
                                         <option value="new">New</option>
                                         <option value="resale">Resale</option>
                                     </select>
                                 </div>
-                                <div class="search-group">
+                                <div class="search-group filter-group" data-filter-for="common">
                                     <label><i class="fas fa-rupee-sign"></i> Price Range</label>
                                     <button type="button" class="price-range-btn" id="indexPriceRangeBtn">
                                         <span class="price-range-display" id="indexPriceRangeDisplay">Any Price</span>
@@ -328,9 +363,19 @@ h6{font-size:22px}
                                     </button>
                                     <input type="hidden" id="indexSearchPrice" value="">
                                 </div>
-                                <div class="search-group">
-                                    <label><i class="fas fa-ruler-combined"></i> Dimensions</label>
-                                    <input type="text" id="indexSearchDimensions" placeholder="e.g., 30x40, 50x80">
+                                <div class="search-group filter-group" data-filter-for="common">
+                                    <label><i class="fas fa-compass"></i> Direction</label>
+                                    <select id="indexSearchDirection">
+                                        <option value="">Any Direction</option>
+                                        <option value="east">East</option>
+                                        <option value="west">West</option>
+                                        <option value="north">North</option>
+                                        <option value="south">South</option>
+                                        <option value="northeast">North East</option>
+                                        <option value="northwest">North West</option>
+                                        <option value="southeast">South East</option>
+                                        <option value="southwest">South West</option>
+                                    </select>
                                 </div>
                             </div>
                         </div>
@@ -397,39 +442,6 @@ h6{font-size:22px}
             </div>
         </div>
     </div>
-    <hr>
-
-    <!-- Property Types -->
-    <section class="property-types">
-        <div class="container">
-            <div class="section-header">
-                <h2>Browse by Property Type</h2>
-            </div>
-            <div class="types-grid">
-                <div class="type-card" data-type="apartment">
-                    <div class="type-icon">
-                        <i class="fas fa-building"></i>
-                    </div>
-                    <h3>Apartments</h3>
-                    <p class="type-count">0 Properties</p>
-                </div>
-                <div class="type-card" data-type="plot">
-                    <div class="type-icon">
-                        <i class="fas fa-map"></i>
-                    </div>
-                    <h3>Plots</h3>
-                    <p class="type-count">0 Properties</p>
-                </div>
-                <div class="type-card" data-type="villa">
-                    <div class="type-icon">
-                        <i class="fas fa-igloo"></i>
-                    </div>
-                    <h3>Villas</h3>
-                    <p class="type-count">0 Properties</p>
-                </div>
-            </div>
-        </div>
-    </section>
     <hr>
 
     <!-- About Section -->
@@ -2022,6 +2034,24 @@ h6{font-size:22px}
                 }
             }
             
+            // Update filter input visibility by selected subcategory (per dashboard add-property modal)
+            function updateIndexFilterGroupsByPropertyType() {
+                const container = document.getElementById('indexPropertiesFilters');
+                if (!container) return;
+                const propertyType = typeof indexSelectedPropertyType === 'string' ? indexSelectedPropertyType : null;
+                const residentialTypes = ['apartment', 'house', 'villa'];
+                const commercialTypes = ['office-space', 'warehouse', 'showrooms'];
+                container.querySelectorAll('.filter-group[data-filter-for]').forEach(el => {
+                    const forStr = (el.getAttribute('data-filter-for') || '').trim();
+                    let show = false;
+                    if (forStr.includes('common')) show = true;
+                    else if (forStr.includes('residential') && forStr.includes('commercial')) show = !propertyType || residentialTypes.includes(propertyType) || commercialTypes.includes(propertyType);
+                    else if (forStr.includes('residential')) show = !propertyType || residentialTypes.includes(propertyType);
+                    else if (forStr.includes('commercial')) show = !propertyType || commercialTypes.includes(propertyType);
+                    el.style.display = show ? '' : 'none';
+                });
+            }
+
             // Initialize index filters
             function initIndexFilters() {
                 const categorySection = document.getElementById('indexCategorySection');
@@ -2112,7 +2142,7 @@ h6{font-size:22px}
                     });
                 }
                 
-                // Property Condition select
+                // Status select
                 const propertyConditionSelect = document.getElementById('indexSearchPropertyCondition');
                 if (propertyConditionSelect) {
                     propertyConditionSelect.addEventListener('change', (e) => {
@@ -2210,6 +2240,7 @@ h6{font-size:22px}
                         indexSelectedCategory = category;
                         indexSelectedPropertyType = null;
                     }
+                    updateIndexFilterGroupsByPropertyType();
                     // Update filter tags without redirecting
                     indexApplyFilters(false);
                 }
@@ -2247,6 +2278,7 @@ h6{font-size:22px}
                             if (categoryBtn) categoryBtn.classList.add('active');
                             if (categorySection) categorySection.setAttribute('data-active-category', parentCategory);
                         }
+                        updateIndexFilterGroupsByPropertyType();
                         // Update filter tags without redirecting
                         indexApplyFilters(false);
                     });
@@ -2298,11 +2330,12 @@ h6{font-size:22px}
                         document.querySelectorAll('#indexPropertiesFilters .subcategory-button').forEach(btn => btn.classList.remove('active'));
                         document.querySelectorAll('#indexPropertiesFilters .category-text-button').forEach(btn => btn.classList.remove('active'));
                         if (categorySection) categorySection.removeAttribute('data-active-category');
+                        updateIndexFilterGroupsByPropertyType();
                         
                         document.getElementById('indexSearchCity').value = '';
                         document.getElementById('indexSearchArea').value = '';
                         document.getElementById('indexSearchAmenities').value = '';
-                        document.getElementById('indexSearchDimensions').value = '';
+                        document.getElementById('indexSearchDirection').value = '';
                         document.getElementById('indexSearchPrice').value = '';
                         
                         // Update filter tags without redirecting when clearing
@@ -2312,6 +2345,7 @@ h6{font-size:22px}
                 
                 // Initialize price range modal
                 initIndexPriceRangeModal();
+                updateIndexFilterGroupsByPropertyType();
             }
             
             // Apply filters (optionally redirects to properties page with filters)
@@ -2345,8 +2379,8 @@ h6{font-size:22px}
                     const amenities = document.getElementById('indexSearchAmenities')?.value.trim() || '';
                     if (amenities) params.set('amenities', amenities);
                     
-                    const dimensions = document.getElementById('indexSearchDimensions')?.value.trim() || '';
-                    if (dimensions) params.set('dimensions', dimensions);
+                    const direction = document.getElementById('indexSearchDirection')?.value.trim() || '';
+                    if (direction) params.set('direction', direction);
                     
                     const price = document.getElementById('indexSearchPrice')?.value || '';
                     if (price) params.set('price', price);
@@ -2465,13 +2499,14 @@ h6{font-size:22px}
                     });
                 }
                 
-                const dimensions = document.getElementById('indexSearchDimensions')?.value.trim() || '';
-                if (dimensions) {
+                const direction = document.getElementById('indexSearchDirection')?.value.trim() || '';
+                if (direction) {
+                    const directionLabels = { east: 'East', west: 'West', north: 'North', south: 'South', northeast: 'North East', northwest: 'North West', southeast: 'South East', southwest: 'South West' };
                     activeFilters.push({
-                        type: 'dimensions',
-                        label: `Dimensions: ${dimensions}`,
-                        icon: 'fa-ruler-combined',
-                        value: dimensions
+                        type: 'direction',
+                        label: `Direction: ${directionLabels[direction] || direction}`,
+                        icon: 'fa-compass',
+                        value: direction
                     });
                 }
                 
@@ -2563,9 +2598,9 @@ h6{font-size:22px}
                         const areaInput = document.getElementById('indexSearchArea');
                         if (areaInput) areaInput.value = '';
                         break;
-                    case 'dimensions':
-                        const dimensionsInput = document.getElementById('indexSearchDimensions');
-                        if (dimensionsInput) dimensionsInput.value = '';
+                    case 'direction':
+                        const directionInput = document.getElementById('indexSearchDirection');
+                        if (directionInput) directionInput.value = '';
                         break;
                     case 'price':
                         const priceSelect = document.getElementById('indexSearchPrice');

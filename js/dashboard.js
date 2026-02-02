@@ -297,6 +297,18 @@ function getAdminEmail() {
     return null;
 }
 
+// Keys used for auth storage (must match clearAllAuthData in dashboard.html)
+const AUTH_STORAGE_KEYS = ['dashboard_authenticated', 'isAuthenticated', 'user'];
+
+// Redirect to login and clear auth (e.g. on 401 session expired)
+function redirectToLoginOnSessionExpired() {
+    AUTH_STORAGE_KEYS.forEach(key => {
+        sessionStorage.removeItem(key);
+        localStorage.removeItem(key);
+    });
+    window.location.replace('/index.html');
+}
+
 // Helper function to make authenticated fetch requests
 async function authenticatedFetch(url, options = {}) {
     const adminEmail = getAdminEmail();
@@ -310,13 +322,16 @@ async function authenticatedFetch(url, options = {}) {
         ...options.headers
     };
     
-    // Making authenticated request
-    
     try {
         const response = await fetch(url, {
             ...options,
             headers
         });
+        // Session timeout (4 hours): backend returns 401 when session expired
+        if (response.status === 401) {
+            redirectToLoginOnSessionExpired();
+            throw new Error('Session expired. Please log in again.');
+        }
         return response;
     } catch (error) {
         console.error('Fetch error:', error);

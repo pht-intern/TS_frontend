@@ -1046,21 +1046,6 @@ function initServicesSection() {
     }
 }
 
-// Smooth scroll to next section (for button click)
-function scrollToNextSection() {
-    const nextSection = document.querySelector('.property-types');
-    
-    if (nextSection) {
-        const nextSectionTop = nextSection.offsetTop;
-        
-        // Smooth scroll
-        window.scrollTo({
-            top: nextSectionTop - 80, // Offset for better visibility
-            behavior: 'smooth'
-        });
-    }
-}
-
 // Global Navigation Search Handler
 function initGlobalNavSearch() {
     const navSearchInput = document.getElementById('navSearchInput');
@@ -1153,27 +1138,14 @@ function initGlobalNavSearch() {
     
 }
 
-// Initialize
-document.addEventListener('DOMContentLoaded', () => {
+// Initialize (run when DOM is ready; script.js may load after DOMContentLoaded on index)
+function runScriptInit() {
     renderProperties();
     // initServicesSection(); // Disabled scroll animation for Services Section
     initGlobalNavSearch();
-    
-    // Hero scroll indicator with enhanced animation
-    const scrollIndicator = document.querySelector('.hero-scroll-indicator');
-    if (scrollIndicator) {
-        scrollIndicator.addEventListener('click', () => {
-            // Add click animation
-            scrollIndicator.style.transform = 'scale(0.9)';
-            setTimeout(() => {
-                scrollIndicator.style.transform = '';
-            }, 150);
-            
-            // Scroll to next section
-            scrollToNextSection();
-        });
-    }
-    
+
+    // Hero scroll indicator: scroll is handled by CSS (anchor + html { scroll-behavior: smooth })
+
     // Scroll-based animation for all sections (excluding services section)
     const sectionsToAnimate = document.querySelectorAll('section:not(.hero):not(.services-showcase)');
     
@@ -1241,7 +1213,12 @@ document.addEventListener('DOMContentLoaded', () => {
     //         serviceSectionObserver.observe(subsection);
     //     });
     // }
-});
+}
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', runScriptInit);
+} else {
+    runScriptInit();
+}
 
 // ============================================
 // Hero Image Sliders - Automatic Rotation

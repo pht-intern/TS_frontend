@@ -98,7 +98,6 @@
                             <button type="button" class="filter-button subcategory-button" data-property-type="apartment" data-parent-category="residential" id="propertiesFilterApartments">Apartments</button>
                             <button type="button" class="filter-button subcategory-button" data-property-type="house" data-parent-category="residential" id="propertiesFilterIndividualHouse">Individual House</button>
                             <button type="button" class="filter-button subcategory-button" data-property-type="villa" data-parent-category="residential" id="propertiesFilterVillas">Villas</button>
-                            <button type="button" class="filter-button subcategory-button" data-property-type="row-house" data-parent-category="residential" id="propertiesFilterRowHouses">Row Houses</button>
                         </div>
                         <div class="subcategory-buttons" data-category="commercial">
                             <button type="button" class="filter-button subcategory-button" data-property-type="office-space" data-parent-category="commercial" id="propertiesFilterOfficeSpace">Office Space</button>
@@ -112,35 +111,31 @@
                 <div class="properties-search">
                     <form class="search-form" id="propertiesPropertiesSearchForm">
                         <div class="filters-two-column">
-                            <!-- Left Column: Filter 1 -->
+                            <!-- Left Column: Filter 1 - common + residential-only fields (per dashboard add-property modal) -->
                             <div class="filter1">
-                                <div class="search-group">
+                                <div class="search-group filter-group" data-filter-for="common">
                                     <label><i class="fas fa-map-marker-alt"></i> City</label>
                                     <select id="propertiesSearchCity">
                                         <option value="">Any City</option>
                                     </select>
                                 </div>
-                                <div class="search-group">
+                                <div class="search-group filter-group" data-filter-for="common">
                                     <label><i class="fas fa-map-marker-alt"></i> Area</label>
                                     <select id="propertiesSearchArea">
                                         <option value="">Any Area</option>
                                     </select>
                                 </div>
-                                <div class="search-group">
+                                <div class="search-group filter-group" data-filter-for="residential">
                                     <label><i class="fas fa-star"></i> Amenities</label>
                                     <select id="propertiesSearchAmenities">
                                         <option value="">Any Amenity</option>
                                     </select>
                                 </div>
-                                <div class="search-group">
-                                    <label><i class="fas fa-compass"></i> Directions</label>
-                                    <input type="text" id="propertiesSearchDirections" placeholder="e.g., North, South, East, West">
-                                </div>
                             </div>
                             
                             <!-- Right Column: Filter 2 -->
                             <div class="filter2">
-                                <div class="search-group">
+                                <div class="search-group filter-group" data-filter-for="common">
                                     <label><i class="fas fa-exchange-alt"></i> Transaction Type</label>
                                     <select id="propertiesSearchTransactionType">
                                         <option value="all">All Properties</option>
@@ -148,15 +143,15 @@
                                         <option value="rent">Rent</option>
                                     </select>
                                 </div>
-                                <div class="search-group">
-                                    <label><i class="fas fa-check-circle"></i> Property Condition</label>
+                                <div class="search-group filter-group" data-filter-for="common">
+                                    <label><i class="fas fa-check-circle"></i> Status</label>
                                     <select id="propertiesSearchPropertyCondition">
-                                        <option value="">Any Condition</option>
+                                        <option value="">Any Status</option>
                                         <option value="new">New</option>
                                         <option value="resale">Resale</option>
                                     </select>
                                 </div>
-                                <div class="search-group">
+                                <div class="search-group filter-group" data-filter-for="common">
                                     <label><i class="fas fa-rupee-sign"></i> Price Range</label>
                                     <button type="button" class="price-range-btn" id="propertiesPriceRangeBtn">
                                         <span class="price-range-display" id="propertiesPriceRangeDisplay">Any Price</span>
@@ -164,30 +159,40 @@
                                     </button>
                                     <input type="hidden" id="propertiesSearchPrice" value="">
                                 </div>
-                                <div class="search-group">
-                                    <label><i class="fas fa-ruler-combined"></i> Dimensions</label>
-                                    <input type="text" id="propertiesSearchDimensions" placeholder="e.g., 30x40, 50x80">
+                                <div class="search-group filter-group" data-filter-for="common">
+                                    <label><i class="fas fa-compass"></i> Direction</label>
+                                    <select id="propertiesSearchDirection">
+                                        <option value="">Any Direction</option>
+                                        <option value="east">East</option>
+                                        <option value="west">West</option>
+                                        <option value="north">North</option>
+                                        <option value="south">South</option>
+                                        <option value="northeast">North East</option>
+                                        <option value="northwest">North West</option>
+                                        <option value="southeast">South East</option>
+                                        <option value="southwest">South West</option>
+                                    </select>
                                 </div>
                             </div>
                         </div>
                         
-                        <!-- Additional Details Row -->
+                        <!-- Additional Details Row - residential (apartment, house, villa) + commercial (length/breadth/carpet); hidden for plots -->
                         <div class="filter-additional-row">
-                            <div class="search-group">
+                            <div class="search-group filter-group" data-filter-for="residential">
                                 <label><i class="fas fa-home"></i> Unit Type</label>
                                 <select id="propertiesSearchUnitType">
                                     <option value="">Any Unit Type</option>
                                 </select>
                             </div>
-                            <div class="search-group">
+                            <div class="search-group filter-group" data-filter-for="residential commercial">
                                 <label><i class="fas fa-ruler"></i> Length</label>
                                 <input type="text" id="propertiesSearchLength" placeholder="Enter length (ft)">
                             </div>
-                            <div class="search-group">
+                            <div class="search-group filter-group" data-filter-for="residential commercial">
                                 <label><i class="fas fa-ruler"></i> Breadth</label>
                                 <input type="text" id="propertiesSearchBreadth" placeholder="Enter breadth (ft)">
                             </div>
-                            <div class="search-group">
+                            <div class="search-group filter-group" data-filter-for="residential commercial">
                                 <label><i class="fas fa-vector-square"></i> Carpet Area</label>
                                 <input type="text" id="propertiesSearchCarpetArea" placeholder="Enter carpet area (sq ft)">
                             </div>
@@ -530,8 +535,8 @@
                 'searchCity': 'propertiesSearchCity',
                 'searchArea': 'propertiesSearchArea',
                 'searchAmenities': 'propertiesSearchAmenities',
-                'searchDirections': 'propertiesSearchDirections',
-                'searchDimensions': 'propertiesSearchDimensions',
+                'searchDirection': 'propertiesSearchDirection',
+                'searchDirections': 'propertiesSearchDirection',
                 'searchPrice': 'propertiesSearchPrice',
                 'searchTransactionType': 'propertiesSearchTransactionType',
                 'searchPropertyCondition': 'propertiesSearchPropertyCondition',

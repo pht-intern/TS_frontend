@@ -23,7 +23,34 @@ let selectedBHK = null; // 1, 2, 3, 4, or 5
 let selectedPropertyType = null; // property type from buttons
 let selectedCategory = null; // 'residential' or 'commercial'
 
-// Format price for display (same logic as property-details.js)
+// Normalize price string to use ₹ symbol (for property-content display)
+function normalizeRupeeSymbol(str) {
+    if (typeof str !== 'string') return str;
+    return str.replace(/\bRs\.?\s*/gi, '₹ ').replace(/₹\s*₹/g, '₹').trim();
+}
+
+// Format numeric price: auto-calculate and display as Cr, L, K with ₹
+function formatNumericPrice(price) {
+    const num = typeof price === 'string' ? parseFloat(price) : price;
+    if (typeof num !== 'number' || isNaN(num) || num <= 0) return null;
+    if (num >= 10000000) {
+        const crores = (num / 10000000).toFixed(2);
+        return `₹ ${crores} Cr`;
+    }
+    if (num >= 100000) {
+        const lakhs = (num / 100000).toFixed(2);
+        return `₹ ${lakhs} L`;
+    }
+    if (num >= 1000) {
+        const thousands = (num / 1000).toFixed(2);
+        return `₹ ${thousands} K`;
+    }
+    if (num < 100 && num > 0 && num < 10) return null;
+    if (num < 100 && num > 0) return `₹ ${num.toFixed(2)} Cr`;
+    return `₹ ${num.toLocaleString('en-IN')}`;
+}
+
+// Format price for display (same logic as property-details.js) - ₹ symbol, Cr/L/K
 function formatPropertyPrice(property) {
     // Get price_text from property object
     let displayPriceText = '';
@@ -40,110 +67,73 @@ function formatPropertyPrice(property) {
     );
     
     if (isPerSqft) {
-        // For per sq.ft. prices, show the price_text if available, otherwise format the numeric price
         if (displayPriceText) {
-            return displayPriceText;
-        } else if (typeof property.price === 'number' && property.price > 0) {
-            return `Rs. ${property.price.toLocaleString('en-IN')}/- Sq.Ft.`;
+            return normalizeRupeeSymbol(displayPriceText);
+        }
+        if (typeof property.price === 'number' && property.price > 0) {
+            return `₹ ${property.price.toLocaleString('en-IN')}/- Sq.Ft.`;
         }
     }
     
     // Priority: price_text > string price > formatted numeric price
     if (displayPriceText && displayPriceText !== '' && displayPriceText !== String(property.price) && displayPriceText !== String(Math.round(property.price))) {
-        // Use the price text if available (e.g., "3BHK: Rs.3.32 Cr, 4BHK: Rs.3.72 Cr")
-        // For card display, show first price or simplified version
-        
-        // If price_text is just "Rs.3" or similar single digit, it's likely wrong - try to extract better price
+        // If price_text is just "Rs.3" or similar single digit, it's likely wrong
         if (displayPriceText.match(/^Rs\.?\s*\d\s*$/i) || displayPriceText.match(/^Rs\.?\s*\d\s*Cr$/i)) {
-            // This looks like it matched "3" from "3BHK" - try to find a better price in the text
             const betterPriceMatch = displayPriceText.match(/Rs\.?\s*[\d,]+\.[\d]+/);
             if (betterPriceMatch) {
-                return betterPriceMatch[0].trim();
+                return normalizeRupeeSymbol(betterPriceMatch[0].trim());
             }
-            // If no better match, show "Price on request" rather than wrong price
             console.warn('Price text appears to be incorrectly extracted:', displayPriceText);
             return 'Price on request';
         }
         
         if (displayPriceText.includes('3BHK') && displayPriceText.includes('4BHK')) {
-            // Extract first price for card view (e.g., "3BHK: Rs.3.32 Cr")
-            // Look for price with decimal point first
             const firstPriceMatch = displayPriceText.match(/(\d+BHK[^,]*?Rs\.?\s*[\d,]+\.[\d]+[^,]*)/);
             if (firstPriceMatch) {
-                return firstPriceMatch[1].trim();
+                return normalizeRupeeSymbol(firstPriceMatch[1].trim());
             }
-            // Fallback: extract any price with decimal
             const match = displayPriceText.match(/Rs\.?\s*[\d,]+\.[\d]+[^,]*/);
             if (match) {
-                return match[0].trim();
+                return normalizeRupeeSymbol(match[0].trim());
             }
         }
-        // If it contains commas, show first part for card view
         if (displayPriceText.includes(',')) {
             const firstPart = displayPriceText.split(',')[0].trim();
-            // Make sure first part has a proper price, not just "Rs.3"
             if (firstPart.match(/Rs\.?\s*\d\s*$/i)) {
-                // Try to get a better price from the rest
                 const betterMatch = displayPriceText.match(/Rs\.?\s*[\d,]+\.[\d]+/);
                 if (betterMatch) {
-                    return betterMatch[0].trim();
+                    return normalizeRupeeSymbol(betterMatch[0].trim());
                 }
             }
-            return firstPart;
+            return normalizeRupeeSymbol(firstPart);
         }
-        return displayPriceText;
-    } else if (typeof property.price === 'string' && property.price.trim() !== '') {
-        // Price is already a string - use it directly (but check if it's a valid price string)
+        return normalizeRupeeSymbol(displayPriceText);
+    }
+    
+    if (typeof property.price === 'string' && property.price.trim() !== '') {
         const priceStr = property.price.trim();
-        // If it already contains Rs. or currency symbols, return as is
-        if (priceStr.includes('Rs.') || priceStr.includes('₹') || priceStr.includes('Cr') || priceStr.includes('Lakh')) {
-            return priceStr;
+        if (priceStr.includes('Rs.') || priceStr.includes('₹') || priceStr.includes('Cr') || priceStr.includes('Lakh') || priceStr.includes(' L')) {
+            return normalizeRupeeSymbol(priceStr.replace(/\bLakh\b/gi, 'L'));
         }
-        // Otherwise, treat as number
         const numPrice = parseFloat(priceStr);
         if (!isNaN(numPrice)) {
             property.price = numPrice;
-            // Continue to numeric formatting below
         } else {
-            return priceStr;
+            return normalizeRupeeSymbol(priceStr);
         }
     }
     
-    // Format numeric price
+    // Auto-calculate numeric price: ₹ with Cr, L, K
     if (typeof property.price === 'number' && property.price > 0) {
-        // Price is a number - format it with Indian currency
-        if (property.price >= 10000000) {
-            // Crores (10 million+)
-            const crores = (property.price / 10000000).toFixed(2);
-            return `Rs. ${crores} Cr`;
-        } else if (property.price >= 100000) {
-            // Lakhs (100 thousand+)
-            const lakhs = (property.price / 100000).toFixed(2);
-            return `Rs. ${lakhs} Lakh`;
-        } else if (property.price >= 1000) {
-            // Thousands
-            const thousands = (property.price / 1000).toFixed(2);
-            return `Rs. ${thousands} K`;
-        } else if (property.price < 100 && property.price > 0 && property.price < 10) {
-            // Very small numbers (< 10) are likely incorrectly stored
-            // This happens when old extraction logic matched "3" from "3BHK"
-            // In this case, if price_text is null, show "Price on request"
-            if (!displayPriceText) {
-                console.warn('Property has suspiciously small price value:', property.price, '- price_text is missing');
-                return 'Price on request';
-            }
-            // If we have price_text, use it instead
-            return displayPriceText || 'Price on request';
-        } else if (property.price < 100 && property.price > 0) {
-            // Small numbers (10-99) might be in crores already (e.g., 3.32 means 3.32 Cr)
-            return `Rs. ${property.price.toFixed(2)} Cr`;
-        } else {
-            // Regular formatting with commas
-            return `Rs. ${property.price.toLocaleString('en-IN')}`;
+        const formatted = formatNumericPrice(property.price);
+        if (formatted) return formatted;
+        if (!displayPriceText) {
+            console.warn('Property has suspiciously small price value:', property.price, '- price_text is missing');
+            return 'Price on request';
         }
+        return normalizeRupeeSymbol(displayPriceText || 'Price on request');
     }
     
-    // Fallback
     return 'Price on request';
 }
 
@@ -640,6 +630,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const typeParam = urlParams.get('type');
     const statusParam = urlParams.get('status');
     const searchParam = urlParams.get('search');
+    const directionParam = urlParams.get('direction');
     
     // Apply search parameter if present
     if (searchParam) {
@@ -681,8 +672,22 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     }
     
+    // Apply direction filter if present
+    if (directionParam) {
+        const directionSelect = document.getElementById('searchDirection') || document.getElementById('searchDirections');
+        if (directionSelect && directionSelect.options) {
+            const val = directionParam.toLowerCase();
+            for (let i = 0; i < directionSelect.options.length; i++) {
+                if (directionSelect.options[i].value === val) {
+                    directionSelect.value = val;
+                    break;
+                }
+            }
+        }
+    }
+    
     // Apply all filters if any URL parameters are present
-    if (typeParam || statusParam || searchParam) {
+    if (typeParam || statusParam || searchParam || directionParam) {
         applyFilters();
         // Scroll to properties section
         setTimeout(() => {
@@ -1247,6 +1252,24 @@ async function loadUnitTypes() {
     }
 }
 
+// Update filter input visibility by selected subcategory (per dashboard add-property modal)
+function updateFilterGroupsByPropertyType() {
+    const container = document.getElementById('propertiesPropertiesFilters');
+    if (!container) return;
+    const propertyType = typeof selectedPropertyType === 'string' ? selectedPropertyType : null;
+    const residentialTypes = ['apartment', 'house', 'villa'];
+    const commercialTypes = ['office-space', 'warehouse', 'showrooms'];
+    container.querySelectorAll('.filter-group[data-filter-for]').forEach(el => {
+        const forStr = (el.getAttribute('data-filter-for') || '').trim();
+        let show = false;
+        if (forStr.includes('common')) show = true;
+        else if (forStr.includes('residential') && forStr.includes('commercial')) show = !propertyType || residentialTypes.includes(propertyType) || commercialTypes.includes(propertyType);
+        else if (forStr.includes('residential')) show = !propertyType || residentialTypes.includes(propertyType);
+        else if (forStr.includes('commercial')) show = !propertyType || commercialTypes.includes(propertyType);
+        el.style.display = show ? '' : 'none';
+    });
+}
+
 // Load categories and populate dropdown
 // Initialize Filters
 function initFilters() {
@@ -1288,7 +1311,7 @@ function initFilters() {
         });
     }
 
-    // Property Condition select (New/Resale)
+    // Status select (New/Resale)
     const propertyConditionSelect = document.getElementById('searchPropertyCondition');
     if (propertyConditionSelect) {
         propertyConditionSelect.addEventListener('change', (e) => {
@@ -1350,6 +1373,7 @@ function initFilters() {
                 selectedCategory = category;
                 selectedPropertyType = null; // Clear specific property type when selecting category
             }
+            updateFilterGroupsByPropertyType();
             applyFilters();
         });
     });
@@ -1387,6 +1411,7 @@ function initFilters() {
                 if (categoryBtn) categoryBtn.classList.add('active');
                 if (categorySection) categorySection.setAttribute('data-active-category', parentCategory);
             }
+            updateFilterGroupsByPropertyType();
             applyFilters();
         });
     });
@@ -1401,6 +1426,7 @@ function initFilters() {
     
     // Initialize Price Range Dropdown
     initPriceRange();
+    updateFilterGroupsByPropertyType();
 }
 
 // Initialize Price Range Dropdown
@@ -1717,22 +1743,6 @@ function applyFilters() {
         );
     }
     
-    // Dimensions filter
-    const dimensions = document.getElementById('searchDimensions')?.value.toLowerCase().trim() || '';
-    if (dimensions) {
-        filtered = filtered.filter(p => {
-            // Check if property has dimensions field
-            if (p.dimensions !== undefined) {
-                return p.dimensions.toLowerCase().includes(dimensions);
-            }
-            if (p.plot_area !== undefined) {
-                return p.plot_area.toLowerCase().includes(dimensions);
-            }
-            // If field doesn't exist, include property (no filter applied)
-            return true;
-        });
-    }
-    
     // Price filter
     const price = document.getElementById('searchPrice')?.value || '';
     if (price) {
@@ -1789,15 +1799,15 @@ function applyFilters() {
         });
     }
     
-    // Directions filter
-    const directions = document.getElementById('searchDirections')?.value.toLowerCase().trim() || '';
-    if (directions) {
+    // Direction filter
+    const direction = (document.getElementById('searchDirection') || document.getElementById('searchDirections'))?.value.toLowerCase().trim() || '';
+    if (direction) {
         filtered = filtered.filter(p => {
             if (p.directions !== undefined) {
-                return p.directions.toLowerCase().includes(directions);
+                return p.directions.toLowerCase().includes(direction);
             }
             if (p.direction !== undefined) {
-                return p.direction.toLowerCase().includes(directions);
+                return p.direction.toLowerCase().includes(direction);
             }
             return true;
         });
@@ -1940,17 +1950,6 @@ function updateFilterTags() {
             label: `Area: ${area}`,
             icon: 'fa-map-marker-alt',
             value: area
-        });
-    }
-    
-    // Dimensions filter
-    const dimensions = document.getElementById('searchDimensions')?.value.trim() || '';
-    if (dimensions) {
-        activeFilters.push({
-            type: 'dimensions',
-            label: `Dimensions: ${dimensions}`,
-            icon: 'fa-ruler-combined',
-            value: dimensions
         });
     }
     
@@ -2141,9 +2140,10 @@ function removeFilter(filterType) {
             const areaInput = document.getElementById('searchArea');
             if (areaInput) areaInput.value = '';
             break;
-        case 'dimensions':
-            const dimensionsInput = document.getElementById('searchDimensions');
-            if (dimensionsInput) dimensionsInput.value = '';
+        case 'direction':
+        case 'directions':
+            const directionInput = document.getElementById('searchDirection') || document.getElementById('searchDirections');
+            if (directionInput) directionInput.value = '';
             break;
         case 'price':
             const priceSelect = document.getElementById('searchPrice');
@@ -2213,26 +2213,25 @@ function initFilterTags() {
             document.querySelectorAll('.category-text-button[data-category]').forEach(btn => btn.classList.remove('active'));
             const categorySection = document.querySelector('.category-section-centered');
             if (categorySection) categorySection.removeAttribute('data-active-category');
+            updateFilterGroupsByPropertyType();
             
             // Clear all form filters
             const cityInput = document.getElementById('searchCity');
             const areaInput = document.getElementById('searchArea');
-            const dimensionsInput = document.getElementById('searchDimensions');
+            const directionInput = document.getElementById('searchDirection') || document.getElementById('searchDirections');
             const priceSelect = document.getElementById('searchPrice');
             const lengthInput = document.getElementById('searchLength');
             const breadthInput = document.getElementById('searchBreadth');
             const carpetAreaInput = document.getElementById('searchCarpetArea');
-            const directionsInput = document.getElementById('searchDirections');
             const amenitiesInput = document.getElementById('searchAmenities');
             
             if (cityInput) cityInput.value = '';
             if (areaInput) areaInput.value = '';
-            if (dimensionsInput) dimensionsInput.value = '';
+            if (directionInput) directionInput.value = '';
             if (priceSelect) priceSelect.value = '';
             if (lengthInput) lengthInput.value = '';
             if (breadthInput) breadthInput.value = '';
             if (carpetAreaInput) carpetAreaInput.value = '';
-            if (directionsInput) directionsInput.value = '';
             if (amenitiesInput) amenitiesInput.value = '';
             
             applyFilters();

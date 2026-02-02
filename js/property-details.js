@@ -51,6 +51,33 @@ function escapeHtml(text) {
     return div.innerHTML;
 }
 
+// Normalize price string to use ₹ symbol (for property-info-card display)
+function normalizeRupeeSymbol(str) {
+    if (typeof str !== 'string') return str;
+    return str.replace(/\bRs\.?\s*/gi, '₹ ').replace(/₹\s*₹/g, '₹').trim();
+}
+
+// Format numeric price: auto-calculate and display as Cr, L, K with ₹
+function formatNumericPrice(price) {
+    const num = typeof price === 'string' ? parseFloat(price) : price;
+    if (typeof num !== 'number' || isNaN(num) || num <= 0) return null;
+    if (num >= 10000000) {
+        const crores = (num / 10000000).toFixed(2);
+        return `₹ ${crores} Cr`;
+    }
+    if (num >= 100000) {
+        const lakhs = (num / 100000).toFixed(2);
+        return `₹ ${lakhs} L`;
+    }
+    if (num >= 1000) {
+        const thousands = (num / 1000).toFixed(2);
+        return `₹ ${thousands} K`;
+    }
+    if (num < 100 && num > 0 && num < 10) return null;
+    if (num < 100 && num > 0) return `₹ ${num.toFixed(2)} Cr`;
+    return `₹ ${num.toLocaleString('en-IN')}`;
+}
+
 // Store current property ID globally
 let currentPropertyId = null;
 
@@ -945,58 +972,48 @@ function renderPropertyDetails(property) {
         displayPriceText.toLowerCase().includes('/sq')
     );
     
-    // Display price with proper formatting and heading
+    // Display price with proper formatting: ₹ symbol, Cr/L/K
     // Priority: price_text > string price > formatted numeric price
     let priceContent = '';
     
     // Handle per sq.ft. prices first
     if (isPerSqft) {
-        // For per sq.ft. prices, show the price_text if available, otherwise format the numeric price
         if (displayPriceText) {
-            priceContent = displayPriceText;
+            priceContent = normalizeRupeeSymbol(displayPriceText);
         } else if (typeof property.price === 'number' && property.price > 0) {
-            priceContent = `Rs. ${property.price.toLocaleString('en-IN')}/- Sq.Ft.`;
+            priceContent = `₹ ${property.price.toLocaleString('en-IN')}/- Sq.Ft.`;
         } else {
             priceContent = 'Price on request';
         }
     } else if (displayPriceText && displayPriceText !== '' && displayPriceText !== String(property.price) && displayPriceText !== String(Math.round(property.price))) {
         // Use the price text if available (e.g., "3BHK: Rs.3.32 Cr, 4BHK: Rs.3.72 Cr")
-        // Format it nicely with line breaks if it contains multiple prices
-        let formattedPrice = displayPriceText;
-        // If it contains "3BHK" and "4BHK", format with line breaks
+        // Format with line breaks if multiple prices; normalize Rs. to ₹
+        let formattedPrice = displayPriceText.replace(/\bLakh\b/gi, 'L');
         if (displayPriceText.includes('3BHK') && displayPriceText.includes('4BHK')) {
-            formattedPrice = displayPriceText
-                .replace(/(3BHK[^4]*?)(4BHK)/g, '$1<br>$2')
-                .replace(/,/g, '<br>');
+            formattedPrice = formattedPrice
+                .replace(/(3BHK[^4]*?)(4BHK)/g, '$1 | $2')
+                .replace(/,/g, ' | ');
         } else if (displayPriceText.includes(',')) {
-            // If it has commas, replace with line breaks
-            formattedPrice = displayPriceText.replace(/,/g, '<br>');
+            formattedPrice = formattedPrice.replace(/,/g, ' | ');
         }
-        priceContent = formattedPrice;
+        priceContent = normalizeRupeeSymbol(formattedPrice);
     } else if (typeof property.price === 'string' && property.price.trim() !== '') {
-        // Price is already a string - use it directly
-        priceContent = property.price;
-    } else if (typeof property.price === 'number' && property.price > 0) {
-        // Price is a number - format it with Indian currency
-        if (property.price >= 10000000) {
-            // Crores
-            const crores = (property.price / 10000000).toFixed(2);
-            priceContent = `Rs. ${crores} Cr`;
-        } else if (property.price >= 100000) {
-            // Lakhs
-            const lakhs = (property.price / 100000).toFixed(2);
-            priceContent = `Rs. ${lakhs} Lakh`;
+        const priceStr = property.price.trim();
+        if (priceStr.includes('Rs.') || priceStr.includes('₹') || priceStr.includes('Cr') || priceStr.includes('Lakh') || priceStr.includes(' L')) {
+            priceContent = normalizeRupeeSymbol(priceStr.replace(/\bLakh\b/gi, 'L'));
         } else {
-            // For small numbers, check if it might be in crores (e.g., 3.32 could mean 3.32 Cr)
-            if (property.price < 100 && property.price > 0) {
-                priceContent = `Rs. ${property.price.toFixed(2)} Cr`;
+            const numPrice = parseFloat(priceStr);
+            if (!isNaN(numPrice)) {
+                const formatted = formatNumericPrice(numPrice);
+                priceContent = formatted || priceStr;
             } else {
-                // Regular formatting with commas
-                priceContent = `Rs. ${property.price.toLocaleString('en-IN')}`;
+                priceContent = normalizeRupeeSymbol(priceStr);
             }
         }
+    } else if (typeof property.price === 'number' && property.price > 0) {
+        const formatted = formatNumericPrice(property.price);
+        priceContent = formatted || `₹ ${property.price.toLocaleString('en-IN')}`;
     } else {
-        // Fallback
         priceContent = 'Price on request';
     }
     

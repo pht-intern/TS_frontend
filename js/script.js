@@ -11,7 +11,13 @@ if ('serviceWorker' in navigator) {
         });
 }
 
-// Format price for display (same logic as property-details.js)
+// Normalize price string to use ₹ symbol
+function normalizeRupeeSymbol(str) {
+    if (typeof str !== 'string') return str;
+    return str.replace(/\bRs\.?\s*/gi, '₹ ').replace(/₹\s*₹/g, '₹').trim();
+}
+
+// Format price for display (same logic as property-details.js) - ₹ and Cr/L
 function formatPropertyPrice(property) {
     // Get price_text from property object
     let displayPriceText = '';
@@ -22,48 +28,35 @@ function formatPropertyPrice(property) {
     // Priority: price_text > string price > formatted numeric price
     if (displayPriceText && displayPriceText !== '' && displayPriceText !== String(property.price) && displayPriceText !== String(Math.round(property.price))) {
         // Use the price text if available (e.g., "3BHK: Rs.3.32 Cr, 4BHK: Rs.3.72 Cr")
-        // For card display, show first price or simplified version
         if (displayPriceText.includes('3BHK') && displayPriceText.includes('4BHK')) {
-            // Extract first price for card view (e.g., "3BHK: Rs.3.32 Cr")
             const firstPriceMatch = displayPriceText.match(/(\d+BHK[^,]*?Rs\.?\s*[\d.]+[^,]*)/);
             if (firstPriceMatch) {
-                return firstPriceMatch[1].trim();
+                return normalizeRupeeSymbol(firstPriceMatch[1].trim());
             }
-            // Fallback: extract any price
             const match = displayPriceText.match(/Rs\.?\s*[\d.]+[^,]*/);
             if (match) {
-                return match[0].trim();
+                return normalizeRupeeSymbol(match[0].trim());
             }
         }
-        // If it contains commas, show first part for card view
         if (displayPriceText.includes(',')) {
-            return displayPriceText.split(',')[0].trim();
+            return normalizeRupeeSymbol(displayPriceText.split(',')[0].trim());
         }
-        return displayPriceText;
+        return normalizeRupeeSymbol(displayPriceText);
     } else if (typeof property.price === 'string' && property.price.trim() !== '') {
-        // Price is already a string - use it directly
-        return property.price;
+        return normalizeRupeeSymbol(property.price.replace(/\bLakh\b/gi, 'L'));
     } else if (typeof property.price === 'number' && property.price > 0) {
-        // Price is a number - format it with Indian currency
         if (property.price >= 10000000) {
-            // Crores
             const crores = (property.price / 10000000).toFixed(2);
-            return `Rs. ${crores} Cr`;
+            return `₹ ${crores} Cr`;
         } else if (property.price >= 100000) {
-            // Lakhs
             const lakhs = (property.price / 100000).toFixed(2);
-            return `Rs. ${lakhs} Lakh`;
+            return `₹ ${lakhs} L`;
+        } else if (property.price < 100 && property.price > 0) {
+            return `₹ ${property.price.toFixed(2)} Cr`;
         } else {
-            // For small numbers, check if it might be in crores (e.g., 3.32 could mean 3.32 Cr)
-            if (property.price < 100 && property.price > 0) {
-                return `Rs. ${property.price.toFixed(2)} Cr`;
-            } else {
-                // Regular formatting with commas
-                return `Rs. ${property.price.toLocaleString('en-IN')}`;
-            }
+            return `₹ ${property.price.toLocaleString('en-IN')}`;
         }
     } else {
-        // Fallback
         return 'Price on request';
     }
 }

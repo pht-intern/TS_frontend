@@ -73,7 +73,7 @@ function formatNumericPrice(price) {
         const thousands = (num / 1000).toFixed(2);
         return `₹ ${thousands} K`;
     }
-    if (num < 100 && num > 0 && num < 10) return null;
+    /* Numbers in (0, 100) are treated as Crores (e.g. 3.32 → ₹ 3.32 Cr) */
     if (num < 100 && num > 0) return `₹ ${num.toFixed(2)} Cr`;
     return `₹ ${num.toLocaleString('en-IN')}`;
 }
@@ -991,10 +991,10 @@ function renderPropertyDetails(property) {
         let formattedPrice = displayPriceText.replace(/\bLakh\b/gi, 'L');
         if (displayPriceText.includes('3BHK') && displayPriceText.includes('4BHK')) {
             formattedPrice = formattedPrice
-                .replace(/(3BHK[^4]*?)(4BHK)/g, '$1 | $2')
-                .replace(/,/g, ' | ');
+                .replace(/(3BHK[^4]*?)(4BHK)/g, '$1, $2')
+                .replace(/,/g, ', ');
         } else if (displayPriceText.includes(',')) {
-            formattedPrice = formattedPrice.replace(/,/g, ' | ');
+            formattedPrice = formattedPrice.replace(/,/g, ', ');
         }
         priceContent = normalizeRupeeSymbol(formattedPrice);
     } else if (typeof property.price === 'string' && property.price.trim() !== '') {
@@ -1100,13 +1100,15 @@ function renderPropertyDetails(property) {
         `;
     }
     
-    if (!isPlot && property.bathrooms !== null && property.bathrooms !== undefined && property.bathrooms > 0) {
+    // Bathrooms: show for all residential (including 0)
+    if (!isPlot) {
+        const bathroomsVal = (property.bathrooms !== null && property.bathrooms !== undefined) ? property.bathrooms : 0;
         quickInfoHTML += `
         <div class="quick-info-item">
             <i class="fas fa-bath"></i>
             <div>
                 <span class="quick-info-label">Bathrooms</span>
-                <span class="quick-info-value">${property.bathrooms}</span>
+                <span class="quick-info-value">${bathroomsVal}</span>
             </div>
         </div>
         `;

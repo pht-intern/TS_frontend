@@ -5175,6 +5175,21 @@ function handleImageSelect(e) {
 }
 
 
+function getImageFileInputId(formType, imageCategory) {
+    if (formType === 'property') return 'propertyImages';
+    if (formType === 'residential') {
+        if (imageCategory === 'project') return 'residentialProjectImages';
+        if (imageCategory === 'floorplan') return 'residentialFloorPlanImages';
+        if (imageCategory === 'masterplan') return 'residentialMasterPlanImages';
+    }
+    if (formType === 'plot') {
+        if (imageCategory === 'project') return 'plotProjectImages';
+        if (imageCategory === 'floorplan') return 'plotFloorPlanImages';
+        if (imageCategory === 'masterplan') return 'plotMasterPlanImages';
+    }
+    return 'propertyImages';
+}
+
 async function handleImageFiles(files, formType = 'property', imageCategory = 'project') {
     const maxFileSize = 5 * 1024 * 1024; // 5MB
     
@@ -5188,8 +5203,11 @@ async function handleImageFiles(files, formType = 'property', imageCategory = 'p
         
         // Validate file size
         if (file.size > maxFileSize) {
-            showNotification(`File "${file.name}" is too large. Maximum size is 5MB.`, 'error');
-            continue;
+            alert('The image is too heavy, it should be below 5MB.');
+            const fileInputId = getImageFileInputId(formType, imageCategory);
+            const fileInput = document.getElementById(fileInputId);
+            if (fileInput) fileInput.value = '';
+            return;
         }
         
         // Read image file as base64

@@ -45,7 +45,7 @@ function formatNumericPrice(price) {
         const thousands = (num / 1000).toFixed(2);
         return `₹ ${thousands} K`;
     }
-    if (num < 100 && num > 0 && num < 10) return null;
+    /* Numbers in (0, 100) are treated as Crores (e.g. 3.32 → ₹ 3.32 Cr) */
     if (num < 100 && num > 0) return `₹ ${num.toFixed(2)} Cr`;
     return `₹ ${num.toLocaleString('en-IN')}`;
 }
@@ -77,6 +77,13 @@ function formatPropertyPrice(property) {
     
     // Priority: price_text > string price > formatted numeric price
     if (displayPriceText && displayPriceText !== '' && displayPriceText !== String(property.price) && displayPriceText !== String(Math.round(property.price))) {
+        // If price_text is a plain number (e.g. "3.32"), show as ₹ X Cr
+        const numFromText = parseFloat(displayPriceText.replace(/,/g, ''));
+        if (!isNaN(numFromText) && displayPriceText.trim().match(/^[\d.,\s]+$/)) {
+            if (numFromText >= 1 && numFromText < 1000) {
+                return `₹ ${numFromText.toFixed(2)} Cr`;
+            }
+        }
         // If price_text is just "Rs.3" or similar single digit, it's likely wrong
         if (displayPriceText.match(/^Rs\.?\s*\d\s*$/i) || displayPriceText.match(/^Rs\.?\s*\d\s*Cr$/i)) {
             const betterPriceMatch = displayPriceText.match(/Rs\.?\s*[\d,]+\.[\d]+/);

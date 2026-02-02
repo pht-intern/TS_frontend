@@ -2773,7 +2773,7 @@ function getApartmentsStep2HTML() {
                 <select id="residentialStatus" name="status" required>
                     <option value="">Select Status</option>
                     <option value="new">New</option>
-                    <option value="resell">Resell</option>
+                    <option value="resale">Resale</option>
                 </select>
             </div>
             <div class="dashboard-form-group">
@@ -2888,7 +2888,7 @@ function getVillasStep2HTML() {
                 <select id="residentialStatus" name="status" required>
                     <option value="">Select Status</option>
                     <option value="new">New</option>
-                    <option value="resell">Resell</option>
+                    <option value="resale">Resale</option>
                 </select>
             </div>
         </div>
@@ -4188,11 +4188,11 @@ function normalizeSaleRentStatus(value) {
     return v;
 }
 
-function normalizeNewResellValue(value) {
+function normalizeNewResaleValue(value) {
     if (!value) return null;
     const v = String(value).trim().toLowerCase();
     if (v === 'new') return 'new';
-    if (v === 'resell' || v === 'resale' || v === 'reselling') return 'resell';
+    if (v === 'resale' || v === 'reselling') return 'resale';
     return v;
 }
 
@@ -4219,7 +4219,7 @@ function populateStep2Fields(property) {
     const propertyType = document.getElementById('residentialPropertyType')?.value;
     
     // Common fields - Note: dropdowns are swapped
-    // Status dropdown now shows new/resell (what was in listing_type)
+    // Status dropdown now shows new/resale (what was in listing_type)
     // Listing Type dropdown now shows sale/rent/under_construction/ready_to_move (what was in status)
     
     const statusInput = document.getElementById('residentialStatus');
@@ -4228,9 +4228,9 @@ function populateStep2Fields(property) {
             safeSetSelectValue(statusInput, 'new');
         } else {
             safeSetSelectValueFromCandidates(statusInput, [
-                normalizeNewResellValue(property.listing_type),
-                normalizeNewResellValue(property.property_status),
-                normalizeNewResellValue(property.status)
+                normalizeNewResaleValue(property.listing_type),
+                normalizeNewResaleValue(property.property_status),
+                normalizeNewResaleValue(property.status)
             ]);
         }
     }
@@ -4587,11 +4587,11 @@ async function handleResidentialPropertySubmit(e) {
             if (!listingTypeValue) return null;
             // Map sale/rent to null (they don't go to listing_type)
             // Map under_construction/ready_to_move to null (they go to property_status)
-            // Only new/resell should go to listing_type, but those are now in status field
+            // Only new/resale should go to listing_type, but those are now in status field
             // So we need to get listing_type from status field instead
             const statusValue = formData.get('status');
-            if (statusValue === 'new' || statusValue === 'resell') {
-                return statusValue === 'resell' ? 'resell' : 'new';
+            if (statusValue === 'new' || statusValue === 'resale') {
+                return statusValue === 'resale' ? 'resale' : 'new';
             }
             return null;
         })(),
@@ -4600,7 +4600,7 @@ async function handleResidentialPropertySubmit(e) {
         price_negotiable: formData.get('price_negotiable') === 'on',
         price_includes_registration: formData.get('price_includes_registration') === 'on',
         status: (() => {
-            // status field now contains what was previously in listing_type (new/resell)
+            // status field now contains what was previously in listing_type (new/resale)
             // listing_type field now contains what was previously in status (sale/rent/under_construction/ready_to_move)
             const listingTypeValue = formData.get('listing_type'); // This now has sale/rent/under_construction/ready_to_move
             if (!listingTypeValue) return 'sale';
@@ -4616,16 +4616,16 @@ async function handleResidentialPropertySubmit(e) {
         })(),
         property_status: (() => {
             // property_status stores: resale, new, ready_to_move, under_construction, under_development
-            const statusValue = formData.get('status'); // This now has new/resell
+            const statusValue = formData.get('status'); // This now has new/resale
             const listingTypeValue = formData.get('listing_type'); // This now has sale/rent/under_construction/ready_to_move
             
             // First check listing_type for under_construction/ready_to_move/under_development
             if (listingTypeValue === 'ready_to_move' || listingTypeValue === 'under_construction' || listingTypeValue === 'under_development') {
                 return listingTypeValue;
             }
-            // Then check status field for new/resell (which map to new/resale)
-            if (statusValue === 'new' || statusValue === 'resell') {
-                return statusValue === 'resell' ? 'resale' : 'new';
+            // Then check status field for new/resale (which map to new/resale)
+            if (statusValue === 'new' || statusValue === 'resale') {
+                return statusValue === 'resale' ? 'resale' : 'new';
             }
             return null; // For 'sale' and 'rent', property_status is null
         })(),
@@ -4943,7 +4943,7 @@ async function handlePlotPropertySubmit(e) {
             return null;
         })(),
         status: (() => {
-            // For plot properties, status field now has new/resell, listing_type has ready_to_move/under_development
+            // For plot properties, status field now has new/resale, listing_type has ready_to_move/under_development
             // status field should be 'sale' for plot properties
             return 'sale';
         })(),

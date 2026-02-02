@@ -11,54 +11,59 @@ if ('serviceWorker' in navigator) {
         });
 }
 
-// Normalize price string to use ₹ symbol
-function normalizeRupeeSymbol(str) {
-    if (typeof str !== 'string') return str;
-    return str.replace(/\bRs\.?\s*/gi, '₹ ').replace(/₹\s*₹/g, '₹').trim();
-}
+// Get only the numeric price and unit for display. ₹ and Cr/L are hardcoded in the template.
+// Returns { value: "3.32", unit: "Cr" } or { value: "50", unit: "L" } or { value: null, unit: "Cr" } for "Price on request".
+function getPriceForDisplay(property) {
+    let num = null;
+    let unit = 'Cr';
 
-// Format price for display (same logic as property-details.js) - ₹ and Cr/L
-function formatPropertyPrice(property) {
-    // Get price_text from property object
-    let displayPriceText = '';
     if (property.price_text) {
-        displayPriceText = String(property.price_text).trim();
+        const text = String(property.price_text).trim();
+        const match = text.match(/[\d,]+\.?[\d]*|[\d]+/);
+        if (match) {
+            num = parseFloat(match[0].replace(/,/g, ''));
+            if (!isNaN(num) && num > 0) {
+                if (text.toLowerCase().includes('lakh') || text.includes(' L')) unit = 'L';
+                else unit = 'Cr';
+                if (num >= 10000000) {
+                    return { value: (num / 10000000).toFixed(2), unit: 'Cr' };
+                }
+                if (num >= 100000) {
+                    return { value: (num / 100000).toFixed(2), unit: 'L' };
+                }
+                if (num >= 1 && num < 1000) {
+                    return { value: num.toFixed(2), unit };
+                }
+            }
+        }
     }
-    
-    // Priority: price_text > string price > formatted numeric price
-    if (displayPriceText && displayPriceText !== '' && displayPriceText !== String(property.price) && displayPriceText !== String(Math.round(property.price))) {
-        // Use the price text if available (e.g., "3BHK: Rs.3.32 Cr, 4BHK: Rs.3.72 Cr")
-        if (displayPriceText.includes('3BHK') && displayPriceText.includes('4BHK')) {
-            const firstPriceMatch = displayPriceText.match(/(\d+BHK[^,]*?Rs\.?\s*[\d.]+[^,]*)/);
-            if (firstPriceMatch) {
-                return normalizeRupeeSymbol(firstPriceMatch[1].trim());
+    if (typeof property.price === 'string' && property.price.trim() !== '') {
+        num = parseFloat(property.price.replace(/,/g, ''));
+        if (!isNaN(num) && num > 0) {
+            if (num >= 10000000) {
+                return { value: (num / 10000000).toFixed(2), unit: 'Cr' };
             }
-            const match = displayPriceText.match(/Rs\.?\s*[\d.]+[^,]*/);
-            if (match) {
-                return normalizeRupeeSymbol(match[0].trim());
+            if (num >= 100000) {
+                return { value: (num / 100000).toFixed(2), unit: 'L' };
+            }
+            if (num < 1000 && num >= 1) {
+                return { value: num.toFixed(2), unit: 'Cr' };
             }
         }
-        if (displayPriceText.includes(',')) {
-            return normalizeRupeeSymbol(displayPriceText.split(',')[0].trim());
-        }
-        return normalizeRupeeSymbol(displayPriceText);
-    } else if (typeof property.price === 'string' && property.price.trim() !== '') {
-        return normalizeRupeeSymbol(property.price.replace(/\bLakh\b/gi, 'L'));
-    } else if (typeof property.price === 'number' && property.price > 0) {
+    }
+    if (typeof property.price === 'number' && property.price > 0) {
         if (property.price >= 10000000) {
-            const crores = (property.price / 10000000).toFixed(2);
-            return `₹ ${crores} Cr`;
-        } else if (property.price >= 100000) {
-            const lakhs = (property.price / 100000).toFixed(2);
-            return `₹ ${lakhs} L`;
-        } else if (property.price < 100 && property.price > 0) {
-            return `₹ ${property.price.toFixed(2)} Cr`;
-        } else {
-            return `₹ ${property.price.toLocaleString('en-IN')}`;
+            return { value: (property.price / 10000000).toFixed(2), unit: 'Cr' };
         }
-    } else {
-        return 'Price on request';
+        if (property.price >= 100000) {
+            return { value: (property.price / 100000).toFixed(2), unit: 'L' };
+        }
+        if (property.price < 100 && property.price >= 1) {
+            return { value: property.price.toFixed(2), unit: 'Cr' };
+        }
+        return { value: property.price.toLocaleString('en-IN'), unit: 'Cr' };
     }
+    return { value: null, unit: 'Cr' };
 }
 
 // Property Data
@@ -362,7 +367,12 @@ function renderProperties(propertiesToRender = properties) {
     const grid = document.getElementById('propertiesGrid');
     if (!grid) return;
 
-    grid.innerHTML = propertiesToRender.map(property => `
+    grid.innerHTML = propertiesToRender.map(property => {
+        const priceDisplay = getPriceForDisplay(property);
+        const priceHtml = priceDisplay.value != null
+            ? `₹ <span class="price-value">${priceDisplay.value}</span> <span class="price-unit">${priceDisplay.unit}</span>`
+            : 'Price on request';
+        return `
         <div class="property-card" data-type="${property.type}">
             <div class="property-image">
                 <img src="${property.image}" alt="${property.title}" onerror="this.style.background='linear-gradient(135deg, #667eea 0%, #764ba2 100%)'">
@@ -375,7 +385,7 @@ function renderProperties(propertiesToRender = properties) {
             </div>
             <div class="property-content">
                 <h3 class="property-title">${property.title}</h3>
-                <div class="property-price">${formatPropertyPrice(property)}</div>
+                <div class="property-price">${priceHtml}</div>
                 <div class="property-location">
                     <i class="fas fa-map-marker-alt"></i>
                     <span>${property.location}</span>
@@ -396,7 +406,8 @@ function renderProperties(propertiesToRender = properties) {
                 </div>
             </div>
         </div>
-    `).join('');
+    `;
+    }).join('');
 
     // Add share functionality - copy property link to clipboard
     grid.querySelectorAll('.property-action-btn').forEach(btn => {

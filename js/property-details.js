@@ -895,18 +895,20 @@ function renderPropertyDetails(property) {
         initImageFilters();
     }, 100);
     
-    // Render Description (clean description - remove property details section if it exists)
+    // Render Description as rich HTML (from Quill editor: <p>, <strong>, etc.)
     const description = document.getElementById('propertyDescription');
-    let cleanDescription = property.description || 'No description available.';
+    let cleanDescription = property.description || '';
     // Remove "--- Property Details ---" section if it exists
     const detailsSeparator = '--- Property Details ---';
     if (cleanDescription.includes(detailsSeparator)) {
         const parts = cleanDescription.split(detailsSeparator);
         cleanDescription = parts[0].trim();
     }
-    // Escape HTML but preserve line breaks
-    const escapedDescription = escapeHtml(cleanDescription).replace(/\n/g, '<br>');
-    description.innerHTML = `<p>${escapedDescription}</p>`;
+    if (cleanDescription.trim()) {
+        description.innerHTML = cleanDescription.trim();
+    } else {
+        description.innerHTML = '<p>No description available.</p>';
+    }
     
     // Render Video Preview if available
     const videoSection = document.getElementById('propertyVideoSection');

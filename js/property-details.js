@@ -51,31 +51,81 @@ function escapeHtml(text) {
     return div.innerHTML;
 }
 
-// Normalize price string to use ₹ symbol (for property-info-card display)
-function normalizeRupeeSymbol(str) {
-    if (typeof str !== 'string') return str;
-    return str.replace(/\bRs\.?\s*/gi, '₹ ').replace(/₹\s*₹/g, '₹').trim();
-}
+// Get only the numeric price and unit for property-info-card. ₹ and Cr/L are hardcoded in the template.
+// Returns { value: "3.32", unit: "Cr" } or { value: "50", unit: "L" } or { value: null, unit: "Cr" }.
+// For per sq.ft., unit is "/- Sq.Ft.". For multiple prices (3BHK/4BHK), value can be "3.32, 3.72".
+function getPriceForDisplay(property) {
+    let num = null;
+    let unit = 'Cr';
 
-// Format numeric price: auto-calculate and display as Cr, L, K with ₹
-function formatNumericPrice(price) {
-    const num = typeof price === 'string' ? parseFloat(price) : price;
-    if (typeof num !== 'number' || isNaN(num) || num <= 0) return null;
-    if (num >= 10000000) {
-        const crores = (num / 10000000).toFixed(2);
-        return `₹ ${crores} Cr`;
+    if (property.price_text !== null && property.price_text !== undefined && property.price_text !== '') {
+        const text = String(property.price_text).trim();
+        const isPerSqft = /sq\.?ft|sqft|per sq|\/sq/i.test(text);
+        if (isPerSqft) {
+            const numMatch = text.match(/[\d,]+\.?[\d]*|[\d]+/);
+            if (numMatch) {
+                num = parseFloat(numMatch[0].replace(/,/g, ''));
+                if (!isNaN(num) && num > 0) {
+                    return { value: num.toLocaleString('en-IN'), unit: '/- Sq.Ft.' };
+                }
+            }
+            return { value: null, unit: '' };
+        }
+        const numMatch = text.match(/[\d,]+\.?[\d]*|[\d]+/);
+        if (numMatch) {
+            num = parseFloat(numMatch[0].replace(/,/g, ''));
+            if (!isNaN(num) && num > 0) {
+                if (text.toLowerCase().includes('lakh') || text.includes(' L')) unit = 'L';
+                else unit = 'Cr';
+                if (num >= 10000000) {
+                    return { value: (num / 10000000).toFixed(2), unit: 'Cr' };
+                }
+                if (num >= 100000) {
+                    return { value: (num / 100000).toFixed(2), unit: 'L' };
+                }
+                if (num >= 1 && num < 1000) {
+                    return { value: num.toFixed(2), unit };
+                }
+            }
+        }
+        if (text.includes('3BHK') && text.includes('4BHK')) {
+            const parts = [];
+            const m1 = text.match(/3BHK[^,]*?([\d.]+)/);
+            const m2 = text.match(/4BHK[^,]*?([\d.]+)/);
+            if (m1) parts.push(m1[1]);
+            if (m2) parts.push(m2[1]);
+            if (parts.length) {
+                return { value: parts.join(', '), unit: 'Cr' };
+            }
+        }
     }
-    if (num >= 100000) {
-        const lakhs = (num / 100000).toFixed(2);
-        return `₹ ${lakhs} L`;
+    if (typeof property.price === 'string' && property.price.trim() !== '') {
+        num = parseFloat(property.price.replace(/,/g, ''));
+        if (!isNaN(num) && num > 0) {
+            if (num >= 10000000) {
+                return { value: (num / 10000000).toFixed(2), unit: 'Cr' };
+            }
+            if (num >= 100000) {
+                return { value: (num / 100000).toFixed(2), unit: 'L' };
+            }
+            if (num < 1000 && num >= 1) {
+                return { value: num.toFixed(2), unit: 'Cr' };
+            }
+        }
     }
-    if (num >= 1000) {
-        const thousands = (num / 1000).toFixed(2);
-        return `₹ ${thousands} K`;
+    if (typeof property.price === 'number' && property.price > 0) {
+        if (property.price >= 10000000) {
+            return { value: (property.price / 10000000).toFixed(2), unit: 'Cr' };
+        }
+        if (property.price >= 100000) {
+            return { value: (property.price / 100000).toFixed(2), unit: 'L' };
+        }
+        if (property.price < 100 && property.price >= 1) {
+            return { value: property.price.toFixed(2), unit: 'Cr' };
+        }
+        return { value: property.price.toLocaleString('en-IN'), unit: 'Cr' };
     }
-    /* Numbers in (0, 100) are treated as Crores (e.g. 3.32 → ₹ 3.32 Cr) */
-    if (num < 100 && num > 0) return `₹ ${num.toFixed(2)} Cr`;
-    return `₹ ${num.toLocaleString('en-IN')}`;
+    return { value: null, unit: 'Cr' };
 }
 
 // Store current property ID globally
@@ -949,76 +999,13 @@ function renderPropertyDetails(property) {
         }
     }
     
-    // Render Sidebar - Price Display
+    // Render Sidebar - Price Display (₹ and Cr/L hardcoded, only number from DB)
     const price = document.getElementById('propertyPrice');
-    
-    // Get price text from property object (set in convertPropertyFromAPI)
-    // Ensure it's a string and not empty/null
-    let displayPriceText = '';
-    if (property.price_text) {
-        displayPriceText = String(property.price_text).trim();
-    }
-    
-    // If no price_text, check if price is a string
-    if (!displayPriceText && typeof property.price === 'string' && property.price.trim() !== '') {
-        displayPriceText = property.price.trim();
-    }
-    
-    // Check if this is a per sq.ft. price - if so, display price_text as-is or format the numeric price
-    const isPerSqft = displayPriceText && (
-        displayPriceText.toLowerCase().includes('sq.ft') || 
-        displayPriceText.toLowerCase().includes('sqft') || 
-        displayPriceText.toLowerCase().includes('per sq') ||
-        displayPriceText.toLowerCase().includes('/sq')
-    );
-    
-    // Display price with proper formatting: ₹ symbol, Cr/L/K
-    // Priority: price_text > string price > formatted numeric price
-    let priceContent = '';
-    
-    // Handle per sq.ft. prices first
-    if (isPerSqft) {
-        if (displayPriceText) {
-            priceContent = normalizeRupeeSymbol(displayPriceText);
-        } else if (typeof property.price === 'number' && property.price > 0) {
-            priceContent = `₹ ${property.price.toLocaleString('en-IN')}/- Sq.Ft.`;
-        } else {
-            priceContent = 'Price on request';
-        }
-    } else if (displayPriceText && displayPriceText !== '' && displayPriceText !== String(property.price) && displayPriceText !== String(Math.round(property.price))) {
-        // Use the price text if available (e.g., "3BHK: Rs.3.32 Cr, 4BHK: Rs.3.72 Cr")
-        // Format with line breaks if multiple prices; normalize Rs. to ₹
-        let formattedPrice = displayPriceText.replace(/\bLakh\b/gi, 'L');
-        if (displayPriceText.includes('3BHK') && displayPriceText.includes('4BHK')) {
-            formattedPrice = formattedPrice
-                .replace(/(3BHK[^4]*?)(4BHK)/g, '$1, $2')
-                .replace(/,/g, ', ');
-        } else if (displayPriceText.includes(',')) {
-            formattedPrice = formattedPrice.replace(/,/g, ', ');
-        }
-        priceContent = normalizeRupeeSymbol(formattedPrice);
-    } else if (typeof property.price === 'string' && property.price.trim() !== '') {
-        const priceStr = property.price.trim();
-        if (priceStr.includes('Rs.') || priceStr.includes('₹') || priceStr.includes('Cr') || priceStr.includes('Lakh') || priceStr.includes(' L')) {
-            priceContent = normalizeRupeeSymbol(priceStr.replace(/\bLakh\b/gi, 'L'));
-        } else {
-            const numPrice = parseFloat(priceStr);
-            if (!isNaN(numPrice)) {
-                const formatted = formatNumericPrice(numPrice);
-                priceContent = formatted || priceStr;
-            } else {
-                priceContent = normalizeRupeeSymbol(priceStr);
-            }
-        }
-    } else if (typeof property.price === 'number' && property.price > 0) {
-        const formatted = formatNumericPrice(property.price);
-        priceContent = formatted || `₹ ${property.price.toLocaleString('en-IN')}`;
-    } else {
-        priceContent = 'Price on request';
-    }
-    
-    // Wrap price content with heading and appropriately sized font
-    // Note: priceContent may contain HTML (line breaks), so we don't escape it
+    const priceDisplay = getPriceForDisplay(property);
+    const priceContentHtml = priceDisplay.value != null
+        ? `₹ <span class="price-value">${priceDisplay.value}</span> <span class="price-unit">${priceDisplay.unit}</span>`
+        : 'Price on request';
+
     price.innerHTML = `
         <div style="margin-bottom: 0.5rem;">
             <h3 style="font-size: 26px; font-weight: 600; margin: 0 0 0.75rem 0; color: #1f2937; display: flex; align-items: center; gap: 0.5rem;">
@@ -1027,7 +1014,7 @@ function renderPropertyDetails(property) {
             </h3>
         </div>
         <div style="font-size: 22px; line-height: 1.6; color: #374151;">
-            ${priceContent}
+            ${priceContentHtml}
         </div>
     `;
     

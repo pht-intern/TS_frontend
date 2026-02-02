@@ -2821,14 +2821,13 @@ function getApartmentsStep2HTML() {
         </div>
 
         <div class="dashboard-form-group">
-            <label for="residentialAmenities">
+            <label>
                 <i class="fas fa-star"></i>
                 Amenities/Features
             </label>
-            <select id="residentialAmenities" name="amenities" multiple style="min-height: 150px;">
-                <!-- Options will be populated dynamically -->
-            </select>
-            <small style="color: #6b7280; margin-top: 0.5rem; display: block;">Hold Ctrl/Cmd to select multiple amenities</small>
+            <div id="residentialAmenitiesCheckboxes" class="dashboard-amenities-checkboxes" role="group" aria-label="Select amenities">
+                <!-- Checkboxes populated dynamically by loadAmenitiesForResidentialForm -->
+            </div>
         </div>
     `;
 }
@@ -2946,14 +2945,13 @@ function getVillasStep2HTML() {
         </div>
 
         <div class="dashboard-form-group">
-            <label for="residentialAmenities">
+            <label>
                 <i class="fas fa-star"></i>
                 Amenities/Features
             </label>
-            <select id="residentialAmenities" name="amenities" multiple style="min-height: 150px;">
-                <!-- Options will be populated dynamically -->
-            </select>
-            <small style="color: #6b7280; margin-top: 0.5rem; display: block;">Hold Ctrl/Cmd to select multiple amenities</small>
+            <div id="residentialAmenitiesCheckboxes" class="dashboard-amenities-checkboxes" role="group" aria-label="Select amenities">
+                <!-- Checkboxes populated dynamically by loadAmenitiesForResidentialForm -->
+            </div>
         </div>
     `;
 }
@@ -3323,29 +3321,25 @@ function initializeStep2EventListeners(propertyType) {
     }
 }
 
-// Load Amenities for Residential Property Form
+// Load Amenities for Residential Property Form (populate checkboxes)
 async function loadAmenitiesForResidentialForm() {
     try {
         const response = await fetch('/api/amenities');
         if (response.ok) {
             const data = await response.json();
-            const amenitiesSelect = document.getElementById('residentialAmenities');
-            if (amenitiesSelect && data.amenities && Array.isArray(data.amenities)) {
-                // Clear existing options
-                amenitiesSelect.innerHTML = '';
-                
-                // Add amenities
+            const container = document.getElementById('residentialAmenitiesCheckboxes');
+            if (container && data.amenities && Array.isArray(data.amenities)) {
+                container.innerHTML = '';
                 const uniqueAmenities = [...new Set(data.amenities.map(a => a && a.trim()).filter(Boolean))];
                 uniqueAmenities.sort();
-                
                 uniqueAmenities.forEach(amenity => {
-                    const option = document.createElement('option');
-                    option.value = amenity;
                     const displayName = amenity
                         .replace(/_/g, ' ')
                         .replace(/\b\w/g, l => l.toUpperCase());
-                    option.textContent = displayName;
-                    amenitiesSelect.appendChild(option);
+                    const label = document.createElement('label');
+                    label.className = 'dashboard-amenity-checkbox-label';
+                    label.innerHTML = `<input type="checkbox" name="amenities" value="${escapeHtml(amenity)}"> <span>${escapeHtml(displayName)}</span>`;
+                    container.appendChild(label);
                 });
             }
         }
@@ -4328,26 +4322,17 @@ function populateStep2Fields(property) {
         const featureNames = toFeatureNameList(property.features);
         if (featureNames.length > 0) {
             const applyAmenities = (attempt = 0) => {
-                const amenitiesSelect = document.getElementById('residentialAmenities');
-                if (!amenitiesSelect) return;
-
-                if (!amenitiesSelect.options || amenitiesSelect.options.length === 0) {
-                    if (attempt < 20) {
-                        setTimeout(() => applyAmenities(attempt + 1), 150);
-                    }
+                const container = document.getElementById('residentialAmenitiesCheckboxes');
+                if (!container) return;
+                const checkboxes = container.querySelectorAll('input[name="amenities"]');
+                if (!checkboxes.length && attempt < 20) {
+                    setTimeout(() => applyAmenities(attempt + 1), 150);
                     return;
                 }
-
-                Array.from(amenitiesSelect.options).forEach(opt => {
-                    opt.selected = false;
-                });
-
-                featureNames.forEach(name => {
-                    const opt = Array.from(amenitiesSelect.options).find(o => o.value === name);
-                    if (opt) opt.selected = true;
+                checkboxes.forEach(cb => {
+                    cb.checked = featureNames.indexOf(cb.value) !== -1;
                 });
             };
-
             applyAmenities();
         }
     } else if (propertyType === 'villas' || propertyType === 'individual_house') {
@@ -4458,26 +4443,17 @@ function populateStep2Fields(property) {
         const villaFeatureNames = toFeatureNameList(property.features);
         if (propertyType === 'villas' && villaFeatureNames.length > 0) {
             const applyAmenities = (attempt = 0) => {
-                const amenitiesSelect = document.getElementById('residentialAmenities');
-                if (!amenitiesSelect) return;
-
-                if (!amenitiesSelect.options || amenitiesSelect.options.length === 0) {
-                    if (attempt < 20) {
-                        setTimeout(() => applyAmenities(attempt + 1), 150);
-                    }
+                const container = document.getElementById('residentialAmenitiesCheckboxes');
+                if (!container) return;
+                const checkboxes = container.querySelectorAll('input[name="amenities"]');
+                if (!checkboxes.length && attempt < 20) {
+                    setTimeout(() => applyAmenities(attempt + 1), 150);
                     return;
                 }
-
-                Array.from(amenitiesSelect.options).forEach(opt => {
-                    opt.selected = false;
-                });
-
-                villaFeatureNames.forEach(name => {
-                    const opt = Array.from(amenitiesSelect.options).find(o => o.value === name);
-                    if (opt) opt.selected = true;
+                checkboxes.forEach(cb => {
+                    cb.checked = villaFeatureNames.indexOf(cb.value) !== -1;
                 });
             };
-
             applyAmenities();
         }
     } else if (propertyType === 'plot_properties') {
@@ -4731,14 +4707,14 @@ async function handleResidentialPropertySubmit(e) {
         data.video_preview_link = videoLink;
     }
     
-    // Get features/amenities from Step 2 (for apartments and villas)
-    // Guard: Ensure features is always an array, even if empty
+    // Get features/amenities from Step 2 (for apartments and villas) - from checkboxes
     data.features = [];
-    const amenitiesSelect = document.getElementById('residentialAmenities');
-    if (amenitiesSelect && amenitiesSelect.selectedOptions && amenitiesSelect.selectedOptions.length > 0) {
-        data.features = Array.from(amenitiesSelect.selectedOptions)
-            .map(opt => opt && opt.value ? String(opt.value).trim() : null)
-            .filter(Boolean); // Remove null/empty values
+    const amenitiesContainer = document.getElementById('residentialAmenitiesCheckboxes');
+    if (amenitiesContainer) {
+        const checked = amenitiesContainer.querySelectorAll('input[name="amenities"]:checked');
+        data.features = Array.from(checked)
+            .map(cb => cb && cb.value ? String(cb.value).trim() : null)
+            .filter(Boolean);
     }
 
     if (submitBtn) {

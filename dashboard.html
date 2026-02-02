@@ -1139,6 +1139,35 @@ body{font-family:'Inter',sans-serif;font-size:18px;line-height:1.6;color:var(--t
                 <div class="dashboard-form-step active" data-step="1">
                     <div class="dashboard-form-row">
                         <div class="dashboard-form-group">
+                            <label for="residentialStatus">
+                                <i class="fas fa-tag"></i>
+                                Status *
+                            </label>
+                            <select id="residentialStatus" name="status" required>
+                                <option value="">Select Status</option>
+                                <option value="new">New</option>
+                                <option value="resale">Resale</option>
+                            </select>
+                        </div>
+                        <div class="dashboard-form-group">
+                            <label for="residentialListingType">
+                                <i class="fas fa-list"></i>
+                                Listing Type *
+                            </label>
+                            <select id="residentialListingType" name="listing_type" required>
+                                <option value="">Select Listing Type</option>
+                                <option value="sale">Sale</option>
+                                <option value="rent">Rent</option>
+                                <option value="under_construction">Under Construction</option>
+                                <option value="ready_to_move">Ready to Move</option>
+                                <option value="ready_to_move">Ready to Register</option>
+                                <option value="under_development">Under Development</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="dashboard-form-row">
+                        <div class="dashboard-form-group">
                             <label for="residentialPropertyName">
                                 <i class="fas fa-building"></i>
                                 Project Name *

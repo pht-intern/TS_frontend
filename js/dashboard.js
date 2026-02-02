@@ -2425,6 +2425,19 @@ function validateResidentialPropertyStep(stepNumber) {
             return false;
         }
         
+        const status = document.getElementById('residentialStatus');
+        const listingType = document.getElementById('residentialListingType');
+        if (!status || !status.value) {
+            showNotification('Please select status', 'error');
+            status?.focus();
+            return false;
+        }
+        if (!listingType || !listingType.value) {
+            showNotification('Please select listing type', 'error');
+            listingType?.focus();
+            return false;
+        }
+        
         const price = document.getElementById('residentialPrice');
         if (!price || !price.value.trim()) {
             showNotification('Please enter price', 'error');
@@ -2766,31 +2779,6 @@ function getApartmentsStep2HTML() {
 
         <div class="dashboard-form-row">
             <div class="dashboard-form-group">
-                <label for="residentialStatus">
-                    <i class="fas fa-tag"></i>
-                    Status *
-                </label>
-                <select id="residentialStatus" name="status" required>
-                    <option value="">Select Status</option>
-                    <option value="new">New</option>
-                    <option value="resale">Resale</option>
-                </select>
-            </div>
-            <div class="dashboard-form-group">
-                <label for="residentialListingType">
-                    <i class="fas fa-list"></i>
-                    Listing Type *
-                </label>
-                <select id="residentialListingType" name="listing_type" required>
-                    <option value="">Select Listing Type</option>
-                    <option value="sale">Sale</option>
-                    <option value="rent">Rent</option>
-                </select>
-            </div>
-        </div>
-
-        <div class="dashboard-form-row">
-            <div class="dashboard-form-group">
                 <label for="residentialSuperBuildupArea">
                     <i class="fas fa-ruler-combined"></i>
                     Super Builtup Area (SBA) (sq.ft.)
@@ -2866,31 +2854,6 @@ function getVillasStep2HTML() {
             </div>
             <input type="hidden" id="residentialUnitType" name="unit_type" value="bhk">
             <input type="hidden" id="residentialBedrooms" name="bedrooms" value="3">
-        </div>
-
-        <div class="dashboard-form-row">
-            <div class="dashboard-form-group">
-                <label for="residentialListingType">
-                    <i class="fas fa-list"></i>
-                    Listing Type *
-                </label>
-                <select id="residentialListingType" name="listing_type" required>
-                    <option value="">Select Listing Type</option>
-                    <option value="under_construction">Under Construction</option>
-                    <option value="ready_to_move">Ready to Move</option>
-                </select>
-            </div>
-            <div class="dashboard-form-group">
-                <label for="residentialStatus">
-                    <i class="fas fa-tag"></i>
-                    Status *
-                </label>
-                <select id="residentialStatus" name="status" required>
-                    <option value="">Select Status</option>
-                    <option value="new">New</option>
-                    <option value="resale">Resale</option>
-                </select>
-            </div>
         </div>
 
         <div class="dashboard-form-row">
@@ -2984,27 +2947,6 @@ function getPlotPropertiesStep2HTML() {
             </div>
         </div>
 
-        <div class="dashboard-form-group">
-            <label for="residentialStatus">
-                <i class="fas fa-tag"></i>
-                Status *
-            </label>
-            <select id="residentialStatus" name="status" required>
-                <option value="">Select Status</option>
-                <option value="new">New</option>
-            </select>
-        </div>
-        <div class="dashboard-form-group">
-            <label for="residentialListingType">
-                <i class="fas fa-list"></i>
-                Listing Type *
-            </label>
-            <select id="residentialListingType" name="listing_type" required>
-                <option value="">Select Listing Type</option>
-                <option value="ready_to_move">Ready to Register</option>
-                <option value="under_development">Under Development</option>
-            </select>
-        </div>
     `;
 }
 
@@ -3987,11 +3929,8 @@ function populateResidentialForm(property) {
                 const checkAndPopulate = () => {
                     attempts++;
                     const step2Content = document.getElementById('residentialStep2');
-                    // Check for actual form fields, not just HTML content
-                    // Look for common Step 2 fields that should exist
+                    // Check for Step 2 content (status/listing type are now in Step 1)
                     const hasFields = step2Content && (
-                        document.getElementById('residentialStatus') ||
-                        document.getElementById('residentialListingType') ||
                         document.getElementById('residentialUnitType') ||
                         document.getElementById('residentialBedrooms') ||
                         step2Content.querySelector('input, select, textarea')

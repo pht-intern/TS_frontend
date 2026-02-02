@@ -1839,6 +1839,27 @@ async function openResidentialPropertyModal(propertyId = null) {
     
     if (!modal || !form) return;
 
+    // Lazy load Quill and init property description editor (same as add blog modal)
+    if (window.loadQuillEditor && typeof Quill === 'undefined') {
+        window.loadQuillEditor();
+    }
+    initPropertyDescriptionEditor();
+    if (!propertyId) {
+        if (propertyDescriptionEditor) {
+            propertyDescriptionEditor.setContents([]);
+            const descTextarea = document.getElementById('residentialDescription');
+            if (descTextarea) descTextarea.value = '';
+        } else {
+            setTimeout(function() {
+                if (propertyDescriptionEditor) {
+                    propertyDescriptionEditor.setContents([]);
+                    const t = document.getElementById('residentialDescription');
+                    if (t) t.value = '';
+                }
+            }, 600);
+        }
+    }
+
     // Get property ID input reference BEFORE resetting form
     const propertyIdInput = document.getElementById('residentialPropertyId');
     const propertyTypeCacheInput = document.getElementById('residentialPropertyTypeCache');
@@ -2044,6 +2065,15 @@ function resetResidentialPropertyModalState() {
         const propertyIdInput = document.getElementById('residentialPropertyId');
         if (propertyIdInput) {
             propertyIdInput.value = '';
+        }
+        
+        // Clear property description editor and hidden textarea
+        if (propertyDescriptionEditor) {
+            propertyDescriptionEditor.setContents([]);
+        }
+        const descriptionTextarea = document.getElementById('residentialDescription');
+        if (descriptionTextarea) {
+            descriptionTextarea.value = '';
         }
         
         // Clear gallery
@@ -3995,8 +4025,12 @@ function populateResidentialForm(property) {
     // Populate Step 3 fields - ensure all fields are set
     // These fields should always exist, so populate them directly
     const descriptionInput = document.getElementById('residentialDescription');
-    if (descriptionInput) {
-        descriptionInput.value = property.description || '';
+    const descHtml = property.description || '';
+    if (propertyDescriptionEditor) {
+        propertyDescriptionEditor.root.innerHTML = descHtml;
+        if (descriptionInput) descriptionInput.value = descHtml;
+    } else if (descriptionInput) {
+        descriptionInput.value = descHtml;
     }
     
     const videoLinkInput = document.getElementById('residentialVideoPreviewLink');
@@ -4470,6 +4504,13 @@ function populateStep2Fields(property) {
 // Handle Residential Property Submit
 async function handleResidentialPropertySubmit(e) {
     e.preventDefault();
+    
+    // Sync property description editor to hidden textarea (same as blog content)
+    if (propertyDescriptionEditor) {
+        const content = propertyDescriptionEditor.root.innerHTML.trim();
+        const textarea = document.getElementById('residentialDescription');
+        if (textarea) textarea.value = content;
+    }
     
     // Validate Step 3 before submitting
     if (!validateResidentialPropertyStep(3)) {
@@ -7179,6 +7220,61 @@ function initializeQuillEditor() {
     blogContentEditor.on('text-change', function() {
         const content = blogContentEditor.root.innerHTML;
         const textarea = document.getElementById('blogContent');
+        if (textarea) {
+            textarea.value = content;
+        }
+    });
+}
+
+// Quill editor instance for property description (add property modal)
+let propertyDescriptionEditor = null;
+
+// Initialize Property Description Editor (same pattern as blog content editor)
+function initPropertyDescriptionEditor() {
+    const editorContainer = document.getElementById('residentialDescriptionEditor');
+    if (!editorContainer) return;
+    if (propertyDescriptionEditor) return; // Already initialized
+
+    if (typeof Quill === 'undefined') {
+        if (window.loadQuillEditor) {
+            window.loadQuillEditor();
+            const checkQuill = setInterval(() => {
+                if (typeof Quill !== 'undefined') {
+                    clearInterval(checkQuill);
+                    initializePropertyDescriptionEditor();
+                }
+            }, 100);
+            setTimeout(() => clearInterval(checkQuill), 5000);
+        }
+        return;
+    }
+    initializePropertyDescriptionEditor();
+}
+
+function initializePropertyDescriptionEditor() {
+    const editorContainer = document.getElementById('residentialDescriptionEditor');
+    if (!editorContainer || propertyDescriptionEditor) return;
+
+    propertyDescriptionEditor = new Quill('#residentialDescriptionEditor', {
+        theme: 'snow',
+        modules: {
+            toolbar: [
+                [{ 'header': [1, 2, 3, 4, 5, 6, false] }],
+                ['bold', 'italic', 'underline', 'strike'],
+                [{ 'color': [] }, { 'background': [] }],
+                [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+                [{ 'align': [] }],
+                ['link', 'image'],
+                ['blockquote', 'code-block'],
+                ['clean']
+            ]
+        },
+        placeholder: 'Enter property description...'
+    });
+
+    propertyDescriptionEditor.on('text-change', function() {
+        const content = propertyDescriptionEditor.root.innerHTML;
+        const textarea = document.getElementById('residentialDescription');
         if (textarea) {
             textarea.value = content;
         }

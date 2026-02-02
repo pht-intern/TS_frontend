@@ -2395,17 +2395,10 @@ function getCurrentResidentialPropertyStep() {
 // Validate step before proceeding
 function validateResidentialPropertyStep(stepNumber) {
     if (stepNumber === 1) {
-        // Validate Step 1 fields
-        const propertyName = document.getElementById('residentialPropertyName');
+        // Validate Step 1 fields (project name is in Step 2)
         const city = document.getElementById('residentialCity');
         const locality = document.getElementById('residentialLocality');
         const propertyType = document.getElementById('residentialPropertyType');
-        
-        if (!propertyName || !propertyName.value.trim()) {
-            showNotification('Please enter project name', 'error');
-            propertyName?.focus();
-            return false;
-        }
         
         if (!city || !city.value.trim()) {
             showNotification('Please enter city', 'error');
@@ -2438,51 +2431,6 @@ function validateResidentialPropertyStep(stepNumber) {
             return false;
         }
         
-        const price = document.getElementById('residentialPrice');
-        if (!price || !price.value.trim()) {
-            showNotification('Please enter price', 'error');
-            price?.focus();
-            return false;
-        }
-        
-        // Validate location link if provided
-        const locationLink = document.getElementById('residentialLocationLink');
-        if (locationLink && locationLink.value.trim()) {
-            const linkValue = locationLink.value.trim();
-            
-            // Check if it's a valid URL
-            try {
-                const url = new URL(linkValue);
-                
-                // Validate URL scheme (must be http or https)
-                if (!['http:', 'https:'].includes(url.protocol)) {
-                    showNotification('Location link must be a valid HTTP or HTTPS URL', 'error');
-                    locationLink.focus();
-                    return false;
-                }
-                
-                // Optional: Check if it's a map service URL (Google Maps, Apple Maps, etc.)
-                const hostname = url.hostname.toLowerCase();
-                const isMapService = hostname.includes('google.com') || 
-                                   hostname.includes('maps.google.com') ||
-                                   hostname.includes('maps.apple.com') ||
-                                   hostname.includes('openstreetmap.org') ||
-                                   hostname.includes('bing.com/maps') ||
-                                   hostname.includes('mapbox.com');
-                
-                // If it's not a recognized map service, show a warning but allow it
-                // (user might be using a custom map service or shortened URL)
-                if (!isMapService) {
-                    console.warn('Location link does not appear to be from a recognized map service:', hostname);
-                }
-            } catch (error) {
-                // Invalid URL format
-                showNotification('Please enter a valid location link URL (e.g., https://maps.google.com/...)', 'error');
-                locationLink.focus();
-                return false;
-            }
-        }
-        
         return true;
     }
     
@@ -2495,6 +2443,12 @@ function validateResidentialPropertyStep(stepNumber) {
         }
         
         const propertyType = document.getElementById('residentialPropertyType')?.value;
+        const propertyName = document.getElementById('residentialPropertyName');
+        if (!propertyName || !propertyName.value.trim()) {
+            showNotification('Please enter project name', 'error');
+            propertyName?.focus();
+            return false;
+        }
         
         if (!propertyType) {
             showNotification('Please select a property type first', 'error');
@@ -2592,7 +2546,37 @@ function validateResidentialPropertyStep(stepNumber) {
     }
     
     if (stepNumber === 3) {
-        // Step 3 validation (optional fields, so just return true)
+        // Step 3: Price is required; location link validated if provided
+        const price = document.getElementById('residentialPrice');
+        if (!price || !price.value.trim()) {
+            showNotification('Please enter price', 'error');
+            price?.focus();
+            return false;
+        }
+        
+        const locationLink = document.getElementById('residentialLocationLink');
+        if (locationLink && locationLink.value.trim()) {
+            const linkValue = locationLink.value.trim();
+            try {
+                const url = new URL(linkValue);
+                if (!['http:', 'https:'].includes(url.protocol)) {
+                    showNotification('Location link must be a valid HTTP or HTTPS URL', 'error');
+                    locationLink.focus();
+                    return false;
+                }
+                const hostname = url.hostname.toLowerCase();
+                const isMapService = hostname.includes('google.com') || hostname.includes('maps.google.com') ||
+                    hostname.includes('maps.apple.com') || hostname.includes('openstreetmap.org') ||
+                    hostname.includes('bing.com/maps') || hostname.includes('mapbox.com');
+                if (!isMapService) {
+                    console.warn('Location link does not appear to be from a recognized map service:', hostname);
+                }
+            } catch (error) {
+                showNotification('Please enter a valid location link URL (e.g., https://maps.google.com/...)', 'error');
+                locationLink.focus();
+                return false;
+            }
+        }
         return true;
     }
     
@@ -2698,7 +2682,7 @@ function loadStep2Content(propertyType, container) {
             html = getVillasStep2HTML();
             break;
         case 'individual_house':
-            html = getIndividualHouseStep2HTML();
+            html = getIndividualHouseStep2HTML ? getIndividualHouseStep2HTML() : getVillasStep2HTML();
             break;
         case 'plot_properties':
             html = getPlotPropertiesStep2HTML();
@@ -2766,6 +2750,15 @@ function getApartmentsStep2HTML() {
     
     return `
         <div class="dashboard-form-group">
+            <label for="residentialPropertyName">
+                <i class="fas fa-building"></i>
+                Project Name *
+            </label>
+            <input type="text" id="residentialPropertyName" name="property_name"
+                placeholder="e.g., Prestige Shantiniketan" required>
+        </div>
+
+        <div class="dashboard-form-group">
             <label>
                 <i class="fas fa-home"></i>
                 Unit Type *
@@ -2823,6 +2816,15 @@ function getApartmentsStep2HTML() {
 // Get HTML for Villas Step 2
 function getVillasStep2HTML() {
     return `
+        <div class="dashboard-form-group">
+            <label for="residentialPropertyName">
+                <i class="fas fa-building"></i>
+                Project Name *
+            </label>
+            <input type="text" id="residentialPropertyName" name="property_name"
+                placeholder="e.g., Prestige Shantiniketan" required>
+        </div>
+
         <div class="dashboard-form-group">
             <label for="residentialVillaType">
                 <i class="fas fa-home"></i>
@@ -2922,6 +2924,15 @@ function getVillasStep2HTML() {
 // Get HTML for Plot Properties Step 2
 function getPlotPropertiesStep2HTML() {
     return `
+        <div class="dashboard-form-group">
+            <label for="residentialPropertyName">
+                <i class="fas fa-building"></i>
+                Project Name *
+            </label>
+            <input type="text" id="residentialPropertyName" name="property_name"
+                placeholder="e.g., Prestige Shantiniketan" required>
+        </div>
+
         <div class="dashboard-form-group">
             <label for="residentialPlotArea">
                 <i class="fas fa-map"></i>
@@ -3808,8 +3819,7 @@ function populateResidentialForm(property) {
         if (localityInput2) localityInput2.value = property.locality || '';
     }
     
-    const propertyNameInput = document.getElementById('residentialPropertyName');
-    if (propertyNameInput) propertyNameInput.value = property.property_name || '';
+    // Project name is in Step 2; set in populateStep2Fields after Step 2 loads
     
     const typeInput = document.getElementById('residentialType');
     if (typeInput) typeInput.value = property.type || 'residential';
@@ -4156,6 +4166,10 @@ function populateStep2Fields(property) {
     }
     
     const propertyType = document.getElementById('residentialPropertyType')?.value;
+    
+    // Project name (Step 2)
+    const propertyNameInput = document.getElementById('residentialPropertyName');
+    if (propertyNameInput) propertyNameInput.value = property.property_name || '';
     
     // Common fields - Note: dropdowns are swapped
     // Status dropdown now shows new/resale (what was in listing_type)

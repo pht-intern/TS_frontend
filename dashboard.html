@@ -1168,14 +1168,6 @@ body{font-family:'Inter',sans-serif;font-size:18px;line-height:1.6;color:var(--t
 
                     <div class="dashboard-form-row">
                         <div class="dashboard-form-group">
-                            <label for="residentialPropertyName">
-                                <i class="fas fa-building"></i>
-                                Project Name *
-                            </label>
-                            <input type="text" id="residentialPropertyName" name="property_name"
-                                placeholder="e.g., Prestige Shantiniketan" required>
-                        </div>
-                        <div class="dashboard-form-group">
                             <label for="residentialCity">
                                 <i class="fas fa-map-marker-alt"></i>
                                 City *
@@ -1186,9 +1178,6 @@ body{font-family:'Inter',sans-serif;font-size:18px;line-height:1.6;color:var(--t
                                 <option value="">Select City</option>
                             </datalist>
                         </div>
-                    </div>
-
-                    <div class="dashboard-form-row">
                         <div class="dashboard-form-group">
                             <label for="residentialLocality">
                                 <i class="fas fa-location-dot"></i>
@@ -1199,14 +1188,6 @@ body{font-family:'Inter',sans-serif;font-size:18px;line-height:1.6;color:var(--t
                             <datalist id="residentialLocalityList">
                                 <option value="">Select Locality/Area</option>
                             </datalist>
-                        </div>
-                        <div class="dashboard-form-group">
-                            <label for="residentialLocationLink">
-                                <i class="fas fa-link"></i>
-                                Location Link
-                            </label>
-                            <input type="url" id="residentialLocationLink" name="location_link"
-                                placeholder="e.g., https://maps.google.com/...">
                         </div>
                     </div>
 
@@ -1222,20 +1203,6 @@ body{font-family:'Inter',sans-serif;font-size:18px;line-height:1.6;color:var(--t
                                 <option value="villas">Villas</option>
                                 <option value="plot_properties">Plot Properties</option>
                             </select>
-                        </div>
-                        <div class="dashboard-form-group">
-                            <label for="residentialPrice">
-                                <i class="fas fa-rupee-sign"></i>
-                                Price *
-                            </label>
-                            <input type="text" id="residentialPrice" name="price" placeholder="e.g., Rs. 1.2 Cr"
-                                required>
-                            <div style="margin-top: 0.75rem;">
-                                <label style="display: flex; align-items: center; gap: 0.5rem; font-weight: normal; cursor: pointer;">
-                                    <input type="checkbox" id="residentialPriceNegotiable" name="price_negotiable" style="width: auto;">
-                                    <span>Price Negotiable</span>
-                                </label>
-                            </div>
                         </div>
                     </div>
                 </div>
@@ -1278,6 +1245,29 @@ body{font-family:'Inter',sans-serif;font-size:18px;line-height:1.6;color:var(--t
                         </label>
                         <div id="residentialDescriptionEditor" style="min-height: 200px;"></div>
                         <textarea id="residentialDescription" name="description" style="display: none;"></textarea>
+                    </div>
+
+                    <div class="dashboard-form-group">
+                        <label for="residentialLocationLink">
+                            <i class="fas fa-link"></i>
+                            Location Link
+                        </label>
+                        <input type="url" id="residentialLocationLink" name="location_link"
+                            placeholder="e.g., https://maps.google.com/...">
+                    </div>
+
+                    <div class="dashboard-form-group">
+                        <label for="residentialPrice">
+                            <i class="fas fa-rupee-sign"></i>
+                            Price *
+                        </label>
+                        <input type="text" id="residentialPrice" name="price" placeholder="e.g., Rs. 1.2 Cr" required>
+                        <div style="margin-top: 0.75rem;">
+                            <label style="display: flex; align-items: center; gap: 0.5rem; font-weight: normal; cursor: pointer;">
+                                <input type="checkbox" id="residentialPriceNegotiable" name="price_negotiable" style="width: auto;">
+                                <span>Price Negotiable</span>
+                            </label>
+                        </div>
                     </div>
 
                 </div>

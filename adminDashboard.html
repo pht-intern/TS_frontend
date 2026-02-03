@@ -114,21 +114,19 @@ body{font-family:'Inter',sans-serif;font-size:18px;line-height:1.6;color:var(--t
                     }
                 }
 
-                // Restore session from _session_restore if we just refreshed (saved within last 5s)
+                // Restore session from _session_restore if we just refreshed (saved within last 3s)
                 function restoreSessionIfRefresh() {
                     try {
-                        const raw = sessionStorage.getItem('_session_restore') || localStorage.getItem('_session_restore');
+                        const raw = sessionStorage.getItem('_session_restore');
                         if (!raw) return;
                         const data = JSON.parse(raw);
                         if (!data || typeof data.saved_at !== 'number') {
                             sessionStorage.removeItem('_session_restore');
-                            localStorage.removeItem('_session_restore');
                             return;
                         }
                         const age = Date.now() - data.saved_at;
-                        if (age > 5000) {
+                        if (age > 3000) {
                             sessionStorage.removeItem('_session_restore');
-                            localStorage.removeItem('_session_restore');
                             return;
                         }
                         if (data.user) {
@@ -144,7 +142,6 @@ body{font-family:'Inter',sans-serif;font-size:18px;line-height:1.6;color:var(--t
                             sessionStorage.setItem('session_start_time', data.session_start_time);
                         }
                         sessionStorage.removeItem('_session_restore');
-                        localStorage.removeItem('_session_restore');
                     } catch (e) { /* ignore */ }
                 }
 
@@ -436,9 +433,17 @@ body{font-family:'Inter',sans-serif;font-size:18px;line-height:1.6;color:var(--t
                                     </div>
                                 </div>
                             </div>
+                            <a href="/app-metrics.html" class="dashboard-profile-item" target="_blank">
+                                <i class="fas fa-cog"></i>
+                                <span>App Metrics</span>
+                            </a>
                             <a href="/settings.html" class="dashboard-profile-item" target="_blank">
                                 <i class="fas fa-cog"></i>
                                 <span>Settings</span>
+                            </a>
+                            <a href="/activity-logs.html" class="dashboard-profile-item" target="_blank">
+                                <i class="fas fa-history"></i>
+                                <span>Activity Logs</span>
                             </a>
                             <button class="dashboard-profile-item dashboard-profile-logout" id="dashboardLogout">
                                 <i class="fas fa-sign-out-alt"></i>
@@ -1616,7 +1621,7 @@ body{font-family:'Inter',sans-serif;font-size:18px;line-height:1.6;color:var(--t
     <!-- Critical JS - Load immediately -->
     <script src="/js/session-manager.js" defer></script>
     <!-- Dashboard JS - Load immediately after authentication check -->
-    <script src="/js/dashboard.js?v=20250203120000" defer></script>
+    <script src="/js/adminDashboard.js?v=20250203120000" defer></script>
     <!-- Non-critical JS - Load after page is interactive -->
     <script>
         // Load other scripts after page load

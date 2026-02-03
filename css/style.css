@@ -15529,34 +15529,63 @@ section:not(.hero).section-visible .section-header {
     align-items: start;
 }
 
-.dashboard-gallery-item-image {
+/* Same look for every gallery item image area (Image 1, Image 2, etc.) */
+.dashboard-gallery-item .dashboard-gallery-item-image {
     position: relative;
-    border-radius: 8px;
+    border-radius: 10px;
     overflow: hidden;
-    background: var(--grey-pale);
-    min-height: 150px;
+    min-height: 200px;
+    height: 200px;
     display: flex;
     align-items: center;
     justify-content: center;
+    border: 2px dashed var(--primary-color);
+    background: var(--primary-lightest);
+    transition: border-color 0.3s ease, background 0.3s ease;
 }
 
-.dashboard-gallery-item-image img {
+.dashboard-gallery-item .dashboard-gallery-item-image.has-image,
+.dashboard-gallery-item .dashboard-gallery-item-image:has(img) {
+    border-style: solid;
+    border-color: var(--border-color);
+    background: transparent;
+    height: auto;
+    min-height: 200px;
+}
+
+.dashboard-gallery-item .dashboard-gallery-item-image img {
     width: 100%;
     height: 100%;
     object-fit: cover;
     max-height: 200px;
 }
 
-.dashboard-gallery-item-image-placeholder {
+.dashboard-gallery-item .dashboard-gallery-item-image-placeholder {
+    width: 100%;
+    height: 100%;
+    min-height: 196px;
     padding: 2rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
     text-align: center;
-    color: var(--text-gray);
+    color: var(--primary-color);
+    font-weight: 500;
+    box-sizing: border-box;
 }
 
-.dashboard-gallery-item-image-placeholder i {
-    font-size: 2rem;
-    margin-bottom: 0.5rem;
+.dashboard-gallery-item .dashboard-gallery-item-image-placeholder i {
+    font-size: 2.5rem;
+    margin-bottom: 0.75rem;
     display: block;
+    opacity: 0.9;
+}
+
+.dashboard-gallery-item .dashboard-gallery-item-image-placeholder p {
+    margin: 0;
+    font-size: 0.9rem;
+    color: var(--text-gray);
 }
 
 .dashboard-gallery-item-fields {

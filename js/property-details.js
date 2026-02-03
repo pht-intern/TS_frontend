@@ -462,7 +462,8 @@ function convertPropertyFromAPI(property) {
         price_negotiable: property.price_negotiable || false,
         video_link: property.video_link || '',
         location_link: property.location_link || '',
-        direction: property.directions || property.facing || property.orientation || ''
+        direction: property.directions || property.facing || property.orientation || '',
+        created_at: property.created_at || null
     };
 }
 
@@ -1277,6 +1278,33 @@ function renderPropertyDetails(property) {
             </a>
         </div>
     `;
+    
+    // Render Created at timestamp
+    const createdAtEl = document.getElementById('propertyCreatedAt');
+    if (createdAtEl && property.created_at) {
+        let createdDate;
+        try {
+            const d = new Date(property.created_at);
+            createdDate = isNaN(d.getTime()) ? null : d.toLocaleDateString('en-IN', {
+                day: 'numeric',
+                month: 'short',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        } catch (e) {
+            createdDate = null;
+        }
+        if (createdDate) {
+            createdAtEl.innerHTML = `
+                <div class="property-created-at-content" style="margin-top: 1rem; padding: 0.75rem; background: var(--bg-light, #f9fafb); border-radius: 8px; border-left: 3px solid var(--primary-color, #3b82f6);">
+                    <span style="font-size: 0.9rem; color: var(--text-gray, #6b7280);">Listed on:</span>
+                    <span style="font-weight: 600; color: var(--text-color, #1f2937); margin-left: 0.5rem;">${escapeHtml(createdDate)}</span>
+                </div>
+            `;
+            createdAtEl.style.display = 'block';
+        }
+    }
     
     } catch (error) {
         console.error('Error rendering property details:', error);

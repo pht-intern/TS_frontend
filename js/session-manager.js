@@ -11,6 +11,8 @@
     const HEARTBEAT_INTERVAL = 2000; // 2 seconds
     const TAB_TIMEOUT = 5000; // 5 seconds - if no heartbeat, consider tab dead
     const INITIAL_CHECK_TIMEOUT = 3000; // 3 seconds to wait for other tabs to respond
+    const SESSION_MAX_DURATION_MS = 4 * 60 * 60 * 1000; // 4 hours - auto-logout only when session time ends
+    const SESSION_START_TIME_KEY = 'session_start_time';
     const SESSION_KEY = 'dashboard_authenticated';
     const USER_KEY = 'user';
 
@@ -90,6 +92,16 @@
             // DO NOT initialize - return immediately without creating any data
             return;
         }
+        
+        // Set session start time if not already set (e.g. existing session before this feature)
+        try {
+            const existingStart = localStorage.getItem(SESSION_START_TIME_KEY) || sessionStorage.getItem(SESSION_START_TIME_KEY);
+            if (!existingStart) {
+                const now = Date.now().toString();
+                localStorage.setItem(SESSION_START_TIME_KEY, now);
+                sessionStorage.setItem(SESSION_START_TIME_KEY, now);
+            }
+        } catch (e) { /* ignore */ }
         
         // DEBUG: Log successful initialization
         console.log('[SessionManager] Initializing session manager', {
@@ -225,6 +237,20 @@
                 return;
             }
             
+            // Session time ended: auto-logout when max duration exceeded (production/cPanel)
+            try {
+                const startStr = localStorage.getItem(SESSION_START_TIME_KEY) || sessionStorage.getItem(SESSION_START_TIME_KEY);
+                if (startStr) {
+                    const startTime = parseInt(startStr, 10);
+                    if (!isNaN(startTime) && (Date.now() - startTime) > SESSION_MAX_DURATION_MS) {
+                        stopHeartbeat();
+                        clearSession();
+                        window.location.replace('/index.html');
+                        return;
+                    }
+                }
+            } catch (e) { /* ignore */ }
+            
             sendMessage('heartbeat', { tabId });
             
             // Also update localStorage timestamp to mark this tab as active
@@ -315,20 +341,9 @@
                 // Ignore storage errors
             }
             
-            // CRITICAL FIX: Also check if session data exists in localStorage
-            // If session data exists, this is likely a refresh, not a tab closure
-            let hasSessionData = false;
-            try {
-                hasSessionData = localStorage.getItem('dashboard_authenticated') === 'true' ||
-                                localStorage.getItem('user') !== null;
-            } catch (e) {
-                // Ignore storage errors
-            }
-            
-            // event.persisted is false when the page is being unloaded (tab closing)
-            // event.persisted is true when the page is being cached (e.g., back/forward navigation)
-            // Only mark as closing if it's NOT a reload AND session data doesn't exist (real closure)
-            if (!event.persisted && !isPageReload && !hasSessionData) {
+            // event.persisted is false when the page is being unloaded (tab closing/refresh)
+            // cleanup() on beforeunload saves _session_restore and clears when last tab
+            if (!event.persisted && !isPageReload) {
                 // Tab is actually closing, not just navigating or reloading
                 sendMessage('tab-closing', { tabId });
                 
@@ -359,37 +374,19 @@
         window.addEventListener('beforeunload', () => {
             // Only process if session manager is initialized
             if (isInitialized && tabId) {
-                // CRITICAL: Check for reload flag FIRST - check both storages for reliability
+                // Only skip if explicit reload flag is set
                 let isPageReload = false;
                 try {
                     isPageReload = sessionStorage.getItem('_page_reload') === 'true' ||
                                   localStorage.getItem('_page_reload') === 'true';
                 } catch (e) {
-                    // Ignore storage errors - assume it's not a reload if we can't check
-                }
-                
-                // CRITICAL FIX: Also check if session data exists in localStorage
-                // If session data exists, this is likely a refresh, not a tab closure
-                // Regular page refreshes preserve localStorage, so if we have session data,
-                // we should assume it's a refresh and not clear the session
-                let hasSessionData = false;
-                try {
-                    hasSessionData = localStorage.getItem('dashboard_authenticated') === 'true' ||
-                                    localStorage.getItem('user') !== null;
-                } catch (e) {
                     // Ignore storage errors
                 }
-                
-                // If this is a reload OR session data exists (likely a refresh), don't clear session
-                if (isPageReload || hasSessionData) {
-                    // This is just a page reload/refresh, not a tab closure
-                    // Don't mark as closing or clear session
-                    // The flag will be cleared after page loads
+                if (isPageReload) {
                     return;
                 }
                 
-                // This appears to be a real tab closure
-                // Mark tab as closing immediately
+                // Mark tab as closing (cleanup() will save _session_restore and clear when last tab)
                 try {
                     const tabData = {
                         tabId: tabId,
@@ -468,21 +465,6 @@
             return;
         }
         
-        // CRITICAL FIX: Check if this is a page reload/refresh
-        // If session data exists in localStorage, this is likely a refresh, not a tab closure
-        let hasSessionData = false;
-        try {
-            hasSessionData = localStorage.getItem('dashboard_authenticated') === 'true' ||
-                            localStorage.getItem('user') !== null;
-        } catch (e) {
-            // Ignore storage errors
-        }
-        
-        // If session data exists, don't clear - this is likely a refresh
-        if (hasSessionData) {
-            return;
-        }
-        
         // Remove stale tabs first
         const now = Date.now();
         activeTabs.forEach((lastHeartbeat, tabIdToCheck) => {
@@ -523,10 +505,8 @@
         // Count active tabs from BroadcastChannel (excluding self)
         const otherTabs = Array.from(activeTabs.keys()).filter(id => id !== tabId);
         
-        // Only clear session if we're sure we're the last tab AND initial check is done
-        // AND session data doesn't exist (indicating a real closure, not a refresh)
-        if (otherTabs.length === 0 && !otherTabsFound && initialCheckDone && !hasSessionData) {
-            // We're the last tab and initial check completed - clear session
+        // Clear session when we're the last tab (refresh will restore via _session_restore)
+        if (otherTabs.length === 0 && !otherTabsFound && initialCheckDone) {
             clearSession();
         }
     }
@@ -593,6 +573,7 @@
         sessionStorage.removeItem('isAuthenticated');
         sessionStorage.removeItem(USER_KEY);
         sessionStorage.removeItem('user');
+        sessionStorage.removeItem(SESSION_START_TIME_KEY);
         
         // CRITICAL FIX: Always clear session from localStorage when all tabs close
         // "Remember Me" only saves email/password for autofill, NOT the active session
@@ -602,6 +583,7 @@
         localStorage.removeItem('isAuthenticated');
         localStorage.removeItem(USER_KEY);
         localStorage.removeItem('user');
+        localStorage.removeItem(SESSION_START_TIME_KEY);
         
         // Note: We keep 'remember_me', 'saved_email', and 'saved_password' in localStorage
         // if "Remember Me" was checked, so the user can easily log back in with autofill
@@ -707,44 +689,40 @@
     }
 
     /**
-     * Cleanup function - called when tab is closing
-     * Clears session if this is the last tab
-     * CRITICAL FIX: Don't run cleanup during page reloads
+     * Cleanup function - called when tab is closing or refreshing
+     * CRITICAL: Do NOT clear session on beforeunload. We cannot reliably tell refresh from tab-close,
+     * and clearing on refresh was logging users out. Session now ends only on explicit logout or 4h expiry.
      */
+    const SESSION_RESTORE_KEY = '_session_restore';
+    const SESSION_RESTORE_TTL_MS = 5000; // Restore only if saved within last 5 seconds (refresh fallback)
+
     function cleanup() {
         // Only cleanup if session manager was initialized
         if (!isInitialized) return;
         
-        // CRITICAL FIX: Check if this is a page reload before doing cleanup
-        // Check both storages for reliability
-        let isPageReload = false;
-        try {
-            isPageReload = sessionStorage.getItem('_page_reload') === 'true' ||
-                          localStorage.getItem('_page_reload') === 'true';
-        } catch (e) {
-            // Ignore storage errors
-        }
-        
-        // CRITICAL FIX: Also check if session data exists in localStorage
-        // If session data exists, this is likely a refresh, not a tab closure
+        // Save session for possible restore on refresh (fallback - we no longer clear on unload)
         let hasSessionData = false;
         try {
             hasSessionData = localStorage.getItem('dashboard_authenticated') === 'true' ||
                             localStorage.getItem('user') !== null;
+            if (hasSessionData) {
+                const restore = {
+                    user: localStorage.getItem('user'),
+                    dashboard_authenticated: localStorage.getItem('dashboard_authenticated'),
+                    session_start_time: localStorage.getItem(SESSION_START_TIME_KEY),
+                    saved_at: Date.now()
+                };
+                const restoreStr = JSON.stringify(restore);
+                sessionStorage.setItem(SESSION_RESTORE_KEY, restoreStr);
+                localStorage.setItem(SESSION_RESTORE_KEY, restoreStr);
+            }
         } catch (e) {
             // Ignore storage errors
         }
         
-        // If this is a reload OR session data exists (likely a refresh), don't run cleanup
-        if (isPageReload || hasSessionData) {
-            // This is just a page reload/refresh, not a tab closure
-            // Don't clear session or do cleanup
-            return;
-        }
-        
         stopHeartbeat();
         
-        // Mark this tab as closing in localStorage immediately
+        // Mark this tab as closing in localStorage (for other tabs' tracking only)
         if (tabId) {
             try {
                 const tabData = {
@@ -759,72 +737,16 @@
         }
         
         if (broadcastChannel) {
-            // Remove ourselves from active tabs
             activeTabs.delete(tabId);
-            
-            // Notify other tabs that we're closing
             sendMessage('tab-closing', { tabId });
-            
-            // Check immediately and after a short delay if we're the last tab
-            function checkAndClearIfLast() {
-                // Remove stale tabs first
-                const now = Date.now();
-                activeTabs.forEach((lastHeartbeat, tabIdToCheck) => {
-                    if (now - lastHeartbeat > TAB_TIMEOUT) {
-                        activeTabs.delete(tabIdToCheck);
-                    }
-                });
-                
-                // Check for other tabs via localStorage
-                let otherTabsFound = false;
-                try {
-                    for (let i = 0; i < localStorage.length; i++) {
-                        const key = localStorage.key(i);
-                        if (key && key.startsWith('tab_') && key !== `tab_${tabId}`) {
-                            try {
-                                const tabData = JSON.parse(localStorage.getItem(key) || '{}');
-                                // Check if tab is active (recent timestamp and not closing)
-                                if (tabData.timestamp && 
-                                    (now - tabData.timestamp) < TAB_TIMEOUT && 
-                                    !tabData.closing) {
-                                    otherTabsFound = true;
-                                    break;
-                                }
-                            } catch (e) {
-                                // Ignore parse errors
-                            }
-                        }
-                    }
-                } catch (e) {
-                    // Ignore storage errors
-                }
-                
-                // Count active tabs from BroadcastChannel
-                const otherTabs = Array.from(activeTabs.keys()).filter(id => id !== tabId);
-                
-                // If no other tabs found, clear session
-                if (otherTabs.length === 0 && !otherTabsFound) {
-                    // We're the last tab - clear session immediately
-                    clearSession();
-                }
-            }
-            
-            // Check immediately
-            checkAndClearIfLast();
-            
-            // Also check after a short delay to catch any late responses
-            setTimeout(checkAndClearIfLast, 300);
-            
-            // Close broadcast channel after a delay
             setTimeout(() => {
                 if (broadcastChannel) {
                     broadcastChannel.close();
                     broadcastChannel = null;
                 }
-            }, 1000);
+            }, 500);
         }
         
-        // Clean up tab tracking data
         if (tabId) {
             try {
                 localStorage.removeItem(`tab_${tabId}`);
@@ -835,6 +757,9 @@
         
         activeTabs.clear();
         isInitialized = false;
+        
+        // Do NOT clear session here. We cannot tell refresh from tab-close in beforeunload.
+        // Session ends only on: explicit logout, or 4-hour expiry (heartbeat check).
     }
 
     // Initialize when DOM is ready

@@ -508,10 +508,13 @@
                     // Store authentication data synchronously (localStorage/sessionStorage are synchronous)
                     // CRITICAL: Login works regardless of remember me checkbox state
                     try {
+                        // Session start time for auto-logout when session time ends (production/cPanel standard)
+                        const sessionStartTime = Date.now().toString();
                         if (rememberMe) {
                             // Remember Me checked: Use localStorage for persistent storage
                             localStorage.setItem('user', JSON.stringify(userData));
                             localStorage.setItem('dashboard_authenticated', 'true');
+                            localStorage.setItem('session_start_time', sessionStartTime);
                             localStorage.setItem('remember_me', 'true'); // Flag for session manager
                             // Save email and password for autofill
                             localStorage.setItem('saved_email', email);
@@ -519,14 +522,17 @@
                             // Also store in sessionStorage for immediate access
                             sessionStorage.setItem('user', JSON.stringify(userData));
                             sessionStorage.setItem('dashboard_authenticated', 'true');
+                            sessionStorage.setItem('session_start_time', sessionStartTime);
                         } else {
                             // Remember Me not checked OR checkbox doesn't exist: Use sessionStorage
                             // Store in both for reliability, but session manager will clear localStorage when tabs close
                             sessionStorage.setItem('user', JSON.stringify(userData));
                             sessionStorage.setItem('dashboard_authenticated', 'true');
+                            sessionStorage.setItem('session_start_time', sessionStartTime);
                             // Store in localStorage as backup for immediate access
                             localStorage.setItem('user', JSON.stringify(userData));
                             localStorage.setItem('dashboard_authenticated', 'true');
+                            localStorage.setItem('session_start_time', sessionStartTime);
                             localStorage.removeItem('remember_me'); // Clear flag if unchecked or doesn't exist
                             // Clear saved credentials
                             localStorage.removeItem('saved_email');
@@ -607,12 +613,14 @@
                         const finalCheckUser = localStorage.getItem('user') || sessionStorage.getItem('user');
                         
                         if (finalCheckLocal || finalCheckSession) {
-                            // Add timestamp to prevent caching issues
-                            const redirectUrl = '/dashboard.html?_login=' + Date.now();
-                            console.log('Redirecting to dashboard with verified auth:', {
+                            // If user has is_admin true in DB -> adminDashboard, else -> dashboard
+                            const redirectPath = userData.is_admin === true ? '/adminDashboard.html' : '/dashboard.html';
+                            const redirectUrl = redirectPath + '?_login=' + Date.now();
+                            console.log('Redirecting with verified auth:', {
                                 local: finalCheckLocal,
                                 session: finalCheckSession,
-                                hasUser: !!finalCheckUser
+                                hasUser: !!finalCheckUser,
+                                redirectTo: redirectPath
                             });
                             window.location.replace(redirectUrl);
                         } else {

@@ -707,8 +707,17 @@ function showNotification(message, type = 'info') {
 /**
  * Handle logout
  */
-function handleLogout() {
-    if (confirm('Are you sure you want to logout?')) {
+async function handleLogout() {
+    const confirmed = (window.TSPropertiesUI && typeof window.TSPropertiesUI.confirm === 'function')
+        ? await window.TSPropertiesUI.confirm({
+            title: 'Logout',
+            message: 'Are you sure you want to logout?',
+            confirmText: 'Logout',
+            cancelText: 'Cancel'
+        })
+        : false;
+
+    if (confirmed) {
         // Get user email before clearing session
         const userStr = sessionStorage.getItem('user') || localStorage.getItem('user');
         let userEmail = null;

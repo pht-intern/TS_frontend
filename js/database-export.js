@@ -190,8 +190,17 @@ async function handleExportDatabase() {
 /**
  * Handle logout
  */
-function handleLogout() {
-    if (confirm('Are you sure you want to logout?')) {
+async function handleLogout() {
+    const confirmed = (window.TSPropertiesUI && typeof window.TSPropertiesUI.confirm === 'function')
+        ? await window.TSPropertiesUI.confirm({
+            title: 'Logout',
+            message: 'Are you sure you want to logout?',
+            confirmText: 'Logout',
+            cancelText: 'Cancel'
+        })
+        : false;
+
+    if (confirmed) {
         // Cleanup session manager
         if (window.SessionManager) {
             window.SessionManager.cleanup();

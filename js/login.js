@@ -87,20 +87,31 @@
                     user.role === 'admin') {
                     hasValidUser = true;
                 } else {
-                    // Invalid user data - clear it
+                    // Invalid user data - end server session then clear
+                    var clearEmail = (user && user.email) || null;
+                    if (clearEmail) {
+                        try {
+                            fetch('/api/auth/logout', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: clearEmail }), keepalive: true }).catch(function() {});
+                        } catch (err) {}
+                    }
                     user = null;
                     hasValidUser = false;
-                    // Clear invalid session data
                     sessionStorage.removeItem('dashboard_authenticated');
                     sessionStorage.removeItem('user');
                     localStorage.removeItem('dashboard_authenticated');
                     localStorage.removeItem('user');
                 }
             } catch (e) {
-                // Invalid JSON, treat as not authenticated
+                // Invalid JSON - end server session if we can get email, then clear
+                var clearEmail = null;
+                if (userStr) { try { var u = JSON.parse(userStr); clearEmail = u && u.email || null; } catch (e2) {} }
+                if (clearEmail) {
+                    try {
+                        fetch('/api/auth/logout', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: clearEmail }), keepalive: true }).catch(function() {});
+                    } catch (err) {}
+                }
                 user = null;
                 hasValidUser = false;
-                // Clear invalid session data
                 sessionStorage.removeItem('dashboard_authenticated');
                 sessionStorage.removeItem('user');
                 localStorage.removeItem('dashboard_authenticated');
@@ -214,8 +225,15 @@
                 }
             }
             
-            // If there's a session flag but no valid user, clear it
+            // If there's a session flag but no valid user, end server session then clear
             if (!hasValidUser) {
+                var clearEmail = null;
+                if (userStr) { try { var u = JSON.parse(userStr); clearEmail = u && u.email || null; } catch (e2) {} }
+                if (clearEmail) {
+                    try {
+                        fetch('/api/auth/logout', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: clearEmail }), keepalive: true }).catch(function() {});
+                    } catch (e) {}
+                }
                 sessionStorage.removeItem('dashboard_authenticated');
                 sessionStorage.removeItem('isAuthenticated');
                 sessionStorage.removeItem('user');
@@ -405,6 +423,53 @@
         if (existingError) {
             existingError.remove();
         }
+        const endSessionWrap = loginForm.querySelector('.login-error-end-session');
+        if (endSessionWrap) {
+            endSessionWrap.remove();
+        }
+    }
+
+    // Show 403 "already logged in" error with "End other session" button (for app@tirumakudaluproperties.com)
+    function showLoginErrorWithEndSession(message, email, password, submitBtn, originalText) {
+        clearLoginError();
+        const errorDiv = document.createElement('div');
+        errorDiv.className = 'login-error-message form-message error';
+        errorDiv.innerHTML = '<i class="fas fa-exclamation-circle"></i> ' + (message || 'Another session is already active.');
+        const firstFormGroup = loginForm.querySelector('.form-group');
+        if (firstFormGroup) {
+            loginForm.insertBefore(errorDiv, firstFormGroup);
+        } else {
+            loginForm.insertBefore(errorDiv, loginForm.firstChild);
+        }
+        const wrap = document.createElement('div');
+        wrap.className = 'login-error-end-session';
+        wrap.style.marginTop = '8px';
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'btn btn-primary';
+        btn.textContent = 'End other session and log in';
+        btn.addEventListener('click', async function() {
+            btn.disabled = true;
+            btn.textContent = 'Ending session...';
+            try {
+                await fetch('/api/auth/logout', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email: email })
+                });
+            } catch (e) {}
+            clearLoginError();
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = originalText;
+            btn.textContent = 'End other session and log in';
+            btn.disabled = false;
+            loginForm.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
+        });
+        wrap.appendChild(btn);
+        errorDiv.appendChild(wrap);
+        if (loginForm.querySelector('.form-group')) {
+            loginForm.querySelector('.form-group').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
     }
 
     // Form submission
@@ -453,10 +518,10 @@
                     } catch {
                         errorMessage = text || `HTTP ${response.status}: ${response.statusText}`;
                     }
-                    
-                    // Show specific error message for incorrect credentials
                     if (response.status === 401) {
                         showLoginError('Invalid email or password. Please check your credentials and try again.');
+                    } else if (response.status === 403 && (errorMessage.indexOf('already logged in') !== -1 || errorMessage.indexOf('already active') !== -1)) {
+                        showLoginErrorWithEndSession(errorMessage, email, password, submitBtn, originalText);
                     } else {
                         showLoginError(errorMessage);
                     }
@@ -613,8 +678,9 @@
                         const finalCheckUser = localStorage.getItem('user') || sessionStorage.getItem('user');
                         
                         if (finalCheckLocal || finalCheckSession) {
-                            // If user has is_admin true in DB -> adminDashboard, else -> dashboard
-                            const redirectPath = userData.is_admin === true ? '/adminDashboard.html' : '/dashboard.html';
+                            // Redirect by is_admin: only is_admin === 1 goes to adminDashboard; others -> dashboard
+                            const isAdmin = (userData.role === 'admin' && (userData.is_admin === true || userData.is_admin === 1));
+                            const redirectPath = isAdmin ? '/adminDashboard.html' : '/dashboard.html';
                             const redirectUrl = redirectPath + '?_login=' + Date.now();
                             console.log('Redirecting with verified auth:', {
                                 local: finalCheckLocal,

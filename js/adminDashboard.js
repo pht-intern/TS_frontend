@@ -1,5 +1,5 @@
-// Dashboard JavaScript
-console.log('[DASHBOARD] dashboard.js script file loaded!');
+// Admin Dashboard JavaScript
+console.log('[ADMIN DASHBOARD] adminDashboard.js loaded');
 
 // Safe JSON parsing helper - checks response.ok before parsing
 async function safeJsonParse(response) {
@@ -8,6 +8,37 @@ async function safeJsonParse(response) {
         throw new Error(text);
     }
     return await response.json();
+}
+
+// Parse numeric value from price or price_text (handles "83,70,000", "8370000", etc.)
+function parsePriceNumber(property) {
+    if (typeof property.price === 'number' && !isNaN(property.price) && property.price > 0) {
+        return property.price;
+    }
+    if (typeof property.price === 'string' && property.price.trim() !== '') {
+        const n = parseFloat(String(property.price).replace(/,/g, ''));
+        if (!isNaN(n) && n > 0) return n;
+    }
+    // Fallback: parse price_text if it looks like a raw number (e.g. "83,70,000")
+    if (property.price_text && typeof property.price_text === 'string') {
+        const stripped = property.price_text.replace(/[\s,]/g, '').replace(/^[Rr]s\.?|₹| Cr| Lakh| L| Cr\.?$/gi, '').trim();
+        if (/^\d+(\.\d+)?$/.test(stripped)) {
+            const n = parseFloat(stripped);
+            if (!isNaN(n) && n > 0) return n;
+        }
+    }
+    return 0;
+}
+
+// Auto-calculate digit and unit from numeric price (for table display)
+function getPriceDigitForDisplay(property) {
+    const num = parsePriceNumber(property);
+    if (num <= 0) return { value: null, unit: 'Cr' };
+    if (num >= 10000000) return { value: (num / 10000000).toFixed(2), unit: 'Cr' };
+    if (num >= 100000) return { value: (num / 100000).toFixed(2), unit: 'L' };
+    if (num >= 1000) return { value: (num / 1000).toFixed(2), unit: 'K' };
+    if (num < 100 && num >= 1) return { value: num.toFixed(2), unit: 'Cr' };
+    return { value: num.toLocaleString('en-IN'), unit: 'Cr' };
 }
 
 // Format price for display (same logic as property-details.js)
@@ -31,7 +62,7 @@ function formatPropertyPrice(property) {
         if (displayPriceText) {
             return displayPriceText;
         } else if (typeof property.price === 'number' && property.price > 0) {
-            return `Rs. ${property.price.toLocaleString('en-IN')}/- Sq.Ft.`;
+            return `₹ ${property.price.toLocaleString('en-IN')}/- Sq.Ft.`;
         }
     }
     
@@ -55,26 +86,26 @@ function formatPropertyPrice(property) {
         }
     }
     
-    // Format numeric price
+    // Format numeric price (₹ and Cr/L like property-details.html)
     if (typeof property.price === 'number' && property.price > 0) {
         if (property.price >= 10000000) {
             const crores = (property.price / 10000000).toFixed(2);
-            return `Rs. ${crores} Cr`;
+            return `₹ ${crores} Cr`;
         } else if (property.price >= 100000) {
             const lakhs = (property.price / 100000).toFixed(2);
-            return `Rs. ${lakhs} Lakh`;
+            return `₹ ${lakhs} L`;
         } else if (property.price >= 1000) {
             const thousands = (property.price / 1000).toFixed(2);
-            return `Rs. ${thousands} K`;
+            return `₹ ${thousands} K`;
         } else if (property.price < 100 && property.price > 0 && property.price < 10) {
             if (!displayPriceText) {
                 return 'Price on request';
             }
             return displayPriceText || 'Price on request';
         } else if (property.price < 100 && property.price > 0) {
-            return `Rs. ${property.price.toFixed(2)} Cr`;
+            return `₹ ${property.price.toFixed(2)} Cr`;
         } else {
-            return `Rs. ${property.price.toLocaleString('en-IN')}`;
+            return `₹ ${property.price.toLocaleString('en-IN')} Cr`;
         }
     }
     
@@ -96,6 +127,8 @@ let currentPartners = [];
 let currentInquiries = [];
 // Store currently loaded visitors
 let currentVisitors = [];
+// Store property ID when modal is opened for edit (fallback so update URL is never lost)
+let currentEditingPropertyId = null;
 // Store currently loaded logs
 
 // Suppress Quill.js deprecation warnings
@@ -113,14 +146,14 @@ if (typeof console !== 'undefined') {
 
 // Initialize - works regardless of when script loads
 function initializeDashboard() {
-    console.log('[DASHBOARD] Initializing...', 'readyState:', document.readyState);
+    console.log('[ADMIN DASHBOARD] Initializing...', 'readyState:', document.readyState);
     
-    // Only initialize dashboard if we're on the dashboard page
+    // Only initialize if we're on the admin dashboard page (has dashboardContainer)
     const isDashboardPage = document.getElementById('loginScreen') || document.getElementById('dashboardContainer');
-    console.log('[DASHBOARD] isDashboardPage:', !!isDashboardPage);
+    console.log('[ADMIN DASHBOARD] isDashboardPage:', !!isDashboardPage);
     
     if (isDashboardPage) {
-        console.log('[DASHBOARD] Dashboard page detected, starting initialization...');
+        console.log('[ADMIN DASHBOARD] Page detected, starting initialization...');
         checkAuthentication();
         initDashboard();
         
@@ -142,23 +175,20 @@ function initializeDashboard() {
             }
         });
     } else {
-        console.warn('[DASHBOARD] Dashboard page not detected, skipping initialization');
+        console.warn('[ADMIN DASHBOARD] Page not detected, skipping initialization');
     }
 }
 
 // Try to initialize - handle all possible states
-console.log('[DASHBOARD] Script loaded, readyState:', document.readyState);
+console.log('[ADMIN DASHBOARD] Script loaded, readyState:', document.readyState);
 
 if (document.readyState === 'loading') {
-    // DOM is still loading, wait for DOMContentLoaded
-    console.log('[DASHBOARD] DOM still loading, waiting for DOMContentLoaded...');
     document.addEventListener('DOMContentLoaded', function() {
-        console.log('[DASHBOARD] DOMContentLoaded fired');
+        console.log('[ADMIN DASHBOARD] DOMContentLoaded fired');
         initializeDashboard();
     });
 } else {
-    // DOM is already loaded or interactive, initialize immediately
-    console.log('[DASHBOARD] DOM already loaded, initializing immediately...');
+    console.log('[ADMIN DASHBOARD] DOM already loaded, initializing...');
     // Use setTimeout to ensure all scripts are ready
     setTimeout(function() {
         initializeDashboard();
@@ -167,13 +197,11 @@ if (document.readyState === 'loading') {
 
 // Also try on window load as a fallback (in case script loads very late)
 window.addEventListener('load', function() {
-    console.log('[DASHBOARD] Window load event fired');
-    // Only initialize if not already done (check if functions exist)
+    console.log('[ADMIN DASHBOARD] Window load fired');
     const dashboardContainer = document.getElementById('dashboardContainer');
     if (dashboardContainer && typeof initDashboard === 'function') {
-        // Check if already initialized by looking for a marker
         if (!dashboardContainer.dataset.initialized) {
-            console.log('[DASHBOARD] Initializing on window load (fallback)');
+            console.log('[ADMIN DASHBOARD] Initializing on window load (fallback)');
             dashboardContainer.dataset.initialized = 'true';
             initializeDashboard();
         }
@@ -216,12 +244,18 @@ function checkAuthentication() {
     if (userStr) {
         try {
             user = JSON.parse(userStr);
-            // Ensure user has required fields (email is mandatory) and has admin role
+            // Redirect non-admin users (is_admin != 1) to dashboard.html; do not clear session
+            if (user && user.email && (user.is_admin !== 1 && user.is_admin !== true)) {
+                window.location.replace('/dashboard.html');
+                return;
+            }
+            // Ensure user has required fields (email is mandatory) and has admin role and is_admin
             if (user && 
                 user.email && 
                 typeof user.email === 'string' && 
                 user.email.trim() !== '' && 
-                user.role === 'admin') {
+                user.role === 'admin' &&
+                (user.is_admin === 1 || user.is_admin === true)) {
                 hasValidUser = true;
             } else {
                 // Invalid user data
@@ -236,11 +270,17 @@ function checkAuthentication() {
     }
     
     // CRITICAL: Verify both authentication flag AND valid user data exist
-    // If either is missing or invalid, redirect immediately
+    // If either is missing or invalid, end server session then redirect
     if (!isAuthenticated || !hasValidUser || !user) {
-        // Clear any partial or invalid auth data from both storage types
+        // End server session first so it doesn't stay active (fixes app@... "session doesn't end")
+        let email = (user && user.email) || null;
+        if (!email && userStr) { try { const u = JSON.parse(userStr); email = u && u.email || null; } catch (e) {} }
+        if (email) {
+            try {
+                fetch('/api/auth/logout', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email }), keepalive: true }).catch(function() {});
+            } catch (e) {}
+        }
         clearAllAuthData();
-        // Redirect to index.html if not authenticated
         window.location.replace('/index.html');
         return;
     }
@@ -300,8 +340,28 @@ function getAdminEmail() {
 // Keys used for auth storage (must match clearAllAuthData in dashboard.html)
 const AUTH_STORAGE_KEYS = ['dashboard_authenticated', 'isAuthenticated', 'user'];
 
-// Redirect to login and clear auth (e.g. on 401 session expired)
+// 403 Forbidden: do not clear session; redirect to home (user is logged in but not admin)
+function redirectToHomeOnForbidden() {
+    console.warn('Access denied (403) – redirecting to home. Session kept.');
+    window.location.replace('/index.html');
+}
+
+// Redirect to login and clear auth (401 session expired)
 function redirectToLoginOnSessionExpired() {
+    console.trace('FORCED LOGOUT – AUTH CHECK FAILED (401 or session expired)');
+    const email = getAdminEmail();
+    if (email) {
+        try {
+            fetch('/api/auth/logout', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email }),
+                keepalive: true
+            }).catch(() => {});
+        } catch (e) {
+            // Ignore
+        }
+    }
     AUTH_STORAGE_KEYS.forEach(key => {
         sessionStorage.removeItem(key);
         localStorage.removeItem(key);
@@ -327,10 +387,21 @@ async function authenticatedFetch(url, options = {}) {
             ...options,
             headers
         });
-        // Session timeout (4 hours): backend returns 401 when session expired
+        // 401 = unauthenticated / session expired → logout and redirect to login
         if (response.status === 401) {
+            console.warn('authenticatedFetch got 401 for', url);
             redirectToLoginOnSessionExpired();
             throw new Error('Session expired. Please log in again.');
+        }
+        // 403 = forbidden (logged in but not admin) → do NOT clear session; redirect to home
+        if (response.status === 403) {
+            console.warn('authenticatedFetch got 403 (access denied) for', url);
+            if (typeof redirectToHomeOnForbidden === 'function') {
+                redirectToHomeOnForbidden();
+            } else {
+                window.location.replace('/index.html');
+            }
+            throw new Error('Access denied. Admin only.');
         }
         return response;
     } catch (error) {
@@ -573,6 +644,48 @@ function initDashboard() {
                     if (titleSpan) {
                         titleSpan.textContent = titleInput.value.trim() || ('Image ' + (index + 1));
                     }
+                }
+            }
+        });
+        // Drag-and-drop for step 3 gallery upload (event delegation)
+        residentialGalleryContainer.addEventListener('dragover', function (e) {
+            const uploadBtn = e.target.closest('.dashboard-gallery-item-upload-btn');
+            if (uploadBtn) {
+                e.preventDefault();
+                e.dataTransfer.dropEffect = 'copy';
+                uploadBtn.classList.add('dragover');
+            }
+        });
+        residentialGalleryContainer.addEventListener('dragleave', function (e) {
+            const uploadBtn = e.target.closest('.dashboard-gallery-item-upload-btn');
+            if (uploadBtn && !uploadBtn.contains(e.relatedTarget)) {
+                uploadBtn.classList.remove('dragover');
+            }
+        });
+        residentialGalleryContainer.addEventListener('drop', function (e) {
+            const uploadBtn = e.target.closest('.dashboard-gallery-item-upload-btn');
+            if (uploadBtn) {
+                e.preventDefault();
+                uploadBtn.classList.remove('dragover');
+                const galleryItem = uploadBtn.closest('.dashboard-gallery-item');
+                const itemId = galleryItem && galleryItem.getAttribute('data-item-id');
+                if (!itemId) return;
+                const fileInput = document.getElementById(itemId + '-file-input');
+                if (!fileInput) return;
+                const files = e.dataTransfer.files;
+                if (!files.length) return;
+                const file = Array.from(files).find(function (f) { return f.type.startsWith('image/'); });
+                if (!file) {
+                    showNotification('Please drop a valid image file', 'error');
+                    return;
+                }
+                try {
+                    const dt = new DataTransfer();
+                    dt.items.add(file);
+                    fileInput.files = dt.files;
+                    fileInput.dispatchEvent(new Event('change', { bubbles: true }));
+                } catch (err) {
+                    showNotification('Drag and drop not supported in this browser', 'error');
                 }
             }
         });
@@ -1082,7 +1195,16 @@ async function handleLogout() {
         profileDropdown.classList.remove('active');
     }
     
-    if (confirm('Are you sure you want to logout?')) {
+    const confirmed = (window.TSPropertiesUI && typeof window.TSPropertiesUI.confirm === 'function')
+        ? await window.TSPropertiesUI.confirm({
+            title: 'Logout',
+            message: 'Are you sure you want to logout?',
+            confirmText: 'Logout',
+            cancelText: 'Cancel'
+        })
+        : false;
+
+    if (confirmed) {
         // Get user email before clearing session
         const userStr = sessionStorage.getItem('user') || localStorage.getItem('user');
         let userEmail = null;
@@ -1117,9 +1239,9 @@ async function handleLogout() {
             });
         }
         
-        // Clear session and session_start_time via SessionManager (single code path)
+        // Clear session via SessionManager (backend already called above)
         if (window.SessionManager && window.SessionManager.clearSession) {
-            window.SessionManager.clearSession();
+            window.SessionManager.clearSession({ skipBackendLogout: true });
         }
         try {
             sessionStorage.removeItem('_session_restore');
@@ -1179,12 +1301,20 @@ async function handleExportTable(tableName, exportBtn) {
         window.URL.revokeObjectURL(url);
         document.body.removeChild(a);
         
-        // Show success notification (you can replace this with a toast notification if available)
-        alert('Table exported successfully!');
+        // Show success notification (in-page modal)
+        if (window.TSPropertiesUI && typeof window.TSPropertiesUI.alert === 'function') {
+            await window.TSPropertiesUI.alert({ title: 'Export', message: 'Table exported successfully!' });
+        } else {
+            alert('Table exported successfully!');
+        }
         
     } catch (error) {
         console.error('Export error:', error);
-        alert(`Export failed: ${error.message}`);
+        if (window.TSPropertiesUI && typeof window.TSPropertiesUI.alert === 'function') {
+            await window.TSPropertiesUI.alert({ title: 'Export Failed', message: `Export failed: ${error.message}` });
+        } else {
+            alert(`Export failed: ${error.message}`);
+        }
     } finally {
         // Re-enable button
         exportBtn.disabled = false;
@@ -1198,7 +1328,11 @@ async function handleImportTable(tableName, file, importBtn) {
     
     // Validate file type
     if (!file.name.endsWith('.csv')) {
-        alert('Please select a CSV file.');
+        if (window.TSPropertiesUI && typeof window.TSPropertiesUI.alert === 'function') {
+            await window.TSPropertiesUI.alert({ title: 'Invalid File', message: 'Please select a CSV file.' });
+        } else {
+            alert('Please select a CSV file.');
+        }
         return;
     }
     
@@ -1218,8 +1352,15 @@ async function handleImportTable(tableName, file, importBtn) {
     }
     
     // Confirm import
-    if (!confirm(`Are you sure you want to import data from ${file.name} into ${tableName}? This will add new rows to the table.`)) {
-        // Reset file input
+    const importConfirmed = (window.TSPropertiesUI && typeof window.TSPropertiesUI.confirm === 'function')
+        ? await window.TSPropertiesUI.confirm({
+            title: 'Import',
+            message: `Are you sure you want to import data from ${file.name} into ${tableName}? This will add new rows to the table.`,
+            confirmText: 'Import',
+            cancelText: 'Cancel'
+        })
+        : confirm(`Are you sure you want to import data from ${file.name} into ${tableName}? This will add new rows to the table.`);
+    if (!importConfirmed) {
         const fileInputId = fileInputIdMap[tableName];
         const fileInput = document.getElementById(fileInputId);
         if (fileInput) fileInput.value = '';
@@ -1269,7 +1410,11 @@ async function handleImportTable(tableName, file, importBtn) {
                 message += `\nFirst 5 errors:\n${result.errors.slice(0, 5).join('\n')}`;
             }
         }
-        alert(message);
+        if (window.TSPropertiesUI && typeof window.TSPropertiesUI.alert === 'function') {
+            await window.TSPropertiesUI.alert({ title: 'Import Complete', message: message });
+        } else {
+            alert(message);
+        }
         
         // Reload the table data
         const tableLoaders = {
@@ -1288,7 +1433,11 @@ async function handleImportTable(tableName, file, importBtn) {
         
     } catch (error) {
         console.error('Import error:', error);
-        alert(`Import failed: ${error.message}`);
+        if (window.TSPropertiesUI && typeof window.TSPropertiesUI.alert === 'function') {
+            await window.TSPropertiesUI.alert({ title: 'Import Failed', message: `Import failed: ${error.message}` });
+        } else {
+            alert(`Import failed: ${error.message}`);
+        }
     } finally {
         // Re-enable button
         importBtn.disabled = false;
@@ -1662,11 +1811,21 @@ function renderProperties(properties) {
             </td>
             <td>
                 <div class="dashboard-table-price">
-                    ${property.price_text 
-                        ? escapeHtml(property.price_text)
-                        : (typeof property.price === 'number' && property.price > 0
-                            ? formatPropertyPrice(property)
-                            : 'N/A')}
+                    ${(function() {
+                        const isPerSqft = property.price_text && /sq\.?ft|sqft|per sq|\/sq/i.test(String(property.price_text));
+                        if (isPerSqft && property.price_text) {
+                            return escapeHtml(property.price_text);
+                        }
+                        const numPrice = parsePriceNumber(property);
+                        if (numPrice > 0) {
+                            const p = getPriceDigitForDisplay(property);
+                            if (p.value != null) {
+                                return `₹ <span class="price-value">${escapeHtml(p.value)}</span> <span class="price-unit">${escapeHtml(p.unit)}</span>`;
+                            }
+                        }
+                        if (property.price_text) return escapeHtml(property.price_text);
+                        return 'N/A';
+                    })()}
                 </div>
             </td>
             <td>
@@ -1683,7 +1842,7 @@ function renderProperties(properties) {
             </td>
             <td>
                 <div class="dashboard-table-actions">
-                    <button class="dashboard-action-btn edit" onclick="(function(id) { if(typeof window.editProperty === 'function') { window.editProperty(id); } else if(typeof editProperty === 'function') { editProperty(id); } else { console.error('editProperty not found'); alert('Edit function not available. Please refresh the page.'); } })(${property.id})" title="Edit" data-property-id="${property.id}">
+                    <button class="dashboard-action-btn edit" onclick="(function(id) { if(typeof window.editProperty === 'function') { window.editProperty(id); } else if(typeof editProperty === 'function') { editProperty(id); } else { console.error('editProperty not found'); if(window.TSPropertiesUI&&window.TSPropertiesUI.alert) window.TSPropertiesUI.alert({ title: 'Error', message: 'Edit function not available. Please refresh the page.' }); else alert('Edit function not available. Please refresh the page.'); } })(${property.id})" title="Edit" data-property-id="${property.id}">
                         <i class="fas fa-edit"></i>
                     </button>
                     <button class="dashboard-action-btn delete" onclick="deleteProperty(${property.id})" title="Delete">
@@ -2039,6 +2198,7 @@ async function openResidentialPropertyModal(propertyId = null) {
     }
 
     if (propertyId) {
+        currentEditingPropertyId = propertyId;
         modalTitle.textContent = 'Edit Property';
         // Fetch property data for editing
         try {
@@ -2084,9 +2244,11 @@ async function openResidentialPropertyModal(propertyId = null) {
             // Keep property ID set even if fetch fails
             const propertyIdInput = document.getElementById('residentialPropertyId');
             if (propertyIdInput) propertyIdInput.value = propertyId;
+            currentEditingPropertyId = null;
             return;
         }
     } else {
+        currentEditingPropertyId = null;
         modalTitle.textContent = 'Add Other Properties';
     }
 
@@ -2116,6 +2278,7 @@ async function closeResidentialPropertyModal() {
 
 // Reset Residential Property Modal State (Best Practice: Called after API success)
 function resetResidentialPropertyModalState() {
+    currentEditingPropertyId = null;
     const form = document.getElementById('residentialPropertyForm');
     
     if (form) {
@@ -2619,13 +2782,37 @@ function validateResidentialPropertyStep(stepNumber) {
             console.warn('Unknown property type in validation:', propertyType);
         }
         
+        // Price and Location Link (Step 2 - Property Details)
+        const price = document.getElementById('residentialPrice');
+        if (!price || !price.value.trim()) {
+            showNotification('Please enter price', 'error');
+            price?.focus();
+            return false;
+        }
+        const locationLink = document.getElementById('residentialLocationLink');
+        if (locationLink && locationLink.value.trim()) {
+            const linkValue = locationLink.value.trim();
+            try {
+                const url = new URL(linkValue);
+                if (!['http:', 'https:'].includes(url.protocol)) {
+                    showNotification('Location link must be a valid HTTP or HTTPS URL', 'error');
+                    locationLink.focus();
+                    return false;
+                }
+            } catch (error) {
+                showNotification('Please enter a valid location link URL (e.g., https://maps.google.com/...)', 'error');
+                locationLink.focus();
+                return false;
+            }
+        }
+        
         // If we get here, validation passed
         console.log('Step 2 validation passed');
         return true;
     }
     
     if (stepNumber === 3) {
-        // Step 3: Gallery items (all fields mandatory), Price, and optional location link
+        // Step 3: Gallery items (all fields mandatory)
         const galleryItems = document.querySelectorAll('#residentialGalleryContainer .dashboard-gallery-item');
         if (!galleryItems.length) {
             showNotification('Please add at least one image.', 'error');
@@ -2652,37 +2839,6 @@ function validateResidentialPropertyStep(stepNumber) {
             if (!categorySelect || !categorySelect.value.trim()) {
                 showNotification('Please select an image category for Image ' + imageNum + '.', 'error');
                 categorySelect?.focus();
-                return false;
-            }
-        }
-
-        const price = document.getElementById('residentialPrice');
-        if (!price || !price.value.trim()) {
-            showNotification('Please enter price', 'error');
-            price?.focus();
-            return false;
-        }
-        
-        const locationLink = document.getElementById('residentialLocationLink');
-        if (locationLink && locationLink.value.trim()) {
-            const linkValue = locationLink.value.trim();
-            try {
-                const url = new URL(linkValue);
-                if (!['http:', 'https:'].includes(url.protocol)) {
-                    showNotification('Location link must be a valid HTTP or HTTPS URL', 'error');
-                    locationLink.focus();
-                    return false;
-                }
-                const hostname = url.hostname.toLowerCase();
-                const isMapService = hostname.includes('google.com') || hostname.includes('maps.google.com') ||
-                    hostname.includes('maps.apple.com') || hostname.includes('openstreetmap.org') ||
-                    hostname.includes('bing.com/maps') || hostname.includes('mapbox.com');
-                if (!isMapService) {
-                    console.warn('Location link does not appear to be from a recognized map service:', hostname);
-                }
-            } catch (error) {
-                showNotification('Please enter a valid location link URL (e.g., https://maps.google.com/...)', 'error');
-                locationLink.focus();
                 return false;
             }
         }
@@ -2782,8 +2938,10 @@ function handleResidentialPropertyTypeChange() {
 // Load Step 2 content based on property type
 function loadStep2Content(propertyType, container) {
     let html = '';
+    // Normalize: trim, lowercase, spaces to underscore (e.g. "office space" -> "office_space")
+    const normalizedType = (propertyType || '').toString().trim().toLowerCase().replace(/\s+/g, '_');
     
-    switch(propertyType) {
+    switch(normalizedType) {
         case 'apartments':
             html = getApartmentsStep2HTML();
             break;
@@ -2797,14 +2955,20 @@ function loadStep2Content(propertyType, container) {
             html = getPlotPropertiesStep2HTML();
             break;
         case 'office_space':
-        case 'warehouse':
+            html = getOfficeSpaceStep2HTML();
+            break;
         case 'showrooms':
-            html = getCommercialStep2HTML();
+            html = getShowroomsStep2HTML();
+            break;
+        case 'warehouse':
+            html = getWarehouseStep2HTML();
             break;
         default:
             html = '<div class="dashboard-form-group"><p style="color: var(--text-gray); padding: 2rem; text-align: center;">Please select a property type</p></div>';
     }
     
+    // Append price and location link to Step 2 (Property Details)
+    html += getStep2PriceAndLocationLinkHTML();
     container.innerHTML = html;
     
     // Ensure Step 3 is hidden after loading Step 2 content
@@ -2842,6 +3006,33 @@ function loadStep2Content(propertyType, container) {
 }
 
 // Get HTML for Apartments Step 2
+// HTML for Price and Location Link (Step 2 - Property Details)
+function getStep2PriceAndLocationLinkHTML() {
+    return `
+        <div class="dashboard-form-group">
+            <label for="residentialLocationLink">
+                <i class="fas fa-link"></i>
+                Location Link
+            </label>
+            <input type="url" id="residentialLocationLink" name="location_link"
+                placeholder="e.g., https://maps.google.com/...">
+        </div>
+        <div class="dashboard-form-group">
+            <label for="residentialPrice">
+                <i class="fas fa-rupee-sign"></i>
+                Price *
+            </label>
+            <input type="text" id="residentialPrice" name="price" placeholder="e.g., Rs. 1.2 Cr" required>
+            <div style="margin-top: 0.75rem;">
+                <label style="display: flex; align-items: center; gap: 0.5rem; font-weight: normal; cursor: pointer;">
+                    <input type="checkbox" id="residentialPriceNegotiable" name="price_negotiable" style="width: auto;">
+                    <span>Price Negotiable</span>
+                </label>
+            </div>
+        </div>
+    `;
+}
+
 function getApartmentsStep2HTML() {
     // Get first unit type as default
     const defaultUnitType = allUnitTypes && allUnitTypes.length > 0 
@@ -3075,7 +3266,385 @@ function getPlotPropertiesStep2HTML() {
     `;
 }
 
-// Get HTML for Commercial Step 2 (Office Space, Warehouse, Showrooms)
+// Get HTML for Office Space Step 2 (Property Details)
+function getOfficeSpaceStep2HTML() {
+    return `
+        <div class="dashboard-form-group">
+            <label for="residentialPropertyName">
+                <i class="fas fa-building"></i>
+                Project / Building Name *
+            </label>
+            <input type="text" id="residentialPropertyName" name="property_name"
+                placeholder="e.g., Tech Park Tower" required>
+        </div>
+
+        <div class="dashboard-form-row">
+            <div class="dashboard-form-group">
+                <label for="residentialSuperBuildupArea">
+                    <i class="fas fa-ruler-combined"></i>
+                    Super Builtup Area (sq.ft.)
+                </label>
+                <input type="number" id="residentialSuperBuildupArea" name="super_buildup_area"
+                    placeholder="e.g., 1500" step="0.01" min="0">
+            </div>
+            <div class="dashboard-form-group">
+                <label for="residentialCarpetArea">
+                    <i class="fas fa-ruler"></i>
+                    Carpet Area (sq.ft.)
+                </label>
+                <input type="number" id="residentialCarpetArea" name="carpet_area"
+                    placeholder="e.g., 1125 (75% of SBA)" step="0.01" min="0">
+            </div>
+        </div>
+
+        <div class="dashboard-form-row">
+            <div class="dashboard-form-group">
+                <label for="officeTotalFloors">
+                    <i class="fas fa-layer-group"></i>
+                    Total Floors in Building
+                </label>
+                <input type="number" id="officeTotalFloors" name="total_floors"
+                    placeholder="e.g., 10" min="1" step="1">
+            </div>
+            <div class="dashboard-form-group">
+                <label for="officeFloorNumber">
+                    <i class="fas fa-hashtag"></i>
+                    Floor Number
+                </label>
+                <input type="number" id="officeFloorNumber" name="floor_number"
+                    placeholder="e.g., 3" min="0" step="1">
+            </div>
+        </div>
+
+        <div class="dashboard-form-row">
+            <div class="dashboard-form-group">
+                <label for="officeTotalSeats">
+                    <i class="fas fa-chair"></i>
+                    Total Seats / Workstations
+                </label>
+                <input type="number" id="officeTotalSeats" name="total_seats_workstations"
+                    placeholder="e.g., 50" min="0" step="1">
+            </div>
+            <div class="dashboard-form-group">
+                <label for="officeNumberCabins">
+                    <i class="fas fa-door-open"></i>
+                    Number of Cabins
+                </label>
+                <input type="number" id="officeNumberCabins" name="number_of_cabins"
+                    placeholder="e.g., 5" min="0" step="1">
+            </div>
+        </div>
+
+        <div class="dashboard-form-group">
+            <label for="officeNumberParkingSlots">
+                <i class="fas fa-parking"></i>
+                Number of Parking Slots
+            </label>
+            <input type="number" id="officeNumberParkingSlots" name="number_of_parking_slots"
+                placeholder="e.g., 10" min="0" step="1">
+        </div>
+
+        <div class="dashboard-form-group">
+            <label>
+                <i class="fas fa-car"></i>
+                Parking
+            </label>
+            <div class="dashboard-parking-select-wrapper" role="group" aria-label="Parking options">
+                <div class="dashboard-parking-checkboxes">
+                    <label class="dashboard-amenity-checkbox-label">
+                        <input type="checkbox" name="parking_options" value="reserved_parking"> Reserved parking
+                    </label>
+                    <label class="dashboard-amenity-checkbox-label">
+                        <input type="checkbox" name="parking_options" value="visitors_parking"> Visitor's parking
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        <div class="dashboard-form-group">
+            <label>
+                <i class="fas fa-star"></i>
+                Amenities
+            </label>
+            <div id="officeSpaceAmenitiesCheckboxes" class="dashboard-amenities-checkboxes" role="group" aria-label="Office amenities">
+                <label class="dashboard-amenity-checkbox-label"><input type="checkbox" name="office_amenities" value="central_ac"> Central AC</label>
+                <label class="dashboard-amenity-checkbox-label"><input type="checkbox" name="office_amenities" value="lift"> Lift</label>
+                <label class="dashboard-amenity-checkbox-label"><input type="checkbox" name="office_amenities" value="power_backup"> Power backup</label>
+                <label class="dashboard-amenity-checkbox-label"><input type="checkbox" name="office_amenities" value="24x7_access"> 24x7 Access</label>
+                <label class="dashboard-amenity-checkbox-label"><input type="checkbox" name="office_amenities" value="internet_lan_ready"> Internet / LAN Ready</label>
+                <label class="dashboard-amenity-checkbox-label"><input type="checkbox" name="office_amenities" value="fire_safety_compliance"> Fire safety compliance</label>
+                <label class="dashboard-amenity-checkbox-label"><input type="checkbox" name="office_amenities" value="pantry"> Pantry</label>
+                <label class="dashboard-amenity-checkbox-label"><input type="checkbox" name="office_amenities" value="washrooms_private_shared"> Washrooms (Private / Shared)</label>
+                <label class="dashboard-amenity-checkbox-label"><input type="checkbox" name="office_amenities" value="reception_area"> Reception area</label>
+                <label class="dashboard-amenity-checkbox-label"><input type="checkbox" name="office_amenities" value="meeting_room"> Meeting room</label>
+                <label class="dashboard-amenity-checkbox-label"><input type="checkbox" name="office_amenities" value="cabin"> Cabin</label>
+            </div>
+        </div>
+    `;
+}
+
+// Get HTML for Showrooms Step 2 (Property Details)
+function getShowroomsStep2HTML() {
+    return `
+        <div class="dashboard-form-group">
+            <label for="residentialPropertyName">
+                <i class="fas fa-building"></i>
+                Project / Building Name *
+            </label>
+            <input type="text" id="residentialPropertyName" name="property_name"
+                placeholder="e.g., Tech Park Tower" required>
+        </div>
+
+        <div class="dashboard-form-row">
+            <div class="dashboard-form-group">
+                <label for="residentialSuperBuildupArea">
+                    <i class="fas fa-ruler-combined"></i>
+                    Super Builtup Area (sq.ft.)
+                </label>
+                <input type="number" id="residentialSuperBuildupArea" name="super_buildup_area"
+                    placeholder="e.g., 1500" step="0.01" min="0">
+            </div>
+            <div class="dashboard-form-group">
+                <label for="residentialCarpetArea">
+                    <i class="fas fa-ruler"></i>
+                    Carpet Area (sq.ft.)
+                </label>
+                <input type="number" id="residentialCarpetArea" name="carpet_area"
+                    placeholder="e.g., 1125 (75% of SBA)" step="0.01" min="0">
+            </div>
+        </div>
+
+        <div class="dashboard-form-group">
+            <label for="showroomTotalFloors">
+                <i class="fas fa-layer-group"></i>
+                Total Floors in the Building
+            </label>
+            <input type="number" id="showroomTotalFloors" name="total_floors"
+                placeholder="e.g., 5" min="1" step="1">
+        </div>
+
+        <div class="dashboard-form-row">
+            <div class="dashboard-form-group">
+                <label for="showroomFrontageWidth">
+                    <i class="fas fa-arrows-alt-h"></i>
+                    Frontage Width
+                </label>
+                <input type="number" id="showroomFrontageWidth" name="frontage_width"
+                    placeholder="e.g., 30" step="0.01" min="0">
+            </div>
+            <div class="dashboard-form-group">
+                <label for="showroomFrontageUnit">
+                    <i class="fas fa-ruler"></i>
+                    Unit
+                </label>
+                <select id="showroomFrontageUnit" name="frontage_unit">
+                    <option value="ft">ft</option>
+                    <option value="m">m</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="dashboard-form-group">
+            <label for="showroomFootfallPotential">
+                <i class="fas fa-walking"></i>
+                Footfall Potential
+            </label>
+            <select id="showroomFootfallPotential" name="footfall_potential">
+                <option value="">Select</option>
+                <option value="low">Low</option>
+                <option value="medium">Medium</option>
+                <option value="high">High</option>
+            </select>
+        </div>
+
+        <div class="dashboard-form-row">
+            <div class="dashboard-form-group">
+                <label for="showroomGroundFloorArea">
+                    <i class="fas fa-th-large"></i>
+                    Ground Floor Area (sq.ft.)
+                </label>
+                <input type="number" id="showroomGroundFloorArea" name="ground_floor_area"
+                    placeholder="e.g., 2000" step="0.01" min="0">
+            </div>
+            <div class="dashboard-form-group">
+                <label for="showroomCeilingHeight">
+                    <i class="fas fa-arrows-alt-v"></i>
+                    Ceiling Height (ft)
+                </label>
+                <input type="number" id="showroomCeilingHeight" name="ceiling_height"
+                    placeholder="e.g., 12" step="0.01" min="0">
+            </div>
+        </div>
+
+        <div class="dashboard-form-group">
+            <label for="showroomMezzanineArea">
+                <i class="fas fa-layer-group"></i>
+                Mezzanine Area (sq.ft.)
+            </label>
+            <input type="number" id="showroomMezzanineArea" name="mezzanine_area"
+                placeholder="e.g., 500" step="0.01" min="0">
+        </div>
+
+        <div class="dashboard-form-group">
+            <label>
+                <i class="fas fa-star"></i>
+                Amenities
+            </label>
+            <div id="showroomAmenitiesCheckboxes" class="dashboard-amenities-checkboxes" role="group" aria-label="Showroom amenities">
+                <label class="dashboard-amenity-checkbox-label"><input type="checkbox" name="showroom_amenities" value="power_load"> Power Load</label>
+                <label class="dashboard-amenity-checkbox-label"><input type="checkbox" name="showroom_amenities" value="signage_allowed"> Signage allowed</label>
+                <label class="dashboard-amenity-checkbox-label"><input type="checkbox" name="showroom_amenities" value="washroom"> Washroom</label>
+                <label class="dashboard-amenity-checkbox-label"><input type="checkbox" name="showroom_amenities" value="ac_provision"> AC provision</label>
+                <label class="dashboard-amenity-checkbox-label"><input type="checkbox" name="showroom_amenities" value="parking"> Parking</label>
+                <label class="dashboard-amenity-checkbox-label"><input type="checkbox" name="showroom_amenities" value="display_window"> Display window</label>
+                <label class="dashboard-amenity-checkbox-label"><input type="checkbox" name="showroom_amenities" value="road_facing"> Road Facing</label>
+                <label class="dashboard-amenity-checkbox-label"><input type="checkbox" name="showroom_amenities" value="corner_property"> Corner Property</label>
+            </div>
+        </div>
+    `;
+}
+
+// Get HTML for Warehouse Step 2 (Property Details)
+function getWarehouseStep2HTML() {
+    return `
+        <div class="dashboard-form-group">
+            <label for="residentialPropertyName">
+                <i class="fas fa-building"></i>
+                Project / Building Name *
+            </label>
+            <input type="text" id="residentialPropertyName" name="property_name"
+                placeholder="e.g., Tech Park Tower" required>
+        </div>
+
+        <div class="dashboard-form-group">
+            <label for="warehouseType">
+                <i class="fas fa-warehouse"></i>
+                Warehouse Type
+            </label>
+            <select id="warehouseType" name="warehouse_type">
+                <option value="">Select</option>
+                <option value="cold_storage">Cold storage</option>
+                <option value="industrial">Industrial</option>
+                <option value="logistic">Logistic</option>
+            </select>
+        </div>
+
+        <div class="dashboard-form-row">
+            <div class="dashboard-form-group">
+                <label for="warehouseClearanceHeight">
+                    <i class="fas fa-arrows-alt-v"></i>
+                    Clearance Height
+                </label>
+                <input type="number" id="warehouseClearanceHeight" name="clearance_height"
+                    placeholder="e.g., 25" step="0.01" min="0">
+            </div>
+            <div class="dashboard-form-group">
+                <label for="warehouseClearanceUnit">
+                    <i class="fas fa-ruler"></i>
+                    Unit
+                </label>
+                <select id="warehouseClearanceUnit" name="clearance_height_unit">
+                    <option value="ft">ft</option>
+                    <option value="m">m</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="dashboard-form-row">
+            <div class="dashboard-form-group">
+                <label for="warehouseDockLevelers">
+                    <i class="fas fa-truck-loading"></i>
+                    Dock Levelers
+                </label>
+                <input type="number" id="warehouseDockLevelers" name="dock_levelers"
+                    placeholder="e.g., 2" min="0" step="1">
+            </div>
+            <div class="dashboard-form-group">
+                <label for="warehouseNumberShutters">
+                    <i class="fas fa-door-closed"></i>
+                    Number of Shutters
+                </label>
+                <input type="number" id="warehouseNumberShutters" name="number_of_shutters"
+                    placeholder="e.g., 4" min="0" step="1">
+            </div>
+        </div>
+
+        <div class="dashboard-form-row">
+            <div class="dashboard-form-group">
+                <label for="warehouseShutterHeight">
+                    <i class="fas fa-ruler-vertical"></i>
+                    Shutter Height
+                </label>
+                <input type="number" id="warehouseShutterHeight" name="shutter_height"
+                    placeholder="e.g., 10" step="0.01" min="0">
+            </div>
+            <div class="dashboard-form-group">
+                <label for="warehouseShutterHeightUnit">
+                    <i class="fas fa-ruler"></i>
+                    Unit
+                </label>
+                <select id="warehouseShutterHeightUnit" name="shutter_height_unit">
+                    <option value="ft">ft</option>
+                    <option value="m">m</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="dashboard-form-group">
+            <label for="warehouseFloorLoadCapacity">
+                <i class="fas fa-weight-hanging"></i>
+                Floor Load Capacity (Kg/Sq ft)
+            </label>
+            <input type="number" id="warehouseFloorLoadCapacity" name="floor_load_capacity"
+                placeholder="e.g., 500" step="0.01" min="0">
+        </div>
+
+        <div class="dashboard-form-group">
+            <label for="warehousePlotArea">
+                <i class="fas fa-map"></i>
+                Plot Area (sq.ft.)
+            </label>
+            <input type="number" id="warehousePlotArea" name="plot_area"
+                placeholder="e.g., 5000" step="0.01" min="0">
+        </div>
+
+        <div class="dashboard-form-row">
+            <div class="dashboard-form-group">
+                <label for="residentialSuperBuildupArea">
+                    <i class="fas fa-ruler-combined"></i>
+                    Super Builtup Area (sq.ft.)
+                </label>
+                <input type="number" id="residentialSuperBuildupArea" name="super_buildup_area"
+                    placeholder="e.g., 1500" step="0.01" min="0">
+            </div>
+            <div class="dashboard-form-group">
+                <label for="residentialCarpetArea">
+                    <i class="fas fa-ruler"></i>
+                    Carpet Area (sq.ft.)
+                </label>
+                <input type="number" id="residentialCarpetArea" name="carpet_area"
+                    placeholder="e.g., 1125 (75% of SBA)" step="0.01" min="0">
+            </div>
+        </div>
+
+        <div class="dashboard-form-group">
+            <label>
+                <i class="fas fa-star"></i>
+                Amenities
+            </label>
+            <div id="warehouseAmenitiesCheckboxes" class="dashboard-amenities-checkboxes" role="group" aria-label="Warehouse amenities">
+                <label class="dashboard-amenity-checkbox-label"><input type="checkbox" name="warehouse_amenities" value="power_load"> Power load</label>
+                <label class="dashboard-amenity-checkbox-label"><input type="checkbox" name="warehouse_amenities" value="water_availability"> Water Availability</label>
+                <label class="dashboard-amenity-checkbox-label"><input type="checkbox" name="warehouse_amenities" value="fire_noc"> Fire NOC</label>
+                <label class="dashboard-amenity-checkbox-label"><input type="checkbox" name="warehouse_amenities" value="24x7_access"> 24x7 Access</label>
+                <label class="dashboard-amenity-checkbox-label"><input type="checkbox" name="warehouse_amenities" value="trailer_access"> Trailer access</label>
+                <label class="dashboard-amenity-checkbox-label"><input type="checkbox" name="warehouse_amenities" value="turning_radius_for_trucks"> Turning radius for trucks</label>
+            </div>
+        </div>
+    `;
+}
+
+// Get HTML for Commercial Step 2 (fallback - Office Space, Showrooms, Warehouse have dedicated forms)
 function getCommercialStep2HTML() {
     return `
         <div class="dashboard-form-group">
@@ -3399,6 +3968,26 @@ function initializeStep2EventListeners(propertyType) {
         });
     }
     
+    // Location link validation (Step 2 - Price and Location Link are in Step 2)
+    const residentialLocationLink = document.getElementById('residentialLocationLink');
+    if (residentialLocationLink) {
+        residentialLocationLink.addEventListener('blur', function() {
+            validateLocationLinkField(this);
+        });
+        residentialLocationLink.addEventListener('input', function() {
+            if (this.value.trim()) {
+                const isValid = validateLocationLinkField(this, true);
+                if (isValid) {
+                    this.style.borderColor = '';
+                    this.style.borderWidth = '';
+                }
+            } else {
+                this.style.borderColor = '';
+                this.style.borderWidth = '';
+            }
+        });
+    }
+    
     // Load amenities for apartments and villas
     if (propertyType === 'apartments' || propertyType === 'villas') {
         loadAmenitiesForResidentialForm().then(() => {
@@ -3475,23 +4064,26 @@ async function loadCitiesForResidentialForm() {
                 const citiesByState = {};
                 data.cities.forEach(city => {
                     const cityName = typeof city === 'string' ? city : (city.name || '');
-                    const state = typeof city === 'object' ? (city.state || 'Other') : 'Other';
+                    const state = typeof city === 'object' ? (city.state || '') : '';
 
                     if (cityName && cityName.trim()) {
-                        if (!citiesByState[state]) {
-                            citiesByState[state] = [];
+                        const stateKey = (state && state.trim()) ? state : '';
+                        if (!citiesByState[stateKey]) {
+                            citiesByState[stateKey] = [];
                         }
-                        citiesByState[state].push(cityName.trim());
+                        citiesByState[stateKey].push(cityName.trim());
                     }
                 });
 
                 const sortedStates = Object.keys(citiesByState).sort();
                 sortedStates.forEach(state => {
                     const cities = citiesByState[state].sort();
+                    const labelState = (state && state.trim()) ? state : '';
                     cities.forEach(cityName => {
                         const option = document.createElement('option');
                         option.value = cityName;
-                        option.textContent = `${cityName}, ${state}`;
+                        const displayLabel = labelState ? `${cityName}, ${labelState}` : cityName;
+                        option.textContent = displayLabel;
                         cityDatalist.appendChild(option);
                     });
                 });
@@ -3915,44 +4507,7 @@ function populateResidentialForm(property) {
         populatePropertyTypeByProjectCategory();
     }
     
-    const locationLinkInput = document.getElementById('residentialLocationLink');
-    if (locationLinkInput) {
-        locationLinkInput.value = property.location_link || '';
-        // Validate location link after populating (in case existing data is invalid)
-        if (locationLinkInput.value.trim()) {
-            // Use setTimeout to ensure validation runs after DOM is ready
-            setTimeout(() => {
-                validateLocationLinkField(locationLinkInput, true); // Silent mode - no notification, just visual feedback
-            }, 100);
-        }
-    }
-    
-    // Set price in Step 1 - ensure it's always populated if available
-    const priceInput = document.getElementById('residentialPrice');
-    if (priceInput) {
-        if (property.price_text) {
-            priceInput.value = property.price_text;
-        } else if (property.price) {
-            // Format price if it's a number
-            if (typeof property.price === 'number') {
-                priceInput.value = 'Rs. ' + property.price.toLocaleString('en-IN');
-            } else {
-                priceInput.value = property.price;
-            }
-        }
-    }
-    
-    // Set price negotiable checkbox in Step 1 (right below price input)
-    if (property.price_negotiable !== undefined) {
-        const priceNegotiableInput = document.getElementById('residentialPriceNegotiable');
-        if (priceNegotiableInput) {
-            if (priceNegotiableInput.type === 'checkbox') {
-                priceNegotiableInput.checked = Boolean(property.price_negotiable);
-            } else {
-                priceNegotiableInput.value = property.price_negotiable ? '1' : '0';
-            }
-        }
-    }
+    // Location link and price are in Step 2; populated in populateStep2Fields after Step 2 loads
     
     // Set property type (if available) or infer from existing data
     // This is critical for edit mode to dynamically set the select value from database
@@ -4266,6 +4821,39 @@ function populateStep2Fields(property) {
     const propertyNameInput = document.getElementById('residentialPropertyName');
     if (propertyNameInput) propertyNameInput.value = property.property_name || '';
     
+    // Location link and price (Step 2 - Property Details)
+    const locationLinkInput = document.getElementById('residentialLocationLink');
+    if (locationLinkInput) {
+        locationLinkInput.value = property.location_link || '';
+        if (locationLinkInput.value.trim()) {
+            setTimeout(() => {
+                validateLocationLinkField(locationLinkInput, true);
+            }, 100);
+        }
+    }
+    const priceInput = document.getElementById('residentialPrice');
+    if (priceInput) {
+        if (property.price_text) {
+            priceInput.value = property.price_text;
+        } else if (property.price) {
+            if (typeof property.price === 'number') {
+                priceInput.value = 'Rs. ' + property.price.toLocaleString('en-IN');
+            } else {
+                priceInput.value = property.price;
+            }
+        }
+    }
+    if (property.price_negotiable !== undefined) {
+        const priceNegotiableInput = document.getElementById('residentialPriceNegotiable');
+        if (priceNegotiableInput) {
+            if (priceNegotiableInput.type === 'checkbox') {
+                priceNegotiableInput.checked = Boolean(property.price_negotiable);
+            } else {
+                priceNegotiableInput.value = property.price_negotiable ? '1' : '0';
+            }
+        }
+    }
+    
     // Common fields - Note: dropdowns are swapped
     // Status dropdown now shows new/resale (what was in listing_type)
     // Listing Type dropdown now shows sale/rent/under_construction/ready_to_move (what was in status)
@@ -4320,8 +4908,6 @@ function populateStep2Fields(property) {
             possessionDateInput.value = '';
         }
     }
-    
-    // Price is now in Step 1, so it's already populated
     
     const directionInput = document.getElementById('residentialDirection');
     if (directionInput) {
@@ -4524,11 +5110,93 @@ function populateStep2Fields(property) {
             };
             applyAmenities();
         }
-    } else if (propertyType === 'office_space' || propertyType === 'warehouse' || propertyType === 'showrooms') {
-        // Commercial: built-up area
+    } else if (propertyType === 'office_space') {
+        // Office space: super builtup, carpet, floors, seats, cabins, parking, amenities
         const sbaInput = document.getElementById('residentialSuperBuildupArea');
-        if (sbaInput) {
-            sbaInput.value = property.super_buildup_area || property.super_built_up_area || '';
+        if (sbaInput) sbaInput.value = property.super_buildup_area || property.super_built_up_area || '';
+        const carpetInput = document.getElementById('residentialCarpetArea');
+        if (carpetInput) carpetInput.value = property.carpet_area || '';
+        const totalFloorsInput = document.getElementById('officeTotalFloors');
+        if (totalFloorsInput) totalFloorsInput.value = property.total_floors ?? '';
+        const floorNumberInput = document.getElementById('officeFloorNumber');
+        if (floorNumberInput) floorNumberInput.value = property.floor_number ?? '';
+        const totalSeatsInput = document.getElementById('officeTotalSeats');
+        if (totalSeatsInput) totalSeatsInput.value = property.total_seats_workstations ?? '';
+        const cabinsInput = document.getElementById('officeNumberCabins');
+        if (cabinsInput) cabinsInput.value = property.number_of_cabins ?? '';
+        const parkingSlotsInput = document.getElementById('officeNumberParkingSlots');
+        if (parkingSlotsInput) parkingSlotsInput.value = property.number_of_parking_slots ?? '';
+        // Parking options (reserved_parking, visitors_parking)
+        const parkingOptions = property.parking_options || property.parking || [];
+        const parkingArr = Array.isArray(parkingOptions) ? parkingOptions : (typeof parkingOptions === 'string' ? parkingOptions.split(',').map(s => s.trim()) : []);
+        document.querySelectorAll('input[name="parking_options"]').forEach(cb => {
+            cb.checked = parkingArr.indexOf(cb.value) !== -1;
+        });
+        // Office amenities (features for office_space)
+        const officeFeatures = property.features || [];
+        document.querySelectorAll('#officeSpaceAmenitiesCheckboxes input[name="office_amenities"]').forEach(cb => {
+            cb.checked = officeFeatures.indexOf(cb.value) !== -1;
+        });
+        if (typeof window.reinitializeCarpetAreaTracking === 'function') {
+            setTimeout(() => { window.reinitializeCarpetAreaTracking(); }, 100);
+        }
+    } else if (propertyType === 'showrooms') {
+        // Showrooms: super builtup, carpet, floors, frontage, footfall, ground floor, ceiling, mezzanine, amenities
+        const sbaInput = document.getElementById('residentialSuperBuildupArea');
+        if (sbaInput) sbaInput.value = property.super_buildup_area || property.super_built_up_area || '';
+        const carpetInput = document.getElementById('residentialCarpetArea');
+        if (carpetInput) carpetInput.value = property.carpet_area || '';
+        const totalFloorsInput = document.getElementById('showroomTotalFloors');
+        if (totalFloorsInput) totalFloorsInput.value = property.total_floors ?? '';
+        const frontageWidthInput = document.getElementById('showroomFrontageWidth');
+        if (frontageWidthInput) frontageWidthInput.value = property.frontage_width ?? '';
+        const frontageUnitSelect = document.getElementById('showroomFrontageUnit');
+        if (frontageUnitSelect && property.frontage_unit) safeSetSelectValueFromCandidates(frontageUnitSelect, [property.frontage_unit, 'ft', 'm']);
+        const footfallSelect = document.getElementById('showroomFootfallPotential');
+        if (footfallSelect && property.footfall_potential) safeSetSelectValueFromCandidates(footfallSelect, [property.footfall_potential, 'low', 'medium', 'high']);
+        const groundFloorInput = document.getElementById('showroomGroundFloorArea');
+        if (groundFloorInput) groundFloorInput.value = property.ground_floor_area ?? '';
+        const ceilingHeightInput = document.getElementById('showroomCeilingHeight');
+        if (ceilingHeightInput) ceilingHeightInput.value = property.ceiling_height ?? '';
+        const mezzanineInput = document.getElementById('showroomMezzanineArea');
+        if (mezzanineInput) mezzanineInput.value = property.mezzanine_area ?? '';
+        const showroomFeatures = property.features || [];
+        document.querySelectorAll('#showroomAmenitiesCheckboxes input[name="showroom_amenities"]').forEach(cb => {
+            cb.checked = showroomFeatures.indexOf(cb.value) !== -1;
+        });
+        if (typeof window.reinitializeCarpetAreaTracking === 'function') {
+            setTimeout(() => { window.reinitializeCarpetAreaTracking(); }, 100);
+        }
+    } else if (propertyType === 'warehouse') {
+        // Warehouse: type, clearance, dock levelers, shutters, floor load, plot, SBA, carpet, amenities
+        const sbaInput = document.getElementById('residentialSuperBuildupArea');
+        if (sbaInput) sbaInput.value = property.super_buildup_area || property.super_built_up_area || '';
+        const carpetInput = document.getElementById('residentialCarpetArea');
+        if (carpetInput) carpetInput.value = property.carpet_area || '';
+        const warehouseTypeSelect = document.getElementById('warehouseType');
+        if (warehouseTypeSelect && property.warehouse_type) safeSetSelectValueFromCandidates(warehouseTypeSelect, [property.warehouse_type, 'cold_storage', 'industrial', 'logistic']);
+        const clearanceHeightInput = document.getElementById('warehouseClearanceHeight');
+        if (clearanceHeightInput) clearanceHeightInput.value = property.clearance_height ?? '';
+        const clearanceUnitSelect = document.getElementById('warehouseClearanceUnit');
+        if (clearanceUnitSelect && property.clearance_height_unit) safeSetSelectValueFromCandidates(clearanceUnitSelect, [property.clearance_height_unit, 'ft', 'm']);
+        const dockLevelersInput = document.getElementById('warehouseDockLevelers');
+        if (dockLevelersInput) dockLevelersInput.value = property.dock_levelers ?? '';
+        const numberShuttersInput = document.getElementById('warehouseNumberShutters');
+        if (numberShuttersInput) numberShuttersInput.value = property.number_of_shutters ?? '';
+        const shutterHeightInput = document.getElementById('warehouseShutterHeight');
+        if (shutterHeightInput) shutterHeightInput.value = property.shutter_height ?? '';
+        const shutterHeightUnitSelect = document.getElementById('warehouseShutterHeightUnit');
+        if (shutterHeightUnitSelect && property.shutter_height_unit) safeSetSelectValueFromCandidates(shutterHeightUnitSelect, [property.shutter_height_unit, 'ft', 'm']);
+        const floorLoadInput = document.getElementById('warehouseFloorLoadCapacity');
+        if (floorLoadInput) floorLoadInput.value = property.floor_load_capacity ?? '';
+        const plotAreaInput = document.getElementById('warehousePlotArea');
+        if (plotAreaInput) plotAreaInput.value = property.plot_area ?? '';
+        const warehouseFeatures = property.features || [];
+        document.querySelectorAll('#warehouseAmenitiesCheckboxes input[name="warehouse_amenities"]').forEach(cb => {
+            cb.checked = warehouseFeatures.indexOf(cb.value) !== -1;
+        });
+        if (typeof window.reinitializeCarpetAreaTracking === 'function') {
+            setTimeout(() => { window.reinitializeCarpetAreaTracking(); }, 100);
         }
     } else if (propertyType === 'plot_properties') {
         // Plot area
@@ -4572,14 +5240,17 @@ async function handleResidentialPropertySubmit(e) {
     }
     
     const formData = new FormData(e.target);
-    // Get property ID from form data
+    // Get property ID from form data (required for update; when missing we create new)
     let propertyId = formData.get('id');
     
-    // CRITICAL FIX: Also check the input element directly as fallback
+    // CRITICAL FIX: Also check the input element and editing-context fallback so update URL is never lost
     if (!propertyId || propertyId === '' || propertyId === 'null') {
         const propertyIdInput = document.getElementById('residentialPropertyId');
         if (propertyIdInput && propertyIdInput.value) {
             propertyId = propertyIdInput.value;
+        }
+        if (!propertyId && currentEditingPropertyId) {
+            propertyId = String(currentEditingPropertyId);
         }
     }
     
@@ -4783,14 +5454,65 @@ async function handleResidentialPropertySubmit(e) {
         data.video_preview_link = videoLink;
     }
     
-    // Get features/amenities from Step 2 (for apartments and villas) - from checkboxes
+    // Get features/amenities from Step 2 - from checkboxes (residential, office space, or showrooms)
     data.features = [];
-    const amenitiesContainer = document.getElementById('residentialAmenitiesCheckboxes');
-    if (amenitiesContainer) {
-        const checked = amenitiesContainer.querySelectorAll('input[name="amenities"]:checked');
-        data.features = Array.from(checked)
-            .map(cb => cb && cb.value ? String(cb.value).trim() : null)
-            .filter(Boolean);
+    if (propertyType === 'office_space') {
+        const officeAmenitiesContainer = document.getElementById('officeSpaceAmenitiesCheckboxes');
+        if (officeAmenitiesContainer) {
+            const checked = officeAmenitiesContainer.querySelectorAll('input[name="office_amenities"]:checked');
+            data.features = Array.from(checked)
+                .map(cb => cb && cb.value ? String(cb.value).trim() : null)
+                .filter(Boolean);
+        }
+        // Office-specific fields
+        data.total_floors = formData.get('total_floors') ? parseInt(formData.get('total_floors'), 10) : null;
+        data.floor_number = formData.get('floor_number') ? parseInt(formData.get('floor_number'), 10) : null;
+        data.total_seats_workstations = formData.get('total_seats_workstations') ? parseInt(formData.get('total_seats_workstations'), 10) : null;
+        data.number_of_cabins = formData.get('number_of_cabins') ? parseInt(formData.get('number_of_cabins'), 10) : null;
+        data.number_of_parking_slots = formData.get('number_of_parking_slots') ? parseInt(formData.get('number_of_parking_slots'), 10) : null;
+        data.parking_options = formData.getAll('parking_options').filter(Boolean);
+    } else if (propertyType === 'showrooms') {
+        const showroomAmenitiesContainer = document.getElementById('showroomAmenitiesCheckboxes');
+        if (showroomAmenitiesContainer) {
+            const checked = showroomAmenitiesContainer.querySelectorAll('input[name="showroom_amenities"]:checked');
+            data.features = Array.from(checked)
+                .map(cb => cb && cb.value ? String(cb.value).trim() : null)
+                .filter(Boolean);
+        }
+        // Showroom-specific fields
+        data.total_floors = formData.get('total_floors') ? parseInt(formData.get('total_floors'), 10) : null;
+        data.frontage_width = formData.get('frontage_width') ? parseFloat(formData.get('frontage_width')) : null;
+        data.frontage_unit = formData.get('frontage_unit') || null;
+        data.footfall_potential = formData.get('footfall_potential') || null;
+        data.ground_floor_area = formData.get('ground_floor_area') ? parseFloat(formData.get('ground_floor_area')) : null;
+        data.ceiling_height = formData.get('ceiling_height') ? parseFloat(formData.get('ceiling_height')) : null;
+        data.mezzanine_area = formData.get('mezzanine_area') ? parseFloat(formData.get('mezzanine_area')) : null;
+    } else if (propertyType === 'warehouse') {
+        const warehouseAmenitiesContainer = document.getElementById('warehouseAmenitiesCheckboxes');
+        if (warehouseAmenitiesContainer) {
+            const checked = warehouseAmenitiesContainer.querySelectorAll('input[name="warehouse_amenities"]:checked');
+            data.features = Array.from(checked)
+                .map(cb => cb && cb.value ? String(cb.value).trim() : null)
+                .filter(Boolean);
+        }
+        // Warehouse-specific fields
+        data.warehouse_type = formData.get('warehouse_type') || null;
+        data.clearance_height = formData.get('clearance_height') ? parseFloat(formData.get('clearance_height')) : null;
+        data.clearance_height_unit = formData.get('clearance_height_unit') || null;
+        data.dock_levelers = formData.get('dock_levelers') ? parseInt(formData.get('dock_levelers'), 10) : null;
+        data.number_of_shutters = formData.get('number_of_shutters') ? parseInt(formData.get('number_of_shutters'), 10) : null;
+        data.shutter_height = formData.get('shutter_height') ? parseFloat(formData.get('shutter_height')) : null;
+        data.shutter_height_unit = formData.get('shutter_height_unit') || null;
+        data.floor_load_capacity = formData.get('floor_load_capacity') ? parseFloat(formData.get('floor_load_capacity')) : null;
+        data.plot_area = formData.get('plot_area') ? parseFloat(formData.get('plot_area')) : null;
+    } else {
+        const amenitiesContainer = document.getElementById('residentialAmenitiesCheckboxes');
+        if (amenitiesContainer) {
+            const checked = amenitiesContainer.querySelectorAll('input[name="amenities"]:checked');
+            data.features = Array.from(checked)
+                .map(cb => cb && cb.value ? String(cb.value).trim() : null)
+                .filter(Boolean);
+        }
     }
 
     if (submitBtn) {
@@ -4855,6 +5577,7 @@ async function handleResidentialPropertySubmit(e) {
         
         // 6. Modal reopens (fresh) - Close modal so it's fresh when reopened
         closeResidentialPropertyModal();
+        currentEditingPropertyId = null;
         
         // Force refresh to bypass cache and show newly added/updated property
         await loadProperties(true);
@@ -5296,7 +6019,11 @@ async function handleImageFiles(files, formType = 'property', imageCategory = 'p
         
         // Validate file size
         if (file.size > maxFileSize) {
-            alert('The image is too heavy, it should be below 5MB.');
+            if (window.TSPropertiesUI && typeof window.TSPropertiesUI.alert === 'function') {
+                await window.TSPropertiesUI.alert({ title: 'File Too Large', message: 'The image is too heavy, it should be below 5MB.' });
+            } else {
+                alert('The image is too heavy, it should be below 5MB.');
+            }
             const fileInputId = getImageFileInputId(formType, imageCategory);
             const fileInput = document.getElementById(fileInputId);
             if (fileInput) fileInput.value = '';
@@ -5646,15 +6373,15 @@ function addResidentialGalleryItem(imageUrl = null, title = '', category = '') {
                         </select>
                     </div>
                     <div class="dashboard-form-group">
-                        <label>
+                        <span class="dashboard-form-label">
                             <i class="fas fa-upload"></i>
                             Upload Image
-                        </label>
-                        <div class="dashboard-gallery-item-upload-btn" onclick="handleResidentialGalleryUploadClick(event, '${itemId}-file-input')">
+                        </span>
+                        <label for="${itemId}-file-input" class="dashboard-gallery-item-upload-btn">
                             <i class="fas fa-cloud-upload-alt"></i>
                             <span>Click to upload or drag and drop</span>
-                            <input type="file" id="${itemId}-file-input" accept="image/*" onchange="handleResidentialGalleryImageUpload('${itemId}', this)">
-                        </div>
+                        </label>
+                        <input type="file" id="${itemId}-file-input" accept="image/*" onchange="handleResidentialGalleryImageUpload('${itemId}', this)">
                     </div>
                 </div>
             </div>
@@ -6367,8 +7094,16 @@ function editTestimonial(id) {
 }
 
 // Delete Testimonial
-function deleteTestimonial(id) {
-    if (!confirm('Are you sure you want to delete this testimonial?')) {
+async function deleteTestimonial(id) {
+    const confirmed = (window.TSPropertiesUI && typeof window.TSPropertiesUI.confirm === 'function')
+        ? await window.TSPropertiesUI.confirm({
+            title: 'Delete Testimonial',
+            message: 'Are you sure you want to delete this testimonial?',
+            confirmText: 'Delete',
+            cancelText: 'Cancel'
+        })
+        : confirm('Are you sure you want to delete this testimonial?');
+    if (!confirmed) {
         return;
     }
     
@@ -7757,8 +8492,16 @@ function editBlog(id) {
 }
 
 // Delete Blog
-function deleteBlog(id) {
-    if (!confirm('Are you sure you want to delete this blog?')) {
+async function deleteBlog(id) {
+    const confirmed = (window.TSPropertiesUI && typeof window.TSPropertiesUI.confirm === 'function')
+        ? await window.TSPropertiesUI.confirm({
+            title: 'Delete Blog',
+            message: 'Are you sure you want to delete this blog?',
+            confirmText: 'Delete',
+            cancelText: 'Cancel'
+        })
+        : confirm('Are you sure you want to delete this blog?');
+    if (!confirmed) {
         return;
     }
     

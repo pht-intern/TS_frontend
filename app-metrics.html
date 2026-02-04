@@ -1788,8 +1788,17 @@
             // Logout functionality
             const logoutBtn = document.getElementById('dashboardLogout');
             if (logoutBtn) {
-                logoutBtn.addEventListener('click', function() {
-                    if (confirm('Are you sure you want to logout?')) {
+                logoutBtn.addEventListener('click', async function() {
+                    const confirmed = (window.TSPropertiesUI && typeof window.TSPropertiesUI.confirm === 'function')
+                        ? await window.TSPropertiesUI.confirm({
+                            title: 'Logout',
+                            message: 'Are you sure you want to logout?',
+                            confirmText: 'Logout',
+                            cancelText: 'Cancel'
+                        })
+                        : false;
+
+                    if (confirmed) {
                         stopRealtimeUpdates();
                         localStorage.removeItem('dashboard_authenticated');
                         localStorage.removeItem('isAuthenticated');

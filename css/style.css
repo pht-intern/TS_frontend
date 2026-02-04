@@ -13423,6 +13423,20 @@ section:not(.hero).section-visible .section-header {
     color: var(--primary-darker);
 }
 
+.dashboard-form-group .dashboard-form-label {
+    display: flex;
+    align-items: center;
+    gap: 0.625rem;
+    font-weight: 600;
+    color: var(--text-dark);
+    font-size: 0.95rem;
+    margin-bottom: 0.25rem;
+}
+
+.dashboard-form-group .dashboard-form-label i {
+    color: var(--primary-darker);
+}
+
 .dashboard-form-group input,
 .dashboard-form-group select,
 .dashboard-form-group textarea {
@@ -13480,6 +13494,19 @@ section:not(.hero).section-visible .section-header {
     margin: 0;
     cursor: pointer;
     accent-color: var(--primary-color);
+}
+
+.dashboard-parking-select-wrapper {
+    padding: 0.75rem;
+    border: 2px solid var(--border-color);
+    border-radius: 12px;
+    background: var(--white);
+}
+
+.dashboard-parking-checkboxes {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem 1.5rem;
 }
 
 .dashboard-login-submit {
@@ -14970,6 +14997,148 @@ section:not(.hero).section-visible .section-header {
     padding: 1.5rem 2rem;
 }
 
+/* Logout / Confirm modal (in-page dialog, not browser alert) */
+#tsConfirmModal.dashboard-modal {
+    padding: 1rem;
+    align-items: center;
+    justify-content: center;
+}
+
+#tsConfirmModal .dashboard-modal-content {
+    max-width: 420px;
+    width: 100%;
+}
+
+#tsConfirmModal .dashboard-modal-header {
+    padding: 1.5rem 1.75rem;
+    border-bottom: 2px solid var(--primary-lighter);
+}
+
+#tsConfirmModal .dashboard-modal-header h2 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--primary-dark);
+}
+
+#tsConfirmModal .dashboard-modal-body {
+    padding: 1.5rem 1.75rem;
+}
+
+#tsConfirmModal #tsConfirmMessage {
+    font-size: 1rem;
+    line-height: 1.6;
+    color: var(--text-dark);
+}
+
+#tsConfirmModal .dashboard-modal-actions {
+    padding: 1.25rem 1.75rem;
+    border-top: 2px solid var(--primary-lighter);
+    margin-top: 0;
+    gap: 0.75rem;
+    justify-content: flex-end;
+}
+
+#tsConfirmModal .dashboard-modal-actions .dashboard-btn-secondary {
+    padding: 0.75rem 1.5rem;
+    font-weight: 500;
+}
+
+#tsConfirmModal .dashboard-modal-actions .dashboard-btn-danger {
+    padding: 0.75rem 1.5rem;
+    font-weight: 500;
+}
+
+#tsConfirmModal .dashboard-modal-close {
+    padding: 0.5rem;
+    color: var(--text-gray);
+}
+
+#tsConfirmModal .dashboard-modal-close:hover {
+    color: var(--primary-dark);
+}
+
+@media (max-width: 768px) {
+    #tsConfirmModal.dashboard-modal {
+        padding: 0.75rem;
+    }
+
+    #tsConfirmModal .dashboard-modal-actions {
+        flex-direction: column-reverse;
+    }
+
+    #tsConfirmModal .dashboard-modal-actions button {
+        width: 100%;
+        justify-content: center;
+    }
+}
+
+/* Alert modal (single OK button, in-page dialog) */
+#tsAlertModal.dashboard-modal {
+    padding: 1rem;
+    align-items: center;
+    justify-content: center;
+}
+
+#tsAlertModal .dashboard-modal-content {
+    max-width: 420px;
+    width: 100%;
+}
+
+#tsAlertModal .dashboard-modal-header {
+    padding: 1.5rem 1.75rem;
+    border-bottom: 2px solid var(--primary-lighter);
+}
+
+#tsAlertModal .dashboard-modal-header h2 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--primary-dark);
+}
+
+#tsAlertModal .dashboard-modal-body {
+    padding: 1.5rem 1.75rem;
+}
+
+#tsAlertModal #tsAlertMessage {
+    font-size: 1rem;
+    line-height: 1.6;
+    color: var(--text-dark);
+    white-space: pre-line;
+}
+
+#tsAlertModal .dashboard-modal-actions {
+    padding: 1.25rem 1.75rem;
+    border-top: 2px solid var(--primary-lighter);
+    margin-top: 0;
+    gap: 0.75rem;
+    justify-content: flex-end;
+}
+
+#tsAlertModal .dashboard-modal-actions .dashboard-btn-primary {
+    padding: 0.75rem 1.5rem;
+    font-weight: 500;
+}
+
+#tsAlertModal .dashboard-modal-close {
+    padding: 0.5rem;
+    color: var(--text-gray);
+}
+
+#tsAlertModal .dashboard-modal-close:hover {
+    color: var(--primary-dark);
+}
+
+@media (max-width: 768px) {
+    #tsAlertModal.dashboard-modal {
+        padding: 0.75rem;
+    }
+
+    #tsAlertModal .dashboard-modal-actions button {
+        width: 100%;
+        justify-content: center;
+    }
+}
+
 .dashboard-property-form {
     padding: 2.5rem 3rem;
     display: flex;
@@ -15599,6 +15768,7 @@ section:not(.hero).section-visible .section-header {
 }
 
 .dashboard-gallery-item-upload-btn {
+    position: relative;
     background: var(--primary-lightest);
     border: 2px dashed var(--primary-color);
     border-radius: 10px;
@@ -15623,8 +15793,14 @@ section:not(.hero).section-visible .section-header {
     border-color: var(--primary-dark);
 }
 
-.dashboard-gallery-item-upload-btn input[type="file"] {
-    display: none;
+.dashboard-gallery-item-upload-btn.dragover {
+    background: var(--primary-lighter);
+    border-color: var(--primary-dark);
+}
+
+/* Hide file input; click works via <label for="id"> in step 3 gallery */
+.dashboard-gallery-item-upload-btn + input[type="file"] {
+    display: none !important;
 }
 
 @media (max-width: 768px) {

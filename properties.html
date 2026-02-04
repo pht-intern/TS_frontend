@@ -686,6 +686,8 @@
             const visitorFormMessage = document.getElementById('visitorFormMessage');
             const visitorModalOverlay = document.getElementById('visitorModalOverlay');
             let visitorModalInterval = null;
+            /** When user clicked "View Details", store that URL; after form submit we redirect here */
+            let pendingPropertyDetailsUrl = null;
             
             // Storage keys
             const VISITOR_FORM_SUBMITTED_KEY = 'visitorFormSubmitted';
@@ -854,10 +856,15 @@
                         showVisitorMessage('Thank you! We will get in touch with you soon.', 'success');
                         // Reset isSubmitting after successful submission (sessionStorage check will prevent duplicates)
                         isSubmitting = false;
-                        // Close modal after 2 seconds
+                        const urlToRedirect = pendingPropertyDetailsUrl;
+                        pendingPropertyDetailsUrl = null;
+                        // Close modal after 2 seconds, then redirect to property details if they came from View Details
                         setTimeout(() => {
                             closeVisitorModal();
                             visitorForm.reset();
+                            if (urlToRedirect) {
+                                window.location.href = urlToRedirect;
+                            }
                         }, 2000);
                     } catch (error) {
                         console.error('Error submitting visitor form:', error);
@@ -927,10 +934,41 @@
                 }
             }
 
+            // Trigger modal when user clicks "View Details" on a property card; after form submit, redirect to that property
+            function initViewDetailsTrigger() {
+                const propertiesGrid = document.getElementById('propertiesGrid');
+                if (propertiesGrid) {
+                    propertiesGrid.addEventListener('click', (e) => {
+                        const viewDetailsLink = e.target.closest('.btn-view-details');
+                        if (viewDetailsLink && !isFormSubmitted()) {
+                            e.preventDefault();
+                            const href = viewDetailsLink.getAttribute('href');
+                            if (href) {
+                                pendingPropertyDetailsUrl = href.startsWith('/') ? (window.location.origin + href) : href;
+                            }
+                            showVisitorModal();
+                        }
+                    });
+                }
+            }
+
+            // Show visitor modal on page load (when customer opens properties.html)
+            function showVisitorModalOnPageLoad() {
+                if (isFormSubmitted()) return;
+                // Small delay so page renders first
+                setTimeout(() => {
+                    if (!isFormSubmitted() && visitorModal && !visitorModal.classList.contains('active')) {
+                        showVisitorModal();
+                    }
+                }, 800);
+            }
+
             // Initialize on page load
             if (document.readyState === 'loading') {
                 document.addEventListener('DOMContentLoaded', () => {
                     initFilterButtonTrigger();
+                    initViewDetailsTrigger();
+                    showVisitorModalOnPageLoad();
                     
                     // If form was skipped before, start the interval
                     if (isFormSkipped() && !isFormSubmitted()) {
@@ -939,6 +977,8 @@
                 });
             } else {
                 initFilterButtonTrigger();
+                initViewDetailsTrigger();
+                showVisitorModalOnPageLoad();
                 
                 // If form was skipped before, start the interval
                 if (isFormSkipped() && !isFormSubmitted()) {

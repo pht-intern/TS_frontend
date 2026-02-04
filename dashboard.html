@@ -1314,29 +1314,6 @@ body{font-family:'Inter',sans-serif;font-size:18px;line-height:1.6;color:var(--t
                         <textarea id="residentialDescription" name="description" style="display: none;"></textarea>
                     </div>
 
-                    <div class="dashboard-form-group">
-                        <label for="residentialLocationLink">
-                            <i class="fas fa-link"></i>
-                            Location Link
-                        </label>
-                        <input type="url" id="residentialLocationLink" name="location_link"
-                            placeholder="e.g., https://maps.google.com/...">
-                    </div>
-
-                    <div class="dashboard-form-group">
-                        <label for="residentialPrice">
-                            <i class="fas fa-rupee-sign"></i>
-                            Price *
-                        </label>
-                        <input type="text" id="residentialPrice" name="price" placeholder="e.g., Rs. 1.2 Cr" required>
-                        <div style="margin-top: 0.75rem;">
-                            <label style="display: flex; align-items: center; gap: 0.5rem; font-weight: normal; cursor: pointer;">
-                                <input type="checkbox" id="residentialPriceNegotiable" name="price_negotiable" style="width: auto;">
-                                <span>Price Negotiable</span>
-                            </label>
-                        </div>
-                    </div>
-
                 </div>
 
                 <!-- Hidden fields for form submission -->
@@ -1390,6 +1367,57 @@ body{font-family:'Inter',sans-serif;font-size:18px;line-height:1.6;color:var(--t
                 <button type="button" class="dashboard-btn-danger" id="confirmDeleteBtn">
                     <i class="fas fa-trash"></i>
                     Delete
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Alert Modal (in-page, single OK button) -->
+    <div class="dashboard-modal" id="tsAlertModal" aria-hidden="true">
+        <div class="dashboard-modal-overlay" id="tsAlertModalOverlay"></div>
+        <div class="dashboard-modal-content dashboard-modal-small">
+            <div class="dashboard-modal-header">
+                <h2 id="tsAlertHeader">
+                    <i class="fas fa-info-circle" style="color: var(--primary-color);"></i>
+                    <span id="tsAlertTitle">Notice</span>
+                </h2>
+                <button class="dashboard-modal-close" type="button" id="tsAlertCloseBtn" aria-label="Close">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="dashboard-modal-body">
+                <p id="tsAlertMessage" style="margin: 0;"> </p>
+            </div>
+            <div class="dashboard-modal-actions">
+                <button type="button" class="dashboard-btn-primary" id="tsAlertOkBtn">
+                    <i class="fas fa-check"></i>
+                    OK
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Confirm Modal (in-page, Cancel / Confirm buttons) -->
+    <div class="dashboard-modal" id="tsConfirmModal" aria-hidden="true">
+        <div class="dashboard-modal-overlay" id="tsConfirmModalOverlay"></div>
+        <div class="dashboard-modal-content dashboard-modal-small">
+            <div class="dashboard-modal-header">
+                <h2 id="tsConfirmHeader">
+                    <i class="fas fa-question-circle" style="color: var(--primary-color);"></i>
+                    <span id="tsConfirmTitle">Confirm</span>
+                </h2>
+                <button class="dashboard-modal-close" type="button" id="tsConfirmCloseBtn" aria-label="Close">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="dashboard-modal-body">
+                <p id="tsConfirmMessage" style="margin: 0;"> </p>
+            </div>
+            <div class="dashboard-modal-actions">
+                <button type="button" class="dashboard-btn-secondary" id="tsConfirmCancelBtn">Cancel</button>
+                <button type="button" class="dashboard-btn-danger" id="tsConfirmOkBtn">
+                    <i class="fas fa-sign-out-alt"></i>
+                    <span id="tsConfirmOkText">Confirm</span>
                 </button>
             </div>
         </div>
@@ -1616,7 +1644,7 @@ body{font-family:'Inter',sans-serif;font-size:18px;line-height:1.6;color:var(--t
     <!-- Critical JS - Load immediately -->
     <script src="/js/session-manager.js" defer></script>
     <!-- Dashboard JS - Load immediately after authentication check -->
-    <script src="/js/dashboard.js?v=20250203120000" defer></script>
+    <script src="/js/dashboard.js?v=20250206120000" defer></script>
     <!-- Non-critical JS - Load after page is interactive -->
     <script>
         // Load other scripts after page load

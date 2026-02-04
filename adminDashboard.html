@@ -93,7 +93,20 @@ body{font-family:'Inter',sans-serif;font-size:18px;line-height:1.6;color:var(--t
             'use strict';
 
             try {
-                // Function to clear all authentication data
+                // End server session then clear client data (so backend session doesn't stay active)
+                function endSessionAndRedirect() {
+                    try {
+                        var u = localStorage.getItem('user') || sessionStorage.getItem('user');
+                        if (u) {
+                            var o = JSON.parse(u);
+                            if (o && o.email) {
+                                fetch('/api/auth/logout', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: o.email }), keepalive: true }).catch(function () {});
+                            }
+                        }
+                    } catch (e) {}
+                    clearAllAuthData();
+                    window.location.replace('/index.html');
+                }
                 function clearAllAuthData() {
                     try {
                         sessionStorage.removeItem('dashboard_authenticated');
@@ -104,14 +117,7 @@ body{font-family:'Inter',sans-serif;font-size:18px;line-height:1.6;color:var(--t
                         localStorage.removeItem('isAuthenticated');
                         localStorage.removeItem('user');
                         localStorage.removeItem('session_start_time');
-                        // CRITICAL FIX: Don't clear session manager tracking data here
-                        // This was causing sessions to be cleared prematurely
-                        // The session manager handles its own cleanup
-                        // Only clear tab_ data if we're actually logging out
-                        // (We'll let the session manager handle tab tracking)
-                    } catch (e) {
-                        // Ignore errors during cleanup
-                    }
+                    } catch (e) {}
                 }
 
                 // Restore session from _session_restore if we just refreshed (saved within last 3s)
@@ -228,33 +234,9 @@ body{font-family:'Inter',sans-serif;font-size:18px;line-height:1.6;color:var(--t
                             }
                         }
 
-                        // No retries left or not a login redirect - redirect to login
-                        console.error('Authentication check failed after retries:', {
-                            isAuthenticated,
-                            hasValidUser,
-                            hasUser: !!user,
-                            localAuth,
-                            sessionAuth,
-                            retryCount
-                        });
-                        clearAllAuthData();
-                        // Redirect immediately - use replace to prevent back button
-                        try {
-                            window.location.replace('/index.html');
-                        } catch (e) {
-                            try {
-                                window.location.href = '/index.html';
-                            } catch (e2) {
-                                // Last resort - show error and redirect
-                                if (document.body) {
-                                    document.body.style.display = 'block';
-                                    document.body.innerHTML = '<div style="font-family: Inter, sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; text-align: center;"><div><h1>Unauthorized Access</h1><p>Redirecting to login...</p></div></div>';
-                                    setTimeout(function () {
-                                        window.location.href = '/index.html';
-                                    }, 1000);
-                                }
-                            }
-                        }
+                        // No retries left or not a login redirect - end server session then redirect
+                        console.error('Authentication check failed after retries:', { isAuthenticated, hasValidUser, hasUser: !!user, localAuth, sessionAuth, retryCount });
+                        endSessionAndRedirect();
                         return false;
                     }
 
@@ -278,8 +260,7 @@ body{font-family:'Inter',sans-serif;font-size:18px;line-height:1.6;color:var(--t
                     if (startStr) sessionStartTime = parseInt(startStr, 10);
                 } catch (e) { /* ignore */ }
                 if (sessionStartTime && !isNaN(sessionStartTime) && (Date.now() - sessionStartTime) > SESSION_MAX_MS) {
-                    clearAllAuthData();
-                    try { window.location.replace('/index.html'); } catch (e2) { window.location.href = '/index.html'; }
+                    endSessionAndRedirect();
                     return;
                 }
 
@@ -287,15 +268,13 @@ body{font-family:'Inter',sans-serif;font-size:18px;line-height:1.6;color:var(--t
                 // (Already validated in checkAuthWithRetry, but double-check for safety)
                 if (!user || !user.email || typeof user.email !== 'string' || user.email.trim() === '') {
                     console.error('User validation failed:', user);
-                    clearAllAuthData();
-                    window.location.replace('/index.html');
+                    endSessionAndRedirect();
                     return;
                 }
 
                 if (user.role !== 'admin') {
                     console.error('User role validation failed:', user.role);
-                    clearAllAuthData();
-                    window.location.replace('/index.html');
+                    endSessionAndRedirect();
                     return;
                 }
 
@@ -363,26 +342,8 @@ body{font-family:'Inter',sans-serif;font-size:18px;line-height:1.6;color:var(--t
                 }, 100);
 
             } catch (error) {
-                // If any error occurs, show error message and redirect
                 console.error('Authentication check error:', error);
-                try {
-                    window.location.replace('/index.html');
-                } catch (e) {
-                    // Show error and redirect
-                    try {
-                        if (document.body) {
-                            document.body.style.display = 'block';
-                            document.body.innerHTML = '<div style="font-family: Inter, sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; text-align: center;"><div><h1>Error</h1><p>An error occurred. Redirecting to login...</p></div></div>';
-                            setTimeout(function () {
-                                window.location.href = '/index.html';
-                            }, 2000);
-                        } else {
-                            window.location.href = '/index.html';
-                        }
-                    } catch (e2) {
-                        window.location.href = '/index.html';
-                    }
-                }
+                endSessionAndRedirect();
             }
         })();
     </script>
@@ -1319,29 +1280,6 @@ body{font-family:'Inter',sans-serif;font-size:18px;line-height:1.6;color:var(--t
                         <textarea id="residentialDescription" name="description" style="display: none;"></textarea>
                     </div>
 
-                    <div class="dashboard-form-group">
-                        <label for="residentialLocationLink">
-                            <i class="fas fa-link"></i>
-                            Location Link
-                        </label>
-                        <input type="url" id="residentialLocationLink" name="location_link"
-                            placeholder="e.g., https://maps.google.com/...">
-                    </div>
-
-                    <div class="dashboard-form-group">
-                        <label for="residentialPrice">
-                            <i class="fas fa-rupee-sign"></i>
-                            Price *
-                        </label>
-                        <input type="text" id="residentialPrice" name="price" placeholder="e.g., Rs. 1.2 Cr" required>
-                        <div style="margin-top: 0.75rem;">
-                            <label style="display: flex; align-items: center; gap: 0.5rem; font-weight: normal; cursor: pointer;">
-                                <input type="checkbox" id="residentialPriceNegotiable" name="price_negotiable" style="width: auto;">
-                                <span>Price Negotiable</span>
-                            </label>
-                        </div>
-                    </div>
-
                 </div>
 
                 <!-- Hidden fields for form submission -->
@@ -1395,6 +1333,57 @@ body{font-family:'Inter',sans-serif;font-size:18px;line-height:1.6;color:var(--t
                 <button type="button" class="dashboard-btn-danger" id="confirmDeleteBtn">
                     <i class="fas fa-trash"></i>
                     Delete
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Alert Modal (in-page, single OK button) -->
+    <div class="dashboard-modal" id="tsAlertModal" aria-hidden="true">
+        <div class="dashboard-modal-overlay" id="tsAlertModalOverlay"></div>
+        <div class="dashboard-modal-content dashboard-modal-small">
+            <div class="dashboard-modal-header">
+                <h2 id="tsAlertHeader">
+                    <i class="fas fa-info-circle" style="color: var(--primary-color);"></i>
+                    <span id="tsAlertTitle">Notice</span>
+                </h2>
+                <button class="dashboard-modal-close" type="button" id="tsAlertCloseBtn" aria-label="Close">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="dashboard-modal-body">
+                <p id="tsAlertMessage" style="margin: 0;"> </p>
+            </div>
+            <div class="dashboard-modal-actions">
+                <button type="button" class="dashboard-btn-primary" id="tsAlertOkBtn">
+                    <i class="fas fa-check"></i>
+                    OK
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Confirm Modal (in-page, Cancel / Confirm buttons) -->
+    <div class="dashboard-modal" id="tsConfirmModal" aria-hidden="true">
+        <div class="dashboard-modal-overlay" id="tsConfirmModalOverlay"></div>
+        <div class="dashboard-modal-content dashboard-modal-small">
+            <div class="dashboard-modal-header">
+                <h2 id="tsConfirmHeader">
+                    <i class="fas fa-question-circle" style="color: var(--primary-color);"></i>
+                    <span id="tsConfirmTitle">Confirm</span>
+                </h2>
+                <button class="dashboard-modal-close" type="button" id="tsConfirmCloseBtn" aria-label="Close">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="dashboard-modal-body">
+                <p id="tsConfirmMessage" style="margin: 0;"> </p>
+            </div>
+            <div class="dashboard-modal-actions">
+                <button type="button" class="dashboard-btn-secondary" id="tsConfirmCancelBtn">Cancel</button>
+                <button type="button" class="dashboard-btn-danger" id="tsConfirmOkBtn">
+                    <i class="fas fa-sign-out-alt"></i>
+                    <span id="tsConfirmOkText">Confirm</span>
                 </button>
             </div>
         </div>
@@ -1621,7 +1610,7 @@ body{font-family:'Inter',sans-serif;font-size:18px;line-height:1.6;color:var(--t
     <!-- Critical JS - Load immediately -->
     <script src="/js/session-manager.js" defer></script>
     <!-- Dashboard JS - Load immediately after authentication check -->
-    <script src="/js/adminDashboard.js?v=20250203120000" defer></script>
+    <script src="/js/adminDashboard.js?v=20250206120000" defer></script>
     <!-- Non-critical JS - Load after page is interactive -->
     <script>
         // Load other scripts after page load

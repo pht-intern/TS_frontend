@@ -24,6 +24,296 @@
     let initialCheckDone = false;
 
     /**
+     * Lightweight UI confirm dialog (uses existing dashboard modal CSS).
+     * Returns Promise<boolean>.
+     *
+     * NOTE: Designed for production/cPanel: no dependencies, no frameworks.
+     */
+    function uiConfirm(options) {
+        const opts = options || {};
+        const title = (typeof opts.title === 'string' && opts.title.trim()) ? opts.title.trim() : 'Confirm';
+        const message = (typeof opts.message === 'string' && opts.message.trim()) ? opts.message.trim() : 'Are you sure?';
+        const confirmText = (typeof opts.confirmText === 'string' && opts.confirmText.trim()) ? opts.confirmText.trim() : 'Confirm';
+        const cancelText = (typeof opts.cancelText === 'string' && opts.cancelText.trim()) ? opts.cancelText.trim() : 'Cancel';
+
+        return new Promise((resolve) => {
+            const existingModal = document.getElementById('tsConfirmModal');
+            const useExisting = existingModal && existingModal.getAttribute('aria-hidden') !== null;
+
+            if (useExisting) {
+                const titleEl = document.getElementById('tsConfirmTitle');
+                const messageEl = document.getElementById('tsConfirmMessage');
+                const okTextEl = document.getElementById('tsConfirmOkText');
+                const overlayEl = document.getElementById('tsConfirmModalOverlay');
+                const closeBtn = document.getElementById('tsConfirmCloseBtn');
+                const cancelBtn = document.getElementById('tsConfirmCancelBtn');
+                const okBtn = document.getElementById('tsConfirmOkBtn');
+                if (titleEl) titleEl.textContent = title;
+                if (messageEl) messageEl.textContent = message;
+                if (okTextEl) okTextEl.textContent = confirmText;
+
+                function done(value) {
+                    try { document.removeEventListener('keydown', onKeyDown, true); } catch (e) { /* ignore */ }
+                    try { existingModal.classList.remove('active'); existingModal.setAttribute('aria-hidden', 'true'); } catch (e) { /* ignore */ }
+                    try { document.body.style.overflow = ''; } catch (e) { /* ignore */ }
+                    resolve(value === true);
+                }
+
+                function onKeyDown(e) {
+                    if (!e) return;
+                    if (e.key === 'Escape') {
+                        e.preventDefault();
+                        done(false);
+                    }
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        done(true);
+                    }
+                }
+
+                if (overlayEl) overlayEl.addEventListener('click', function() { done(false); });
+                if (closeBtn) closeBtn.addEventListener('click', function() { done(false); });
+                if (cancelBtn) cancelBtn.addEventListener('click', function() { done(false); });
+                if (okBtn) okBtn.addEventListener('click', function() { done(true); });
+                document.addEventListener('keydown', onKeyDown, true);
+
+                try { document.body.style.overflow = 'hidden'; } catch (e) { /* ignore */ }
+                existingModal.classList.add('active');
+                existingModal.removeAttribute('aria-hidden');
+                setTimeout(function() {
+                    try { if (cancelBtn) cancelBtn.focus(); } catch (e) { /* ignore */ }
+                }, 0);
+                return;
+            }
+
+            try {
+                const existing = document.getElementById('tsConfirmModal');
+                if (existing && existing.parentNode) existing.parentNode.removeChild(existing);
+            } catch (e) { /* ignore */ }
+
+            const modal = document.createElement('div');
+            modal.className = 'dashboard-modal';
+            modal.id = 'tsConfirmModal';
+
+            const overlay = document.createElement('div');
+            overlay.className = 'dashboard-modal-overlay';
+            overlay.id = 'tsConfirmModalOverlay';
+
+            const content = document.createElement('div');
+            content.className = 'dashboard-modal-content dashboard-modal-small';
+
+            const header = document.createElement('div');
+            header.className = 'dashboard-modal-header';
+            header.innerHTML = `
+                <h2 style="display:flex;align-items:center;gap:.5rem;">
+                    <i class="fas fa-question-circle" style="color: var(--primary-color);"></i>
+                    <span>${title}</span>
+                </h2>
+                <button class="dashboard-modal-close" type="button" id="tsConfirmCloseBtn" aria-label="Close">
+                    <i class="fas fa-times"></i>
+                </button>
+            `;
+
+            const body = document.createElement('div');
+            body.className = 'dashboard-modal-body';
+            body.innerHTML = `<p id="tsConfirmMessage" style="margin:0;">${message}</p>`;
+
+            const actions = document.createElement('div');
+            actions.className = 'dashboard-modal-actions';
+            actions.innerHTML = `
+                <button type="button" class="dashboard-btn-secondary" id="tsConfirmCancelBtn">${cancelText}</button>
+                <button type="button" class="dashboard-btn-danger" id="tsConfirmOkBtn">
+                    <i class="fas fa-sign-out-alt"></i>
+                    ${confirmText}
+                </button>
+            `;
+
+            content.appendChild(header);
+            content.appendChild(body);
+            content.appendChild(actions);
+            modal.appendChild(overlay);
+            modal.appendChild(content);
+
+            function cleanupAndResolve(value) {
+                try {
+                    document.removeEventListener('keydown', onKeyDown, true);
+                } catch (e) { /* ignore */ }
+                try {
+                    if (modal && modal.parentNode) modal.parentNode.removeChild(modal);
+                } catch (e) { /* ignore */ }
+                resolve(value === true);
+            }
+
+            function onKeyDown(e) {
+                if (!e) return;
+                if (e.key === 'Escape') {
+                    e.preventDefault();
+                    cleanupAndResolve(false);
+                }
+                if (e.key === 'Enter') {
+                    // Only treat Enter as confirm when modal is visible
+                    e.preventDefault();
+                    cleanupAndResolve(true);
+                }
+            }
+
+            // Wire up events
+            overlay.addEventListener('click', () => cleanupAndResolve(false));
+            content.addEventListener('click', (e) => e.stopPropagation());
+            header.querySelector('#tsConfirmCloseBtn').addEventListener('click', () => cleanupAndResolve(false));
+            actions.querySelector('#tsConfirmCancelBtn').addEventListener('click', () => cleanupAndResolve(false));
+            actions.querySelector('#tsConfirmOkBtn').addEventListener('click', () => cleanupAndResolve(true));
+            document.addEventListener('keydown', onKeyDown, true);
+
+            // Add to DOM and show
+            (document.body || document.documentElement).appendChild(modal);
+            // Trigger layout then activate (ensures CSS animation works)
+            setTimeout(() => {
+                try { modal.classList.add('active'); } catch (e) { /* ignore */ }
+                try { actions.querySelector('#tsConfirmCancelBtn').focus(); } catch (e) { /* ignore */ }
+            }, 0);
+        });
+    }
+
+    /**
+     * Lightweight UI alert dialog (single OK button, same styling as confirm).
+     * Returns Promise<void> (resolves when user closes).
+     *
+     * NOTE: Designed for production/cPanel: no dependencies, no frameworks.
+     */
+    function uiAlert(options) {
+        const opts = options || {};
+        const title = (typeof opts.title === 'string' && opts.title.trim()) ? opts.title.trim() : 'Notice';
+        const message = (typeof opts.message === 'string') ? opts.message : '';
+
+        return new Promise((resolve) => {
+            const existingModal = document.getElementById('tsAlertModal');
+            const useExisting = existingModal && existingModal.getAttribute('aria-hidden') !== null;
+
+            if (useExisting) {
+                const titleEl = document.getElementById('tsAlertTitle');
+                const messageEl = document.getElementById('tsAlertMessage');
+                const overlayEl = document.getElementById('tsAlertModalOverlay');
+                const closeBtn = document.getElementById('tsAlertCloseBtn');
+                const okBtn = document.getElementById('tsAlertOkBtn');
+                if (titleEl) titleEl.textContent = title;
+                if (messageEl) messageEl.textContent = message;
+
+                function done() {
+                    try { document.removeEventListener('keydown', onKeyDown, true); } catch (e) { /* ignore */ }
+                    try { existingModal.classList.remove('active'); existingModal.setAttribute('aria-hidden', 'true'); } catch (e) { /* ignore */ }
+                    try { document.body.style.overflow = ''; } catch (e) { /* ignore */ }
+                    resolve();
+                }
+
+                function onKeyDown(e) {
+                    if (!e) return;
+                    if (e.key === 'Escape' || e.key === 'Enter') {
+                        e.preventDefault();
+                        done();
+                    }
+                }
+
+                if (overlayEl) overlayEl.addEventListener('click', done);
+                if (closeBtn) closeBtn.addEventListener('click', done);
+                if (okBtn) okBtn.addEventListener('click', done);
+                document.addEventListener('keydown', onKeyDown, true);
+
+                try { document.body.style.overflow = 'hidden'; } catch (e) { /* ignore */ }
+                existingModal.classList.add('active');
+                existingModal.removeAttribute('aria-hidden');
+                setTimeout(function() {
+                    try { if (okBtn) okBtn.focus(); } catch (e) { /* ignore */ }
+                }, 0);
+                return;
+            }
+
+            try {
+                const existing = document.getElementById('tsAlertModal');
+                if (existing && existing.parentNode) existing.parentNode.removeChild(existing);
+            } catch (e) { /* ignore */ }
+
+            const modal = document.createElement('div');
+            modal.className = 'dashboard-modal';
+            modal.id = 'tsAlertModal';
+
+            const overlay = document.createElement('div');
+            overlay.className = 'dashboard-modal-overlay';
+            overlay.id = 'tsAlertModalOverlay';
+
+            const content = document.createElement('div');
+            content.className = 'dashboard-modal-content dashboard-modal-small';
+
+            const header = document.createElement('div');
+            header.className = 'dashboard-modal-header';
+            header.innerHTML = `
+                <h2 style="display:flex;align-items:center;gap:.5rem;">
+                    <i class="fas fa-info-circle" style="color: var(--primary-color);"></i>
+                    <span>${title}</span>
+                </h2>
+                <button class="dashboard-modal-close" type="button" id="tsAlertCloseBtn" aria-label="Close">
+                    <i class="fas fa-times"></i>
+                </button>
+            `;
+
+            const body = document.createElement('div');
+            body.className = 'dashboard-modal-body';
+            const msgEl = document.createElement('p');
+            msgEl.id = 'tsAlertMessage';
+            msgEl.style.margin = '0';
+            msgEl.textContent = message;
+            body.appendChild(msgEl);
+
+            const actions = document.createElement('div');
+            actions.className = 'dashboard-modal-actions';
+            actions.innerHTML = `
+                <button type="button" class="dashboard-btn-primary" id="tsAlertOkBtn">
+                    <i class="fas fa-check"></i>
+                    OK
+                </button>
+            `;
+
+            content.appendChild(header);
+            content.appendChild(body);
+            content.appendChild(actions);
+            modal.appendChild(overlay);
+            modal.appendChild(content);
+
+            function cleanupAndResolve() {
+                try {
+                    document.removeEventListener('keydown', onKeyDown, true);
+                } catch (e) { /* ignore */ }
+                try {
+                    if (modal && modal.parentNode) modal.parentNode.removeChild(modal);
+                } catch (e) { /* ignore */ }
+                try { document.body.style.overflow = ''; } catch (e) { /* ignore */ }
+                resolve();
+            }
+
+            function onKeyDown(e) {
+                if (!e) return;
+                if (e.key === 'Escape' || e.key === 'Enter') {
+                    e.preventDefault();
+                    cleanupAndResolve();
+                }
+            }
+
+            overlay.addEventListener('click', cleanupAndResolve);
+            content.addEventListener('click', (e) => e.stopPropagation());
+            header.querySelector('#tsAlertCloseBtn').addEventListener('click', cleanupAndResolve);
+            actions.querySelector('#tsAlertOkBtn').addEventListener('click', cleanupAndResolve);
+            document.addEventListener('keydown', onKeyDown, true);
+
+            (document.body || document.documentElement).appendChild(modal);
+            try { document.body.style.overflow = 'hidden'; } catch (e) { /* ignore */ }
+            setTimeout(() => {
+                try { modal.classList.add('active'); } catch (e) { /* ignore */ }
+                try { actions.querySelector('#tsAlertOkBtn').focus(); } catch (e) { /* ignore */ }
+            }, 0);
+        });
+    }
+
+    /**
      * Initialize the session manager
      * CRITICAL: Only initializes after successful login - never before
      */
@@ -65,31 +355,11 @@
         // CRITICAL: Only initialize if there's BOTH a session flag AND valid user data
         // If either is missing, do NOT initialize and do NOT create any tracking data
         if (!hasSession || !hasValidUser) {
-            // DEBUG: Log why initialization is being skipped
-            console.log('[SessionManager] Skipping initialization', {
-                hasSession,
-                hasValidUser,
-                userStr: userStr ? 'present' : 'missing'
-            });
-            
-            // No valid session - don't initialize and don't create any data
-            // Clear any invalid session data
+            // No valid session - end server session if we had invalid data, then don't initialize
             if (hasSession && !hasValidUser) {
-                // Clear invalid data but don't create any new data
-                try {
-                    sessionStorage.removeItem(SESSION_KEY);
-                    sessionStorage.removeItem('dashboard_authenticated');
-                    sessionStorage.removeItem(USER_KEY);
-                    sessionStorage.removeItem('user');
-                    localStorage.removeItem(SESSION_KEY);
-                    localStorage.removeItem('dashboard_authenticated');
-                    localStorage.removeItem(USER_KEY);
-                    localStorage.removeItem('user');
-                } catch (e) {
-                    // Ignore errors
-                }
+                // Use clearSession so backend logout is called (ends server session properly)
+                clearSession();
             }
-            // DO NOT initialize - return immediately without creating any data
             return;
         }
         
@@ -296,14 +566,9 @@
                 // Ignore storage errors
             }
             
-            // Check if we're the last tab after cleanup
-            // CRITICAL: Only check if initial check is done to prevent premature session clearing
+            // Tab cleanup only (no session clear - session ends only on manual logout or 4h)
             if (initialCheckDone) {
-                const otherTabsCount = Array.from(activeTabs.keys()).filter(id => id !== tabId).length;
-                if (otherTabsCount === 0 && activeTabs.size > 0) {
-                    // We're the only tab left - double check with localStorage
-                    checkIfLastTab();
-                }
+                checkIfLastTab();
             }
         }, HEARTBEAT_INTERVAL);
     }
@@ -450,83 +715,50 @@
     }
 
     /**
-     * Check if this is the last active tab
-     * If so, clear the session immediately
-     * CRITICAL: Only clears session when tabs are actually closing, not on initial load or refresh
+     * Check if this is the last active tab (for tab tracking only).
+     * Session is NOT cleared here: user stays logged in until manual logout or 4h timeout.
+     * This avoids logging out app@tirumakudaluproperties.com (or any user) as soon as they login.
      */
     function checkIfLastTab() {
-        // Only check if session manager is initialized
         if (!isInitialized) return;
-        
-        // CRITICAL FIX: Don't check if initial check hasn't completed yet
-        // This prevents clearing session when we're just starting up
-        if (!initialCheckDone) {
-            // Still waiting for initial check - don't clear session yet
-            return;
-        }
-        
-        // Remove stale tabs first
+        if (!initialCheckDone) return;
+        // Remove stale tabs from our map only
         const now = Date.now();
         activeTabs.forEach((lastHeartbeat, tabIdToCheck) => {
             if (now - lastHeartbeat > TAB_TIMEOUT) {
                 activeTabs.delete(tabIdToCheck);
             }
         });
-        
-        // Check for other tabs via localStorage (more reliable than BroadcastChannel alone)
-        let otherTabsFound = false;
-        try {
-            for (let i = 0; i < localStorage.length; i++) {
-                const key = localStorage.key(i);
-                if (key && key.startsWith('tab_') && key !== `tab_${tabId}`) {
-                    try {
-                        const tabData = JSON.parse(localStorage.getItem(key) || '{}');
-                        // Check if tab data is recent (within last 5 seconds) and NOT closing
-                        if (tabData.timestamp && 
-                            (now - tabData.timestamp) < TAB_TIMEOUT && 
-                            !tabData.closing) {
-                            otherTabsFound = true;
-                            break;
-                        }
-                    } catch (e) {
-                        // Ignore parse errors - remove invalid entries
-                        try {
-                            localStorage.removeItem(key);
-                        } catch (e2) {
-                            // Ignore
-                        }
-                    }
-                }
-            }
-        } catch (e) {
-            // Ignore storage errors
-        }
-        
-        // Count active tabs from BroadcastChannel (excluding self)
-        const otherTabs = Array.from(activeTabs.keys()).filter(id => id !== tabId);
-        
-        // Clear session when we're the last tab (refresh will restore via _session_restore)
-        if (otherTabs.length === 0 && !otherTabsFound && initialCheckDone) {
-            clearSession();
-        }
+        // Do NOT clear session when we're the only tab - session ends only on manual logout or 4h expiry
     }
 
     /**
-     * Clear session data
+     * Clear session data and end session properly.
      * CRITICAL: Always clears session when all tabs close, regardless of "Remember Me"
      * "Remember Me" only preserves saved email/password for autofill, not the active session
-     * Also calls backend logout endpoint to clear server-side session
+     * Also calls backend logout endpoint to clear server-side session (unless skipBackendLogout).
+     * @param {Object} [options] - Optional: { skipBackendLogout: true } when caller already called logout API
      */
-    function clearSession() {
-        // DEBUG: Log when session is being cleared
-        console.log('[SessionManager] clearSession() called - clearing session because all tabs closed', {
-            isInitialized,
-            initialCheckDone,
-            tabId,
-            activeTabsCount: activeTabs.size,
-            stackTrace: new Error().stack
-        });
-        
+    function clearSession(options) {
+        const skipBackendLogout = options && options.skipBackendLogout === true;
+
+        // End session properly: stop heartbeat, notify other tabs, then close channel
+        stopHeartbeat();
+        if (broadcastChannel && tabId) {
+            sendMessage('session-cleared', { tabId });
+            try {
+                broadcastChannel.removeEventListener('message', handleMessage);
+                broadcastChannel.close();
+            } catch (e) {
+                // Ignore if already closed
+            }
+            broadcastChannel = null;
+        }
+        tabId = null;
+        activeTabs.clear();
+        initialCheckDone = false;
+        isInitialized = false;
+
         // Get user email before clearing session (for backend logout)
         let userEmail = null;
         try {
@@ -539,15 +771,11 @@
         } catch (e) {
             // Ignore parse errors
         }
-        
-        // Call backend logout endpoint to clear server-side session
-        // Use fetch with keepalive for reliability during page unload
-        if (userEmail) {
+
+        // Call backend logout endpoint to clear server-side session (unless caller already did)
+        if (!skipBackendLogout && userEmail) {
             try {
                 const logoutData = JSON.stringify({ email: userEmail });
-                
-                // Use fetch with keepalive flag - this ensures the request completes
-                // even if the page is unloading/closing
                 fetch('/api/auth/logout', {
                     method: 'POST',
                     headers: {
@@ -556,17 +784,13 @@
                     body: logoutData,
                     keepalive: true // Critical: keeps request alive even during page unload
                 }).catch(error => {
-                    // Ignore errors - session will be cleared on client side anyway
-                    // The backend will also clean up expired sessions automatically
                     console.warn('Logout API call failed during tab close (this is normal if page is unloading):', error);
                 });
             } catch (error) {
-                // Ignore errors - continue with client-side logout
-                // The backend will clean up expired sessions automatically
                 console.warn('Error calling logout endpoint:', error);
             }
         }
-        
+
         // Always clear sessionStorage
         sessionStorage.removeItem(SESSION_KEY);
         sessionStorage.removeItem('dashboard_authenticated');
@@ -599,9 +823,6 @@
         } catch (e) {
             // Ignore storage errors
         }
-        
-        // Notify other tabs (if any) via BroadcastChannel
-        sendMessage('session-cleared', { tabId });
         
         // Clean up all tab tracking data
         try {
@@ -858,5 +1079,10 @@
             return Array.from(activeTabs.keys()).filter(id => id !== tabId).length;
         }
     };
+
+    // Expose UI modals globally (used by dashboards for alerts and confirmations)
+    window.TSPropertiesUI = window.TSPropertiesUI || {};
+    window.TSPropertiesUI.confirm = uiConfirm;
+    window.TSPropertiesUI.alert = uiAlert;
 })();
 

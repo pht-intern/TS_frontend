@@ -1,4 +1,4 @@
-﻿// Settings Page JavaScript
+// Settings Page JavaScript
 (function() {
     // Get user data
     const userStr = localStorage.getItem('user') || sessionStorage.getItem('user');
@@ -966,11 +966,20 @@ let allStates = [];
         });
     }
 
-    // Logout functionality
+    // Logout functionality (use in-page modal, not browser confirm)
     const logoutBtn = document.getElementById('dashboardLogout');
     if (logoutBtn) {
-        logoutBtn.addEventListener('click', function() {
-            if (confirm('Are you sure you want to logout?')) {
+        logoutBtn.addEventListener('click', async function() {
+            const confirmed = (window.TSPropertiesUI && typeof window.TSPropertiesUI.confirm === 'function')
+                ? await window.TSPropertiesUI.confirm({
+                    title: 'Logout',
+                    message: 'Are you sure you want to logout?',
+                    confirmText: 'Logout',
+                    cancelText: 'Cancel'
+                })
+                : false;
+
+            if (confirmed) {
                 localStorage.removeItem('dashboard_authenticated');
                 localStorage.removeItem('isAuthenticated');
                 localStorage.removeItem('user');

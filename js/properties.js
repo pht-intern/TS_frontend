@@ -83,7 +83,7 @@ function showLoadingState() {
     const loadingEl = document.getElementById('propertiesLoading');
     const errorEl = document.getElementById('propertiesError');
     const gridEl = document.getElementById('propertiesGrid');
-    
+
     if (loadingEl) loadingEl.style.display = 'flex';
     if (errorEl) errorEl.style.display = 'none';
     if (gridEl) gridEl.style.display = 'none';
@@ -93,7 +93,7 @@ function showLoadingState() {
 function hideLoadingState() {
     const loadingEl = document.getElementById('propertiesLoading');
     const gridEl = document.getElementById('propertiesGrid');
-    
+
     if (loadingEl) loadingEl.style.display = 'none';
     if (gridEl) {
         gridEl.style.display = 'grid';
@@ -107,7 +107,7 @@ function showErrorState(message = 'Best of the properties are being selected for
     const loadingEl = document.getElementById('propertiesLoading');
     const errorEl = document.getElementById('propertiesError');
     const gridEl = document.getElementById('propertiesGrid');
-    
+
     if (loadingEl) loadingEl.style.display = 'none';
     if (errorEl) {
         errorEl.style.display = 'block';
@@ -130,39 +130,39 @@ function fetchWithTimeout(url, options = {}, timeout = 30000) {
 async function loadPropertiesFromAPI() {
     try {
         showLoadingState();
-        
+
         // Fetch active properties from API
         let allFetchedProperties = [];
         let page = 1;
         let hasMore = true;
         const maxPages = 50; // Safety limit to prevent infinite loops
         const startTime = Date.now();
-        
+
         while (hasMore && page <= maxPages) {
             const pageStartTime = Date.now();
-            
+
             try {
                 const response = await fetchWithTimeout(
                     `/api/properties?is_active=true&page=${page}&limit=${limit}`,
                     {},
                     30000 // 30 second timeout per request
                 );
-                
+
                 if (!response.ok) {
                     const errorText = await response.text();
                     throw new Error(`Failed to fetch properties: ${response.status} ${errorText}`);
                 }
-                
+
                 const data = await response.json();
                 const properties = data.items || [];
                 allFetchedProperties = allFetchedProperties.concat(properties);
-                
+
                 const pageTime = Date.now() - pageStartTime;
-                
+
                 // Check if there are more pages
                 hasMore = page < data.pages;
                 page++;
-                
+
                 // If we have enough properties for initial display, show them progressively
                 if (allFetchedProperties.length >= 8 && page === 2) {
                     // Show first batch immediately
@@ -185,9 +185,9 @@ async function loadPropertiesFromAPI() {
                 throw error;
             }
         }
-        
+
         const totalTime = Date.now() - startTime;
-        
+
         // If no properties found, show message
         if (allFetchedProperties.length === 0) {
             hideLoadingState();
@@ -203,43 +203,43 @@ async function loadPropertiesFromAPI() {
             }
             return;
         }
-        
+
         // Convert property from API format to display format
         function convertPropertyToDisplayFormat(property) {
             // Helper function to normalize image URLs
             function normalizeImageUrl(url) {
-            if (!url) return null;
-            
-            // If it's already a data URL (base64), return as is
-            if (url.startsWith('data:')) {
-                return url;
-            }
-            
-            // If it's an absolute URL (http/https), return as is (external image)
-            if (url.startsWith('http://') || url.startsWith('https://')) {
-                return url;
-            }
-            
-            // If it's a relative path starting with /, return as is
-            if (url.startsWith('/')) {
-                return url;
-            }
-            
-            // If it's a relative path without /, add /images/properties/ prefix
-            // This handles cases where just the filename is stored
-            if (url.includes('.jpeg') || url.includes('.jpg') || url.includes('.png') || url.includes('.gif') || url.includes('.webp')) {
-                // Check if it already has /images/ in the path
-                if (url.includes('/images/')) {
-                    return url.startsWith('/') ? url : '/' + url;
+                if (!url) return null;
+
+                // If it's already a data URL (base64), return as is
+                if (url.startsWith('data:')) {
+                    return url;
                 }
-                // Otherwise, assume it's a property image
-                return '/images/properties/' + url;
+
+                // If it's an absolute URL (http/https), return as is (external image)
+                if (url.startsWith('http://') || url.startsWith('https://')) {
+                    return url;
+                }
+
+                // If it's a relative path starting with /, return as is
+                if (url.startsWith('/')) {
+                    return url;
+                }
+
+                // If it's a relative path without /, add /images/properties/ prefix
+                // This handles cases where just the filename is stored
+                if (url.includes('.jpeg') || url.includes('.jpg') || url.includes('.png') || url.includes('.gif') || url.includes('.webp')) {
+                    // Check if it already has /images/ in the path
+                    if (url.includes('/images/')) {
+                        return url.startsWith('/') ? url : '/' + url;
+                    }
+                    // Otherwise, assume it's a property image
+                    return '/images/properties/' + url;
+                }
+
+                // Default: return as relative path with leading /
+                return url.startsWith('/') ? url : '/' + url;
             }
-            
-            // Default: return as relative path with leading /
-            return url.startsWith('/') ? url : '/' + url;
-            }
-            
+
             // Handle images - API returns array of objects with image_url, or primary_image string
             // Get image from database - no hardcoded fallback
             let imageUrl = null;
@@ -253,13 +253,13 @@ async function loadPropertiesFromAPI() {
                     imageUrl = normalizeImageUrl(property.images[0]);
                 }
             }
-            
+
             // Get price_text from property - check multiple possible locations
             let priceText = '';
             if (property.price_text !== null && property.price_text !== undefined && property.price_text !== '') {
                 priceText = String(property.price_text).trim();
             }
-            
+
             // Ensure price is a number (API might return it as string)
             let priceValue = property.price;
             if (typeof priceValue === 'string') {
@@ -268,7 +268,7 @@ async function loadPropertiesFromAPI() {
             if (isNaN(priceValue) || priceValue <= 0) {
                 priceValue = 0;
             }
-            
+
             // Guard: Ensure features is always an array
             let safeFeatures = [];
             if (property.features && Array.isArray(property.features)) {
@@ -287,7 +287,7 @@ async function loadPropertiesFromAPI() {
                     return String(f).trim();
                 });
             }
-            
+
             // Guard: Ensure images is always an array
             let safeImages = [];
             if (property.images && Array.isArray(property.images)) {
@@ -300,7 +300,7 @@ async function loadPropertiesFromAPI() {
                     return false;
                 });
             }
-            
+
             return {
                 id: property.id,
                 title: property.title || 'Untitled Property',
@@ -318,24 +318,24 @@ async function loadPropertiesFromAPI() {
                 features: safeFeatures
             };
         }
-        
+
         // Convert API format to display format
         allProperties = allFetchedProperties.map(property => {
             return convertPropertyToDisplayFormat(property);
         });
-        
+
         // Initialize filtered properties
         filteredProperties = [...allProperties];
         displayedProperties = 8;
-        
+
         hideLoadingState();
-        
+
         // Render properties
         renderProperties();
-        
+
         // Update load more button visibility
         updateLoadMoreButton();
-        
+
     } catch (error) {
         console.error('Error loading properties from API:', error);
         console.error('Error details:', {
@@ -344,7 +344,7 @@ async function loadPropertiesFromAPI() {
             name: error.name
         });
         hideLoadingState();
-        
+
         // Provide more specific error messages
         let errorMessage = 'Best of the properties are being selected for you, please wait...';
         if (error.message === 'Request timeout') {
@@ -352,9 +352,9 @@ async function loadPropertiesFromAPI() {
         } else if (error.message.includes('Failed to fetch')) {
             errorMessage = 'Best of the properties are being selected for you, please wait...';
         }
-        
+
         showErrorState(errorMessage);
-        
+
         // Set up retry button
         const retryBtn = document.getElementById('retryLoadBtn');
         if (retryBtn) {
@@ -362,7 +362,7 @@ async function loadPropertiesFromAPI() {
                 loadPropertiesFromAPI();
             };
         }
-        
+
         // Don't use fallback properties - let user retry or see error
         allProperties = [];
         filteredProperties = [];
@@ -401,150 +401,150 @@ function getPropertiesFromStorage() {
 
 function getDefaultProperties() {
     return [
-    {
-        id: 1,
-        title: "Luxury Modern Apartment",
-        location: "Downtown District, Bengaluru",
-        price: 450000,
-        type: "apartment",
-        bedrooms: 3,
-        bathrooms: 2,
-        area: 1800,
-        image: "/images/img1.webp",
-        status: "sale"
-    },
-    {
-        id: 2,
-        title: "Spacious Family House",
-        location: "Suburban Area, Bengaluru",
-        price: 650000,
-        type: "house",
-        bedrooms: 4,
-        bathrooms: 3,
-        area: 2500,
-        image: "/images/img2.webp",
-        status: "sale"
-    },
-    {
-        id: 3,
-        title: "Elegant Villa with Pool",
-        location: "Hillside View, Bengaluru",
-        price: 1200000,
-        type: "villa",
-        bedrooms: 5,
-        bathrooms: 4,
-        area: 4000,
-        image: "/images/img3.jpg",
-        status: "sale"
-    },
-    {
-        id: 4,
-        title: "Modern Condo Unit",
-        location: "City Center, Bengaluru",
-        price: 320000,
-        type: "condo",
-        bedrooms: 2,
-        bathrooms: 2,
-        area: 1200,
-        image: "/images/img4.jpg",
-        status: "rent"
-    },
-    {
-        id: 5,
-        title: "Cozy Townhouse",
-        location: "Residential Zone, Bengaluru",
-        price: 380000,
-        type: "townhouse",
-        bedrooms: 3,
-        bathrooms: 2.5,
-        area: 1600,
-        image: "/images/img5.jpg",
-        status: "sale"
-    },
-    {
-        id: 6,
-        title: "Premium Apartment Suite",
-        location: "Waterfront, Bengaluru",
-        price: 550000,
-        type: "apartment",
-        bedrooms: 3,
-        bathrooms: 2,
-        area: 2000,
-        image: "/images/img1.webp",
-        status: "sale"
-    },
-    {
-        id: 7,
-        title: "Luxury House Estate",
-        location: "Gated Community, Bengaluru",
-        price: 850000,
-        type: "house",
-        bedrooms: 5,
-        bathrooms: 4,
-        area: 3500,
-        image: "/images/img2.webp",
-        status: "sale"
-    },
-    {
-        id: 8,
-        title: "Beachfront Villa",
-        location: "Coastal Area, Bengaluru",
-        price: 1500000,
-        type: "villa",
-        bedrooms: 6,
-        bathrooms: 5,
-        area: 5000,
-        image: "/images/img3.jpg",
-        status: "sale"
-    },
-    {
-        id: 9,
-        title: "Contemporary Apartment",
-        location: "Business District, Bengaluru",
-        price: 420000,
-        type: "apartment",
-        bedrooms: 2,
-        bathrooms: 2,
-        area: 1500,
-        image: "/images/img4.jpg",
-        status: "rent"
-    },
-    {
-        id: 10,
-        title: "Family-Friendly House",
-        location: "Quiet Neighborhood, Bengaluru",
-        price: 580000,
-        type: "house",
-        bedrooms: 4,
-        bathrooms: 3,
-        area: 2200,
-        image: "/images/img5.jpg",
-        status: "sale"
-    },
-    {
-        id: 11,
-        title: "Executive Villa",
-        location: "Prestigious Area, Bengaluru",
-        price: 1350000,
-        type: "villa",
-        bedrooms: 6,
-        bathrooms: 5,
-        area: 4500,
-        image: "/images/img1.webp",
-        status: "sale"
-    },
-    {
-        id: 12,
-        title: "Modern Condo with View",
-        location: "City Skyline, Bengaluru",
-        price: 350000,
-        type: "condo",
-        bedrooms: 2,
-        bathrooms: 2,
-        area: 1300,
-        image: "/images/img2.webp",
-        status: "rent"
-    }
+        {
+            id: 1,
+            title: "Luxury Modern Apartment",
+            location: "Downtown District, Bengaluru",
+            price: 450000,
+            type: "apartment",
+            bedrooms: 3,
+            bathrooms: 2,
+            area: 1800,
+            image: "/images/img1.webp",
+            status: "sale"
+        },
+        {
+            id: 2,
+            title: "Spacious Family House",
+            location: "Suburban Area, Bengaluru",
+            price: 650000,
+            type: "house",
+            bedrooms: 4,
+            bathrooms: 3,
+            area: 2500,
+            image: "/images/img2.webp",
+            status: "sale"
+        },
+        {
+            id: 3,
+            title: "Elegant Villa with Pool",
+            location: "Hillside View, Bengaluru",
+            price: 1200000,
+            type: "villa",
+            bedrooms: 5,
+            bathrooms: 4,
+            area: 4000,
+            image: "/images/img3.jpg",
+            status: "sale"
+        },
+        {
+            id: 4,
+            title: "Modern Condo Unit",
+            location: "City Center, Bengaluru",
+            price: 320000,
+            type: "condo",
+            bedrooms: 2,
+            bathrooms: 2,
+            area: 1200,
+            image: "/images/img4.jpg",
+            status: "rent"
+        },
+        {
+            id: 5,
+            title: "Cozy Townhouse",
+            location: "Residential Zone, Bengaluru",
+            price: 380000,
+            type: "townhouse",
+            bedrooms: 3,
+            bathrooms: 2.5,
+            area: 1600,
+            image: "/images/img5.jpg",
+            status: "sale"
+        },
+        {
+            id: 6,
+            title: "Premium Apartment Suite",
+            location: "Waterfront, Bengaluru",
+            price: 550000,
+            type: "apartment",
+            bedrooms: 3,
+            bathrooms: 2,
+            area: 2000,
+            image: "/images/img1.webp",
+            status: "sale"
+        },
+        {
+            id: 7,
+            title: "Luxury House Estate",
+            location: "Gated Community, Bengaluru",
+            price: 850000,
+            type: "house",
+            bedrooms: 5,
+            bathrooms: 4,
+            area: 3500,
+            image: "/images/img2.webp",
+            status: "sale"
+        },
+        {
+            id: 8,
+            title: "Beachfront Villa",
+            location: "Coastal Area, Bengaluru",
+            price: 1500000,
+            type: "villa",
+            bedrooms: 6,
+            bathrooms: 5,
+            area: 5000,
+            image: "/images/img3.jpg",
+            status: "sale"
+        },
+        {
+            id: 9,
+            title: "Contemporary Apartment",
+            location: "Business District, Bengaluru",
+            price: 420000,
+            type: "apartment",
+            bedrooms: 2,
+            bathrooms: 2,
+            area: 1500,
+            image: "/images/img4.jpg",
+            status: "rent"
+        },
+        {
+            id: 10,
+            title: "Family-Friendly House",
+            location: "Quiet Neighborhood, Bengaluru",
+            price: 580000,
+            type: "house",
+            bedrooms: 4,
+            bathrooms: 3,
+            area: 2200,
+            image: "/images/img5.jpg",
+            status: "sale"
+        },
+        {
+            id: 11,
+            title: "Executive Villa",
+            location: "Prestigious Area, Bengaluru",
+            price: 1350000,
+            type: "villa",
+            bedrooms: 6,
+            bathrooms: 5,
+            area: 4500,
+            image: "/images/img1.webp",
+            status: "sale"
+        },
+        {
+            id: 12,
+            title: "Modern Condo with View",
+            location: "City Skyline, Bengaluru",
+            price: 350000,
+            type: "condo",
+            bedrooms: 2,
+            bathrooms: 2,
+            area: 1300,
+            image: "/images/img2.webp",
+            status: "rent"
+        }
     ];
 }
 
@@ -555,24 +555,24 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (categorySection) {
         categorySection.removeAttribute('data-active-category');
     }
-    
+
     // Load properties from API first
     await loadPropertiesFromAPI();
-    
+
     // Initialize UI components
     initFilters();
     initSearch();
     initMainSearch();
     initFilterTags();
     initLoadMore();
-    
+
     // Check URL parameters and apply filters
     const urlParams = new URLSearchParams(window.location.search);
     const typeParam = urlParams.get('type');
     const statusParam = urlParams.get('status');
     const searchParam = urlParams.get('search');
     const directionParam = urlParams.get('direction');
-    
+
     // Apply search parameter if present
     if (searchParam) {
         const navSearchInput = document.getElementById('navSearchInput');
@@ -580,7 +580,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         const navSearchClear = document.getElementById('navSearchClear');
         const mainSearchClear = document.getElementById('mainSearchClear');
         const searchValue = decodeURIComponent(searchParam);
-        
+
         if (navSearchInput) {
             navSearchInput.value = searchValue;
             if (navSearchClear) {
@@ -594,7 +594,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
         }
     }
-    
+
     // Apply status filter if present
     if (statusParam && (statusParam === 'sale' || statusParam === 'rent' || statusParam === 'all')) {
         const transactionTypeSelect = document.getElementById('searchTransactionType');
@@ -603,7 +603,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             currentFilter = statusParam;
         }
     }
-    
+
     // Apply type filter if present
     if (typeParam) {
         // Set the type filter in the search form
@@ -612,7 +612,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             searchTypeSelect.value = typeParam;
         }
     }
-    
+
     // Apply direction filter if present
     if (directionParam) {
         const directionSelect = document.getElementById('searchDirection') || document.getElementById('searchDirections');
@@ -626,7 +626,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
         }
     }
-    
+
     // Apply all filters if any URL parameters are present
     if (typeParam || statusParam || searchParam || directionParam) {
         applyFilters();
@@ -674,7 +674,7 @@ function renderProperties(propertiesToRender = filteredProperties.slice(0, displ
         const priceHtml = priceDisplay.value != null
             ? `₹ <span class="price-value">${priceDisplay.value}</span> <span class="price-unit">${priceDisplay.unit}</span>`
             : 'Price on request';
-        
+
         return `
         <div class="property-card" data-type="${propertyType}" data-status="${propertyStatus}" data-id="${propertyId}" data-property-id="${propertyId}">
             <div class="property-image">
@@ -708,28 +708,28 @@ function renderProperties(propertiesToRender = filteredProperties.slice(0, displ
                 e.stopPropagation();
                 const propertyId = btn.getAttribute('data-property-id');
                 if (!propertyId) return;
-                
+
                 // Create the property URL
                 const propertyUrl = `${window.location.origin}/property-details.html?id=${propertyId}`;
-                
+
                 try {
                     // Copy to clipboard using Clipboard API
                     await navigator.clipboard.writeText(propertyUrl);
-                    
+
                     // Show success feedback
                     const icon = btn.querySelector('i');
                     const originalClass = icon.className;
                     icon.className = 'fas fa-check';
                     icon.style.color = '#4caf50';
                     btn.title = 'Link copied!';
-                    
+
                     // Reset after 2 seconds
                     setTimeout(() => {
                         icon.className = originalClass;
                         icon.style.color = '';
                         btn.title = 'Share';
                     }, 2000);
-                    
+
                     // Optional: Show a toast notification
                     showToastNotification('Property link copied to clipboard!');
                 } catch (err) {
@@ -744,20 +744,20 @@ function renderProperties(propertiesToRender = filteredProperties.slice(0, displ
                         textArea.select();
                         document.execCommand('copy');
                         document.body.removeChild(textArea);
-                        
+
                         // Show success feedback
                         const icon = btn.querySelector('i');
                         const originalClass = icon.className;
                         icon.className = 'fas fa-check';
                         icon.style.color = '#4caf50';
                         btn.title = 'Link copied!';
-                        
+
                         setTimeout(() => {
                             icon.className = originalClass;
                             icon.style.color = '';
                             btn.title = 'Share';
                         }, 2000);
-                        
+
                         showToastNotification('Property link copied to clipboard!');
                     } catch (fallbackErr) {
                         console.error('Fallback copy failed:', fallbackErr);
@@ -776,7 +776,7 @@ function showToastNotification(message) {
     if (existingToast) {
         existingToast.remove();
     }
-    
+
     // Create toast element
     const toast = document.createElement('div');
     toast.className = 'toast-notification';
@@ -794,7 +794,7 @@ function showToastNotification(message) {
         font-weight: 500;
         animation: slideInRight 0.3s ease-out;
     `;
-    
+
     // Add animation
     const style = document.createElement('style');
     style.textContent = `
@@ -823,9 +823,9 @@ function showToastNotification(message) {
         style.setAttribute('data-toast-animations', 'true');
         document.head.appendChild(style);
     }
-    
+
     document.body.appendChild(toast);
-    
+
     // Remove after 3 seconds
     setTimeout(() => {
         toast.style.animation = 'slideOutRight 0.3s ease-out';
@@ -849,7 +849,7 @@ async function loadActiveCities() {
                 'Cache-Control': 'no-cache'
             }
         });
-        
+
         if (response.ok) {
             const data = await response.json();
             console.log('Cities API response:', data);
@@ -866,10 +866,10 @@ async function loadActiveCities() {
             if (Array.isArray(data.cities)) {
                 // Store current selection before clearing
                 const currentValue = citySelect.value;
-                
+
                 // Clear existing options except the first "Any City" option
                 citySelect.innerHTML = '<option value="">Any City</option>';
-                
+
                 // If no active cities, show message
                 if (data.cities.length === 0) {
                     const option = document.createElement('option');
@@ -879,14 +879,14 @@ async function loadActiveCities() {
                     citySelect.appendChild(option);
                     return;
                 }
-                
+
                 // Group cities by state
                 const citiesByState = {};
                 data.cities.forEach(city => {
                     // Handle both string and object formats
                     const cityName = typeof city === 'string' ? city : (city.name || '');
                     const state = typeof city === 'object' ? (city.state || 'Other') : 'Other';
-                    
+
                     if (cityName && cityName.trim()) {
                         if (!citiesByState[state]) {
                             citiesByState[state] = [];
@@ -894,7 +894,7 @@ async function loadActiveCities() {
                         citiesByState[state].push(cityName.trim());
                     }
                 });
-                
+
                 // Sort states and cities
                 const sortedStates = Object.keys(citiesByState).sort();
                 sortedStates.forEach(state => {
@@ -906,7 +906,7 @@ async function loadActiveCities() {
                         citySelect.appendChild(option);
                     });
                 });
-                
+
                 // Restore selected value from URL params if present, otherwise restore previous selection
                 const urlParams = new URLSearchParams(window.location.search);
                 const cityParam = urlParams.get('city');
@@ -951,7 +951,7 @@ async function loadLocalitiesForCity(cityName) {
             }
             return;
         }
-        
+
         // Add cache-busting timestamp to ensure fresh data
         const timestamp = new Date().getTime();
         const apiUrl = `/api/localities?city=${encodeURIComponent(cityName)}&_t=${timestamp}`;
@@ -963,7 +963,7 @@ async function loadLocalitiesForCity(cityName) {
                 'Cache-Control': 'no-cache'
             }
         });
-        
+
         if (response.ok) {
             const data = await response.json();
             console.log('Localities API response for city "' + cityName + '":', data);
@@ -973,13 +973,13 @@ async function loadLocalitiesForCity(cityName) {
                 console.error('Area select element not found: propertiesSearchArea or searchArea');
                 return;
             }
-            
+
             // Store current selection before clearing
             const currentValue = areaSelect.value;
-            
+
             // Clear existing options except the first "Any Area" option
             areaSelect.innerHTML = '<option value="">Any Area</option>';
-            
+
             if (data.localities && Array.isArray(data.localities)) {
                 console.log('Processing localities array:', data.localities);
                 // If no localities found, show message
@@ -992,11 +992,11 @@ async function loadLocalitiesForCity(cityName) {
                     areaSelect.appendChild(option);
                     return;
                 }
-                
+
                 // Sort localities alphabetically
                 const sortedLocalities = [...data.localities].sort();
                 console.log('Sorted localities:', sortedLocalities);
-                
+
                 // Add localities to select dropdown
                 let addedCount = 0;
                 sortedLocalities.forEach(locality => {
@@ -1009,7 +1009,7 @@ async function loadLocalitiesForCity(cityName) {
                     }
                 });
                 console.log(`Added ${addedCount} localities to dropdown`);
-                
+
                 // Restore previous selection if it still exists
                 if (currentValue && areaSelect.querySelector(`option[value="${currentValue}"]`)) {
                     areaSelect.value = currentValue;
@@ -1051,7 +1051,7 @@ async function loadAmenities() {
                 'Cache-Control': 'no-cache'
             }
         });
-        
+
         if (response.ok) {
             const data = await response.json();
             console.log('Amenities API response:', data);
@@ -1067,14 +1067,14 @@ async function loadAmenities() {
             if (Array.isArray(data.amenities)) {
                 // Store current value before clearing
                 const currentValue = amenitiesSelect.value;
-                
+
                 // Clear existing options except the first "Any Amenity" option
                 amenitiesSelect.innerHTML = '<option value="">Any Amenity</option>';
-                
+
                 // Remove duplicates and sort amenities
                 const uniqueAmenities = [...new Set(data.amenities.map(a => a && a.trim()).filter(Boolean))];
                 uniqueAmenities.sort();
-                
+
                 // Add amenities to select dropdown
                 if (uniqueAmenities.length > 0) {
                     uniqueAmenities.forEach(amenity => {
@@ -1088,7 +1088,7 @@ async function loadAmenities() {
                         amenitiesSelect.appendChild(option);
                     });
                 }
-                
+
                 // Restore selected value from URL params if present, otherwise restore previous selection
                 const urlParams = new URLSearchParams(window.location.search);
                 const amenitiesParam = urlParams.get('amenities');
@@ -1118,7 +1118,7 @@ async function loadUnitTypes() {
                 'Cache-Control': 'no-cache'
             }
         });
-        
+
         if (response.ok) {
             const data = await response.json();
             console.log('Unit Types API response:', data);
@@ -1135,10 +1135,10 @@ async function loadUnitTypes() {
             if (Array.isArray(data.unit_types)) {
                 // Store current selection before clearing
                 const currentValue = unitTypeSelect.value;
-                
+
                 // Clear existing options except the first "Any Unit Type" option
                 unitTypeSelect.innerHTML = '<option value="">Any Unit Type</option>';
-                
+
                 // If no unit types, show message
                 if (data.unit_types.length === 0) {
                     const option = document.createElement('option');
@@ -1148,7 +1148,7 @@ async function loadUnitTypes() {
                     unitTypeSelect.appendChild(option);
                     return;
                 }
-                
+
                 // Add unit types sorted by bedrooms, then name
                 data.unit_types.forEach(unitType => {
                     if (unitType && unitType.name && unitType.display_name) {
@@ -1162,7 +1162,7 @@ async function loadUnitTypes() {
                         unitTypeSelect.appendChild(option);
                     }
                 });
-                
+
                 // Restore selected value from URL params if present, otherwise restore previous selection
                 const urlParams = new URLSearchParams(window.location.search);
                 const unitTypeParam = urlParams.get('unit_type') || urlParams.get('type');
@@ -1200,6 +1200,14 @@ async function loadUnitTypes() {
 function updateFilterGroupsByPropertyType() {
     const container = document.getElementById('propertiesPropertiesFilters');
     if (!container) return;
+
+    // Toggle active class on container to show/hide filter groups
+    if (selectedCategory) {
+        container.classList.add('filters-active');
+    } else {
+        container.classList.remove('filters-active');
+    }
+
     const propertyType = typeof selectedPropertyType === 'string' ? selectedPropertyType : null;
     const residentialTypes = ['apartment', 'house', 'villa'];
     const commercialTypes = ['office-space', 'warehouse', 'showrooms'];
@@ -1223,7 +1231,7 @@ function initFilters() {
         loadAmenities().catch(err => console.error('Error loading amenities:', err));
         loadUnitTypes().catch(err => console.error('Error loading unit types:', err));
     }, 100);
-    
+
     // City select change handler
     const citySelect = document.getElementById('propertiesSearchCity') || document.getElementById('searchCity');
     if (citySelect) {
@@ -1237,7 +1245,7 @@ function initFilters() {
             applyFilters();
         });
     }
-    
+
     // Amenities select change handler
     const amenitiesSelect = document.getElementById('propertiesSearchAmenities') || document.getElementById('searchAmenities');
     if (amenitiesSelect) {
@@ -1245,7 +1253,7 @@ function initFilters() {
             applyFilters();
         });
     }
-    
+
     // Transaction Type select (Buy/Rent/All)
     const transactionTypeSelect = document.getElementById('searchTransactionType');
     if (transactionTypeSelect) {
@@ -1282,17 +1290,17 @@ function initFilters() {
     // Category buttons (show subcategories and filter by category)
     const categoryButtons = document.querySelectorAll('.category-text-button[data-category]');
     const categorySection = document.querySelector('.category-section-centered');
-    
+
     categoryButtons.forEach(btn => {
         btn.addEventListener('click', (e) => {
             e.preventDefault();
             e.stopPropagation();
             const category = btn.dataset.category;
-            
+
             if (!categorySection) return;
-            
+
             const currentActiveCategory = categorySection.getAttribute('data-active-category');
-            
+
             // Toggle subcategories visibility
             if (currentActiveCategory === category) {
                 // Hide subcategories if clicking the same category
@@ -1305,15 +1313,15 @@ function initFilters() {
             } else {
                 // Show subcategories for selected category
                 categorySection.setAttribute('data-active-category', category);
-                
+
                 // Update active state
                 categoryButtons.forEach(b => b.classList.remove('active'));
                 btn.classList.add('active');
-                
+
                 // Clear property type selection when switching categories
                 const allSubButtons = document.querySelectorAll('.subcategory-button');
                 allSubButtons.forEach(b => b.classList.remove('active'));
-                
+
                 selectedCategory = category;
                 selectedPropertyType = null; // Clear specific property type when selecting category
             }
@@ -1330,7 +1338,7 @@ function initFilters() {
             e.stopPropagation();
             const propType = btn.dataset.propertyType;
             const parentCategory = btn.dataset.parentCategory;
-            
+
             if (selectedPropertyType === propType && selectedCategory === parentCategory) {
                 // Toggle off if already selected
                 selectedPropertyType = null;
@@ -1344,12 +1352,12 @@ function initFilters() {
                 // Deselect all other property types and categories
                 propertyTypeButtons.forEach(b => b.classList.remove('active'));
                 categoryButtons.forEach(b => b.classList.remove('active'));
-                
+
                 // Select new property type and category
                 selectedPropertyType = propType;
                 selectedCategory = parentCategory;
                 btn.classList.add('active');
-                
+
                 // Also activate parent category button and show subcategories
                 const categoryBtn = document.querySelector(`.category-text-button[data-category="${parentCategory}"]`);
                 if (categoryBtn) categoryBtn.classList.add('active');
@@ -1359,7 +1367,7 @@ function initFilters() {
             applyFilters();
         });
     });
-    
+
     // Also handle category button clicks to filter by category only (without specific property type)
     categoryButtons.forEach(btn => {
         // Add a separate handler for filtering (not just expand/collapse)
@@ -1367,7 +1375,7 @@ function initFilters() {
         // For now, clicking category button only expands/collapses
         // Users should click subcategories to filter
     });
-    
+
     // Initialize Price Range Dropdown
     initPriceRange();
     updateFilterGroupsByPropertyType();
@@ -1383,17 +1391,17 @@ function initPriceRange() {
     const priceMinInput = document.getElementById('priceMin');
     const priceMaxInput = document.getElementById('priceMax');
     const priceApplyBtn = document.getElementById('priceApplyBtn');
-    
+
     if (!priceRangeBtn || !priceRangeDropdown) return;
-    
+
     // Format price for display
     function formatPriceDisplay(value) {
         if (!value || value === '') return 'Any Price';
-        
+
         const [min, max] = value.split('-').map(v => v === '' ? null : parseInt(v));
-        
+
         if (min === null && max === null) return 'Any Price';
-        
+
         // Format numbers with Indian locale
         function formatNumber(num) {
             if (num >= 10000000) {
@@ -1404,7 +1412,7 @@ function initPriceRange() {
                 return `₹${num.toLocaleString('en-IN')}`;
             }
         }
-        
+
         if (min !== null && max !== null) {
             return `${formatNumber(min)} - ${formatNumber(max)}`;
         } else if (min !== null && max === null) {
@@ -1413,12 +1421,12 @@ function initPriceRange() {
             return `Up to ${formatNumber(max)}`;
         }
     }
-    
+
     // Toggle dropdown
     priceRangeBtn.addEventListener('click', (e) => {
         e.stopPropagation();
         const isActive = priceRangeDropdown.classList.contains('active');
-        
+
         if (isActive) {
             priceRangeDropdown.classList.remove('active');
             priceRangeBtn.classList.remove('active');
@@ -1427,7 +1435,7 @@ function initPriceRange() {
             priceRangeBtn.classList.add('active');
         }
     });
-    
+
     // Close dropdown when clicking outside
     document.addEventListener('click', (e) => {
         if (!priceRangeBtn.contains(e.target) && !priceRangeDropdown.contains(e.target)) {
@@ -1435,45 +1443,45 @@ function initPriceRange() {
             priceRangeBtn.classList.remove('active');
         }
     });
-    
+
     // Handle preset button clicks
     pricePresetBtns.forEach(btn => {
         btn.addEventListener('click', () => {
             const value = btn.dataset.value || '';
-            
+
             // Update active state
             pricePresetBtns.forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
-            
+
             // Update hidden input and display
             searchPriceInput.value = value;
             priceRangeDisplay.textContent = formatPriceDisplay(value);
-            
+
             // Clear custom inputs
             if (priceMinInput) priceMinInput.value = '';
             if (priceMaxInput) priceMaxInput.value = '';
-            
+
             // Close dropdown
             priceRangeDropdown.classList.remove('active');
             priceRangeBtn.classList.remove('active');
-            
+
             // Apply filters
             applyFilters();
         });
     });
-    
+
     // Handle custom price input
     if (priceApplyBtn) {
         priceApplyBtn.addEventListener('click', () => {
             const min = priceMinInput?.value ? parseInt(priceMinInput.value) : null;
             const max = priceMaxInput?.value ? parseInt(priceMaxInput.value) : null;
-            
+
             // Validate
             if (min !== null && max !== null && min > max) {
                 alert('Minimum price cannot be greater than maximum price');
                 return;
             }
-            
+
             // Build value string
             let value = '';
             if (min !== null && max !== null) {
@@ -1483,27 +1491,27 @@ function initPriceRange() {
             } else if (max !== null) {
                 value = `0-${max}`;
             }
-            
+
             // Update hidden input and display
             searchPriceInput.value = value;
             priceRangeDisplay.textContent = formatPriceDisplay(value);
-            
+
             // Update active state
             pricePresetBtns.forEach(b => b.classList.remove('active'));
-            
+
             // Close dropdown
             priceRangeDropdown.classList.remove('active');
             priceRangeBtn.classList.remove('active');
-            
+
             // Apply filters
             applyFilters();
         });
     }
-    
+
     // Update display on page load if value exists
     if (searchPriceInput && searchPriceInput.value) {
         priceRangeDisplay.textContent = formatPriceDisplay(searchPriceInput.value);
-        
+
         // Set active preset if it matches
         pricePresetBtns.forEach(btn => {
             if (btn.dataset.value === searchPriceInput.value) {
@@ -1516,12 +1524,12 @@ function initPriceRange() {
 // Apply Filters
 function applyFilters() {
     let filtered = [...allProperties];
-    
+
     // Buy/Rent filter (status)
     if (currentFilter !== 'all') {
         filtered = filtered.filter(p => p.status === currentFilter);
     }
-    
+
     // New/Resale filter (condition)
     if (selectedCondition) {
         // Note: This assumes properties have a 'condition' or 'property_status' field
@@ -1537,13 +1545,13 @@ function applyFilters() {
             return true;
         });
     }
-    
+
     // Unit Type filter (BHK/RK)
     if (selectedBHK !== null) {
         const unitTypeSelect = document.getElementById('searchUnitType');
         const selectedOption = unitTypeSelect?.options[unitTypeSelect.selectedIndex];
         const unitType = selectedOption?.value;
-        
+
         filtered = filtered.filter(p => {
             if (unitType === 'rk') {
                 // 1RK: filter for 0 bedrooms or properties marked as RK
@@ -1557,7 +1565,7 @@ function applyFilters() {
             }
         });
     }
-    
+
     // Category and Property Type filter
     // Define property type to category mapping
     const propertyTypeToCategory = {
@@ -1570,14 +1578,14 @@ function applyFilters() {
         'warehouse': 'commercial',
         'showrooms': 'commercial'
     };
-    
+
     // If property type is selected, it implies a category
     if (selectedPropertyType) {
         // Ensure category is set based on property type
         if (!selectedCategory && propertyTypeToCategory[selectedPropertyType]) {
             selectedCategory = propertyTypeToCategory[selectedPropertyType];
         }
-        
+
         // Map new property types to existing types or check for new fields
         const typeMapping = {
             'plots': 'plots',
@@ -1589,7 +1597,7 @@ function applyFilters() {
             'villa': 'villa',
             'row-house': 'row-house'
         };
-        
+
         filtered = filtered.filter(p => {
             // Check if property has a new type field
             if (p.property_type !== undefined) {
@@ -1604,8 +1612,8 @@ function applyFilters() {
             return p.type === selectedPropertyType;
         });
     }
-    
-    
+
+
     // Residential/Commercial filter (category)
     // If category is selected but no specific property type, show all properties of that category
     if (selectedCategory && !selectedPropertyType) {
@@ -1614,15 +1622,15 @@ function applyFilters() {
             'residential': ['plots', 'apartment', 'house', 'villa', 'row-house'],
             'commercial': ['office-space', 'warehouse', 'showrooms']
         };
-        
+
         const typesForCategory = categoryPropertyTypes[selectedCategory] || [];
-        
+
         filtered = filtered.filter(p => {
             // Check if property has a category field
             if (p.category !== undefined) {
                 return p.category.toLowerCase() === selectedCategory;
             }
-            
+
             // If no category field, check by property type
             const typeMapping = {
                 'plots': 'plots',
@@ -1634,12 +1642,12 @@ function applyFilters() {
                 'villa': 'villa',
                 'row-house': 'row-house'
             };
-            
+
             // Check if property type matches any in the category
             if (p.property_type !== undefined) {
                 return typesForCategory.includes(p.property_type);
             }
-            
+
             // Check existing type field
             if (p.type) {
                 const propertyType = p.type.toLowerCase();
@@ -1650,43 +1658,43 @@ function applyFilters() {
                 // Check if type matches any in category
                 return typesForCategory.some(t => propertyType.includes(t.replace('-', '')));
             }
-            
+
             // If we can't determine, include it (no filter applied)
             return true;
         });
     }
-    
+
     // Main search bar filter (check both main search and nav search)
     const mainSearchInput = document.getElementById('mainSearchInput')?.value.toLowerCase().trim() || '';
     const navSearchInput = document.getElementById('navSearchInput')?.value.toLowerCase().trim() || '';
     const mainSearch = mainSearchInput || navSearchInput;
     if (mainSearch) {
-        filtered = filtered.filter(p => 
+        filtered = filtered.filter(p =>
             (p.title && p.title.toLowerCase().includes(mainSearch)) ||
             (p.location && p.location.toLowerCase().includes(mainSearch)) ||
             (p.type && p.type.toLowerCase().includes(mainSearch)) ||
             (p.status && p.status.toLowerCase().includes(mainSearch))
         );
     }
-    
+
     // City filter
     const city = document.getElementById('searchCity')?.value.toLowerCase().trim() || '';
     if (city) {
-        filtered = filtered.filter(p => 
-            (p.location && p.location.toLowerCase().includes(city)) || 
+        filtered = filtered.filter(p =>
+            (p.location && p.location.toLowerCase().includes(city)) ||
             (p.title && p.title.toLowerCase().includes(city))
         );
     }
-    
+
     // Area filter
     const area = document.getElementById('searchArea')?.value.toLowerCase().trim() || '';
     if (area) {
-        filtered = filtered.filter(p => 
-            (p.location && p.location.toLowerCase().includes(area)) || 
+        filtered = filtered.filter(p =>
+            (p.location && p.location.toLowerCase().includes(area)) ||
             (p.title && p.title.toLowerCase().includes(area))
         );
     }
-    
+
     // Price filter
     const price = document.getElementById('searchPrice')?.value || '';
     if (price) {
@@ -1698,7 +1706,7 @@ function applyFilters() {
             return p.price >= min && p.price <= max;
         });
     }
-    
+
     // Length filter
     const length = document.getElementById('searchLength')?.value.toLowerCase().trim() || '';
     if (length) {
@@ -1713,7 +1721,7 @@ function applyFilters() {
             return true;
         });
     }
-    
+
     // Breadth filter
     const breadth = document.getElementById('searchBreadth')?.value.toLowerCase().trim() || '';
     if (breadth) {
@@ -1728,7 +1736,7 @@ function applyFilters() {
             return true;
         });
     }
-    
+
     // Carpet Area filter
     const carpetArea = document.getElementById('searchCarpetArea')?.value.toLowerCase().trim() || '';
     if (carpetArea) {
@@ -1742,7 +1750,7 @@ function applyFilters() {
             return true;
         });
     }
-    
+
     // Direction filter
     const direction = (document.getElementById('searchDirection') || document.getElementById('searchDirections'))?.value.toLowerCase().trim() || '';
     if (direction) {
@@ -1756,13 +1764,13 @@ function applyFilters() {
             return true;
         });
     }
-    
+
     // Amenities filter
     const amenities = (document.getElementById('propertiesSearchAmenities') || document.getElementById('searchAmenities'))?.value.toLowerCase().trim() || '';
     if (amenities) {
         filtered = filtered.filter(p => {
             if (p.amenities !== undefined) {
-                const propertyAmenities = Array.isArray(p.amenities) 
+                const propertyAmenities = Array.isArray(p.amenities)
                     ? p.amenities.join(' ').toLowerCase()
                     : p.amenities.toString().toLowerCase();
                 return propertyAmenities.includes(amenities);
@@ -1770,7 +1778,7 @@ function applyFilters() {
             return true;
         });
     }
-    
+
     filteredProperties = filtered;
     displayedProperties = 8;
     renderProperties();
@@ -1782,11 +1790,11 @@ function applyFilters() {
 function updateFilterTags() {
     const filterTagsContainer = document.getElementById('filterTagsContainer');
     const filterTags = document.getElementById('filterTags');
-    
+
     if (!filterTagsContainer || !filterTags) return;
-    
+
     const activeFilters = [];
-    
+
     // Main search (check both main search and nav search)
     const mainSearchInput = document.getElementById('mainSearchInput')?.value.trim() || '';
     const navSearchInput = document.getElementById('navSearchInput')?.value.trim() || '';
@@ -1799,7 +1807,7 @@ function updateFilterTags() {
             value: mainSearch
         });
     }
-    
+
     // Condition filter (New/Resale)
     if (selectedCondition) {
         activeFilters.push({
@@ -1809,7 +1817,7 @@ function updateFilterTags() {
             value: selectedCondition
         });
     }
-    
+
     // Status filter (Buy/Rent)
     if (currentFilter !== 'all') {
         activeFilters.push({
@@ -1819,13 +1827,13 @@ function updateFilterTags() {
             value: currentFilter
         });
     }
-    
+
     // Unit Type filter
     if (selectedBHK !== null) {
         const unitTypeSelect = document.getElementById('searchUnitType');
         const selectedOption = unitTypeSelect?.options[unitTypeSelect.selectedIndex];
         const unitType = selectedOption?.value;
-        
+
         let unitTypeLabel = '';
         if (unitType === 'rk') {
             unitTypeLabel = '1RK';
@@ -1834,7 +1842,7 @@ function updateFilterTags() {
         } else {
             unitTypeLabel = `${selectedBHK}BHK`;
         }
-        
+
         activeFilters.push({
             type: 'bhk',
             label: `Unit Type: ${unitTypeLabel}`,
@@ -1842,7 +1850,7 @@ function updateFilterTags() {
             value: selectedBHK.toString()
         });
     }
-    
+
     // Property type filter (shows both category and type if both are selected)
     if (selectedPropertyType) {
         const typeLabels = {
@@ -1855,10 +1863,10 @@ function updateFilterTags() {
             'villa': 'Villas',
             'row-house': 'Row Houses'
         };
-        const categoryLabel = selectedCategory === 'residential' ? 'Residential' : 
-                             selectedCategory === 'commercial' ? 'Commercial' : '';
+        const categoryLabel = selectedCategory === 'residential' ? 'Residential' :
+            selectedCategory === 'commercial' ? 'Commercial' : '';
         const typeLabel = typeLabels[selectedPropertyType] || selectedPropertyType;
-        
+
         activeFilters.push({
             type: 'propertyType',
             label: categoryLabel ? `${categoryLabel}: ${typeLabel}` : `Type: ${typeLabel}`,
@@ -1874,7 +1882,7 @@ function updateFilterTags() {
             value: selectedCategory
         });
     }
-    
+
     // City filter
     const city = document.getElementById('searchCity')?.value.trim() || '';
     if (city) {
@@ -1885,7 +1893,7 @@ function updateFilterTags() {
             value: city
         });
     }
-    
+
     // Area filter
     const area = document.getElementById('searchArea')?.value.trim() || '';
     if (area) {
@@ -1896,18 +1904,18 @@ function updateFilterTags() {
             value: area
         });
     }
-    
+
     // Price filter
     const price = document.getElementById('searchPrice')?.value || '';
     if (price) {
         // Format price for display
         function formatPriceLabel(value) {
             if (!value || value === '') return '';
-            
+
             const [min, max] = value.split('-').map(v => v === '' ? null : parseInt(v));
-            
+
             if (min === null && max === null) return '';
-            
+
             function formatNumber(num) {
                 if (num >= 10000000) {
                     return `₹${(num / 10000000).toFixed(1)}Cr`;
@@ -1917,7 +1925,7 @@ function updateFilterTags() {
                     return `₹${num.toLocaleString('en-IN')}`;
                 }
             }
-            
+
             if (min !== null && max !== null) {
                 return `${formatNumber(min)} - ${formatNumber(max)}`;
             } else if (min !== null && max === null) {
@@ -1926,7 +1934,7 @@ function updateFilterTags() {
                 return `Up to ${formatNumber(max)}`;
             }
         }
-        
+
         const priceLabel = formatPriceLabel(price);
         if (priceLabel) {
             activeFilters.push({
@@ -1937,7 +1945,7 @@ function updateFilterTags() {
             });
         }
     }
-    
+
     // Length filter
     const length = document.getElementById('searchLength')?.value.trim() || '';
     if (length) {
@@ -1948,7 +1956,7 @@ function updateFilterTags() {
             value: length
         });
     }
-    
+
     // Breadth filter
     const breadth = document.getElementById('searchBreadth')?.value.trim() || '';
     if (breadth) {
@@ -1959,7 +1967,7 @@ function updateFilterTags() {
             value: breadth
         });
     }
-    
+
     // Carpet Area filter
     const carpetArea = document.getElementById('searchCarpetArea')?.value.trim() || '';
     if (carpetArea) {
@@ -1970,7 +1978,7 @@ function updateFilterTags() {
             value: carpetArea
         });
     }
-    
+
     // Directions filter
     const directions = document.getElementById('searchDirections')?.value.trim() || '';
     if (directions) {
@@ -1981,7 +1989,7 @@ function updateFilterTags() {
             value: directions
         });
     }
-    
+
     // Amenities filter
     const amenities = document.getElementById('searchAmenities')?.value.trim() || '';
     if (amenities) {
@@ -1992,7 +2000,7 @@ function updateFilterTags() {
             value: amenities
         });
     }
-    
+
     // Render tags
     if (activeFilters.length > 0) {
         filterTags.innerHTML = activeFilters.map(filter => `
@@ -2004,9 +2012,9 @@ function updateFilterTags() {
                 </button>
             </div>
         `).join('');
-        
+
         filterTagsContainer.style.display = 'block';
-        
+
         // Add event listeners to remove buttons
         filterTags.querySelectorAll('.filter-tag-remove').forEach(btn => {
             btn.addEventListener('click', (e) => {
@@ -2023,7 +2031,7 @@ function updateFilterTags() {
 
 // Remove Filter
 function removeFilter(filterType) {
-    switch(filterType) {
+    switch (filterType) {
         case 'mainSearch':
             const mainSearchInput = document.getElementById('mainSearchInput');
             const mainSearchClear = document.getElementById('mainSearchClear');
@@ -2120,7 +2128,7 @@ function removeFilter(filterType) {
 // Initialize Filter Tags
 function initFilterTags() {
     const clearAllBtn = document.getElementById('clearAllFilters');
-    
+
     if (clearAllBtn) {
         clearAllBtn.addEventListener('click', () => {
             // Clear main search
@@ -2132,33 +2140,33 @@ function initFilterTags() {
                     mainSearchClear.style.display = 'none';
                 }
             }
-            
+
             // Reset condition filter
             selectedCondition = null;
             const propertyConditionSelect = document.getElementById('searchPropertyCondition');
             if (propertyConditionSelect) propertyConditionSelect.value = '';
-            
+
             // Reset status filter
             currentFilter = 'all';
             const transactionTypeSelect = document.getElementById('searchTransactionType');
             if (transactionTypeSelect) transactionTypeSelect.value = 'all';
-            
+
             // Reset BHK filter
             selectedBHK = null;
             const unitTypeSelect = document.getElementById('searchUnitType');
             if (unitTypeSelect) unitTypeSelect.value = '';
-            
+
             // Reset property type filter
             selectedPropertyType = null;
             document.querySelectorAll('.subcategory-button[data-property-type]').forEach(btn => btn.classList.remove('active'));
-            
+
             // Reset category filter
             selectedCategory = null;
             document.querySelectorAll('.category-text-button[data-category]').forEach(btn => btn.classList.remove('active'));
             const categorySection = document.querySelector('.category-section-centered');
             if (categorySection) categorySection.removeAttribute('data-active-category');
             updateFilterGroupsByPropertyType();
-            
+
             // Clear all form filters
             const cityInput = document.getElementById('searchCity');
             const areaInput = document.getElementById('searchArea');
@@ -2168,7 +2176,7 @@ function initFilterTags() {
             const breadthInput = document.getElementById('searchBreadth');
             const carpetAreaInput = document.getElementById('searchCarpetArea');
             const amenitiesInput = document.getElementById('searchAmenities');
-            
+
             if (cityInput) cityInput.value = '';
             if (areaInput) areaInput.value = '';
             if (directionInput) directionInput.value = '';
@@ -2177,7 +2185,7 @@ function initFilterTags() {
             if (breadthInput) breadthInput.value = '';
             if (carpetAreaInput) carpetAreaInput.value = '';
             if (amenitiesInput) amenitiesInput.value = '';
-            
+
             applyFilters();
         });
     }
@@ -2191,14 +2199,14 @@ function initSearch() {
             e.preventDefault();
             applyFilters();
         });
-        
+
         // Real-time search on input change
         const searchInputs = searchForm.querySelectorAll('input, select');
         searchInputs.forEach(input => {
             input.addEventListener('change', () => {
                 applyFilters();
             });
-            
+
             // Also listen to input events for text inputs
             if (input.tagName === 'INPUT' && input.type === 'text') {
                 let inputTimeout;
@@ -2219,22 +2227,22 @@ function initMainSearch() {
     const mainSearchClear = document.getElementById('mainSearchClear');
     const navSearchInput = document.getElementById('navSearchInput');
     const navSearchClear = document.getElementById('navSearchClear');
-    
+
     // Function to initialize search input
     function initSearchInput(input, clearBtn) {
         if (!input) return;
-        
+
         // Real-time search as user types
         let searchTimeout;
         input.addEventListener('input', (e) => {
             clearTimeout(searchTimeout);
             const value = e.target.value.trim();
-            
+
             // Show/hide clear button
             if (clearBtn) {
                 clearBtn.style.display = value ? 'flex' : 'none';
             }
-            
+
             // Sync with other search input if both exist
             if (input === mainSearchInput && navSearchInput) {
                 navSearchInput.value = value;
@@ -2247,13 +2255,13 @@ function initMainSearch() {
                     mainSearchClear.style.display = value ? 'flex' : 'none';
                 }
             }
-            
+
             // Debounce search for better performance
             searchTimeout = setTimeout(() => {
                 applyFilters();
             }, 300);
         });
-        
+
         // Search on Enter key
         input.addEventListener('keydown', (e) => {
             if (e.key === 'Enter') {
@@ -2262,11 +2270,11 @@ function initMainSearch() {
             }
         });
     }
-    
+
     // Initialize both search inputs
     initSearchInput(mainSearchInput, mainSearchClear);
     initSearchInput(navSearchInput, navSearchClear);
-    
+
     // Clear button functionality for main search
     if (mainSearchClear) {
         mainSearchClear.addEventListener('click', () => {
@@ -2284,7 +2292,7 @@ function initMainSearch() {
             }
         });
     }
-    
+
     // Clear button functionality for nav search
     if (navSearchClear) {
         navSearchClear.addEventListener('click', () => {
@@ -2309,7 +2317,7 @@ function updateLoadMoreButton() {
     const loadMoreBtn = document.getElementById('loadMoreBtn');
     if (loadMoreBtn) {
         const loadMoreContainer = loadMoreBtn.closest('.properties-load-more');
-        
+
         if (displayedProperties >= filteredProperties.length || filteredProperties.length === 0) {
             // Hide button if all properties are displayed or no properties
             if (loadMoreContainer) {
@@ -2323,7 +2331,7 @@ function updateLoadMoreButton() {
                 loadMoreContainer.style.display = 'block';
             }
             loadMoreBtn.style.display = 'inline-flex';
-            
+
             // Update button text to show remaining count (only if not in loading state)
             if (!loadMoreBtn.disabled) {
                 const remaining = filteredProperties.length - displayedProperties;
@@ -2334,8 +2342,8 @@ function updateLoadMoreButton() {
                         loadMoreBtn.dataset.originalText = buttonText.textContent;
                     }
                     const originalText = loadMoreBtn.dataset.originalText;
-                    buttonText.textContent = remaining <= 8 
-                        ? originalText 
+                    buttonText.textContent = remaining <= 8
+                        ? originalText
                         : `${originalText} (${remaining} remaining)`;
                 }
             }
@@ -2353,7 +2361,7 @@ function initLoadMore() {
             const buttonText = loadMoreBtn.querySelector('span');
             const buttonIcon = loadMoreBtn.querySelector('i');
             const originalText = buttonText ? buttonText.textContent : '';
-            
+
             // Show loading state
             if (buttonText) {
                 buttonText.textContent = 'Loading...';
@@ -2361,21 +2369,21 @@ function initLoadMore() {
             if (buttonIcon) {
                 buttonIcon.className = 'fas fa-spinner fa-spin';
             }
-            
+
             // Small delay for smooth UX
             await new Promise(resolve => setTimeout(resolve, 300));
-            
+
             // Calculate how many to show (8 more, or remaining if less)
             const remaining = filteredProperties.length - displayedProperties;
             const toShow = Math.min(8, remaining);
             displayedProperties += toShow;
-            
+
             // Get current scroll position
             const scrollPosition = window.pageYOffset || document.documentElement.scrollTop;
-            
+
             // Render properties
             renderProperties();
-            
+
             // Smooth scroll to show newly loaded properties
             setTimeout(() => {
                 const propertiesGrid = document.getElementById('propertiesGrid');
@@ -2385,8 +2393,8 @@ function initLoadMore() {
                         // Scroll to the first newly loaded property
                         const firstNewProperty = newProperties[Math.max(0, displayedProperties - toShow - 1)];
                         if (firstNewProperty) {
-                            firstNewProperty.scrollIntoView({ 
-                                behavior: 'smooth', 
+                            firstNewProperty.scrollIntoView({
+                                behavior: 'smooth',
                                 block: 'start',
                                 inline: 'nearest'
                             });
@@ -2394,10 +2402,10 @@ function initLoadMore() {
                     }
                 }
             }, 100);
-            
+
             // Update button state
             updateLoadMoreButton();
-            
+
             // Re-enable button
             loadMoreBtn.disabled = false;
             if (buttonText) {
@@ -2537,7 +2545,7 @@ function initLoadMore() {
         const minPrice = crToPrice(minValue);
         const maxPrice = maxValue >= 100 ? '' : crToPrice(maxValue);
         const priceValue = maxPrice === '' ? `${minPrice}-` : `${minPrice}-${maxPrice}`;
-        
+
         if (searchPriceInput) {
             if (minValue === 0 && maxValue >= 100) {
                 searchPriceInput.value = '';

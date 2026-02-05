@@ -1,29 +1,30 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Tirumakudalu Properties - Premium Real Estate Solutions</title>
     <!-- Clear any invalid session data immediately on page load -->
     <script>
-        (function() {
+        (function () {
             // Clear invalid session data before any other scripts run
             // This ensures sessions are only valid after successful login
             const hasSessionFlag = sessionStorage.getItem('dashboard_authenticated') === 'true' ||
-                                  localStorage.getItem('dashboard_authenticated') === 'true';
-            
+                localStorage.getItem('dashboard_authenticated') === 'true';
+
             if (hasSessionFlag) {
                 const userStr = sessionStorage.getItem('user') || localStorage.getItem('user');
                 let hasValidUser = false;
-                
+
                 if (userStr) {
                     try {
                         const user = JSON.parse(userStr);
                         // Validate user has required fields (email and admin role)
-                        if (user && 
-                            user.email && 
-                            typeof user.email === 'string' && 
-                            user.email.trim() !== '' && 
+                        if (user &&
+                            user.email &&
+                            typeof user.email === 'string' &&
+                            user.email.trim() !== '' &&
                             user.role === 'admin') {
                             hasValidUser = true;
                         }
@@ -31,7 +32,7 @@
                         // Invalid JSON
                     }
                 }
-                
+
                 // If there's a session flag but no valid user, clear it
                 if (!hasValidUser) {
                     sessionStorage.removeItem('dashboard_authenticated');
@@ -47,82 +48,566 @@
     <link rel="icon" type="image/webp" href="/images/TS_logo.webp">
     <!-- Critical CSS - Inlined for above-the-fold content -->
     <style>
-/* Critical CSS - Above the fold styles only */
-*{margin:0;padding:0;box-sizing:border-box}
-:root{--black:#000;--black-soft:#0a0a0a;--black-elevated:#1a1a1a;--grey-darkest:#2d2d2d;--grey-darker:#3d3d3d;--grey-dark:#4a4a4a;--grey-medium:#6b6b6b;--grey:#8a8a8a;--grey-light:#b0b0b0;--grey-lighter:#d0d0d0;--grey-lightest:#e5e5e5;--grey-pale:#f0f0f0;--grey-ultra-pale:#f8f8f8;--white:#fff;--white-off:#fafafa;--yellow-muted:#2C3E50;--yellow-soft:#1e2a36;--yellow-dull:#151c24;--yellow-warm:#8B2E3D;--yellow-pale:#f5f3f0;--yellow-subtle:#e8e5e0;--yellow-bright:#2C3E50;--yellow-gold:#8B2E3D;--purple:#9C27B0;--purple-pale:#f3e5f5;--purple-light:#e1bee7;--primary-color:#2C3E50;--primary-dark:#1e2a36;--primary-darker:#151c24;--primary-light:#8B2E3D;--primary-lighter:#e8e5e0;--primary-lightest:#f5f3f0;--secondary-color:#4a4a4a;--accent-color:#8B2E3D;--pastel-yellow:#f5f3f0;--pastel-grey-light:#f5f5f5;--pastel-grey:#eee;--pastel-grey-dark:#e0e0e0;--text-dark:#1a1a1a;--text-gray:#4a4a4a;--text-light:#6b6b6b;--light-bg:#fafafa;--border-color:#e5e5e5;--shadow-sm:0 1px 2px 0 rgba(0,0,0,.05);--shadow-md:0 4px 6px -1px rgba(0,0,0,.1);--shadow-lg:0 10px 15px -3px rgba(0,0,0,.1);--shadow-xl:0 20px 25px -5px rgba(0,0,0,.1);--shadow-2xl:0 25px 50px -12px rgba(0,0,0,.25)}
-html{overflow-x:hidden;width:100%;max-width:100%}
-body{font-family:'Inter',sans-serif;font-size:18px;line-height:1.6;color:var(--text-dark);overflow-x:hidden;width:100%;max-width:100%;box-sizing:border-box}
-*{box-sizing:border-box}
-p{font-size:18px}
-h1{font-size:28px}
-h2{font-size:26px}
-h3{font-size:22px}
-h4{font-size:22px}
-h5{font-size:22px}
-h6{font-size:22px}
-.container{max-width:1200px;margin:0 auto;padding:0 20px;overflow:visible;width:100%;box-sizing:border-box}
-@media (max-width:1366px){.container{max-width:100%;padding:0 15px}}
-@media (max-width:1280px){.container{padding:0 12px}}
-.top-bar{background:var(--black);color:var(--white);padding:.75rem 0;font-size:.875rem}
-.top-bar-content{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem}
-.top-bar-left{display:flex;gap:2rem;flex-wrap:wrap}
-.top-bar-left a{color:rgba(255,255,255,.8);text-decoration:none;transition:color .3s ease}
-.top-bar-left a:hover{color:var(--white)}
-.top-bar-left i{margin-right:.5rem;color:var(--accent-color)}
-.top-bar-right{display:flex;gap:1rem}
-.top-bar-right a{color:rgba(255,255,255,.8);width:30px;height:30px;display:flex;align-items:center;justify-content:center;border-radius:50%;transition:all .3s ease}
-.top-bar-right a:hover{background:var(--primary-color);color:var(--black);transform:translateY(-3px) scale(1.1)}
-.navbar{position:sticky;top:0;left:0;right:0;background:var(--white);box-shadow:0 2px 8px rgba(0,0,0,.1);z-index:1000;transition:all .3s ease}
-.nav-wrapper{display:flex;justify-content:flex-start;align-items:center;padding:1.25rem 0;gap:3rem;flex-wrap:nowrap;position:relative}
-.logo{display:flex;align-items:center;margin-right:3.5rem;flex-shrink:0;z-index:1001}
-.logo-link{display:flex;align-items:center;gap:1rem;text-decoration:none;transition:transform .3s ease}
-.logo-img{width:200px;height:auto;object-fit:contain;display:block;transition:width .3s ease}
-.nav-menu{display:flex;list-style:none;gap:2rem;align-items:center}
-.nav-menu a{text-decoration:none;color:var(--text-dark);font-weight:500;font-size:.95rem;transition:all .3s cubic-bezier(.68,-.55,.265,1.55);position:relative;display:inline-block}
-.nav-menu a::after{content:'';position:absolute;bottom:-5px;left:0;width:0;height:2px;background:var(--primary-color);transition:width .3s ease}
-.nav-menu a:hover::after,.nav-menu a.active::after{width:100%}
-.nav-menu a:hover,.nav-menu a.active{color:var(--primary-color);transform:translateY(-2px)}
-.nav-search{flex:1;max-width:300px;margin:0;min-width:0}
-.nav-search-wrapper{position:relative;display:flex;align-items:center;background:var(--light-bg);border:2px solid var(--border-color);border-radius:25px;padding:.5rem 1rem;transition:all .3s ease}
-.nav-search-wrapper:focus-within{border-color:var(--primary-color);box-shadow:0 0 0 3px rgba(171,184,195,.2)}
-.nav-search-input{flex:1;border:none;background:transparent;outline:none;font-size:.9rem;color:var(--text-dark);font-family:inherit;width:100%}
-.nav-actions{display:flex;align-items:center;gap:1rem;margin-left:auto;flex-shrink:0}
-.btn-login{display:inline-flex;align-items:center;gap:.5rem;padding:.625rem 1.25rem;background:linear-gradient(135deg,var(--primary-color),var(--primary-dark));color:var(--white);border:2px solid transparent;border-radius:8px;font-size:.9rem;font-weight:700;cursor:pointer;transition:all .3s cubic-bezier(.4,0,.2,1);font-family:inherit;box-shadow:0 2px 8px var(--primary-color);position:relative;overflow:hidden}
-.btn-login:hover{background:var(--primary-dark);transform:translateY(-3px);box-shadow:0 8px 25px rgba(171,184,195,.5)}
-.hero{position:relative;height:100vh;min-height:800px;overflow:hidden;display:flex;align-items:stretch}
-.hero-split-container{display:grid;grid-template-columns:1fr 2fr;width:100%;height:100%;position:relative}
-.hero-left-panel{background:linear-gradient(135deg,var(--text-dark) 0%,rgba(45,58,69,.95) 100%);display:flex;align-items:center;justify-content:center;position:relative;z-index:2;overflow:hidden}
-.hero-left-content{padding:4rem 3rem;text-align:center;display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;max-width:500px;position:relative;z-index:1}
-.hero-main-heading{font-family:'Playfair Display',serif;font-size:clamp(26px,4vw,28px);font-weight:400;color:var(--white);line-height:1.4;margin-bottom:2rem;text-transform:uppercase;letter-spacing:2px;position:relative}
-.hero-sub-heading{font-family:'Inter',sans-serif;font-size:18px;font-weight:300;color:var(--white);text-transform:uppercase;letter-spacing:3px;margin-bottom:3rem;line-height:1.6;text-align:left;max-width:400px;position:relative;padding-left:1.5rem}
-.hero-sub-heading::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--white);border-radius:2px}
-.hero-right-panel{position:relative;overflow:hidden}
-.hero-image-wrapper{position:relative;width:100%;height:100%;overflow:hidden}
-.hero-image-wrapper img{width:100%;height:100%;object-fit:cover;display:block}
-@media (max-width:768px){.top-bar{padding:.5rem 0;font-size:.75rem}.top-bar-left{gap:1rem;justify-content:center;width:100%}.logo{margin-right:auto}.logo-img{width:140px}.nav-wrapper{gap:1rem;padding:.875rem 0}.hero{min-height:100vh}.hero-left-panel{min-height:350px}.hero-left-content{padding:2rem 1.5rem}.hero-main-heading{font-size:1.5rem}.hero-sub-heading{font-size:.75rem;margin-bottom:2rem}}
+        /* Critical CSS - Above the fold styles only */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box
+        }
+
+        :root {
+            --black: #000;
+            --black-soft: #0a0a0a;
+            --black-elevated: #1a1a1a;
+            --grey-darkest: #2d2d2d;
+            --grey-darker: #3d3d3d;
+            --grey-dark: #4a4a4a;
+            --grey-medium: #6b6b6b;
+            --grey: #8a8a8a;
+            --grey-light: #b0b0b0;
+            --grey-lighter: #d0d0d0;
+            --grey-lightest: #e5e5e5;
+            --grey-pale: #f0f0f0;
+            --grey-ultra-pale: #f8f8f8;
+            --white: #fff;
+            --white-off: #fafafa;
+            --yellow-muted: #2C3E50;
+            --yellow-soft: #1e2a36;
+            --yellow-dull: #151c24;
+            --yellow-warm: #8B2E3D;
+            --yellow-pale: #f5f3f0;
+            --yellow-subtle: #e8e5e0;
+            --yellow-bright: #2C3E50;
+            --yellow-gold: #8B2E3D;
+            --purple: #9C27B0;
+            --purple-pale: #f3e5f5;
+            --purple-light: #e1bee7;
+            --primary-color: #2C3E50;
+            --primary-dark: #1e2a36;
+            --primary-darker: #151c24;
+            --primary-light: #8B2E3D;
+            --primary-lighter: #e8e5e0;
+            --primary-lightest: #f5f3f0;
+            --secondary-color: #4a4a4a;
+            --accent-color: #8B2E3D;
+            --pastel-yellow: #f5f3f0;
+            --pastel-grey-light: #f5f5f5;
+            --pastel-grey: #eee;
+            --pastel-grey-dark: #e0e0e0;
+            --text-dark: #1a1a1a;
+            --text-gray: #4a4a4a;
+            --text-light: #6b6b6b;
+            --light-bg: #fafafa;
+            --border-color: #e5e5e5;
+            --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, .05);
+            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, .1);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, .1);
+            --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, .1);
+            --shadow-2xl: 0 25px 50px -12px rgba(0, 0, 0, .25)
+        }
+
+        html {
+            visibility: hidden;
+            overflow-x: hidden;
+            width: 100%;
+            max-width: 100%
+        }
+
+        html.loaded {
+            visibility: visible;
+        }
+
+        body {
+            font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            font-size: 18px;
+            line-height: 1.6;
+            color: var(--text-dark);
+            overflow-x: hidden;
+            width: 100%;
+            max-width: 100%;
+            box-sizing: border-box
+        }
+
+        * {
+            box-sizing: border-box
+        }
+
+        p {
+            font-size: 18px
+        }
+
+        h1 {
+            font-size: 28px
+        }
+
+        h2 {
+            font-size: 26px
+        }
+
+        h3 {
+            font-size: 22px
+        }
+
+        h4 {
+            font-size: 22px
+        }
+
+        h5 {
+            font-size: 22px
+        }
+
+        h6 {
+            font-size: 22px
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+            overflow: visible;
+            width: 100%;
+            box-sizing: border-box
+        }
+
+        @media (max-width:1366px) {
+            .container {
+                max-width: 100%;
+                padding: 0 15px
+            }
+        }
+
+        @media (max-width:1280px) {
+            .container {
+                padding: 0 12px
+            }
+        }
+
+        .top-bar {
+            background: var(--black);
+            color: var(--white);
+            padding: .75rem 0;
+            font-size: .875rem
+        }
+
+        .top-bar-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem
+        }
+
+        .top-bar-left {
+            display: flex;
+            gap: 2rem;
+            flex-wrap: wrap
+        }
+
+        .top-bar-left a {
+            color: rgba(255, 255, 255, .8);
+            text-decoration: none;
+            transition: color .3s ease
+        }
+
+        .top-bar-left a:hover {
+            color: var(--white)
+        }
+
+        .top-bar-left i {
+            margin-right: .5rem;
+            color: var(--accent-color)
+        }
+
+        .top-bar-right {
+            display: flex;
+            gap: 1rem
+        }
+
+        .top-bar-right a {
+            color: rgba(255, 255, 255, .8);
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            transition: all .3s ease
+        }
+
+        .top-bar-right a:hover {
+            background: var(--primary-color);
+            color: var(--black);
+            transform: translateY(-3px) scale(1.1)
+        }
+
+        .navbar {
+            position: sticky;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: var(--white);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, .1);
+            z-index: 1000;
+            transition: all .3s ease;
+            min-height: 80px;
+        }
+
+        .nav-wrapper {
+            display: flex;
+            justify-content: flex-start;
+            align-items: center;
+            padding: 1.25rem 0;
+            gap: 3rem;
+            flex-wrap: nowrap;
+            position: relative
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            margin-right: 3.5rem;
+            flex-shrink: 0;
+            z-index: 1001
+        }
+
+        .logo-link {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            text-decoration: none;
+            transition: transform .3s ease
+        }
+
+        .logo-img {
+            width: 200px;
+            height: auto;
+            object-fit: contain;
+            display: block;
+            transition: width .3s ease
+        }
+
+        .nav-menu {
+            display: flex;
+            list-style: none;
+            gap: 2rem;
+            align-items: center
+        }
+
+        .nav-menu a {
+            text-decoration: none;
+            color: var(--text-dark);
+            font-weight: 500;
+            font-size: .95rem;
+            transition: all .3s cubic-bezier(.68, -.55, .265, 1.55);
+            position: relative;
+            display: inline-block
+        }
+
+        .nav-menu a::after {
+            content: '';
+            position: absolute;
+            bottom: -5px;
+            left: 0;
+            width: 0;
+            height: 2px;
+            background: var(--primary-color);
+            transition: width .3s ease
+        }
+
+        .nav-menu a:hover::after,
+        .nav-menu a.active::after {
+            width: 100%
+        }
+
+        .nav-menu a:hover,
+        .nav-menu a.active {
+            color: var(--primary-color);
+            transform: translateY(-2px)
+        }
+
+        .nav-search {
+            flex: 1;
+            max-width: 300px;
+            margin: 0;
+            min-width: 0
+        }
+
+        .nav-search-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+            background: var(--light-bg);
+            border: 2px solid var(--border-color);
+            border-radius: 25px;
+            padding: .5rem 1rem;
+            transition: all .3s ease
+        }
+
+        .nav-search-wrapper:focus-within {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(171, 184, 195, .2)
+        }
+
+        .nav-search-input {
+            flex: 1;
+            border: none;
+            background: transparent;
+            outline: none;
+            font-size: .9rem;
+            color: var(--text-dark);
+            font-family: inherit;
+            width: 100%
+        }
+
+        .nav-actions {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-left: auto;
+            flex-shrink: 0
+        }
+
+        .btn-login {
+            display: inline-flex;
+            align-items: center;
+            gap: .5rem;
+            padding: .625rem 1.25rem;
+            background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+            color: var(--white);
+            border: 2px solid transparent;
+            border-radius: 8px;
+            font-size: .9rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all .3s cubic-bezier(.4, 0, .2, 1);
+            font-family: inherit;
+            box-shadow: 0 2px 8px var(--primary-color);
+            position: relative;
+            overflow: hidden
+        }
+
+        .btn-login:hover {
+            background: var(--primary-dark);
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(171, 184, 195, .5)
+        }
+
+        .hero {
+            position: relative;
+            height: min(100vh, 900px);
+            min-height: 800px;
+            overflow: hidden;
+            display: flex;
+            align-items: stretch
+        }
+
+        .hero-split-container {
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            width: 100%;
+            height: 100%;
+            position: relative
+        }
+
+        .hero-left-panel {
+            background: linear-gradient(135deg, var(--text-dark) 0%, rgba(45, 58, 69, .95) 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            z-index: 2;
+            overflow: hidden
+        }
+
+        .hero-left-content {
+            padding: 4rem 3rem;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            max-width: 500px;
+            position: relative;
+            z-index: 1
+        }
+
+        .hero-main-heading {
+            font-family: 'Playfair Display', serif;
+            font-size: clamp(26px, 4vw, 28px);
+            font-weight: 400;
+            color: var(--white);
+            line-height: 1.4;
+            margin-bottom: 2rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            position: relative
+        }
+
+        .hero-sub-heading {
+            font-family: 'Inter', sans-serif;
+            font-size: 18px;
+            font-weight: 300;
+            color: var(--white);
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            margin-bottom: 3rem;
+            line-height: 1.6;
+            text-align: left;
+            max-width: 400px;
+            position: relative;
+            padding-left: 1.5rem
+        }
+
+        .hero-sub-heading::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 3px;
+            background: var(--white);
+            border-radius: 2px
+        }
+
+        .hero-right-panel {
+            position: relative;
+            overflow: hidden;
+            background: #fff
+        }
+
+        .hero-image-section {
+            width: 100%;
+            height: 100%;
+            opacity: 1 !important;
+            visibility: visible !important
+        }
+
+        .hero-image-slider {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            overflow: hidden
+        }
+
+        .hero-slider-track {
+            position: relative;
+            width: 100%;
+            height: 100%
+        }
+
+        .hero-slide {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            transition: opacity 1.5s ease-in-out
+        }
+
+        .hero-slide.active {
+            opacity: 1;
+            z-index: 1
+        }
+
+        .hero-image-wrapper {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            overflow: hidden
+        }
+
+        .hero-image-wrapper img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block
+        }
+
+        @media (max-width:768px) {
+            .top-bar {
+                padding: .5rem 0;
+                font-size: .75rem
+            }
+
+            .top-bar-left {
+                gap: 1rem;
+                justify-content: center;
+                width: 100%
+            }
+
+            .logo {
+                margin-right: auto
+            }
+
+            .logo-img {
+                width: 140px
+            }
+
+            .nav-wrapper {
+                gap: 1rem;
+                padding: .875rem 0
+            }
+
+            .hero {
+                min-height: 100vh
+            }
+
+            .hero-left-panel {
+                min-height: 350px
+            }
+
+            .hero-left-content {
+                padding: 2rem 1.5rem
+            }
+
+            .hero-main-heading {
+                font-size: 1.5rem
+            }
+
+            .hero-sub-heading {
+                font-size: .75rem;
+                margin-bottom: 2rem
+            }
+        }
+
+        @media (min-width:450px) and (min-height:832px) {
+            .hero {
+                max-height: 300px;
+            }
+
+            .hero-left-panel {
+                background-color: var(--primary-color);
+                min-height: 300px
+            }
+
+            .hero-left-content {
+                padding: 2.5rem 2rem
+            }
+        }
     </style>
-    <!-- Non-critical CSS - Load asynchronously -->
-    <script>
-        // Load non-critical CSS asynchronously
-        (function() {
-            const link = document.createElement('link');
-            link.rel = 'stylesheet';
-            link.href = '/css/style.css';
-            link.media = 'print';
-            link.onload = function() { this.media = 'all'; };
-            document.head.appendChild(link);
-        })();
-    </script>
-    <noscript><link rel="stylesheet" href="/css/style.css"></noscript>
+    <!-- Main styles loaded normally on index to prevent FOUC -->
+    <link rel="stylesheet" href="/css/style.css">
     <!-- Google Fonts - Load asynchronously -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:wght@400;600;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
-    <noscript><link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:wght@400;600;700&display=swap" rel="stylesheet"></noscript>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:wght@400;600;700&display=swap"
+        rel="stylesheet" media="print" onload="this.media='all'">
+    <noscript>
+        <link
+            href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:wght@400;600;700&display=swap"
+            rel="stylesheet">
+    </noscript>
     <!-- Font Awesome - Load asynchronously -->
-    <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
-    <noscript><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"></noscript>
+    <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" as="style"
+        onload="this.onload=null;this.rel='stylesheet'">
+    <noscript>
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    </noscript>
 </head>
+
 <body>
     <!-- Top Bar -->
     <div class="top-bar">
@@ -130,7 +615,8 @@ h6{font-size:22px}
             <div class="top-bar-content">
                 <div class="top-bar-left">
                     <a href="tel:+919741111756"><i class="fas fa-phone"></i> +91 97411 11756</a>
-                    <a href="mailto:info@tirumakudaluproperties.com"><i class="fas fa-envelope"></i> info@tirumakudaluproperties.com</a>
+                    <a href="mailto:info@tirumakudaluproperties.com"><i class="fas fa-envelope"></i>
+                        info@tirumakudaluproperties.com</a>
                 </div>
             </div>
         </div>
@@ -143,7 +629,8 @@ h6{font-size:22px}
                 <div class="logo">
                     <a href="#home" class="logo-link">
                         <div class="logo-graphic">
-                            <img src="/images/TS_logo.webp" alt="Tirumakudalu Properties Logo" class="logo-img" loading="lazy">
+                            <img src="/images/TS_logo.webp" alt="Tirumakudalu Properties Logo" class="logo-img"
+                                loading="lazy">
                         </div>
                     </a>
                 </div>
@@ -155,13 +642,8 @@ h6{font-size:22px}
                 <div class="nav-search">
                     <div class="nav-search-wrapper">
                         <i class="fas fa-search nav-search-icon"></i>
-                        <input 
-                            type="text" 
-                            id="navSearchInput" 
-                            class="nav-search-input" 
-                            placeholder="Search properties..."
-                            autocomplete="off"
-                        >
+                        <input type="text" id="navSearchInput" class="nav-search-input"
+                            placeholder="Search properties..." autocomplete="off">
                         <button type="button" class="nav-search-clear" id="navSearchClear" style="display: none;">
                             <i class="fas fa-times"></i>
                         </button>
@@ -196,39 +678,52 @@ h6{font-size:22px}
                         <span class="hero-heading-line">SOLUTIONS</span>
                     </h1>
                     <p class="hero-sub-heading">YOUR TRUSTED PARTNER IN PROPERTY INVESTMENT & RENTAL SERVICES.</p>
-                    <a href="#indexPropertiesFilters" class="hero-scroll-indicator" aria-label="Scroll to filter section">
+                    <a href="#indexPropertiesFilters" class="hero-scroll-indicator"
+                        aria-label="Scroll to filter section">
                         <i class="fas fa-chevron-down"></i>
                     </a>
                 </div>
             </div>
-            
+
             <!-- Right Panel - Image Slider -->
             <div class="hero-right-panel">
                 <div class="hero-image-section hero-image-single">
                     <div class="hero-image-slider">
-                        <div class="hero-slide">
-                            <div class="hero-image-wrapper">
-                                <img src="/images/img1.webp" alt="Modern Apartment" loading="lazy">
+                        <div class="hero-slider-track" id="heroSliderTrack">
+                            <div class="hero-slide active">
+                                <div class="hero-image-wrapper">
+                                    <img src="/images/img1.webp" alt="Modern Apartment" loading="lazy">
+                                </div>
                             </div>
-                        </div>
-                        <div class="hero-slide">
-                            <div class="hero-image-wrapper">
-                                <img src="/images/img2.webp" alt="Luxury Property" loading="lazy">
+                            <div class="hero-slide">
+                                <div class="hero-image-wrapper">
+                                    <img src="/images/img2.webp" alt="Luxury Property" loading="lazy">
+                                </div>
                             </div>
-                        </div>
-                        <div class="hero-slide">
-                            <div class="hero-image-wrapper">
-                                <img src="/images/img3.webp" alt="Premium Real Estate" loading="lazy">
+                            <div class="hero-slide">
+                                <div class="hero-image-wrapper">
+                                    <img src="/images/img3.webp" alt="Premium Real Estate" loading="lazy">
+                                </div>
                             </div>
-                        </div>
-                        <div class="hero-slide">
-                            <div class="hero-image-wrapper">
-                                <img src="/images/img4.webp" alt="Beautiful Home" loading="lazy">
+                            <div class="hero-slide">
+                                <div class="hero-image-wrapper">
+                                    <img src="/images/img4.webp" alt="Beautiful Home" loading="lazy">
+                                </div>
                             </div>
-                        </div>
-                        <div class="hero-slide">
-                            <div class="hero-image-wrapper">
-                                <img src="/images/img5.webp" alt="Elegant Property" loading="lazy">
+                            <div class="hero-slide">
+                                <div class="hero-image-wrapper">
+                                    <img src="/images/img5.webp" alt="Elegant Property" loading="lazy">
+                                </div>
+                            </div>
+                            <div class="hero-slide">
+                                <div class="hero-image-wrapper">
+                                    <img src="/images/img.webp" alt="Premium Residence" loading="lazy">
+                                </div>
+                            </div>
+                            <div class="hero-slide">
+                                <div class="hero-image-wrapper">
+                                    <img src="/images/img.jpg" alt="Luxury Interior" loading="lazy">
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -238,6 +733,8 @@ h6{font-size:22px}
     </section>
     <hr>
 
+
+    <hr>
     <!-- Property Types -->
     <section class="property-types">
         <div class="container">
@@ -271,190 +768,19 @@ h6{font-size:22px}
     </section>
     <hr>
 
-    <!-- Main Search Bar -->
-    <section class="properties-section">
-        <div class="container">
-            <div class="section-header">
-                <h2>Browse by specifications</h2>
-            </div>
-            <!-- Filters and Search -->
-            <div class="properties-filters" id="indexPropertiesFilters">
-                <!-- Category Filter with Subcategories -->
-                <div class="filter-section category-section-centered" id="indexCategorySection">
-                    <div class="category-main-buttons">
-                        <button type="button" class="category-text-button" data-category="residential" id="indexFilterResidential">Residential</button>
-                        <span class="category-divider">|</span>
-                        <button type="button" class="category-text-button" data-category="commercial" id="indexFilterCommercial">Commercial</button>
-                    </div>
-                    <div class="category-subcategories-container">
-                        <div class="subcategory-buttons" data-category="residential">
-                            <button type="button" class="filter-button subcategory-button" data-property-type="plots" data-parent-category="residential" id="indexFilterPlots">Plots</button>
-                            <button type="button" class="filter-button subcategory-button" data-property-type="apartment" data-parent-category="residential" id="indexFilterApartments">Apartments</button>
-                            <button type="button" class="filter-button subcategory-button" data-property-type="house" data-parent-category="residential" id="indexFilterIndividualHouse">Individual House</button>
-                            <button type="button" class="filter-button subcategory-button" data-property-type="villa" data-parent-category="residential" id="indexFilterVillas">Villas</button>
-                        </div>
-                        <div class="subcategory-buttons" data-category="commercial">
-                            <button type="button" class="filter-button subcategory-button" data-property-type="office-space" data-parent-category="commercial" id="indexFilterOfficeSpace">Office Space</button>
-                            <button type="button" class="filter-button subcategory-button" data-property-type="warehouse" data-parent-category="commercial" id="indexFilterWarehouse">Warehouse</button>
-                            <button type="button" class="filter-button subcategory-button" data-property-type="showrooms" data-parent-category="commercial" id="indexFilterShowrooms">Showrooms</button>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Advanced Search Form -->
-                <div class="properties-search">
-                    <form class="search-form" id="indexPropertiesSearchForm">
-                        <div class="filters-two-column">
-                            <!-- Left Column: Filter 1 - common + residential-only fields -->
-                            <div class="filter1">
-                                <div class="search-group filter-group" data-filter-for="common">
-                                    <label><i class="fas fa-map-marker-alt"></i> City</label>
-                                    <input type="text" id="indexSearchCity" list="indexSearchCityList" 
-                                        placeholder="Type or select city" autocomplete="off">
-                                    <datalist id="indexSearchCityList">
-                                        <option value="">Any City</option>
-                                    </datalist>
-                                </div>
-                                <div class="search-group filter-group" data-filter-for="common">
-                                    <label><i class="fas fa-map-marker-alt"></i> Area</label>
-                                    <input type="text" id="indexSearchArea" list="indexSearchAreaList" 
-                                        placeholder="Type or select area" autocomplete="off">
-                                    <datalist id="indexSearchAreaList">
-                                        <option value="">Any Area</option>
-                                    </datalist>
-                                </div>
-                                <div class="search-group filter-group" data-filter-for="residential">
-                                    <label><i class="fas fa-star"></i> Amenities</label>
-                                    <select id="indexSearchAmenities">
-                                        <option value="">Any Amenity</option>
-                                    </select>
-                                </div>
-                                <div class="search-group filter-group" data-filter-for="residential">
-                                    <label><i class="fas fa-home"></i> Unit Type</label>
-                                    <select id="indexSearchUnitType">
-                                        <option value="">Any Unit Type</option>
-                                    </select>
-                                </div>
-                            </div>
-                            
-                            <!-- Right Column: Filter 2 -->
-                            <div class="filter2">
-                                <div class="search-group filter-group" data-filter-for="common">
-                                    <label><i class="fas fa-exchange-alt"></i> Transaction Type</label>
-                                    <select id="indexSearchTransactionType">
-                                        <option value="all">All Properties</option>
-                                        <option value="sale">Buy</option>
-                                        <option value="rent">Rent</option>
-                                    </select>
-                                </div>
-                                <div class="search-group filter-group" data-filter-for="common">
-                                    <label><i class="fas fa-check-circle"></i> Status</label>
-                                    <select id="indexSearchPropertyCondition">
-                                        <option value="">Any Status</option>
-                                        <option value="new">New</option>
-                                        <option value="resale">Resale</option>
-                                    </select>
-                                </div>
-                                <div class="search-group filter-group" data-filter-for="common">
-                                    <label><i class="fas fa-rupee-sign"></i> Price Range</label>
-                                    <button type="button" class="price-range-btn" id="indexPriceRangeBtn">
-                                        <span class="price-range-display" id="indexPriceRangeDisplay">Any Price</span>
-                                        <i class="fas fa-chevron-down"></i>
-                                    </button>
-                                    <input type="hidden" id="indexSearchPrice" value="">
-                                </div>
-                                <div class="search-group filter-group" data-filter-for="common">
-                                    <label><i class="fas fa-compass"></i> Direction</label>
-                                    <select id="indexSearchDirection">
-                                        <option value="">Any Direction</option>
-                                        <option value="east">East</option>
-                                        <option value="west">West</option>
-                                        <option value="north">North</option>
-                                        <option value="south">South</option>
-                                        <option value="northeast">North East</option>
-                                        <option value="northwest">North West</option>
-                                        <option value="southeast">South East</option>
-                                        <option value="southwest">South West</option>
-                                    </select>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="filter-button-center">
-                            <button type="submit" class="btn-search">Filter</button>
-                        </div>
-                    </form>
-                </div>
-                
-                <!-- Active Filter Tags -->
-                <div class="filter-tags-container" id="indexFilterTagsContainer" style="display: none;">
-                    <div class="filter-tags-header">
-                        <span class="filter-tags-label">Active Filters:</span>
-                        <button type="button" class="clear-all-filters" id="indexClearAllFilters">
-                            <i class="fas fa-times-circle"></i> Clear All
-                        </button>
-                    </div>
-                    <div class="filter-tags" id="indexFilterTags">
-                        <!-- Filter tags will be rendered here by JavaScript -->
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Price Range Modal -->
-    <div class="price-range-modal" id="indexPriceRangeModal">
-        <div class="price-range-modal-overlay" id="indexPriceRangeModalOverlay"></div>
-        <div class="price-range-modal-content">
-            <div class="price-range-modal-header">
-                <h3>Select Price Range</h3>
-                <button type="button" class="price-range-modal-close" id="indexPriceRangeModalClose">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-            <div class="price-range-modal-body">
-                <div class="price-range-slider-container">
-                    <div class="price-range-labels">
-                        <span class="price-range-label-min" id="indexPriceRangeLabelMin">₹0</span>
-                        <span class="price-range-label-max" id="indexPriceRangeLabelMax">₹100+ Cr</span>
-                    </div>
-                    <div class="price-range-slider-wrapper">
-                        <div class="price-range-track" id="indexPriceRangeTrack">
-                            <div class="price-range-progress" id="indexPriceRangeProgress"></div>
-                            <input type="range" class="price-range-input price-range-input-min" id="indexPriceRangeMin" min="0" max="100" value="0" step="0.1">
-                            <input type="range" class="price-range-input price-range-input-max" id="indexPriceRangeMax" min="0" max="100" value="100" step="0.1">
-                        </div>
-                    </div>
-                    <div class="price-range-inputs">
-                        <div class="price-range-input-group">
-                            <label>Min Price (Cr)</label>
-                            <input type="number" class="price-range-number-input" id="indexPriceRangeMinInput" min="0" max="100" step="0.1" value="0">
-                        </div>
-                        <div class="price-range-input-group">
-                            <label>Max Price (Cr)</label>
-                            <input type="number" class="price-range-number-input" id="indexPriceRangeMaxInput" min="0" max="100" step="0.1" value="100">
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="price-range-modal-footer">
-                <button type="button" class="price-range-btn-clear" id="indexPriceRangeBtnClear">Clear</button>
-                <button type="button" class="price-range-btn-apply" id="indexPriceRangeBtnApply">Apply</button>
-            </div>
-        </div>
-    </div>
-    <hr>
-
     <!-- About Section -->
     <section class="about-compact" id="about">
         <div class="container">
             <div class="section-header">
                 <h2>About Us</h2>
             </div>
-            
+
             <div class="about-compact-content">
                 <!-- Introduction -->
                 <div class="about-intro-compact">
-                    <p class="about-intro-text">Tirumakudalu Properties is the place to be! With over ten years of experience in property-related services, we have established ourselves as one of the industry's leading companies.</p>
+                    <p class="about-intro-text">Tirumakudalu Properties is the place to be! With over ten years of
+                        experience in property-related services, we have established ourselves as one of the industry's
+                        leading companies.</p>
                 </div>
 
                 <!-- Vision & Mission Cards -->
@@ -464,14 +790,18 @@ h6{font-size:22px}
                             <i class="fas fa-eye"></i>
                         </div>
                         <h3>Vision</h3>
-                        <p>To be the most trusted and sought-after real estate and property management company in Bengaluru, recognized for our exceptional customer service, innovative solutions, and unwavering commitment to integrity and transparency.</p>
+                        <p>To be the most trusted and sought-after real estate and property management company in
+                            Bengaluru, recognized for our exceptional customer service, innovative solutions, and
+                            unwavering commitment to integrity and transparency.</p>
                     </div>
                     <div class="vm-compact-card">
                         <div class="vm-compact-icon">
                             <i class="fas fa-bullseye"></i>
                         </div>
                         <h3>Mission</h3>
-                        <p>To provide exceptional real estate and property management services that exceed expectations by leveraging our deep knowledge of the local market, adopting innovative technologies, and fostering a culture of honesty and transparency.</p>
+                        <p>To provide exceptional real estate and property management services that exceed expectations
+                            by leveraging our deep knowledge of the local market, adopting innovative technologies, and
+                            fostering a culture of honesty and transparency.</p>
                     </div>
                 </div>
             </div>
@@ -485,12 +815,15 @@ h6{font-size:22px}
             <div class="section-header">
                 <h2>Our Partners</h2>
             </div>
-            
+
             <div class="partners-compact-content">
                 <div class="partners-intro-compact">
-                    <p>With its strong reputation for professionalism and integrity, Tirumakudalu Properties has established partnerships with some of the most reputed property-related companies in the region. These channel partners help the company to expand its reach and offer a wider range of services to its clients, ensuring that they receive the best possible advice and support.</p>
+                    <p>With its strong reputation for professionalism and integrity, Tirumakudalu Properties has
+                        established partnerships with some of the most reputed property-related companies in the region.
+                        These channel partners help the company to expand its reach and offer a wider range of services
+                        to its clients, ensuring that they receive the best possible advice and support.</p>
                 </div>
-                
+
                 <div class="partners-compact-grid" id="partnersCompactGrid">
                     <!-- Partners will be rendered here -->
                 </div>
@@ -517,7 +850,7 @@ h6{font-size:22px}
             <div class="section-header">
                 <h2>What Our Clients Say</h2>
             </div>
-            
+
             <div class="testimonials-compact-content">
                 <div class="testimonials-compact-scroll-wrapper">
                     <div class="testimonials-compact-grid" id="testimonialsCompactGrid">
@@ -527,7 +860,8 @@ h6{font-size:22px}
                                 <i class="fas fa-comments"></i>
                             </div>
                             <h3>Testimonials Coming Soon</h3>
-                            <p>We're collecting testimonials from our satisfied clients. Check back soon to read about their experiences with Tirumakudalu Properties.</p>
+                            <p>We're collecting testimonials from our satisfied clients. Check back soon to read about
+                                their experiences with Tirumakudalu Properties.</p>
                         </div>
                     </div>
                 </div>
@@ -542,7 +876,7 @@ h6{font-size:22px}
             <div class="section-header">
                 <h2>Our Services</h2>
             </div>
-            
+
             <div class="services-layout">
                 <!-- Service 1: Rental of Properties - Blurred Background Style -->
                 <div class="service-section service-rental">
@@ -555,10 +889,12 @@ h6{font-size:22px}
                             </div>
                             <h3 class="service-main-title">Rental of Properties</h3>
                             <p class="service-subtitle">Premium Property Solutions</p>
-                            
+
                             <div class="service-cards-row">
                                 <div class="service-testimonial-card">
-                                    <p class="service-card-text">We offer comprehensive rental services for premium properties across India, helping property owners find the right tenants and assisting tenants in finding their perfect space.</p>
+                                    <p class="service-card-text">We offer comprehensive rental services for premium
+                                        properties across India, helping property owners find the right tenants and
+                                        assisting tenants in finding their perfect space.</p>
                                     <div class="service-card-footer">
                                         <div class="service-card-icon">
                                             <i class="fas fa-home"></i>
@@ -575,9 +911,11 @@ h6{font-size:22px}
                                         </div>
                                     </div>
                                 </div>
-                                
+
                                 <div class="service-testimonial-card">
-                                    <p class="service-card-text">We also undertake advertising of rentals on top-rated property portals to attract potential tenants for existing properties, ensuring maximum visibility and reach.</p>
+                                    <p class="service-card-text">We also undertake advertising of rentals on top-rated
+                                        property portals to attract potential tenants for existing properties, ensuring
+                                        maximum visibility and reach.</p>
                                     <div class="service-card-footer">
                                         <div class="service-card-icon">
                                             <i class="fas fa-building"></i>
@@ -594,9 +932,11 @@ h6{font-size:22px}
                                         </div>
                                     </div>
                                 </div>
-                                
+
                                 <div class="service-testimonial-card">
-                                    <p class="service-card-text">Office Space | Showrooms | Industrial Sheds | Godowns | Warehouses - we provide rental solutions for all types of commercial and industrial properties.</p>
+                                    <p class="service-card-text">Office Space | Showrooms | Industrial Sheds | Godowns |
+                                        Warehouses - we provide rental solutions for all types of commercial and
+                                        industrial properties.</p>
                                     <div class="service-card-footer">
                                         <div class="service-card-icon">
                                             <i class="fas fa-warehouse"></i>
@@ -632,48 +972,55 @@ h6{font-size:22px}
                                 </h3>
                             </div>
                             <div class="investment-header-right">
-                                <p>Our partnership with renowned builders and developers in India allows us to assist clients in finding the perfect investment property that meets their specific needs. We thoroughly investigate all properties by verifying facts, checking documents, conducting site inspections, and taking pictures.</p>
+                                <p>Our partnership with renowned builders and developers in India allows us to assist
+                                    clients in finding the perfect investment property that meets their specific needs.
+                                    We thoroughly investigate all properties by verifying facts, checking documents,
+                                    conducting site inspections, and taking pictures.</p>
                             </div>
                         </div>
-                        
+
                         <div class="investment-feature-cards-row">
                             <div class="investment-feature-card">
                                 <div class="investment-feature-icon">
                                     <i class="fas fa-search"></i>
                                 </div>
                                 <h4>Verifying Facts</h4>
-                                <p>Thorough verification of all property details and information to ensure accuracy and reliability.</p>
+                                <p>Thorough verification of all property details and information to ensure accuracy and
+                                    reliability.</p>
                                 <div class="investment-feature-line"></div>
                             </div>
-                            
+
                             <div class="investment-feature-card featured-investment">
                                 <div class="investment-feature-icon">
                                     <i class="fas fa-file-alt"></i>
                                 </div>
                                 <h4>Checking Documents</h4>
-                                <p>Complete document verification and validation to ensure all legal requirements are met.</p>
+                                <p>Complete document verification and validation to ensure all legal requirements are
+                                    met.</p>
                                 <div class="investment-feature-line"></div>
                             </div>
-                            
+
                             <div class="investment-feature-card">
                                 <div class="investment-feature-icon">
                                     <i class="fas fa-building"></i>
                                 </div>
                                 <h4>Site Inspections</h4>
-                                <p>Comprehensive on-site property inspections to assess condition and value accurately.</p>
+                                <p>Comprehensive on-site property inspections to assess condition and value accurately.
+                                </p>
                                 <div class="investment-feature-line"></div>
                             </div>
-                            
+
                             <div class="investment-feature-card">
                                 <div class="investment-feature-icon">
                                     <i class="fas fa-camera"></i>
                                 </div>
                                 <h4>Photography</h4>
-                                <p>Professional property photography services to showcase properties in the best light.</p>
+                                <p>Professional property photography services to showcase properties in the best light.
+                                </p>
                                 <div class="investment-feature-line"></div>
                             </div>
                         </div>
-                        
+
                         <div class="investment-properties-section-bottom">
                             <h4>We deal in the sale of properties across India:</h4>
                             <div class="investment-properties-list">
@@ -694,10 +1041,12 @@ h6{font-size:22px}
                 <div class="service-section service-management">
                     <div class="service-abstract-bg"></div>
                     <div class="service-section-content">
-                        <div class="service-header-key">
-                            <h3 class="service-header-key-title" style="text-align: center;">Property Management Services.</h3>
+                        <div class="service-header-key" style="margin-left: 350px;">
+                            <h3 class="service-header-key-title" style="text-align: center;">
+                                Property Management Services.</h3>
                         </div>
-                        <p class="service-intro">We undertake comprehensive property management to ensure your property is well-maintained, compliant, and generating optimal returns.</p>
+                        <p class="service-intro">We undertake comprehensive property management to ensure your property
+                            is well-maintained, compliant, and generating optimal returns.</p>
                         <div class="service-features-grid-key">
                             <div class="key-feature-block">
                                 <div class="feature-number">01</div>
@@ -750,10 +1099,13 @@ h6{font-size:22px}
                             </div>
                             <h3 class="service-main-title">Value Added Services</h3>
                             <p class="service-subtitle">Comprehensive Property Solutions</p>
-                            
+
                             <div class="service-cards-row">
                                 <div class="service-testimonial-card">
-                                    <p class="service-card-text">We provide comprehensive property services including registration, documentation, and transactions. Our expert team ensures all property dealings are transparent, secure, and compliant with regulatory requirements across major cities in Karnataka.</p>
+                                    <p class="service-card-text">We provide comprehensive property services including
+                                        registration, documentation, and transactions. Our expert team ensures all
+                                        property dealings are transparent, secure, and compliant with regulatory
+                                        requirements across major cities in Karnataka.</p>
                                     <div class="service-card-footer">
                                         <div class="service-card-icon">
                                             <i class="fas fa-stamp"></i>
@@ -770,9 +1122,12 @@ h6{font-size:22px}
                                         </div>
                                     </div>
                                 </div>
-                                
+
                                 <div class="service-testimonial-card">
-                                    <p class="service-card-text">We handle property transactions including buying, selling, and reselling with complete legal verification and title clearance. Our services ensure smooth and hassle-free property transactions for all our clients.</p>
+                                    <p class="service-card-text">We handle property transactions including buying,
+                                        selling, and reselling with complete legal verification and title clearance. Our
+                                        services ensure smooth and hassle-free property transactions for all our
+                                        clients.</p>
                                     <div class="service-card-footer">
                                         <div class="service-card-icon">
                                             <i class="fas fa-handshake"></i>
@@ -789,9 +1144,11 @@ h6{font-size:22px}
                                         </div>
                                     </div>
                                 </div>
-                                
+
                                 <div class="service-testimonial-card">
-                                    <p class="service-card-text">We offer property verification, due diligence, inspection, and valuation services. Our team provides market analysis and pricing to help you make informed decisions about your property investments.</p>
+                                    <p class="service-card-text">We offer property verification, due diligence,
+                                        inspection, and valuation services. Our team provides market analysis and
+                                        pricing to help you make informed decisions about your property investments.</p>
                                     <div class="service-card-footer">
                                         <div class="service-card-icon">
                                             <i class="fas fa-search"></i>
@@ -854,7 +1211,10 @@ h6{font-size:22px}
                     <div class="founder-compact-label">About Founder</div>
                     <h3 style="color: #8B2E3D;">Seshadri T S.</h3>
                     <div class="founder-compact-role">Proprietor | Consultant</div>
-                    <p>Tirumakudalu Properties is a solely owned and operated firm promoted by Mr. Seshadri T. S. He has over 30 years of vast professional experience in finance, marketing, and sales, and 16 years in the field of property management. Mr. Seshadri is the grandson of Sri T. Rama Rao, the late founder member of The National Institute of Engineering (NIE), Mysore.</p>
+                    <p>Tirumakudalu Properties is a solely owned and operated firm promoted by Mr. Seshadri T. S. He has
+                        over 30 years of vast professional experience in finance, marketing, and sales, and 16 years in
+                        the field of property management. Mr. Seshadri is the grandson of Sri T. Rama Rao, the late
+                        founder member of The National Institute of Engineering (NIE), Mysore.</p>
                 </div>
             </div>
         </div>
@@ -939,7 +1299,8 @@ h6{font-size:22px}
                         <input type="text" id="contactSubject" name="subject" placeholder="Subject" required>
                     </div>
                     <div class="form-group">
-                        <textarea id="contactMessage" name="message" placeholder="Your Message" rows="5" required></textarea>
+                        <textarea id="contactMessage" name="message" placeholder="Your Message" rows="5"
+                            required></textarea>
                     </div>
                     <div class="form-group">
                         <input type="tel" id="contactPhone" name="phone" placeholder="Phone Number (Optional)">
@@ -985,7 +1346,8 @@ h6{font-size:22px}
                         Password
                     </label>
                     <div class="password-input-wrapper">
-                        <input type="password" id="loginPassword" name="password" placeholder="Enter your password" required>
+                        <input type="password" id="loginPassword" name="password" placeholder="Enter your password"
+                            required>
                         <button type="button" class="password-toggle" id="passwordToggle">
                             <i class="fas fa-eye"></i>
                         </button>
@@ -1022,7 +1384,9 @@ h6{font-size:22px}
                         <i class="fas fa-question-circle"></i>
                     </div>
                     <h4>What services do you offer?</h4>
-                    <p>We offer property valuation, listing, marketing, legal services, property management, buying and selling real estate, building services, interior decoration, security, CCTV services, and more.</p>
+                    <p>We offer property valuation, listing, marketing, legal services, property management, buying and
+                        selling real estate, building services, interior decoration, security, CCTV services, and more.
+                    </p>
                     <div class="faq-item-decoration"></div>
                 </div>
                 <div class="faq-compact-item">
@@ -1030,7 +1394,8 @@ h6{font-size:22px}
                         <i class="fas fa-question-circle"></i>
                     </div>
                     <h4>Do you provide government-related services?</h4>
-                    <p>Yes, we work with government agencies to provide land records, possession certificates, khata, tax certificates, loans, and other related services.</p>
+                    <p>Yes, we work with government agencies to provide land records, possession certificates, khata,
+                        tax certificates, loans, and other related services.</p>
                     <div class="faq-item-decoration"></div>
                 </div>
                 <div class="faq-compact-item">
@@ -1038,7 +1403,8 @@ h6{font-size:22px}
                         <i class="fas fa-question-circle"></i>
                     </div>
                     <h4>How can you help with my real estate needs?</h4>
-                    <p>Whether you're looking to buy, sell, or manage a property, our experienced team provides a hassle-free experience ensuring smooth and stress-free transactions.</p>
+                    <p>Whether you're looking to buy, sell, or manage a property, our experienced team provides a
+                        hassle-free experience ensuring smooth and stress-free transactions.</p>
                     <div class="faq-item-decoration"></div>
                 </div>
             </div>
@@ -1053,11 +1419,13 @@ h6{font-size:22px}
                     <div class="footer-logo">
                         <a href="#home" class="logo-link">
                             <div class="logo-graphic">
-                                <img src="/images/TS_Logo_White .png" alt="Tirumakudalu Properties Logo" width="300px" height="auto" style="margin-left: 150px;" loading="lazy">
+                                <img src="/images/TS_Logo_White .png" alt="Tirumakudalu Properties Logo" width="300px"
+                                    height="auto" style="margin-left: 150px;" loading="lazy">
                             </div>
                         </a>
                     </div>
-                    <p>Tirumakudalu Properties offers Property Management & Real Estate Services in and around Bangalore City.</p>
+                    <p>Tirumakudalu Properties offers Property Management & Real Estate Services in and around Bangalore
+                        City.</p>
                 </div>
                 <div class="footer-col">
                     <h4>Quick Links</h4>
@@ -1081,13 +1449,16 @@ h6{font-size:22px}
                         </li>
                         <li>
                             <i class="fas fa-map-marker-alt"></i>
-                            <span>#76, 2ND floor, 2ND CROSS, Mysore Bank Colony, JP nagar, 7th Phase, BANGALORE - 560078</span>
+                            <span>#76, 2ND floor, 2ND CROSS, Mysore Bank Colony, JP nagar, 7th Phase, BANGALORE -
+                                560078</span>
                         </li>
                     </ul>
                 </div>
             </div>
             <div class="footer-bottom">
-                <p>Copyright &copy; 2025 - Designed & Powered by <a href="https://purplehuetechnosoft.com/" target="_blank" rel="noopener noreferrer" class="footer-credit">Purple Hue Technosoft Pvt. Ltd.</a></p>
+                <p>Copyright &copy; 2025 - Designed & Powered by <a href="https://purplehuetechnosoft.com/"
+                        target="_blank" rel="noopener noreferrer" class="footer-credit">Purple Hue Technosoft Pvt.
+                        Ltd.</a></p>
             </div>
         </div>
     </footer>
@@ -1104,14 +1475,14 @@ h6{font-size:22px}
     <!-- Non-critical JS - Load after page is interactive -->
     <script>
         // Load non-critical scripts after page load
-        window.addEventListener('load', function() {
+        window.addEventListener('load', function () {
             const scripts = [
                 '/js/script.js',
                 '/js/properties.js',
                 '/js/page-tracking.js',
                 '/js/app-metrics-tracker.js'
             ];
-            scripts.forEach(function(src) {
+            scripts.forEach(function (src) {
                 const script = document.createElement('script');
                 script.src = src;
                 script.defer = true;
@@ -1124,7 +1495,7 @@ h6{font-size:22px}
     </script>
     <script>
         // Partners data and rendering for compact section
-        (function() {
+        (function () {
             let partners = [];
 
             // Load partners from API
@@ -1132,7 +1503,7 @@ h6{font-size:22px}
                 try {
                     // Fetch active partners (sorted by display_order)
                     let fetchedPartners = [];
-                    
+
                     try {
                         const response = await fetch('/api/partners?is_active=true', {
                             headers: {
@@ -1140,7 +1511,7 @@ h6{font-size:22px}
                                 'Content-Type': 'application/json'
                             }
                         });
-                        
+
                         if (response.ok) {
                             try {
                                 const data = await response.json();
@@ -1172,7 +1543,7 @@ h6{font-size:22px}
                             console.warn('Error fetching partners:', fetchError);
                         }
                     }
-                    
+
                     // Convert API format to display format with validation
                     partners = fetchedPartners
                         .filter(p => p && p.name) // Only include partners with names
@@ -1184,10 +1555,10 @@ h6{font-size:22px}
                             description: partner.description || '',
                             display_order: partner.display_order || 0
                         }));
-                    
+
                     // Sort by display_order (already sorted by API, but ensure it)
                     partners.sort((a, b) => (a.display_order || 0) - (b.display_order || 0));
-                    
+
                     renderPartnersCompact();
                 } catch (error) {
                     // Silently handle any unexpected errors - don't break the page
@@ -1226,11 +1597,11 @@ h6{font-size:22px}
                 grid.innerHTML = partners.map((partner, index) => {
                     const hasBlackBackground = blackBackgroundPartners.includes(partner.name);
                     const cardClass = hasBlackBackground ? 'partner-compact-card partner-compact-card-dark' : 'partner-compact-card';
-                    const websiteUrl = partner.website_url && partner.website_url !== '#' 
-                        ? partner.website_url 
+                    const websiteUrl = partner.website_url && partner.website_url !== '#'
+                        ? partner.website_url
                         : '#';
                     const targetAttr = websiteUrl !== '#' ? 'target="_blank" rel="noopener noreferrer"' : '';
-                    
+
                     return `
                         <a href="${escapeHtml(websiteUrl)}" class="${cardClass}" ${targetAttr} data-partner-index="${index}">
                             ${partner.logo_url ? `
@@ -1259,12 +1630,12 @@ h6{font-size:22px}
                         // Initially show Load More button
                         loadMoreContainer.style.display = 'flex';
                         showLessContainer.style.display = 'none';
-                        
+
                         // Load More button click handler
-                        loadMoreBtn.onclick = function(e) {
+                        loadMoreBtn.onclick = function (e) {
                             e.preventDefault();
                             e.stopPropagation();
-                            
+
                             // Expand to show all cards
                             if (!isExpanded) {
                                 grid.classList.remove('partners-grid-collapsed');
@@ -1274,12 +1645,12 @@ h6{font-size:22px}
                                 showLessContainer.style.display = 'flex';
                             }
                         };
-                        
+
                         // Show Less button click handler
-                        showLessBtn.onclick = function(e) {
+                        showLessBtn.onclick = function (e) {
                             e.preventDefault();
                             e.stopPropagation();
-                            
+
                             // Collapse to show only initial cards
                             if (isExpanded) {
                                 grid.classList.remove('partners-grid-expanded');
@@ -1287,7 +1658,7 @@ h6{font-size:22px}
                                 isExpanded = false;
                                 showLessContainer.style.display = 'none';
                                 loadMoreContainer.style.display = 'flex';
-                                
+
                                 // Scroll to partners section smoothly
                                 const partnersSection = document.getElementById('partners');
                                 if (partnersSection) {
@@ -1319,7 +1690,7 @@ h6{font-size:22px}
         })();
 
         // Testimonials rendering for compact section
-        (function() {
+        (function () {
             let testimonials = [];
 
             function generateStars(rating) {
@@ -1344,27 +1715,27 @@ h6{font-size:22px}
                         cleanup();
                         reject(new Error('JSONP request timeout'));
                     }, 10000); // 10 second timeout
-                    
-                    window[callbackName] = function(data) {
+
+                    window[callbackName] = function (data) {
                         clearTimeout(timeout);
                         cleanup();
                         resolve(data);
                     };
-                    
+
                     function cleanup() {
                         if (script.parentNode) {
                             script.parentNode.removeChild(script);
                         }
                         delete window[callbackName];
                     }
-                    
+
                     script.src = url + (url.indexOf('?') >= 0 ? '&' : '?') + 'callback=' + callbackName;
-                    script.onerror = function() {
+                    script.onerror = function () {
                         clearTimeout(timeout);
                         cleanup();
                         reject(new Error('JSONP script load failed'));
                     };
-                    
+
                     document.head.appendChild(script);
                 });
             }
@@ -1374,7 +1745,7 @@ h6{font-size:22px}
                 try {
                     let fetchedTestimonials = [];
                     let useJSONP = true; // Prefer JSONP for cross-origin compatibility
-                    
+
                     // Try to fetch featured testimonials first
                     try {
                         if (useJSONP) {
@@ -1391,7 +1762,7 @@ h6{font-size:22px}
                                 useJSONP = false; // Fall back to fetch
                             }
                         }
-                        
+
                         // Fallback to fetch if JSONP failed or not preferred
                         if (!useJSONP || fetchedTestimonials.length === 0) {
                             const featuredUrl = '/api/testimonials?is_approved=true&is_featured=true';
@@ -1402,7 +1773,7 @@ h6{font-size:22px}
                                     'Content-Type': 'application/json'
                                 }
                             });
-                            
+
                             if (response.ok) {
                                 try {
                                     const data = await response.json();
@@ -1429,7 +1800,7 @@ h6{font-size:22px}
                     } catch (fetchError) {
                         console.error('Error fetching featured testimonials:', fetchError);
                     }
-                    
+
                     // If no featured testimonials, get all approved
                     if (fetchedTestimonials.length === 0) {
                         try {
@@ -1447,7 +1818,7 @@ h6{font-size:22px}
                                     useJSONP = false;
                                 }
                             }
-                            
+
                             if (!useJSONP || fetchedTestimonials.length === 0) {
                                 const allUrl = '/api/testimonials?is_approved=true';
                                 console.log('Loading all approved testimonials via fetch:', allUrl);
@@ -1457,7 +1828,7 @@ h6{font-size:22px}
                                         'Content-Type': 'application/json'
                                     }
                                 });
-                                
+
                                 if (allResponse.ok) {
                                     try {
                                         const allTestimonials = await allResponse.json();
@@ -1485,7 +1856,7 @@ h6{font-size:22px}
                             console.error('Error fetching all testimonials:', fallbackError);
                         }
                     }
-                    
+
                     // Convert API format to display format with validation
                     testimonials = fetchedTestimonials
                         .filter(t => t && t.message) // Only include testimonials with messages
@@ -1497,7 +1868,7 @@ h6{font-size:22px}
                             message: testimonial.message || '',
                             date: testimonial.created_at ? new Date(testimonial.created_at).toLocaleDateString() : ''
                         }));
-                    
+
                     console.log('Final testimonials count:', testimonials.length);
                     renderTestimonialsCompact();
                 } catch (error) {
@@ -1554,7 +1925,7 @@ h6{font-size:22px}
                         </div>
                     </div>
                 `).join('');
-                
+
                 // Duplicate cards for seamless infinite scroll
                 grid.innerHTML = testimonialCards + testimonialCards;
             }
@@ -1576,15 +1947,15 @@ h6{font-size:22px}
         })();
 
         // Floating Button to Browse by Property Type
-        (function() {
+        (function () {
             const floatingBtn = document.getElementById('floatingPropertyTypeBtn');
             const propertyTypesSection = document.querySelector('.property-types');
-            
+
             if (!floatingBtn) {
                 console.error('Floating button not found');
                 return;
             }
-            
+
             if (!propertyTypesSection) {
                 console.error('Property types section not found');
                 return;
@@ -1595,14 +1966,14 @@ h6{font-size:22px}
                 const rect = propertyTypesSection.getBoundingClientRect();
                 const sectionTop = rect.top;
                 const sectionBottom = rect.bottom;
-                
+
                 // Add buffer (200px) to make detection more forgiving
                 const buffer = 200;
-                
+
                 // Check if section is visible in viewport (with buffer)
                 // Section is considered visible if any part of it is within the viewport + buffer
                 const isSectionInView = sectionBottom > -buffer && sectionTop < (window.innerHeight + buffer);
-                
+
                 // Hide button if section IS in view, show it otherwise
                 if (isSectionInView) {
                     floatingBtn.classList.add('hidden');
@@ -1613,7 +1984,7 @@ h6{font-size:22px}
 
             // Handle button click - scroll to property types section
             floatingBtn.addEventListener('click', () => {
-                propertyTypesSection.scrollIntoView({ 
+                propertyTypesSection.scrollIntoView({
                     behavior: 'smooth',
                     block: 'start'
                 });
@@ -1622,7 +1993,7 @@ h6{font-size:22px}
             // Throttle function to limit how often checkScrollPosition runs
             let scrollTimeout = null;
             let resizeTimeout = null;
-            
+
             function throttledCheckScrollPosition() {
                 if (scrollTimeout) return;
                 scrollTimeout = requestAnimationFrame(() => {
@@ -1630,7 +2001,7 @@ h6{font-size:22px}
                     scrollTimeout = null;
                 });
             }
-            
+
             function throttledCheckResize() {
                 if (resizeTimeout) {
                     cancelAnimationFrame(resizeTimeout);
@@ -1640,24 +2011,24 @@ h6{font-size:22px}
                     resizeTimeout = null;
                 });
             }
-            
+
             // Check scroll position on scroll and on load (throttled)
             window.addEventListener('scroll', throttledCheckScrollPosition, { passive: true });
             window.addEventListener('resize', throttledCheckResize, { passive: true });
-            
+
             // Initial check - wait for page to fully load
             function initButton() {
                 setTimeout(() => {
                     checkScrollPosition();
                 }, 300);
             }
-            
+
             if (document.readyState === 'loading') {
                 document.addEventListener('DOMContentLoaded', initButton);
             } else {
                 initButton();
             }
-            
+
             // Also check after window fully loads (images, etc.)
             window.addEventListener('load', () => {
                 setTimeout(checkScrollPosition, 100);
@@ -1666,16 +2037,16 @@ h6{font-size:22px}
     </script>
     <script>
         // Index Page Filters - Inline JavaScript (isolated namespace)
-        (function() {
+        (function () {
             'use strict';
-            
+
             // Filter state variables for index page
             let indexCurrentFilter = 'all';
             let indexSelectedCondition = null;
             let indexSelectedBHK = null;
             let indexSelectedPropertyType = null;
             let indexSelectedCategory = null;
-            
+
             // Load unit types and populate dropdown
             async function loadUnitTypes() {
                 try {
@@ -1688,7 +2059,7 @@ h6{font-size:22px}
                             'Cache-Control': 'no-cache'
                         }
                     });
-                    
+
                     if (response.ok) {
                         const data = await response.json();
                         console.log('Unit Types API response:', data);
@@ -1700,10 +2071,10 @@ h6{font-size:22px}
                         if (data.unit_types && Array.isArray(data.unit_types)) {
                             // Store current selection before clearing
                             const currentValue = unitTypeSelect.value;
-                            
+
                             // Clear existing options except the first "Any Unit Type" option
                             unitTypeSelect.innerHTML = '<option value="">Any Unit Type</option>';
-                            
+
                             // If no unit types, show message
                             if (data.unit_types.length === 0) {
                                 const option = document.createElement('option');
@@ -1713,7 +2084,7 @@ h6{font-size:22px}
                                 unitTypeSelect.appendChild(option);
                                 return;
                             }
-                            
+
                             // Add unit types sorted by bedrooms, then name
                             data.unit_types.forEach(unitType => {
                                 if (unitType && unitType.name && unitType.display_name) {
@@ -1727,7 +2098,7 @@ h6{font-size:22px}
                                     unitTypeSelect.appendChild(option);
                                 }
                             });
-                            
+
                             // Restore selected value from URL params if present, otherwise restore previous selection
                             const urlParams = new URLSearchParams(window.location.search);
                             const unitTypeParam = urlParams.get('unit_type') || urlParams.get('type');
@@ -1760,7 +2131,7 @@ h6{font-size:22px}
                     }
                 }
             }
-            
+
             // Load amenities and populate datalist
             async function loadAmenities() {
                 try {
@@ -1773,7 +2144,7 @@ h6{font-size:22px}
                             'Cache-Control': 'no-cache'
                         }
                     });
-                    
+
                     if (response.ok) {
                         const data = await response.json();
                         console.log('Amenities API response:', data);
@@ -1785,14 +2156,14 @@ h6{font-size:22px}
                         if (data.amenities && Array.isArray(data.amenities)) {
                             // Store current value before clearing
                             const currentValue = amenitiesSelect.value;
-                            
+
                             // Clear existing options except the first "Any Amenity" option
                             amenitiesSelect.innerHTML = '<option value="">Any Amenity</option>';
-                            
+
                             // Remove duplicates and sort amenities
                             const uniqueAmenities = [...new Set(data.amenities.map(a => a && a.trim()).filter(Boolean))];
                             uniqueAmenities.sort();
-                            
+
                             // Add amenities to select dropdown
                             if (uniqueAmenities.length > 0) {
                                 uniqueAmenities.forEach(amenity => {
@@ -1806,7 +2177,7 @@ h6{font-size:22px}
                                     amenitiesSelect.appendChild(option);
                                 });
                             }
-                            
+
                             // Restore selected value from URL params if present, otherwise restore previous selection
                             const urlParams = new URLSearchParams(window.location.search);
                             const amenitiesParam = urlParams.get('amenities');
@@ -1823,7 +2194,7 @@ h6{font-size:22px}
                     console.error('Error loading amenities:', error);
                 }
             }
-            
+
             // Load localities/areas for a selected city in index page
             async function loadLocalitiesForIndexCity(cityName) {
                 try {
@@ -1839,7 +2210,7 @@ h6{font-size:22px}
                         }
                         return;
                     }
-                    
+
                     // Add cache-busting timestamp to ensure fresh data
                     const timestamp = new Date().getTime();
                     const apiUrl = `/api/localities?city=${encodeURIComponent(cityName)}&_t=${timestamp}`;
@@ -1851,7 +2222,7 @@ h6{font-size:22px}
                             'Cache-Control': 'no-cache'
                         }
                     });
-                    
+
                     if (response.ok) {
                         const data = await response.json();
                         console.log('Localities API response for city "' + cityName + '":', data);
@@ -1867,13 +2238,13 @@ h6{font-size:22px}
                             console.error('Area input or datalist element not found: indexSearchArea');
                             return;
                         }
-                        
+
                         // Store current value before clearing
                         const currentValue = areaInput.value;
-                        
+
                         // Clear existing options but keep "Any Area" option
                         areaDatalist.innerHTML = '<option value="">Any Area</option>';
-                        
+
                         if (data.localities && Array.isArray(data.localities)) {
                             console.log('Processing localities array:', data.localities);
                             // If no localities found, show message
@@ -1885,11 +2256,11 @@ h6{font-size:22px}
                                 areaDatalist.appendChild(option);
                                 return;
                             }
-                            
+
                             // Sort localities alphabetically
                             const sortedLocalities = [...data.localities].sort();
                             console.log('Sorted localities:', sortedLocalities);
-                            
+
                             // Add localities to datalist
                             let addedCount = 0;
                             sortedLocalities.forEach(locality => {
@@ -1902,7 +2273,7 @@ h6{font-size:22px}
                                 }
                             });
                             console.log(`Added ${addedCount} localities to datalist for city: ${cityName}`);
-                            
+
                             // Restore previous value if it exists
                             if (currentValue) {
                                 areaInput.value = currentValue;
@@ -1931,7 +2302,7 @@ h6{font-size:22px}
                     }
                 }
             }
-            
+
             // Load active cities and populate dropdown
             async function loadActiveCities() {
                 try {
@@ -1944,7 +2315,7 @@ h6{font-size:22px}
                             'Cache-Control': 'no-cache'
                         }
                     });
-                    
+
                     if (response.ok) {
                         const data = await response.json();
                         console.log('Cities API response:', data);
@@ -1957,10 +2328,10 @@ h6{font-size:22px}
                         if (data.cities && Array.isArray(data.cities)) {
                             // Store current value before clearing
                             const currentValue = cityInput.value;
-                            
+
                             // Clear existing options
                             cityDatalist.innerHTML = '';
-                            
+
                             // If no active cities, show message
                             if (data.cities.length === 0) {
                                 const option = document.createElement('option');
@@ -1969,14 +2340,14 @@ h6{font-size:22px}
                                 cityDatalist.appendChild(option);
                                 return;
                             }
-                            
+
                             // Group cities by state
                             const citiesByState = {};
                             data.cities.forEach(city => {
                                 // Handle both string and object formats
                                 const cityName = typeof city === 'string' ? city : (city.name || '');
                                 const state = typeof city === 'object' ? (city.state || 'Other') : 'Other';
-                                
+
                                 if (cityName && cityName.trim()) {
                                     if (!citiesByState[state]) {
                                         citiesByState[state] = [];
@@ -1984,7 +2355,7 @@ h6{font-size:22px}
                                     citiesByState[state].push(cityName.trim());
                                 }
                             });
-                            
+
                             // Sort states and cities
                             const sortedStates = Object.keys(citiesByState).sort();
                             sortedStates.forEach(state => {
@@ -1996,7 +2367,7 @@ h6{font-size:22px}
                                     cityDatalist.appendChild(option);
                                 });
                             });
-                            
+
                             // Restore selected value from URL params if present, otherwise restore previous selection
                             const urlParams = new URLSearchParams(window.location.search);
                             const cityParam = urlParams.get('city');
@@ -2033,7 +2404,7 @@ h6{font-size:22px}
                     }
                 }
             }
-            
+
             // Update filter input visibility by selected subcategory (per dashboard add-property modal)
             function updateIndexFilterGroupsByPropertyType() {
                 const container = document.getElementById('indexPropertiesFilters');
@@ -2058,20 +2429,15 @@ h6{font-size:22px}
                 if (categorySection) {
                     categorySection.removeAttribute('data-active-category');
                 }
-                
-                // Wait for DOM to be ready, then load cities, amenities, and unit types
-                setTimeout(() => {
-                    loadActiveCities().catch(err => console.error('Error loading cities:', err));
-                    loadAmenities().catch(err => console.error('Error loading amenities:', err));
-                    loadUnitTypes().catch(err => console.error('Error loading unit types:', err));
-                }, 100);
-                
+
+
+
                 // City input change handler
                 const cityInput = document.getElementById('indexSearchCity');
                 if (cityInput) {
                     let cityChangeTimeout;
                     let lastProcessedCity = '';
-                    
+
                     // Function to load localities for a city
                     const loadLocalitiesForCity = async (cityValue) => {
                         if (!cityValue || !cityValue.trim()) {
@@ -2088,10 +2454,10 @@ h6{font-size:22px}
                             indexApplyFilters(false);
                             return;
                         }
-                        
+
                         // Extract city name if it's in format "City, State"
                         const cityName = cityValue.includes(',') ? cityValue.split(',')[0].trim() : cityValue.trim();
-                        
+
                         // Only load if city name changed
                         if (cityName !== lastProcessedCity) {
                             lastProcessedCity = cityName;
@@ -2100,18 +2466,18 @@ h6{font-size:22px}
                             indexApplyFilters(false);
                         }
                     };
-                    
+
                     // Handle input event with debounce for typing
                     cityInput.addEventListener('input', () => {
                         if (cityChangeTimeout) {
                             clearTimeout(cityChangeTimeout);
                         }
-                        
+
                         cityChangeTimeout = setTimeout(() => {
                             loadLocalitiesForCity(cityInput.value);
                         }, 300); // 300ms debounce for typing
                     });
-                    
+
                     // Handle blur event - fires when user selects from datalist or clicks away
                     cityInput.addEventListener('blur', () => {
                         // Clear any pending timeout
@@ -2123,7 +2489,7 @@ h6{font-size:22px}
                         loadLocalitiesForCity(cityInput.value);
                     });
                 }
-                
+
                 // Amenities select change handler
                 const amenitiesSelect = document.getElementById('indexSearchAmenities');
                 if (amenitiesSelect) {
@@ -2131,7 +2497,7 @@ h6{font-size:22px}
                         indexApplyFilters(false);
                     });
                 }
-                
+
                 // Transaction Type select
                 const transactionTypeSelect = document.getElementById('indexSearchTransactionType');
                 if (transactionTypeSelect) {
@@ -2141,7 +2507,7 @@ h6{font-size:22px}
                         indexApplyFilters(false);
                     });
                 }
-                
+
                 // Status select
                 const propertyConditionSelect = document.getElementById('indexSearchPropertyCondition');
                 if (propertyConditionSelect) {
@@ -2151,7 +2517,7 @@ h6{font-size:22px}
                         indexApplyFilters(false);
                     });
                 }
-                
+
                 // Unit Type select
                 const unitTypeSelect = document.getElementById('indexSearchUnitType');
                 if (unitTypeSelect) {
@@ -2167,10 +2533,10 @@ h6{font-size:22px}
                         indexApplyFilters(false);
                     });
                 }
-                
+
                 // Category buttons - use multiple selectors to ensure we find them
                 let categoryButtons = document.querySelectorAll('#indexPropertiesFilters .category-text-button[data-category]');
-                
+
                 // Fallback: try direct ID selectors
                 if (categoryButtons.length === 0) {
                     const residentialBtn = document.getElementById('indexFilterResidential');
@@ -2182,28 +2548,28 @@ h6{font-size:22px}
                         categoryButtons = document.querySelectorAll('.category-text-button[data-category]');
                     }
                 }
-                
+
                 // Function to handle category button click
                 function handleCategoryClick(e) {
                     e.preventDefault();
                     e.stopPropagation();
                     const btn = e.currentTarget;
                     const category = btn.getAttribute('data-category') || btn.dataset.category;
-                    
+
                     if (!category || !categorySection) return;
-                    
+
                     const currentActiveCategory = categorySection.getAttribute('data-active-category');
-                    
+
                     if (currentActiveCategory === category) {
                         // Toggle off - deselect category
                         categorySection.removeAttribute('data-active-category');
-                        
+
                         // Hide all subcategory buttons
                         const allSubcategoryContainers = document.querySelectorAll('#indexPropertiesFilters .subcategory-buttons');
                         allSubcategoryContainers.forEach(container => {
                             container.style.display = 'none';
                         });
-                        
+
                         btn.classList.remove('active');
                         indexSelectedCategory = null;
                         const allSubButtons = document.querySelectorAll('#indexPropertiesFilters .subcategory-button');
@@ -2211,7 +2577,7 @@ h6{font-size:22px}
                     } else {
                         // Toggle on - select category
                         categorySection.setAttribute('data-active-category', category);
-                        
+
                         // Show the appropriate subcategory buttons
                         const allSubcategoryContainers = document.querySelectorAll('#indexPropertiesFilters .subcategory-buttons');
                         allSubcategoryContainers.forEach(container => {
@@ -2222,7 +2588,7 @@ h6{font-size:22px}
                                 container.style.display = 'none';
                             }
                         });
-                        
+
                         // Remove active from all category buttons
                         const allCategoryBtns = document.querySelectorAll('#indexPropertiesFilters .category-text-button[data-category]');
                         if (allCategoryBtns.length === 0) {
@@ -2244,14 +2610,14 @@ h6{font-size:22px}
                     // Update filter tags without redirecting
                     indexApplyFilters(false);
                 }
-                
+
                 // Attach event listeners to all found buttons
                 categoryButtons.forEach(btn => {
                     if (btn) {
                         btn.addEventListener('click', handleCategoryClick);
                     }
                 });
-                
+
                 // Property Type subcategory buttons
                 const propertyTypeButtons = document.querySelectorAll('#indexPropertiesFilters .subcategory-button[data-property-type]');
                 propertyTypeButtons.forEach(btn => {
@@ -2260,7 +2626,7 @@ h6{font-size:22px}
                         e.stopPropagation();
                         const propType = btn.dataset.propertyType;
                         const parentCategory = btn.dataset.parentCategory;
-                        
+
                         if (indexSelectedPropertyType === propType && indexSelectedCategory === parentCategory) {
                             indexSelectedPropertyType = null;
                             indexSelectedCategory = null;
@@ -2283,7 +2649,7 @@ h6{font-size:22px}
                         indexApplyFilters(false);
                     });
                 });
-                
+
                 // Search form submission
                 const searchForm = document.getElementById('indexPropertiesSearchForm');
                 if (searchForm) {
@@ -2292,14 +2658,14 @@ h6{font-size:22px}
                         // Redirect when form is submitted
                         indexApplyFilters(true);
                     });
-                    
+
                     const searchInputs = searchForm.querySelectorAll('input, select');
                     searchInputs.forEach(input => {
                         input.addEventListener('change', () => {
                             // Update filter tags without redirecting for input changes
                             indexApplyFilters(false);
                         });
-                        
+
                         if (input.tagName === 'INPUT' && input.type === 'text') {
                             let inputTimeout;
                             input.addEventListener('input', () => {
@@ -2312,7 +2678,7 @@ h6{font-size:22px}
                         }
                     });
                 }
-                
+
                 // Clear all filters button
                 const clearAllBtn = document.getElementById('indexClearAllFilters');
                 if (clearAllBtn) {
@@ -2322,77 +2688,77 @@ h6{font-size:22px}
                         indexSelectedBHK = null;
                         indexSelectedPropertyType = null;
                         indexSelectedCategory = null;
-                        
+
                         if (transactionTypeSelect) transactionTypeSelect.value = 'all';
                         if (propertyConditionSelect) propertyConditionSelect.value = '';
                         if (unitTypeSelect) unitTypeSelect.value = '';
-                        
+
                         document.querySelectorAll('#indexPropertiesFilters .subcategory-button').forEach(btn => btn.classList.remove('active'));
                         document.querySelectorAll('#indexPropertiesFilters .category-text-button').forEach(btn => btn.classList.remove('active'));
                         if (categorySection) categorySection.removeAttribute('data-active-category');
                         updateIndexFilterGroupsByPropertyType();
-                        
+
                         document.getElementById('indexSearchCity').value = '';
                         document.getElementById('indexSearchArea').value = '';
                         document.getElementById('indexSearchAmenities').value = '';
                         document.getElementById('indexSearchDirection').value = '';
                         document.getElementById('indexSearchPrice').value = '';
-                        
+
                         // Update filter tags without redirecting when clearing
                         indexApplyFilters(false);
                     });
                 }
-                
+
                 // Initialize price range modal
                 initIndexPriceRangeModal();
                 updateIndexFilterGroupsByPropertyType();
             }
-            
+
             // Apply filters (optionally redirects to properties page with filters)
             function indexApplyFilters(shouldRedirect = false) {
                 // Update filter tags first
                 indexUpdateFilterTags();
-                
+
                 // Only redirect if explicitly requested (e.g., form submission, search button click)
                 if (shouldRedirect) {
                     const params = new URLSearchParams();
-                    
+
                     if (indexCurrentFilter !== 'all') {
                         params.set('status', indexCurrentFilter);
                     }
-                    
-                    
+
+
                     if (indexSelectedPropertyType) {
                         params.set('type', indexSelectedPropertyType);
                     }
-                    
+
                     if (indexSelectedCategory && !indexSelectedPropertyType) {
                         params.set('category', indexSelectedCategory);
                     }
-                    
+
                     const city = document.getElementById('indexSearchCity')?.value.trim() || '';
                     if (city) params.set('city', city);
-                    
+
                     const area = document.getElementById('indexSearchArea')?.value.trim() || '';
                     if (area) params.set('area', area);
-                    
+
                     const amenities = document.getElementById('indexSearchAmenities')?.value.trim() || '';
                     if (amenities) params.set('amenities', amenities);
-                    
+
                     const direction = document.getElementById('indexSearchDirection')?.value.trim() || '';
                     if (direction) params.set('direction', direction);
-                    
+
                     const price = document.getElementById('indexSearchPrice')?.value || '';
                     if (price) params.set('price', price);
-                    
+
                     if (indexSelectedCondition) {
                         params.set('condition', indexSelectedCondition);
                     }
-                    
+
                     if (indexSelectedBHK !== null) {
                         params.set('bhk', indexSelectedBHK);
                     }
-                    
+
                     // Redirect to properties page with filters
                     const queryString = params.toString();
                     if (queryString) {
@@ -2402,16 +2768,16 @@ h6{font-size:22px}
                     }
                 }
             }
-            
+
             // Update filter tags display
             function indexUpdateFilterTags() {
                 const filterTagsContainer = document.getElementById('indexFilterTagsContainer');
                 const filterTags = document.getElementById('indexFilterTags');
-                
+
                 if (!filterTagsContainer || !filterTags) return;
-                
+
                 const activeFilters = [];
-                
+
                 if (indexCurrentFilter !== 'all') {
                     activeFilters.push({
                         type: 'status',
@@ -2420,7 +2786,7 @@ h6{font-size:22px}
                         value: indexCurrentFilter
                     });
                 }
-                
+
                 if (indexSelectedCondition) {
                     activeFilters.push({
                         type: 'condition',
@@ -2429,7 +2795,7 @@ h6{font-size:22px}
                         value: indexSelectedCondition
                     });
                 }
-                
+
                 if (indexSelectedBHK !== null) {
                     const unitTypeSelect = document.getElementById('indexSearchUnitType');
                     const selectedOption = unitTypeSelect?.options[unitTypeSelect.selectedIndex];
@@ -2449,7 +2815,7 @@ h6{font-size:22px}
                         value: indexSelectedBHK.toString()
                     });
                 }
-                
+
                 if (indexSelectedPropertyType) {
                     const typeLabels = {
                         'plots': 'Plots',
@@ -2461,8 +2827,8 @@ h6{font-size:22px}
                         'villa': 'Villas',
                         'row-house': 'Row Houses'
                     };
-                    const categoryLabel = indexSelectedCategory === 'residential' ? 'Residential' : 
-                                         indexSelectedCategory === 'commercial' ? 'Commercial' : '';
+                    const categoryLabel = indexSelectedCategory === 'residential' ? 'Residential' :
+                        indexSelectedCategory === 'commercial' ? 'Commercial' : '';
                     const typeLabel = typeLabels[indexSelectedPropertyType] || indexSelectedPropertyType;
                     activeFilters.push({
                         type: 'propertyType',
@@ -2478,7 +2844,7 @@ h6{font-size:22px}
                         value: indexSelectedCategory
                     });
                 }
-                
+
                 const city = document.getElementById('indexSearchCity')?.value.trim() || '';
                 if (city) {
                     activeFilters.push({
@@ -2488,7 +2854,7 @@ h6{font-size:22px}
                         value: city
                     });
                 }
-                
+
                 const area = document.getElementById('indexSearchArea')?.value.trim() || '';
                 if (area) {
                     activeFilters.push({
@@ -2498,7 +2864,7 @@ h6{font-size:22px}
                         value: area
                     });
                 }
-                
+
                 const direction = document.getElementById('indexSearchDirection')?.value.trim() || '';
                 if (direction) {
                     const directionLabels = { east: 'East', west: 'West', north: 'North', south: 'South', northeast: 'North East', northwest: 'North West', southeast: 'South East', southwest: 'South West' };
@@ -2509,7 +2875,7 @@ h6{font-size:22px}
                         value: direction
                     });
                 }
-                
+
                 const price = document.getElementById('indexSearchPrice')?.value || '';
                 if (price) {
                     activeFilters.push({
@@ -2519,7 +2885,7 @@ h6{font-size:22px}
                         value: price
                     });
                 }
-                
+
                 const amenities = document.getElementById('indexSearchAmenities')?.value.trim() || '';
                 if (amenities) {
                     activeFilters.push({
@@ -2529,7 +2895,7 @@ h6{font-size:22px}
                         value: amenities
                     });
                 }
-                
+
                 if (activeFilters.length > 0) {
                     filterTags.innerHTML = activeFilters.map(filter => `
                         <div class="filter-tag" data-filter-type="${filter.type}" data-filter-value="${filter.value || ''}">
@@ -2541,7 +2907,7 @@ h6{font-size:22px}
                         </div>
                     `).join('');
                     filterTagsContainer.style.display = 'block';
-                    
+
                     // Add event listeners to remove buttons
                     filterTags.querySelectorAll('.filter-tag-remove').forEach(btn => {
                         btn.addEventListener('click', (e) => {
@@ -2555,10 +2921,10 @@ h6{font-size:22px}
                     filterTags.innerHTML = '';
                 }
             }
-            
+
             // Remove Filter
             function indexRemoveFilter(filterType) {
-                switch(filterType) {
+                switch (filterType) {
                     case 'status':
                         indexCurrentFilter = 'all';
                         const transactionTypeSelect = document.getElementById('indexSearchTransactionType');
@@ -2616,7 +2982,7 @@ h6{font-size:22px}
                 // Update filter tags without redirecting
                 indexApplyFilters(false);
             }
-            
+
             // Initialize Price Range Modal for Index Page
             function initIndexPriceRangeModal() {
                 const priceRangeBtn = document.getElementById('indexPriceRangeBtn');
@@ -2634,20 +3000,20 @@ h6{font-size:22px}
                 const priceRangeBtnClear = document.getElementById('indexPriceRangeBtnClear');
                 const priceRangeBtnApply = document.getElementById('indexPriceRangeBtnApply');
                 const searchPriceInput = document.getElementById('indexSearchPrice');
-                
+
                 if (!priceRangeBtn || !priceRangeModal) return;
-                
+
                 let minValue = 0;
                 let maxValue = 100;
-                
+
                 function crToPrice(cr) {
                     return cr * 10000000;
                 }
-                
+
                 function priceToCr(price) {
                     return price / 10000000;
                 }
-                
+
                 function formatPriceDisplay(minCr, maxCr) {
                     if (minCr === 0 && maxCr === 100) {
                         return 'Any Price';
@@ -2657,7 +3023,7 @@ h6{font-size:22px}
                     }
                     return `₹${minCr > 0 ? minCr.toFixed(1) : '0'} Cr - ₹${maxCr.toFixed(1)} Cr`;
                 }
-                
+
                 function updateProgress() {
                     const minPercent = (minValue / 100) * 100;
                     const maxPercent = (maxValue / 100) * 100;
@@ -2666,7 +3032,7 @@ h6{font-size:22px}
                         priceRangeProgress.style.right = (100 - maxPercent) + '%';
                     }
                 }
-                
+
                 function updateLabels() {
                     if (priceRangeLabelMin) {
                         priceRangeLabelMin.textContent = minValue === 0 ? '₹0' : `₹${minValue.toFixed(1)} Cr`;
@@ -2675,21 +3041,21 @@ h6{font-size:22px}
                         priceRangeLabelMax.textContent = maxValue >= 100 ? '₹100+ Cr' : `₹${maxValue.toFixed(1)} Cr`;
                     }
                 }
-                
+
                 function updateSliderFromInput() {
                     if (priceRangeMin) priceRangeMin.value = minValue;
                     if (priceRangeMax) priceRangeMax.value = maxValue;
                     updateProgress();
                     updateLabels();
                 }
-                
+
                 function updateInputFromSlider() {
                     if (priceRangeMinInput) priceRangeMinInput.value = minValue;
                     if (priceRangeMaxInput) priceRangeMaxInput.value = maxValue;
                     updateProgress();
                     updateLabels();
                 }
-                
+
                 function validateRange() {
                     if (minValue > maxValue) {
                         const temp = minValue;
@@ -2699,27 +3065,27 @@ h6{font-size:22px}
                     if (minValue < 0) minValue = 0;
                     if (maxValue > 100) maxValue = 100;
                 }
-                
+
                 function openModal() {
                     if (priceRangeModal) {
                         priceRangeModal.classList.add('active');
                         document.body.style.overflow = 'hidden';
                     }
                 }
-                
+
                 function closeModal() {
                     if (priceRangeModal) {
                         priceRangeModal.classList.remove('active');
                         document.body.style.overflow = '';
                     }
                 }
-                
+
                 function applyPriceRange() {
                     validateRange();
                     const minPrice = crToPrice(minValue);
                     const maxPrice = maxValue >= 100 ? '' : crToPrice(maxValue);
                     const priceValue = maxPrice === '' ? `${minPrice}-` : `${minPrice}-${maxPrice}`;
-                    
+
                     if (searchPriceInput) {
                         if (minValue === 0 && maxValue >= 100) {
                             searchPriceInput.value = '';
@@ -2727,15 +3093,15 @@ h6{font-size:22px}
                             searchPriceInput.value = priceValue;
                         }
                     }
-                    
+
                     if (priceRangeDisplay) {
                         priceRangeDisplay.textContent = formatPriceDisplay(minValue, maxValue);
                     }
-                    
+
                     closeModal();
                     indexUpdateFilterTags();
                 }
-                
+
                 function clearPriceRange() {
                     minValue = 0;
                     maxValue = 100;
@@ -2749,25 +3115,25 @@ h6{font-size:22px}
                     closeModal();
                     indexUpdateFilterTags();
                 }
-                
+
                 if (priceRangeBtn) {
                     priceRangeBtn.addEventListener('click', openModal);
                 }
-                
+
                 if (priceRangeModalOverlay) {
                     priceRangeModalOverlay.addEventListener('click', closeModal);
                 }
-                
+
                 if (priceRangeModalClose) {
                     priceRangeModalClose.addEventListener('click', closeModal);
                 }
-                
+
                 document.addEventListener('keydown', (e) => {
                     if (e.key === 'Escape' && priceRangeModal && priceRangeModal.classList.contains('active')) {
                         closeModal();
                     }
                 });
-                
+
                 if (priceRangeMin) {
                     priceRangeMin.addEventListener('input', (e) => {
                         minValue = parseFloat(e.target.value);
@@ -2775,7 +3141,7 @@ h6{font-size:22px}
                         updateInputFromSlider();
                     });
                 }
-                
+
                 if (priceRangeMax) {
                     priceRangeMax.addEventListener('input', (e) => {
                         maxValue = parseFloat(e.target.value);
@@ -2783,7 +3149,7 @@ h6{font-size:22px}
                         updateInputFromSlider();
                     });
                 }
-                
+
                 if (priceRangeMinInput) {
                     priceRangeMinInput.addEventListener('input', (e) => {
                         minValue = parseFloat(e.target.value) || 0;
@@ -2791,7 +3157,7 @@ h6{font-size:22px}
                         updateSliderFromInput();
                     });
                 }
-                
+
                 if (priceRangeMaxInput) {
                     priceRangeMaxInput.addEventListener('input', (e) => {
                         maxValue = parseFloat(e.target.value) || 100;
@@ -2799,19 +3165,19 @@ h6{font-size:22px}
                         updateSliderFromInput();
                     });
                 }
-                
+
                 if (priceRangeBtnClear) {
                     priceRangeBtnClear.addEventListener('click', clearPriceRange);
                 }
-                
+
                 if (priceRangeBtnApply) {
                     priceRangeBtnApply.addEventListener('click', applyPriceRange);
                 }
-                
+
                 updateProgress();
                 updateLabels();
             }
-            
+
             // Initialize on DOM ready
             if (document.readyState === 'loading') {
                 document.addEventListener('DOMContentLoaded', initIndexFilters);
@@ -2822,7 +3188,7 @@ h6{font-size:22px}
     </script>
     <script>
         // Suppress browser extension errors that are not related to our code
-        window.addEventListener('error', function(event) {
+        window.addEventListener('error', function (event) {
             // Suppress common browser extension errors
             if (event.message && (
                 event.message.includes('message channel closed') ||
@@ -2836,9 +3202,9 @@ h6{font-size:22px}
                 return false;
             }
         }, true);
-        
+
         // Suppress unhandled promise rejections from browser extensions
-        window.addEventListener('unhandledrejection', function(event) {
+        window.addEventListener('unhandledrejection', function (event) {
             if (event.reason && typeof event.reason === 'object' && event.reason.message) {
                 const message = event.reason.message;
                 if (message.includes('message channel closed') ||
@@ -2862,5 +3228,9 @@ h6{font-size:22px}
             }
         });
     </script>
+    <script>
+        document.documentElement.classList.add('loaded');
+    </script>
 </body>
+
 </html>

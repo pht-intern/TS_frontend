@@ -190,7 +190,7 @@ if (navToggle && navMenu) {
         const isActive = navMenu.classList.contains('active');
         navMenu.classList.toggle('active');
         navToggle.classList.toggle('active');
-        
+
         // Prevent body scroll when menu is open on mobile
         const navbar = document.querySelector('.navbar');
         if (window.innerWidth <= 768) {
@@ -203,12 +203,12 @@ if (navToggle && navMenu) {
             }
         }
     };
-    
+
     navToggle.addEventListener('click', (e) => {
         e.stopPropagation();
         toggleMenu();
     });
-    
+
     // Close menu when clicking outside (on document or overlay)
     document.addEventListener('click', (e) => {
         if (window.innerWidth <= 768 && navMenu.classList.contains('active')) {
@@ -222,7 +222,7 @@ if (navToggle && navMenu) {
             }
         }
     });
-    
+
     // Close menu when clicking on overlay (navbar::after)
     const navbar = document.querySelector('.navbar');
     if (navbar) {
@@ -231,7 +231,7 @@ if (navToggle && navMenu) {
             if (window.innerWidth <= 768 && navMenu.classList.contains('active')) {
                 // If clicking on the overlay area (not on menu or toggle)
                 const clickedElement = e.target;
-                if (clickedElement === navbar || 
+                if (clickedElement === navbar ||
                     (clickedElement.classList && clickedElement.classList.contains('navbar'))) {
                     navMenu.classList.remove('active');
                     navToggle.classList.remove('active');
@@ -241,7 +241,7 @@ if (navToggle && navMenu) {
             }
         });
     }
-    
+
     // Prevent menu from closing when clicking inside it
     navMenu.addEventListener('click', (e) => {
         e.stopPropagation();
@@ -255,7 +255,7 @@ if (navToggle && navMenu) {
             document.body.classList.remove('menu-open');
         });
     });
-    
+
     // Close menu on window resize if it becomes desktop size (throttled for performance)
     let resizeThrottleTimeout = null;
     window.addEventListener('resize', () => {
@@ -278,7 +278,7 @@ if (navToggle && navMenu) {
 // Dropdown menu toggle for mobile
 document.addEventListener('DOMContentLoaded', () => {
     const dropdownToggles = document.querySelectorAll('.dropdown-toggle');
-    
+
     dropdownToggles.forEach(toggle => {
         toggle.addEventListener('click', (e) => {
             // Only prevent default on mobile
@@ -289,7 +289,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     });
-    
+
     // Close dropdown when clicking outside
     document.addEventListener('click', (e) => {
         if (!e.target.closest('.nav-dropdown')) {
@@ -304,17 +304,17 @@ document.addEventListener('DOMContentLoaded', () => {
 document.querySelectorAll('a[href^="#"]').forEach(anchor => {
     anchor.addEventListener('click', function (e) {
         const href = this.getAttribute('href');
-        
+
         // Skip #contact links - they are handled by page-specific code to open modals
         if (href === '#contact') {
             return; // Let the page-specific handler take over
         }
-        
+
         // Ensure href is a valid CSS selector (starts with # and is not a URL path)
         if (!href || !href.startsWith('#') || href.includes('.html') || href.includes('?')) {
             return; // Not an anchor link, let browser handle navigation
         }
-        
+
         // Additional validation: ensure it's a valid CSS selector
         try {
             e.preventDefault();
@@ -334,24 +334,31 @@ document.querySelectorAll('a[href^="#"]').forEach(anchor => {
 });
 
 // Hero Slider
-let currentSlide = 0;
-const slides = document.querySelectorAll('.hero-slide');
+(function initHeroSlider() {
+    const slides = document.querySelectorAll('.hero-slide');
+    const sliderTrack = document.getElementById('heroSliderTrack');
 
-function showSlide(index) {
-    slides.forEach((slide, i) => {
-        slide.classList.toggle('active', i === index);
-    });
-}
+    if (slides.length === 0 || !sliderTrack) return;
 
-function nextSlide() {
-    currentSlide = (currentSlide + 1) % slides.length;
-    showSlide(currentSlide);
-}
+    let currentSlide = 0;
 
-// Auto-advance slides
-if (slides.length > 0) {
-    setInterval(nextSlide, 5000);
-}
+    function showHeroSlide(index) {
+        slides.forEach((slide, i) => {
+            slide.classList.toggle('active', i === index);
+        });
+    }
+
+    function nextHeroSlide() {
+        currentSlide = (currentSlide + 1) % slides.length;
+        showHeroSlide(currentSlide);
+    }
+
+    // Auto-advance slides every 5 seconds
+    setInterval(nextHeroSlide, 5000);
+
+    // Initial call
+    showHeroSlide(0);
+})();
 
 // Search Tabs
 const searchTabs = document.querySelectorAll('.search-tab');
@@ -416,28 +423,28 @@ function renderProperties(propertiesToRender = properties) {
                 e.stopPropagation();
                 const propertyId = btn.getAttribute('data-property-id');
                 if (!propertyId || propertyId === '0') return;
-                
+
                 // Create the property URL
                 const propertyUrl = `${window.location.origin}/property-details.html?id=${propertyId}`;
-                
+
                 try {
                     // Copy to clipboard using Clipboard API
                     await navigator.clipboard.writeText(propertyUrl);
-                    
+
                     // Show success feedback
                     const icon = btn.querySelector('i');
                     const originalClass = icon.className;
                     icon.className = 'fas fa-check';
                     icon.style.color = '#4caf50';
                     btn.title = 'Link copied!';
-                    
+
                     // Reset after 2 seconds
                     setTimeout(() => {
                         icon.className = originalClass;
                         icon.style.color = '';
                         btn.title = 'Share';
                     }, 2000);
-                    
+
                     // Show toast notification
                     if (typeof showToastNotification === 'function') {
                         showToastNotification('Property link copied to clipboard!');
@@ -454,20 +461,20 @@ function renderProperties(propertiesToRender = properties) {
                         textArea.select();
                         document.execCommand('copy');
                         document.body.removeChild(textArea);
-                        
+
                         // Show success feedback
                         const icon = btn.querySelector('i');
                         const originalClass = icon.className;
                         icon.className = 'fas fa-check';
                         icon.style.color = '#4caf50';
                         btn.title = 'Link copied!';
-                        
+
                         setTimeout(() => {
                             icon.className = originalClass;
                             icon.style.color = '';
                             btn.title = 'Share';
                         }, 2000);
-                        
+
                         if (typeof showToastNotification === 'function') {
                             showToastNotification('Property link copied to clipboard!');
                         }
@@ -488,7 +495,7 @@ function showToastNotification(message) {
     if (existingToast) {
         existingToast.remove();
     }
-    
+
     // Create toast element
     const toast = document.createElement('div');
     toast.className = 'toast-notification';
@@ -506,7 +513,7 @@ function showToastNotification(message) {
         font-weight: 500;
         animation: slideInRight 0.3s ease-out;
     `;
-    
+
     // Add animation
     const style = document.createElement('style');
     style.textContent = `
@@ -535,9 +542,9 @@ function showToastNotification(message) {
         style.setAttribute('data-toast-animations', 'true');
         document.head.appendChild(style);
     }
-    
+
     document.body.appendChild(toast);
-    
+
     // Remove after 3 seconds
     setTimeout(() => {
         toast.style.animation = 'slideOutRight 0.3s ease-out';
@@ -555,14 +562,14 @@ filterButtons.forEach(btn => {
     btn.addEventListener('click', () => {
         filterButtons.forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
-        
+
         const filter = btn.getAttribute('data-filter');
         let filtered = properties;
-        
+
         if (filter !== 'all') {
             filtered = properties.filter(p => p.type === filter);
         }
-        
+
         renderProperties(filtered);
     });
 });
@@ -573,7 +580,7 @@ async function loadPropertyTypeCounts() {
         // Add timeout to fetch request (10 seconds)
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 10000);
-        
+
         let response;
         try {
             response = await fetch('/api/stats/properties', {
@@ -596,7 +603,7 @@ async function loadPropertyTypeCounts() {
             }
             throw fetchError;
         }
-        
+
         // Check if response is ok
         if (!response.ok) {
             // Try to get error message from response
@@ -608,25 +615,25 @@ async function loadPropertyTypeCounts() {
             } catch {
                 errorMessage = text || errorMessage;
             }
-            
+
             // Log the error but don't throw - just use fallback values
             console.warn(`API returned error ${response.status}:`, errorMessage);
             throw new Error(`HTTP ${response.status}: ${errorMessage}`);
         }
-        
+
         const stats = await response.json();
-        
+
         // Validate stats structure
         if (!stats || typeof stats !== 'object') {
             throw new Error('Invalid statistics data');
         }
-        
+
         // Update each type card with the count
         const typeCards = document.querySelectorAll('.type-card');
         typeCards.forEach(card => {
             const type = card.getAttribute('data-type');
             const countElement = card.querySelector('.type-count');
-            
+
             if (countElement && stats.by_type && typeof stats.by_type === 'object' && stats.by_type[type] !== undefined) {
                 const count = parseInt(stats.by_type[type]) || 0;
                 countElement.textContent = `${count} ${count === 1 ? 'Property' : 'Properties'}`;
@@ -684,25 +691,25 @@ const searchForm = document.getElementById('searchForm');
 if (searchForm) {
     searchForm.addEventListener('submit', (e) => {
         e.preventDefault();
-        
+
         const location = document.getElementById('location').value.toLowerCase();
         const propertyType = document.getElementById('propertyType').value;
         const bedrooms = document.getElementById('bedrooms').value;
         const priceRange = document.getElementById('priceRange').value;
-        
+
         let filtered = properties;
-        
+
         if (location) {
-            filtered = filtered.filter(p => 
-                p.location.toLowerCase().includes(location) || 
+            filtered = filtered.filter(p =>
+                p.location.toLowerCase().includes(location) ||
                 p.title.toLowerCase().includes(location)
             );
         }
-        
+
         if (propertyType) {
             filtered = filtered.filter(p => p.type === propertyType);
         }
-        
+
         if (bedrooms) {
             const beds = parseInt(bedrooms);
             filtered = filtered.filter(p => {
@@ -712,7 +719,7 @@ if (searchForm) {
                 return p.bedrooms === beds;
             });
         }
-        
+
         if (priceRange) {
             const [min, max] = priceRange.split('-').map(v => v === '' ? Infinity : parseInt(v));
             filtered = filtered.filter(p => {
@@ -722,7 +729,7 @@ if (searchForm) {
                 return p.price >= min && p.price <= max;
             });
         }
-        
+
         renderProperties(filtered);
         document.getElementById('properties').scrollIntoView({ behavior: 'smooth' });
     });
@@ -732,17 +739,17 @@ if (searchForm) {
 function initContactForm() {
     const contactForm = document.getElementById('contactForm');
     if (!contactForm) return;
-    
+
     contactForm.addEventListener('submit', async (e) => {
         e.preventDefault();
-        
+
         const submitBtn = document.getElementById('contactSubmitBtn');
         const btnText = submitBtn?.querySelector('.btn-text');
         const btnLoader = submitBtn?.querySelector('.btn-loader');
         const messageDiv = document.getElementById('contactFormMessage');
-        
+
         if (!submitBtn) return;
-        
+
         // Get form values
         const formData = {
             name: document.getElementById('contactName').value.trim(),
@@ -751,26 +758,26 @@ function initContactForm() {
             message: document.getElementById('contactMessage').value.trim(),
             phone: document.getElementById('contactPhone').value.trim() || null
         };
-        
+
         // Validate required fields
         if (!formData.name || !formData.email || !formData.subject || !formData.message) {
             showContactMessage('Please fill in all required fields.', 'error');
             return;
         }
-        
+
         // Validate email format
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         if (!emailRegex.test(formData.email)) {
             showContactMessage('Please enter a valid email address.', 'error');
             return;
         }
-        
+
         // Show loading state
         submitBtn.disabled = true;
         if (btnText) btnText.style.display = 'none';
         if (btnLoader) btnLoader.style.display = 'inline';
         if (messageDiv) messageDiv.style.display = 'none';
-        
+
         try {
             const response = await fetch('/api/contact', {
                 method: 'POST',
@@ -779,7 +786,7 @@ function initContactForm() {
                 },
                 body: JSON.stringify(formData)
             });
-            
+
             if (!response.ok) {
                 const text = await response.text();
                 let errorMessage = 'Failed to send message. Please try again.';
@@ -792,7 +799,7 @@ function initContactForm() {
                 showContactMessage(errorMessage, 'error');
                 return;
             }
-            
+
             const data = await response.json();
             // Success
             showContactMessage('Thank you for your message! We will get back to you soon.', 'success');
@@ -823,14 +830,14 @@ window.initContactForm = initContactForm;
 function showContactMessage(message, type) {
     const messageDiv = document.getElementById('contactFormMessage');
     if (!messageDiv) return;
-    
+
     messageDiv.textContent = message;
     messageDiv.className = `form-message ${type}`;
     messageDiv.style.display = 'block';
-    
+
     // Scroll to message
     messageDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-    
+
     // Auto-hide success messages after 5 seconds
     if (type === 'success') {
         setTimeout(() => {
@@ -883,7 +890,7 @@ const statsObserver = new IntersectionObserver((entries) => {
 async function loadStatistics() {
     try {
         let stats = null;
-        
+
         try {
             const response = await fetch('/api/stats/frontend', {
                 headers: {
@@ -891,7 +898,7 @@ async function loadStatistics() {
                     'Content-Type': 'application/json'
                 }
             });
-            
+
             if (response.ok) {
                 try {
                     const data = await response.json();
@@ -924,7 +931,7 @@ async function loadStatistics() {
                 console.warn('Error fetching statistics:', fetchError);
             }
         }
-        
+
         // Use fetched stats or fallback to default values
         const finalStats = stats || {
             properties_listed: 0,
@@ -932,31 +939,31 @@ async function loadStatistics() {
             years_experience: 15,
             deals_closed: 0
         };
-        
+
         // Override with fixed values as requested
         finalStats.happy_clients = 45;
         finalStats.deals_closed = 20;
-        
+
         // Calculate years of experience dynamically (auto-increase each year)
         // Base year: 2010 (2026 - 2010 = 16 years)
         const currentYear = new Date().getFullYear();
         const baseYear = 2010;
         const calculatedYears = currentYear - baseYear;
         finalStats.years_experience = calculatedYears;
-        
+
         // Update each stat card with the fetched data
         const statCards = document.querySelectorAll('.stat-card');
         statCards.forEach(card => {
             const statType = card.getAttribute('data-stat');
             const statNumber = card.querySelector('.stat-number');
-            
+
             if (statType && statNumber && finalStats[statType] !== undefined) {
                 const value = parseInt(finalStats[statType]) || 0;
                 statNumber.setAttribute('data-target', value);
                 statNumber.textContent = '0';
             }
         });
-        
+
         // Set up observer after statistics are loaded
         statCards.forEach(stat => {
             statsObserver.observe(stat);
@@ -969,25 +976,25 @@ async function loadStatistics() {
         const currentYear = new Date().getFullYear();
         const baseYear = 2010;
         const calculatedYears = currentYear - baseYear;
-        
+
         const defaultStats = {
             properties_listed: 0,
             happy_clients: 45,
             years_experience: calculatedYears,
             deals_closed: 20
         };
-        
+
         const statCards = document.querySelectorAll('.stat-card');
         statCards.forEach(card => {
             const statType = card.getAttribute('data-stat');
             const statNumber = card.querySelector('.stat-number');
-            
+
             if (statType && statNumber && defaultStats[statType] !== undefined) {
                 statNumber.setAttribute('data-target', defaultStats[statType]);
                 statNumber.textContent = '0';
             }
         });
-        
+
         // Set up observer even if API fails
         statCards.forEach(stat => {
             statsObserver.observe(stat);
@@ -1028,7 +1035,7 @@ document.querySelectorAll('.type-card, .testimonial-card, .feature-item').forEac
 // Initialize Services Section - Fade in animation
 function initServicesSection() {
     const serviceCards = document.querySelectorAll('.service-card');
-    
+
     if (serviceCards.length > 0) {
         const cardsObserver = new IntersectionObserver((entries) => {
             entries.forEach((entry, index) => {
@@ -1040,7 +1047,7 @@ function initServicesSection() {
                 }
             });
         }, { threshold: 0.1 });
-        
+
         serviceCards.forEach(card => {
             card.style.opacity = '0';
             card.style.transform = 'translateY(30px)';
@@ -1056,19 +1063,19 @@ function initGlobalNavSearch() {
     const navSearchClear = document.getElementById('navSearchClear');
     const navSearchIcon = document.querySelector('.nav-search-icon');
     const isPropertiesPage = window.location.pathname.includes('properties.html');
-    
+
     if (!navSearchInput) return;
-    
+
     // Function to handle search
     function handleSearch() {
         const searchQuery = navSearchInput.value.trim();
-        
+
         if (!searchQuery) {
             // If empty, just focus the input
             navSearchInput.focus();
             return;
         }
-        
+
         // If on properties page, let properties.js handle it
         if (isPropertiesPage) {
             // Trigger the search by dispatching an input event
@@ -1083,7 +1090,7 @@ function initGlobalNavSearch() {
             window.location.href = `/properties.html?search=${encodeURIComponent(searchQuery)}`;
         }
     }
-    
+
     // Handle Enter key
     navSearchInput.addEventListener('keydown', (e) => {
         if (e.key === 'Enter') {
@@ -1091,7 +1098,7 @@ function initGlobalNavSearch() {
             handleSearch();
         }
     });
-    
+
     // Handle search icon click
     if (navSearchIcon) {
         navSearchIcon.addEventListener('click', (e) => {
@@ -1099,11 +1106,11 @@ function initGlobalNavSearch() {
             e.stopPropagation();
             handleSearch();
         });
-        
+
         // Make search icon clickable (cursor pointer)
         navSearchIcon.style.cursor = 'pointer';
     }
-    
+
     // Make search wrapper clickable to focus input (but don't trigger search)
     const navSearchWrapper = document.querySelector('.nav-search-wrapper');
     if (navSearchWrapper) {
@@ -1114,7 +1121,7 @@ function initGlobalNavSearch() {
             }
         });
     }
-    
+
     // Handle clear button
     if (navSearchClear) {
         navSearchClear.addEventListener('click', (e) => {
@@ -1123,13 +1130,13 @@ function initGlobalNavSearch() {
             navSearchInput.value = '';
             navSearchClear.style.display = 'none';
             navSearchInput.focus();
-            
+
             // If on properties page, apply filters to clear search
             if (isPropertiesPage && typeof applyFilters === 'function') {
                 applyFilters();
             }
         });
-        
+
         // Show/hide clear button based on input
         navSearchInput.addEventListener('input', () => {
             if (navSearchInput.value.trim()) {
@@ -1139,7 +1146,7 @@ function initGlobalNavSearch() {
             }
         });
     }
-    
+
 }
 
 // Initialize (run when DOM is ready; script.js may load after DOMContentLoaded on index)
@@ -1152,19 +1159,19 @@ function runScriptInit() {
 
     // Scroll-based animation for all sections (excluding services section)
     const sectionsToAnimate = document.querySelectorAll('section:not(.hero):not(.services-showcase)');
-    
+
     if (sectionsToAnimate.length > 0) {
         // Initially hide all sections
         sectionsToAnimate.forEach(section => {
             section.classList.add('section-coming-into-view');
         });
-        
+
         // Intersection Observer for scroll-triggered animations
         const observerOptions = {
             threshold: 0.15,
             rootMargin: '0px 0px -50px 0px'
         };
-        
+
         const sectionObserver = new IntersectionObserver((entries) => {
             entries.forEach(entry => {
                 if (entry.isIntersecting) {
@@ -1178,28 +1185,28 @@ function runScriptInit() {
                 }
             });
         }, observerOptions);
-        
+
         // Observe all sections
         sectionsToAnimate.forEach(section => {
             sectionObserver.observe(section);
         });
     }
-    
+
     // Individual service section animations (Investment, Management, Value Added) - DISABLED
     // const serviceSubsections = document.querySelectorAll('.service-investment, .service-management, .service-value');
-    
+
     // if (serviceSubsections.length > 0) {
     //     // Initially hide service subsections
     //     serviceSubsections.forEach(subsection => {
     //         subsection.classList.add('section-coming-into-view');
     //     });
-        
+
     //     // Intersection Observer for individual service sections
     //     const serviceObserverOptions = {
     //         threshold: 0.2,
     //         rootMargin: '0px 0px -100px 0px'
     //     };
-        
+
     //     const serviceSectionObserver = new IntersectionObserver((entries) => {
     //         entries.forEach(entry => {
     //             if (entry.isIntersecting) {
@@ -1211,7 +1218,7 @@ function runScriptInit() {
     //             }
     //         });
     //     }, serviceObserverOptions);
-        
+
     //     // Observe each service subsection
     //     serviceSubsections.forEach(subsection => {
     //         serviceSectionObserver.observe(subsection);
@@ -1227,40 +1234,40 @@ if (document.readyState === 'loading') {
 // ============================================
 // Hero Image Sliders - Automatic Rotation
 // ============================================
-(function() {
+(function () {
     'use strict';
-    
+
     const SLIDER_INTERVAL = 4000; // 4 seconds per image
-    
+
     /**
      * Initialize slider for a hero image section
      */
     function initHeroSlider(sliderContainer) {
         if (!sliderContainer) return;
-        
+
         const slides = sliderContainer.querySelectorAll('.hero-slide');
         if (slides.length === 0) return;
-        
+
         let currentIndex = 0;
-        
+
         // Set first slide as active
         slides[currentIndex].classList.add('active');
-        
+
         // Function to show next slide
         function showNextSlide() {
             // Remove active class from current slide
             slides[currentIndex].classList.remove('active');
-            
+
             // Move to next slide
             currentIndex = (currentIndex + 1) % slides.length;
-            
+
             // Add active class to new slide
             slides[currentIndex].classList.add('active');
         }
-        
+
         // Start automatic sliding
         let intervalId = setInterval(showNextSlide, SLIDER_INTERVAL);
-        
+
         // Pause on hover
         const section = sliderContainer.closest('.hero-image-section');
         if (section) {
@@ -1270,7 +1277,7 @@ if (document.readyState === 'loading') {
                     intervalId = null;
                 }
             });
-            
+
             section.addEventListener('mouseleave', () => {
                 // Restart interval
                 if (!intervalId) {
@@ -1279,7 +1286,7 @@ if (document.readyState === 'loading') {
             });
         }
     }
-    
+
     /**
      * Initialize all hero sliders
      */
@@ -1289,7 +1296,7 @@ if (document.readyState === 'loading') {
             initHeroSlider(slider);
         });
     }
-    
+
     // Initialize when DOM is ready
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', initAllHeroSliders);

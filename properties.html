@@ -1,16 +1,52 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Properties - Tirumakudalu Properties</title>
     <link rel="icon" type="image/webp" href="/images/TS_logo.webp">
     <link rel="stylesheet" href="/css/style.css">
+    <style>
+        html {
+            visibility: hidden;
+            overflow-x: hidden;
+            width: 100%;
+            max-width: 100%
+        }
+
+        html.loaded {
+            visibility: visible;
+        }
+
+        body {
+            font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            font-size: 18px;
+            line-height: 1.6;
+            color: #1a1a1a;
+            overflow-x: hidden;
+            width: 100%;
+            max-width: 100%;
+            box-sizing: border-box
+        }
+
+        .navbar {
+            min-height: 80px;
+        }
+
+        .properties-hero {
+            min-height: 300px;
+        }
+    </style>
     <!-- Google Fonts - Load with fallback, no preconnect to avoid connection issues -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:wght@400;600;700&display=swap" rel="stylesheet" onerror="this.onerror=null; this.href='';">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:wght@400;600;700&display=swap"
+        rel="stylesheet" onerror="this.onerror=null; this.href='';">
     <!-- Font Awesome - Load with fallback -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" onerror="this.onerror=null; this.remove();">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+        onerror="this.onerror=null; this.remove();">
 </head>
+
 <body>
     <!-- Top Bar -->
     <div class="top-bar">
@@ -18,7 +54,8 @@
             <div class="top-bar-content">
                 <div class="top-bar-left">
                     <a href="tel:+919741111756"><i class="fas fa-phone"></i> +91 97411 11756</a>
-                    <a href="mailto:info@tirumakudaluproperties.com"><i class="fas fa-envelope"></i> info@tirumakudaluproperties.com</a>
+                    <a href="mailto:info@tirumakudaluproperties.com"><i class="fas fa-envelope"></i>
+                        info@tirumakudaluproperties.com</a>
                 </div>
             </div>
         </div>
@@ -31,7 +68,8 @@
                 <div class="logo">
                     <a href="/index.html" class="logo-link">
                         <div class="logo-graphic">
-                            <img src="/images/TS_logo.webp" alt="Tirumakudalu Properties Logo" class="logo-img" loading="lazy">
+                            <img src="/images/TS_logo.webp" alt="Tirumakudalu Properties Logo" class="logo-img"
+                                loading="lazy">
                         </div>
                     </a>
                 </div>
@@ -43,13 +81,8 @@
                 <div class="nav-search">
                     <div class="nav-search-wrapper">
                         <i class="fas fa-search nav-search-icon"></i>
-                        <input 
-                            type="text" 
-                            id="navSearchInput" 
-                            class="nav-search-input" 
-                            placeholder="Search properties..."
-                            autocomplete="off"
-                        >
+                        <input type="text" id="navSearchInput" class="nav-search-input"
+                            placeholder="Search properties..." autocomplete="off">
                         <button type="button" class="nav-search-clear" id="navSearchClear" style="display: none;">
                             <i class="fas fa-times"></i>
                         </button>
@@ -83,171 +116,207 @@
     <!-- Properties Section -->
     <section class="properties-section">
         <div class="container">
-            <!-- Filters and Search -->
-            <div class="properties-filters" id="propertiesPropertiesFilters">
-                <!-- Category Filter with Subcategories -->
-                <div class="filter-section category-section-centered" id="propertiesCategorySection">
-                    <div class="category-main-buttons">
-                        <button type="button" class="category-text-button" data-category="residential" id="propertiesFilterResidential">Residential</button>
-                        <span class="category-divider">|</span>
-                        <button type="button" class="category-text-button" data-category="commercial" id="propertiesFilterCommercial">Commercial</button>
-                    </div>
-                    <div class="category-subcategories-container">
-                        <div class="subcategory-buttons" data-category="residential">
-                            <button type="button" class="filter-button subcategory-button" data-property-type="plots" data-parent-category="residential" id="propertiesFilterPlots">Plots</button>
-                            <button type="button" class="filter-button subcategory-button" data-property-type="apartment" data-parent-category="residential" id="propertiesFilterApartments">Apartments</button>
-                            <button type="button" class="filter-button subcategory-button" data-property-type="house" data-parent-category="residential" id="propertiesFilterIndividualHouse">Individual House</button>
-                            <button type="button" class="filter-button subcategory-button" data-property-type="villa" data-parent-category="residential" id="propertiesFilterVillas">Villas</button>
-                        </div>
-                        <div class="subcategory-buttons" data-category="commercial">
-                            <button type="button" class="filter-button subcategory-button" data-property-type="office-space" data-parent-category="commercial" id="propertiesFilterOfficeSpace">Office Space</button>
-                            <button type="button" class="filter-button subcategory-button" data-property-type="warehouse" data-parent-category="commercial" id="propertiesFilterWarehouse">Warehouse</button>
-                            <button type="button" class="filter-button subcategory-button" data-property-type="showrooms" data-parent-category="commercial" id="propertiesFilterShowrooms">Showrooms</button>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Advanced Search Form -->
-                <div class="properties-search">
-                    <form class="search-form" id="propertiesPropertiesSearchForm">
-                        <div class="filters-two-column">
-                            <!-- Left Column: Filter 1 - common + residential-only fields (per dashboard add-property modal) -->
-                            <div class="filter1">
-                                <div class="search-group filter-group" data-filter-for="common">
-                                    <label><i class="fas fa-map-marker-alt"></i> City</label>
-                                    <select id="propertiesSearchCity">
-                                        <option value="">Any City</option>
-                                    </select>
-                                </div>
-                                <div class="search-group filter-group" data-filter-for="common">
-                                    <label><i class="fas fa-map-marker-alt"></i> Area</label>
-                                    <select id="propertiesSearchArea">
-                                        <option value="">Any Area</option>
-                                    </select>
-                                </div>
-                                <div class="search-group filter-group" data-filter-for="residential">
-                                    <label><i class="fas fa-star"></i> Amenities</label>
-                                    <select id="propertiesSearchAmenities">
-                                        <option value="">Any Amenity</option>
-                                    </select>
-                                </div>
-                            </div>
-                            
-                            <!-- Right Column: Filter 2 -->
-                            <div class="filter2">
-                                <div class="search-group filter-group" data-filter-for="common">
-                                    <label><i class="fas fa-exchange-alt"></i> Transaction Type</label>
-                                    <select id="propertiesSearchTransactionType">
-                                        <option value="all">All Properties</option>
-                                        <option value="sale">Buy</option>
-                                        <option value="rent">Rent</option>
-                                    </select>
-                                </div>
-                                <div class="search-group filter-group" data-filter-for="common">
-                                    <label><i class="fas fa-check-circle"></i> Status</label>
-                                    <select id="propertiesSearchPropertyCondition">
-                                        <option value="">Any Status</option>
-                                        <option value="new">New</option>
-                                        <option value="resale">Resale</option>
-                                    </select>
-                                </div>
-                                <div class="search-group filter-group" data-filter-for="common">
-                                    <label><i class="fas fa-rupee-sign"></i> Price Range</label>
-                                    <button type="button" class="price-range-btn" id="propertiesPriceRangeBtn">
-                                        <span class="price-range-display" id="propertiesPriceRangeDisplay">Any Price</span>
-                                        <i class="fas fa-chevron-down"></i>
-                                    </button>
-                                    <input type="hidden" id="propertiesSearchPrice" value="">
-                                </div>
-                                <div class="search-group filter-group" data-filter-for="common">
-                                    <label><i class="fas fa-compass"></i> Direction</label>
-                                    <select id="propertiesSearchDirection">
-                                        <option value="">Any Direction</option>
-                                        <option value="east">East</option>
-                                        <option value="west">West</option>
-                                        <option value="north">North</option>
-                                        <option value="south">South</option>
-                                        <option value="northeast">North East</option>
-                                        <option value="northwest">North West</option>
-                                        <option value="southeast">South East</option>
-                                        <option value="southwest">South West</option>
-                                    </select>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <!-- Additional Details Row - residential (apartment, house, villa) + commercial (length/breadth/carpet); hidden for plots -->
-                        <div class="filter-additional-row">
-                            <div class="search-group filter-group" data-filter-for="residential">
-                                <label><i class="fas fa-home"></i> Unit Type</label>
-                                <select id="propertiesSearchUnitType">
-                                    <option value="">Any Unit Type</option>
-                                </select>
-                            </div>
-                            <div class="search-group filter-group" data-filter-for="residential commercial">
-                                <label><i class="fas fa-ruler"></i> Length</label>
-                                <input type="text" id="propertiesSearchLength" placeholder="Enter length (ft)">
-                            </div>
-                            <div class="search-group filter-group" data-filter-for="residential commercial">
-                                <label><i class="fas fa-ruler"></i> Breadth</label>
-                                <input type="text" id="propertiesSearchBreadth" placeholder="Enter breadth (ft)">
-                            </div>
-                            <div class="search-group filter-group" data-filter-for="residential commercial">
-                                <label><i class="fas fa-vector-square"></i> Carpet Area</label>
-                                <input type="text" id="propertiesSearchCarpetArea" placeholder="Enter carpet area (sq ft)">
-                            </div>
-                        </div>
-                        
-                        <div class="filter-button-center">
-                            <button type="submit" class="btn-search">
-                                <i class="fas fa-filter"></i>
-                                <span>Filter</span>
-                            </button>
-                        </div>
-                    </form>
-                </div>
-                
-                <!-- Active Filter Tags -->
-                <div class="filter-tags-container" id="propertiesFilterTagsContainer" style="display: none;">
-                    <div class="filter-tags-header">
-                        <span class="filter-tags-label">Active Filters:</span>
-                        <button type="button" class="clear-all-filters" id="propertiesClearAllFilters">
-                            <i class="fas fa-times-circle"></i> Clear All
+            <div class="properties-layout">
+                <!-- Sidebar Filters -->
+                <aside class="properties-sidebar">
+                    <div class="sidebar-header">
+                        <h3><i class="fas fa-filter"></i> Filters</h3>
+                        <button type="button" class="sidebar-toggle" id="sidebarToggle">
+                            <i class="fas fa-times"></i>
                         </button>
                     </div>
-                    <div class="filter-tags" id="propertiesFilterTags">
-                        <!-- Filter tags will be rendered here by JavaScript -->
+
+                    <div class="properties-filters" id="propertiesPropertiesFilters">
+                        <!-- Category Filter with Subcategories -->
+                        <div class="filter-section category-section-centered" id="propertiesCategorySection">
+                            <div class="category-main-buttons">
+                                <button type="button" class="category-text-button" data-category="residential"
+                                    id="propertiesFilterResidential">Residential</button>
+                                <span class="category-divider">|</span>
+                                <button type="button" class="category-text-button" data-category="commercial"
+                                    id="propertiesFilterCommercial">Commercial</button>
+                            </div>
+                            <div class="category-subcategories-container">
+                                <div class="subcategory-buttons" data-category="residential">
+                                    <button type="button" class="filter-button subcategory-button"
+                                        data-property-type="plots" data-parent-category="residential"
+                                        id="propertiesFilterPlots">Plots</button>
+                                    <button type="button" class="filter-button subcategory-button"
+                                        data-property-type="apartment" data-parent-category="residential"
+                                        id="propertiesFilterApartments">Apartments</button>
+                                    <button type="button" class="filter-button subcategory-button"
+                                        data-property-type="house" data-parent-category="residential"
+                                        id="propertiesFilterIndividualHouse">Individual House</button>
+                                    <button type="button" class="filter-button subcategory-button"
+                                        data-property-type="villa" data-parent-category="residential"
+                                        id="propertiesFilterVillas">Villas</button>
+                                </div>
+                                <div class="subcategory-buttons" data-category="commercial">
+                                    <button type="button" class="filter-button subcategory-button"
+                                        data-property-type="office-space" data-parent-category="commercial"
+                                        id="propertiesFilterOfficeSpace">Office Space</button>
+                                    <button type="button" class="filter-button subcategory-button"
+                                        data-property-type="warehouse" data-parent-category="commercial"
+                                        id="propertiesFilterWarehouse">Warehouse</button>
+                                    <button type="button" class="filter-button subcategory-button"
+                                        data-property-type="showrooms" data-parent-category="commercial"
+                                        id="propertiesFilterShowrooms">Showrooms</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Advanced Search Form -->
+                        <div class="properties-search">
+                            <form class="search-form" id="propertiesPropertiesSearchForm">
+                                <!-- Common Filters -->
+                                <div class="filter-group-sidebar">
+                                    <div class="search-group filter-group" data-filter-for="common">
+                                        <label><i class="fas fa-map-marker-alt"></i> City</label>
+                                        <select id="propertiesSearchCity">
+                                            <option value="">Any City</option>
+                                        </select>
+                                    </div>
+                                    <div class="search-group filter-group" data-filter-for="common">
+                                        <label><i class="fas fa-map-marker-alt"></i> Area</label>
+                                        <select id="propertiesSearchArea">
+                                            <option value="">Any Area</option>
+                                        </select>
+                                    </div>
+                                    <div class="search-group filter-group" data-filter-for="common">
+                                        <label><i class="fas fa-exchange-alt"></i> Transaction Type</label>
+                                        <select id="propertiesSearchTransactionType">
+                                            <option value="all">All Properties</option>
+                                            <option value="sale">Buy</option>
+                                            <option value="rent">Rent</option>
+                                        </select>
+                                    </div>
+                                    <div class="search-group filter-group" data-filter-for="common">
+                                        <label><i class="fas fa-check-circle"></i> Status</label>
+                                        <select id="propertiesSearchPropertyCondition">
+                                            <option value="">Any Status</option>
+                                            <option value="new">New</option>
+                                            <option value="resale">Resale</option>
+                                        </select>
+                                    </div>
+                                    <div class="search-group filter-group" data-filter-for="common">
+                                        <label>
+                                            <span class="currency-symbol">₹</span> Price Range
+                                        </label>
+
+                                        <button type="button" class="price-range-btn" id="propertiesPriceRangeBtn">
+                                            <span class="price-range-display" id="propertiesPriceRangeDisplay">Any
+                                                Price</span>
+                                            <i class="fas fa-chevron-down"></i>
+                                        </button>
+                                        <input type="hidden" id="propertiesSearchPrice" value="">
+                                    </div>
+                                    <div class="search-group filter-group" data-filter-for="common">
+                                        <label><i class="fas fa-compass"></i> Direction</label>
+                                        <select id="propertiesSearchDirection">
+                                            <option value="">Any Direction</option>
+                                            <option value="east">East</option>
+                                            <option value="west">West</option>
+                                            <option value="north">North</option>
+                                            <option value="south">South</option>
+                                            <option value="northeast">North East</option>
+                                            <option value="northwest">North West</option>
+                                            <option value="southeast">South East</option>
+                                            <option value="southwest">South West</option>
+                                        </select>
+                                    </div>
+                                    <div class="search-group filter-group" data-filter-for="residential">
+                                        <label><i class="fas fa-star"></i> Amenities</label>
+                                        <select id="propertiesSearchAmenities">
+                                            <option value="">Any Amenity</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <!-- Additional Details - residential (apartment, house, villa) + commercial (length/breadth/carpet); hidden for plots -->
+                                <div class="filter-additional-sidebar">
+                                    <div class="search-group filter-group" data-filter-for="residential">
+                                        <label><i class="fas fa-home"></i> Unit Type</label>
+                                        <select id="propertiesSearchUnitType">
+                                            <option value="">Any Unit Type</option>
+                                        </select>
+                                    </div>
+                                    <div class="search-group filter-group" data-filter-for="residential commercial">
+                                        <label><i class="fas fa-ruler"></i> Length</label>
+                                        <input type="text" id="propertiesSearchLength" placeholder="Enter length (ft)">
+                                    </div>
+                                    <div class="search-group filter-group" data-filter-for="residential commercial">
+                                        <label><i class="fas fa-ruler"></i> Breadth</label>
+                                        <input type="text" id="propertiesSearchBreadth"
+                                            placeholder="Enter breadth (ft)">
+                                    </div>
+                                    <div class="search-group filter-group" data-filter-for="residential commercial">
+                                        <label><i class="fas fa-vector-square"></i> Carpet Area</label>
+                                        <input type="text" id="propertiesSearchCarpetArea"
+                                            placeholder="Enter carpet area (sq ft)">
+                                    </div>
+                                </div>
+
+                                <div class="filter-button-center">
+                                    <button type="submit" class="btn-search">
+                                        <i class="fas fa-filter"></i>
+                                        <span>Apply Filters</span>
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+
+                        <!-- Active Filter Tags -->
+                        <div class="filter-tags-container" id="propertiesFilterTagsContainer" style="display: none;">
+                            <div class="filter-tags-header">
+                                <span class="filter-tags-label">Active:</span>
+                                <button type="button" class="clear-all-filters" id="propertiesClearAllFilters">
+                                    <i class="fas fa-times-circle"></i>
+                                </button>
+                            </div>
+                            <div class="filter-tags" id="propertiesFilterTags">
+                                <!-- Filter tags will be rendered here by JavaScript -->
+                            </div>
+                        </div>
+                    </div>
+                </aside>
+
+                <!-- Main Content Area -->
+                <div class="properties-main-content">
+                    <!-- Mobile Filter Toggle Button -->
+                    <button class="mobile-filter-toggle" id="mobileFilterToggle">
+                        <i class="fas fa-filter"></i>
+                        <span>Show Filters</span>
+                    </button>
+
+                    <!-- Loading State -->
+                    <div class="properties-loading" id="propertiesLoading" style="display: none;">
+                        <div class="loading-spinner">
+                            <i class="fas fa-spinner fa-spin"></i>
+                        </div>
+                        <p>Loading properties...</p>
+                    </div>
+
+                    <!-- Error State -->
+                    <div class="properties-error" id="propertiesError" style="display: none;">
+                        <i class="fas fa-spinner fa-spin"></i>
+                        <h3>Best Properties Being Selected</h3>
+                        <p>Best of the properties are being selected for you, please wait...</p>
+                        <button class="btn-retry" id="retryLoadBtn">Retry</button>
+                    </div>
+
+                    <!-- Properties Grid -->
+                    <div class="properties-grid" id="propertiesGrid">
+                        <!-- Properties will be rendered here by JavaScript -->
+                    </div>
+
+                    <!-- Load More Button -->
+                    <div class="properties-load-more">
+                        <button class="btn-load-more" id="loadMoreBtn">
+                            <span>Load More Properties</span>
+                            <i class="fas fa-arrow-down"></i>
+                        </button>
                     </div>
                 </div>
-            </div>
-
-            <!-- Loading State -->
-            <div class="properties-loading" id="propertiesLoading" style="display: none;">
-                <div class="loading-spinner">
-                    <i class="fas fa-spinner fa-spin"></i>
-                </div>
-                <p>Loading properties...</p>
-            </div>
-
-            <!-- Error State -->
-            <div class="properties-error" id="propertiesError" style="display: none;">
-                <i class="fas fa-spinner fa-spin"></i>
-                <h3>Best Properties Being Selected</h3>
-                <p>Best of the properties are being selected for you, please wait...</p>
-                <button class="btn-retry" id="retryLoadBtn">Retry</button>
-            </div>
-
-            <!-- Properties Grid -->
-            <div class="properties-grid" id="propertiesGrid">
-                <!-- Properties will be rendered here by JavaScript -->
-            </div>
-
-            <!-- Load More Button -->
-            <div class="properties-load-more">
-                <button class="btn-load-more" id="loadMoreBtn">
-                    <span>Load More Properties</span>
-                    <i class="fas fa-arrow-down"></i>
-                </button>
             </div>
         </div>
     </section>
@@ -271,18 +340,22 @@
                     <div class="price-range-slider-wrapper">
                         <div class="price-range-track" id="propertiesPriceRangeTrack">
                             <div class="price-range-progress" id="propertiesPriceRangeProgress"></div>
-                            <input type="range" class="price-range-input price-range-input-min" id="propertiesPriceRangeMin" min="0" max="100" value="0" step="0.1">
-                            <input type="range" class="price-range-input price-range-input-max" id="propertiesPriceRangeMax" min="0" max="100" value="100" step="0.1">
+                            <input type="range" class="price-range-input price-range-input-min"
+                                id="propertiesPriceRangeMin" min="0" max="100" value="0" step="0.1">
+                            <input type="range" class="price-range-input price-range-input-max"
+                                id="propertiesPriceRangeMax" min="0" max="100" value="100" step="0.1">
                         </div>
                     </div>
                     <div class="price-range-inputs">
                         <div class="price-range-input-group">
                             <label>Min Price (Cr)</label>
-                            <input type="number" class="price-range-number-input" id="propertiesPriceRangeMinInput" min="0" max="100" step="0.1" value="0">
+                            <input type="number" class="price-range-number-input" id="propertiesPriceRangeMinInput"
+                                min="0" max="100" step="0.1" value="0">
                         </div>
                         <div class="price-range-input-group">
                             <label>Max Price (Cr)</label>
-                            <input type="number" class="price-range-number-input" id="propertiesPriceRangeMaxInput" min="0" max="100" step="0.1" value="100">
+                            <input type="number" class="price-range-number-input" id="propertiesPriceRangeMaxInput"
+                                min="0" max="100" step="0.1" value="100">
                         </div>
                     </div>
                 </div>
@@ -307,61 +380,62 @@
                     <p>Have questions? We'd love to hear from you</p>
                 </div>
                 <div class="contact-content">
-                <div class="contact-info">
-                    <div class="contact-item">
-                        <div class="contact-icon">
-                            <i class="fas fa-map-marker-alt"></i>
+                    <div class="contact-info">
+                        <div class="contact-item">
+                            <div class="contact-icon">
+                                <i class="fas fa-map-marker-alt"></i>
+                            </div>
+                            <div>
+                                <h4>Address</h4>
+                                <p>78, SBM COLONY, 2ND CROSS, KONANAKUNTE<br>BANGALORE - 560062</p>
+                            </div>
                         </div>
-                        <div>
-                            <h4>Address</h4>
-                            <p>78, SBM COLONY, 2ND CROSS, KONANAKUNTE<br>BANGALORE - 560062</p>
+                        <div class="contact-item">
+                            <div class="contact-icon">
+                                <i class="fas fa-phone"></i>
+                            </div>
+                            <div>
+                                <h4>Phone</h4>
+                                <p>+91 97411 11756</p>
+                            </div>
+                        </div>
+                        <div class="contact-item">
+                            <div class="contact-icon">
+                                <i class="fas fa-envelope"></i>
+                            </div>
+                            <div>
+                                <h4>Email</h4>
+                                <p>info@tirumakudaluproperties.com</p>
+                            </div>
                         </div>
                     </div>
-                    <div class="contact-item">
-                        <div class="contact-icon">
-                            <i class="fas fa-phone"></i>
+                    <form class="contact-form" id="contactForm">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <input type="text" id="contactName" name="name" placeholder="Your Name" required>
+                            </div>
+                            <div class="form-group">
+                                <input type="email" id="contactEmail" name="email" placeholder="Your Email" required>
+                            </div>
                         </div>
-                        <div>
-                            <h4>Phone</h4>
-                            <p>+91 97411 11756</p>
-                        </div>
-                    </div>
-                    <div class="contact-item">
-                        <div class="contact-icon">
-                            <i class="fas fa-envelope"></i>
-                        </div>
-                        <div>
-                            <h4>Email</h4>
-                            <p>info@tirumakudaluproperties.com</p>
-                        </div>
-                    </div>
-                </div>
-                <form class="contact-form" id="contactForm">
-                    <div class="form-row">
                         <div class="form-group">
-                            <input type="text" id="contactName" name="name" placeholder="Your Name" required>
+                            <input type="text" id="contactSubject" name="subject" placeholder="Subject" required>
                         </div>
                         <div class="form-group">
-                            <input type="email" id="contactEmail" name="email" placeholder="Your Email" required>
+                            <textarea id="contactMessage" name="message" placeholder="Your Message" rows="5"
+                                required></textarea>
                         </div>
-                    </div>
-                    <div class="form-group">
-                        <input type="text" id="contactSubject" name="subject" placeholder="Subject" required>
-                    </div>
-                    <div class="form-group">
-                        <textarea id="contactMessage" name="message" placeholder="Your Message" rows="5" required></textarea>
-                    </div>
-                    <div class="form-group">
-                        <input type="tel" id="contactPhone" name="phone" placeholder="Phone Number (Optional)">
-                    </div>
-                    <div class="form-message" id="contactFormMessage" style="display: none;"></div>
-                    <button type="submit" class="btn btn-primary" id="contactSubmitBtn">
-                        <span class="btn-text">Send Message</span>
-                        <span class="btn-loader" style="display: none;">
-                            <i class="fas fa-spinner fa-spin"></i> Sending...
-                        </span>
-                    </button>
-                </form>
+                        <div class="form-group">
+                            <input type="tel" id="contactPhone" name="phone" placeholder="Phone Number (Optional)">
+                        </div>
+                        <div class="form-message" id="contactFormMessage" style="display: none;"></div>
+                        <button type="submit" class="btn btn-primary" id="contactSubmitBtn">
+                            <span class="btn-text">Send Message</span>
+                            <span class="btn-loader" style="display: none;">
+                                <i class="fas fa-spinner fa-spin"></i> Sending...
+                            </span>
+                        </button>
+                    </form>
                 </div>
             </div>
         </div>
@@ -387,7 +461,8 @@
                         <i class="fas fa-user"></i>
                         Full Name <span class="required">*</span>
                     </label>
-                    <input type="text" id="visitorFullName" name="full_name" placeholder="Enter your full name" required>
+                    <input type="text" id="visitorFullName" name="full_name" placeholder="Enter your full name"
+                        required>
                 </div>
                 <div class="form-group">
                     <label for="visitorEmail">
@@ -408,7 +483,8 @@
                         <i class="fas fa-search"></i>
                         What are you looking for?
                     </label>
-                    <textarea id="visitorLookingFor" name="looking_for" placeholder="E.g., 2BHK apartment for rent, investment property, etc." rows="3"></textarea>
+                    <textarea id="visitorLookingFor" name="looking_for"
+                        placeholder="E.g., 2BHK apartment for rent, investment property, etc." rows="3"></textarea>
                 </div>
                 <div class="visitor-form-message" id="visitorFormMessage" style="display: none;"></div>
                 <div class="visitor-form-footer">
@@ -451,7 +527,8 @@
                         Password
                     </label>
                     <div class="password-input-wrapper">
-                        <input type="password" id="loginPassword" name="password" placeholder="Enter your password" required>
+                        <input type="password" id="loginPassword" name="password" placeholder="Enter your password"
+                            required>
                         <button type="button" class="password-toggle" id="passwordToggle">
                             <i class="fas fa-eye"></i>
                         </button>
@@ -479,11 +556,13 @@
                     <div class="footer-logo">
                         <a href="/index.html" class="logo-link">
                             <div class="logo-graphic">
-                                <img src="/images/TS_Logo_White .png" alt="Tirumakudalu Properties Logo" width="300px" height="auto" style="margin-left: 150px;" loading="lazy">
+                                <img src="/images/TS_Logo_White .png" alt="Tirumakudalu Properties Logo" width="300px"
+                                    height="auto" style="margin-left: 150px;" loading="lazy">
                             </div>
                         </a>
                     </div>
-                    <p>Tirumakudalu Properties offers Property Management & Real Estate Services in and around Bangalore City.</p>
+                    <p>Tirumakudalu Properties offers Property Management & Real Estate Services in and around Bangalore
+                        City.</p>
                     <div class="social-links">
                         <a href="#"><i class="fab fa-facebook-f"></i></a>
                         <a href="#"><i class="fab fa-twitter"></i></a>
@@ -513,23 +592,74 @@
                         </li>
                         <li>
                             <i class="fas fa-map-marker-alt"></i>
-                            <span>#76, 2ND floor, 2ND CROSS, Mysore Bank Colony, JP nagar, 7th Phase, BANGALORE - 560078</span>
+                            <span>#76, 2ND floor, 2ND CROSS, Mysore Bank Colony, JP nagar, 7th Phase, BANGALORE -
+                                560078</span>
                         </li>
                     </ul>
                 </div>
             </div>
             <div class="footer-bottom">
-                <p>Copyright &copy; 2025 - Designed & Powered by <span class="footer-credit">Purple Hue Technosoft Pvt. Ltd.</span></p>
+                <p>Copyright &copy; 2025 - Designed & Powered by <span class="footer-credit">Purple Hue Technosoft Pvt.
+                        Ltd.</span></p>
             </div>
         </div>
     </footer>
 
     <script>
+        // Sidebar Toggle Functionality for Mobile
+        (function () {
+            'use strict';
+
+            const mobileFilterToggle = document.getElementById('mobileFilterToggle');
+            const sidebarToggle = document.getElementById('sidebarToggle');
+            const sidebar = document.querySelector('.properties-sidebar');
+
+            // Open sidebar
+            if (mobileFilterToggle) {
+                mobileFilterToggle.addEventListener('click', function () {
+                    if (sidebar) {
+                        sidebar.classList.add('active');
+                        document.body.style.overflow = 'hidden';
+                    }
+                });
+            }
+
+            // Close sidebar
+            if (sidebarToggle) {
+                sidebarToggle.addEventListener('click', function () {
+                    if (sidebar) {
+                        sidebar.classList.remove('active');
+                        document.body.style.overflow = '';
+                    }
+                });
+            }
+
+            // Close sidebar when clicking overlay (on mobile)
+            if (sidebar) {
+                sidebar.addEventListener('click', function (e) {
+                    if (e.target === sidebar && sidebar.classList.contains('active')) {
+                        sidebar.classList.remove('active');
+                        document.body.style.overflow = '';
+                    }
+                });
+            }
+
+            // Close sidebar on escape key
+            document.addEventListener('keydown', function (e) {
+                if (e.key === 'Escape' && sidebar && sidebar.classList.contains('active')) {
+                    sidebar.classList.remove('active');
+                    document.body.style.overflow = '';
+                }
+            });
+        })();
+    </script>
+
+    <script>
         // Properties Page Filters - Inline JavaScript Bridge (MUST RUN BEFORE properties.js)
         // Maps old ID references to new "properties" prefixed IDs for compatibility with properties.js
-        (function() {
+        (function () {
             'use strict';
-            
+
             // ID mapping: old ID -> new ID
             const idMap = {
                 'searchCity': 'propertiesSearchCity',
@@ -563,10 +693,10 @@
                 'priceRangeBtnClear': 'propertiesPriceRangeBtnClear',
                 'priceRangeBtnApply': 'propertiesPriceRangeBtnApply'
             };
-            
+
             // Patch getElementById to check for new IDs first
             const originalGetElementById = document.getElementById.bind(document);
-            document.getElementById = function(id) {
+            document.getElementById = function (id) {
                 // Check mapped ID first
                 if (idMap[id]) {
                     const mappedElement = originalGetElementById(idMap[id]);
@@ -575,20 +705,20 @@
                 // Fallback to original ID
                 return originalGetElementById(id);
             };
-            
+
             // Patch querySelector to use new IDs
             const originalQuerySelector = Element.prototype.querySelector;
-            Element.prototype.querySelector = function(selector) {
+            Element.prototype.querySelector = function (selector) {
                 if (selector === '.category-section-centered') {
                     const element = originalQuerySelector.call(this, '#propertiesCategorySection');
                     if (element) return element;
                 }
                 return originalQuerySelector.call(this, selector);
             };
-            
+
             // Patch querySelectorAll for category buttons (scope to properties filters)
             const originalQuerySelectorAll = Element.prototype.querySelectorAll;
-            Element.prototype.querySelectorAll = function(selector) {
+            Element.prototype.querySelectorAll = function (selector) {
                 // For category and subcategory buttons, scope to properties filters container
                 if (selector.includes('.category-text-button') || selector.includes('.subcategory-button')) {
                     const container = document.getElementById('propertiesPropertiesFilters');
@@ -608,7 +738,7 @@
     <script src="/js/login.js" defer></script>
     <script>
         // Call Us Button Functionality
-        (function() {
+        (function () {
             const callUsBtn = document.querySelector('.btn-call-us');
             const contactInfoModal = document.getElementById('contactInfoModal');
             const contactInfoModalClose = document.getElementById('contactInfoModalClose');
@@ -616,8 +746,8 @@
 
             // Detect if device is mobile
             function isMobileDevice() {
-                return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || 
-                       (window.matchMedia && window.matchMedia('(max-width: 768px)').matches);
+                return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
+                    (window.matchMedia && window.matchMedia('(max-width: 768px)').matches);
             }
 
             // Open modal
@@ -680,7 +810,7 @@
     </script>
     <script>
         // Visitor Modal Functionality - Triggered by filter button, then every 20 seconds if skipped
-        (function() {
+        (function () {
             const visitorModal = document.getElementById('visitorModal');
             const visitorForm = document.getElementById('visitorForm');
             const visitorFormMessage = document.getElementById('visitorFormMessage');
@@ -688,7 +818,7 @@
             let visitorModalInterval = null;
             /** When user clicked "View Details", store that URL; after form submit we redirect here */
             let pendingPropertyDetailsUrl = null;
-            
+
             // Storage keys
             const VISITOR_FORM_SUBMITTED_KEY = 'visitorFormSubmitted';
             const VISITOR_FORM_SKIPPED_KEY = 'visitorFormSkipped';
@@ -709,17 +839,17 @@
                     document.body.style.overflow = '';
                 }
             }
-            
+
             // Check if form was already submitted
             function isFormSubmitted() {
                 return sessionStorage.getItem(VISITOR_FORM_SUBMITTED_KEY) === 'true';
             }
-            
+
             // Check if form was skipped
             function isFormSkipped() {
                 return sessionStorage.getItem(VISITOR_FORM_SKIPPED_KEY) === 'true';
             }
-            
+
             // Mark form as submitted
             function markFormSubmitted() {
                 sessionStorage.setItem(VISITOR_FORM_SUBMITTED_KEY, 'true');
@@ -730,7 +860,7 @@
                     visitorModalInterval = null;
                 }
             }
-            
+
             // Mark form as skipped
             function markFormSkipped() {
                 sessionStorage.setItem(VISITOR_FORM_SKIPPED_KEY, 'true');
@@ -779,25 +909,25 @@
                 const submitHandler = async (e) => {
                     e.preventDefault();
                     e.stopImmediatePropagation();
-                    
+
                     // Prevent duplicate submissions
                     if (isSubmitting) {
                         console.log('Form submission already in progress, ignoring duplicate request');
                         return;
                     }
-                    
+
                     // Check if form was already submitted in this session
                     if (isFormSubmitted()) {
                         showVisitorMessage('Form has already been submitted.', 'error');
                         return;
                     }
-                    
+
                     isSubmitting = true;
-                    
+
                     const submitBtn = visitorForm.querySelector('.btn-visitor-submit');
                     const btnText = submitBtn.querySelector('.btn-text');
                     const btnLoader = submitBtn.querySelector('.btn-loader');
-                    
+
                     // Get form values
                     const formData = {
                         full_name: document.getElementById('visitorFullName').value.trim(),
@@ -805,14 +935,14 @@
                         phone: document.getElementById('visitorPhone').value.trim(),
                         looking_for: document.getElementById('visitorLookingFor').value.trim() || null
                     };
-                    
+
                     // Validate required fields
                     if (!formData.full_name || !formData.email || !formData.phone) {
                         showVisitorMessage('Please fill in all required fields.', 'error');
                         isSubmitting = false;
                         return;
                     }
-                    
+
                     // Validate email format
                     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
                     if (!emailRegex.test(formData.email)) {
@@ -820,13 +950,13 @@
                         isSubmitting = false;
                         return;
                     }
-                    
+
                     // Show loading state
                     submitBtn.disabled = true;
                     if (btnText) btnText.style.display = 'none';
                     if (btnLoader) btnLoader.style.display = 'inline';
                     if (visitorFormMessage) visitorFormMessage.style.display = 'none';
-                    
+
                     try {
                         const response = await fetch('/api/visitor-info', {
                             method: 'POST',
@@ -835,7 +965,7 @@
                             },
                             body: JSON.stringify(formData)
                         });
-                        
+
                         if (!response.ok) {
                             const text = await response.text();
                             let errorMessage = 'Failed to submit. Please try again.';
@@ -849,7 +979,7 @@
                             isSubmitting = false;
                             return;
                         }
-                        
+
                         const data = await response.json();
                         // Success - mark as submitted immediately to prevent duplicate submissions
                         markFormSubmitted();
@@ -876,7 +1006,7 @@
                         isSubmitting = false;
                     }
                 };
-                
+
                 // Remove any existing listener before adding new one
                 visitorForm.removeEventListener('submit', submitHandler);
                 visitorForm.addEventListener('submit', submitHandler);
@@ -885,11 +1015,11 @@
             // Helper function to show messages
             function showVisitorMessage(message, type) {
                 if (!visitorFormMessage) return;
-                
+
                 visitorFormMessage.textContent = message;
                 visitorFormMessage.className = `visitor-form-message ${type}`;
                 visitorFormMessage.style.display = 'block';
-                
+
                 // Scroll to message
                 visitorFormMessage.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
             }
@@ -900,7 +1030,7 @@
                 if (isFormSubmitted()) {
                     return;
                 }
-                
+
                 // Then show every 20 seconds
                 visitorModalInterval = setInterval(() => {
                     // Only show if modal is not already active and form wasn't submitted
@@ -917,14 +1047,14 @@
                     filterForm.addEventListener('submit', (e) => {
                         // Check if modal was already triggered by filter button
                         const alreadyTriggered = sessionStorage.getItem(VISITOR_MODAL_TRIGGERED_KEY) === 'true';
-                        
+
                         // Only show modal if:
                         // 1. It hasn't been triggered by filter button before
                         // 2. Form wasn't already submitted
                         if (!alreadyTriggered && !isFormSubmitted()) {
                             // Mark as triggered
                             sessionStorage.setItem(VISITOR_MODAL_TRIGGERED_KEY, 'true');
-                            
+
                             // Show modal after a short delay (let filter process first)
                             setTimeout(() => {
                                 showVisitorModal();
@@ -969,7 +1099,7 @@
                     initFilterButtonTrigger();
                     initViewDetailsTrigger();
                     showVisitorModalOnPageLoad();
-                    
+
                     // If form was skipped before, start the interval
                     if (isFormSkipped() && !isFormSubmitted()) {
                         startVisitorModalInterval();
@@ -979,7 +1109,7 @@
                 initFilterButtonTrigger();
                 initViewDetailsTrigger();
                 showVisitorModalOnPageLoad();
-                
+
                 // If form was skipped before, start the interval
                 if (isFormSkipped() && !isFormSubmitted()) {
                     startVisitorModalInterval();
@@ -996,7 +1126,7 @@
     </script>
     <script>
         // Suppress browser extension errors that are not related to our code
-        window.addEventListener('error', function(event) {
+        window.addEventListener('error', function (event) {
             // Suppress common browser extension errors
             if (event.message && (
                 event.message.includes('message channel closed') ||
@@ -1010,9 +1140,9 @@
                 return false;
             }
         }, true);
-        
+
         // Suppress unhandled promise rejections from browser extensions
-        window.addEventListener('unhandledrejection', function(event) {
+        window.addEventListener('unhandledrejection', function (event) {
             if (event.reason && typeof event.reason === 'object' && event.reason.message) {
                 const message = event.reason.message;
                 if (message.includes('message channel closed') ||
@@ -1036,5 +1166,10 @@
             }
         });
     </script>
+    <script>
+        // Make the page visible after it has loaded to prevent FOUC
+        document.documentElement.classList.add('loaded');
+    </script>
 </body>
+
 </html>

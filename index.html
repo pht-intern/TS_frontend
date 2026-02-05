@@ -734,7 +734,240 @@
     <hr>
 
 
+    <!-- Property Filter Section -->
+    <section class="property-search" id="indexPropertiesFilters">
+        <div class="container">
+            <div class="section-header">
+                <h2>Find Your Dream Property</h2>
+                <p>Search through our extensive collection of properties</p>
+            </div>
+
+            <div class="properties-filters">
+                <!-- Category Filter with Subcategories -->
+                <div class="filter-section category-section-centered" id="indexCategorySection">
+                    <div class="category-main-buttons">
+                        <button type="button" class="category-text-button" data-category="residential"
+                            id="indexFilterResidential">Residential</button>
+                        <span class="category-divider">|</span>
+                        <button type="button" class="category-text-button" data-category="commercial"
+                            id="indexFilterCommercial">Commercial</button>
+                    </div>
+                    <div class="category-subcategories-container">
+                        <div class="subcategory-buttons" data-category="residential" style="display: none;">
+                            <button type="button" class="filter-button subcategory-button" data-property-type="plots"
+                                data-parent-category="residential" id="indexFilterPlots">Plots</button>
+                            <button type="button" class="filter-button subcategory-button"
+                                data-property-type="apartment" data-parent-category="residential"
+                                id="indexFilterApartments">Apartments</button>
+                                                        <button type="button" class="filter-button subcategory-button" data-property-type="villa"
+                                data-parent-category="residential" id="indexFilterVillas">Villas</button>
+                        </div>
+                        <div class="subcategory-buttons" data-category="commercial" style="display: none;">
+                            <button type="button" class="filter-button subcategory-button"
+                                data-property-type="office-space" data-parent-category="commercial"
+                                id="indexFilterOfficeSpace">Office Space</button>
+                            <button type="button" class="filter-button subcategory-button"
+                                data-property-type="warehouse" data-parent-category="commercial"
+                                id="indexFilterWarehouse">Warehouse</button>
+                            <button type="button" class="filter-button subcategory-button"
+                                data-property-type="showrooms" data-parent-category="commercial"
+                                id="indexFilterShowrooms">Showrooms</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Advanced Search Form -->
+                <div class="properties-search">
+                    <form class="search-form" id="indexPropertiesSearchForm">
+                        <div class="search-row">
+                            <div class="search-group filter-group" data-filter-for="common">
+                                <label><i class="fas fa-map-marker-alt"></i> City</label>
+                                <input type="text" id="indexSearchCity" list="indexSearchCityList"
+                                    placeholder="Enter City">
+                                <datalist id="indexSearchCityList"></datalist>
+                            </div>
+                            <div class="search-group filter-group" data-filter-for="common">
+                                <label><i class="fas fa-map-marker-alt"></i> Area</label>
+                                <input type="text" id="indexSearchArea" list="indexSearchAreaList"
+                                    placeholder="Enter Area">
+                                <datalist id="indexSearchAreaList">
+                                    <option value="">Any Area</option>
+                                </datalist>
+                            </div>
+                            <div class="search-group filter-group" data-filter-for="common">
+                                <label><i class="fas fa-exchange-alt"></i> Transaction Type</label>
+                                <select id="indexSearchTransactionType">
+                                    <option value="all">All Properties</option>
+                                    <option value="sale">Buy</option>
+                                    <option value="rent">Rent</option>
+                                </select>
+                            </div>
+                            <div class="search-group filter-group" data-filter-for="common">
+                                <label><i class="fas fa-check-circle"></i> Status</label>
+                                <select id="indexSearchPropertyCondition">
+                                    <option value="">Any Status</option>
+                                    <option value="new">New</option>
+                                    <option value="resale">Resale</option>
+                                </select>
+                            </div>
+                            <div class="search-group filter-group" data-filter-for="common">
+                                <label>
+                                    <span class="currency-symbol">₹</span> Price Range
+                                </label>
+                                <button type="button" class="price-range-btn" id="indexPriceRangeBtn">
+                                    <span class="price-range-display" id="indexPriceRangeDisplay">Any Price</span>
+                                    <i class="fas fa-chevron-down"></i>
+                                </button>
+                                <input type="hidden" id="indexSearchPrice" value="">
+                            </div>
+                            <!-- Direction: Step 2 only in Apartments (add property modal) -->
+                            <div class="search-group filter-group" data-filter-for="apartment">
+                                <label><i class="fas fa-compass"></i> Direction</label>
+                                <select id="indexSearchDirection">
+                                    <option value="">Any Direction</option>
+                                    <option value="east">East</option>
+                                    <option value="west">West</option>
+                                    <option value="north">North</option>
+                                    <option value="south">South</option>
+                                    <option value="northeast">North East</option>
+                                    <option value="northwest">North West</option>
+                                    <option value="southeast">South East</option>
+                                    <option value="southwest">South West</option>
+                                </select>
+                            </div>
+                            <!-- Amenities: Step 2 in apartment, house, villa, office-space, showrooms, warehouse -->
+                            <div class="search-group filter-group" data-filter-for="apartment house villa office-space showrooms warehouse">
+                                <label><i class="fas fa-star"></i> Amenities</label>
+                                <select id="indexSearchAmenities">
+                                    <option value="">Any Amenity</option>
+                                </select>
+                            </div>
+                            <!-- Unit Type: Step 2 in apartment, house, villa -->
+                            <div class="search-group filter-group" data-filter-for="apartment house villa">
+                                <label><i class="fas fa-home"></i> Unit Type</label>
+                                <select id="indexSearchUnitType">
+                                    <option value="">Any Unit Type</option>
+                                </select>
+                            </div>
+                            <!-- Villa Type: Step 2 in villa -->
+                            <div class="search-group filter-group" data-filter-for="villa">
+                                <label><i class="fas fa-home"></i> Villa Type</label>
+                                <select id="indexSearchVillaType">
+                                    <option value="">Any Villa Type</option>
+                                    <option value="independent_villa">Independent Villa</option>
+                                    <option value="row_villa">Row Villa</option>
+                                    <option value="villament">Villament</option>
+                                </select>
+                            </div>
+                            <!-- Warehouse Type: Step 2 in warehouse -->
+                            <div class="search-group filter-group" data-filter-for="warehouse">
+                                <label><i class="fas fa-warehouse"></i> Warehouse Type</label>
+                                <select id="indexSearchWarehouseType">
+                                    <option value="">Any Type</option>
+                                    <option value="cold_storage">Cold storage</option>
+                                    <option value="industrial">Industrial</option>
+                                    <option value="logistic">Logistic</option>
+                                </select>
+                            </div>
+                            <!-- Plot Area: Step 2 in plots, villa, warehouse -->
+                            <div class="search-group filter-group" data-filter-for="plots villa warehouse">
+                                <label><i class="fas fa-ruler-combined"></i> Plot Area (sq.ft)</label>
+                                <input type="number" id="indexSearchPlotArea" placeholder="Min Plot Area">
+                            </div>
+                            <!-- Length/Breadth: Step 2 in plots, villa, house -->
+                            <div class="search-group filter-group" data-filter-for="plots villa house">
+                                <label><i class="fas fa-arrows-alt-h"></i> Length (ft)</label>
+                                <input type="number" id="indexSearchLength" placeholder="Length">
+                            </div>
+                            <div class="search-group filter-group" data-filter-for="plots villa house">
+                                <label><i class="fas fa-arrows-alt-v"></i> Breadth (ft)</label>
+                                <input type="number" id="indexSearchBreadth" placeholder="Breadth">
+                            </div>
+                            <!-- Super Builtup Area: Step 2 in apartment, office-space, showrooms, warehouse -->
+                            <div class="search-group filter-group" data-filter-for="apartment office-space showrooms warehouse">
+                                <label><i class="fas fa-ruler-combined"></i> Super Builtup Area (sq.ft)</label>
+                                <input type="number" id="indexSearchSuperBuildupArea" placeholder="Min Super Builtup">
+                            </div>
+                            <!-- Carpet Area: Step 2 in apartment, house, villa, office-space, showrooms, warehouse -->
+                            <div class="search-group filter-group"
+                                data-filter-for="apartment house villa office-space showrooms warehouse">
+                                <label><i class="fas fa-vector-square"></i> Carpet Area (sq.ft)</label>
+                                <input type="number" id="indexSearchCarpetArea" placeholder="Min Carpet Area">
+                            </div>
+                        </div>
+
+                        <div class="filter-button-center">
+                            <button type="submit" class="btn-search">
+                                <i class="fas fa-search"></i>
+                                <span>Filter</span>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Active Filter Tags -->
+                <div class="filter-tags-container" id="indexFilterTagsContainer" style="display: none;">
+                    <div class="filter-tags-header">
+                        <span class="filter-tags-label">Active:</span>
+                        <button type="button" class="clear-all-filters" id="indexClearAllFilters">
+                            <i class="fas fa-times-circle"></i>
+                        </button>
+                    </div>
+                    <div class="filter-tags" id="indexFilterTags">
+                        <!-- Filter tags will be rendered here by JavaScript -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
     <hr>
+
+    <!-- Index Price Range Modal (same structure as properties.html) -->
+    <div class="price-range-modal" id="indexPriceRangeModal">
+        <div class="price-range-modal-overlay" id="indexPriceRangeModalOverlay"></div>
+        <div class="price-range-modal-content">
+            <div class="price-range-modal-header">
+                <h3>Select Price Range</h3>
+                <button type="button" class="price-range-modal-close" id="indexPriceRangeModalClose">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="price-range-modal-body">
+                <div class="price-range-slider-container">
+                    <div class="price-range-labels">
+                        <span class="price-range-label-min" id="indexPriceRangeLabelMin">₹0</span>
+                        <span class="price-range-label-max" id="indexPriceRangeLabelMax">₹100+ Cr</span>
+                    </div>
+                    <div class="price-range-slider-wrapper">
+                        <div class="price-range-track" id="indexPriceRangeTrack">
+                            <div class="price-range-progress" id="indexPriceRangeProgress"></div>
+                            <input type="range" class="price-range-input price-range-input-min"
+                                id="indexPriceRangeMin" min="0" max="100" value="0" step="0.1">
+                            <input type="range" class="price-range-input price-range-input-max"
+                                id="indexPriceRangeMax" min="0" max="100" value="100" step="0.1">
+                        </div>
+                    </div>
+                    <div class="price-range-inputs">
+                        <div class="price-range-input-group">
+                            <label>Min Price (Cr)</label>
+                            <input type="number" class="price-range-number-input" id="indexPriceRangeMinInput"
+                                min="0" max="100" step="0.1" value="0">
+                        </div>
+                        <div class="price-range-input-group">
+                            <label>Max Price (Cr)</label>
+                            <input type="number" class="price-range-number-input" id="indexPriceRangeMaxInput"
+                                min="0" max="100" step="0.1" value="100">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="price-range-modal-footer">
+                <button type="button" class="price-range-btn-clear" id="indexPriceRangeBtnClear">Clear</button>
+                <button type="button" class="price-range-btn-apply" id="indexPriceRangeBtnApply">Apply</button>
+            </div>
+        </div>
+    </div>
     <!-- Property Types -->
     <section class="property-types">
         <div class="container">
@@ -2414,11 +2647,30 @@
                 const commercialTypes = ['office-space', 'warehouse', 'showrooms'];
                 container.querySelectorAll('.filter-group[data-filter-for]').forEach(el => {
                     const forStr = (el.getAttribute('data-filter-for') || '').trim();
+                    const targetTypes = forStr.split(/\s+/);
                     let show = false;
-                    if (forStr.includes('common')) show = true;
-                    else if (forStr.includes('residential') && forStr.includes('commercial')) show = !propertyType || residentialTypes.includes(propertyType) || commercialTypes.includes(propertyType);
-                    else if (forStr.includes('residential')) show = !propertyType || residentialTypes.includes(propertyType);
-                    else if (forStr.includes('commercial')) show = !propertyType || commercialTypes.includes(propertyType);
+
+                    // Always show common filters
+                    if (targetTypes.includes('common')) {
+                        show = true;
+                    }
+                    // If a property type is selected, check if this filter is applicable to it
+                    else if (propertyType) {
+                        if (targetTypes.includes(propertyType)) {
+                            show = true;
+                        }
+                    }
+                    // If no specific property type is selected, we can check category
+                    // For now, if no type matches, we hide the specific filters to keep UI clean
+                    // OR we could show them if they apply to major types in the category? 
+                    // Let's stick to showing only common unless a type is picked, 
+                    // or if the user selected a Category, maybe show fields that are common to ALL types in that category?
+                    // But that complicates things. The dashboard logic is type-specific.
+                    // Let's just default to hiding specific filters if no type is selected. (Cleanest UI)
+                    else {
+                        show = false;
+                    }
+
                     el.style.display = show ? '' : 'none';
                 });
             }
@@ -2428,6 +2680,16 @@
                 const categorySection = document.getElementById('indexCategorySection');
                 if (categorySection) {
                     categorySection.removeAttribute('data-active-category');
+                }
+
+                const indexFiltersRoot = document.getElementById('indexPropertiesFilters');
+                function updateIndexPropertiesSearchVisibility() {
+                    if (!indexFiltersRoot) return;
+                    if (indexSelectedPropertyType) {
+                        indexFiltersRoot.setAttribute('data-show-search', 'true');
+                    } else {
+                        indexFiltersRoot.removeAttribute('data-show-search');
+                    }
                 }
 
 
@@ -2607,6 +2869,7 @@
                         indexSelectedPropertyType = null;
                     }
                     updateIndexFilterGroupsByPropertyType();
+                    updateIndexPropertiesSearchVisibility();
                     // Update filter tags without redirecting
                     indexApplyFilters(false);
                 }
@@ -2645,6 +2908,7 @@
                             if (categorySection) categorySection.setAttribute('data-active-category', parentCategory);
                         }
                         updateIndexFilterGroupsByPropertyType();
+                        updateIndexPropertiesSearchVisibility();
                         // Update filter tags without redirecting
                         indexApplyFilters(false);
                     });
@@ -2697,12 +2961,20 @@
                         document.querySelectorAll('#indexPropertiesFilters .category-text-button').forEach(btn => btn.classList.remove('active'));
                         if (categorySection) categorySection.removeAttribute('data-active-category');
                         updateIndexFilterGroupsByPropertyType();
+                        updateIndexPropertiesSearchVisibility();
 
                         document.getElementById('indexSearchCity').value = '';
                         document.getElementById('indexSearchArea').value = '';
                         document.getElementById('indexSearchAmenities').value = '';
                         document.getElementById('indexSearchDirection').value = '';
                         document.getElementById('indexSearchPrice').value = '';
+                        document.getElementById('indexSearchLength').value = '';
+                        document.getElementById('indexSearchBreadth').value = '';
+                        document.getElementById('indexSearchPlotArea').value = '';
+                        document.getElementById('indexSearchCarpetArea').value = '';
+                        document.getElementById('indexSearchVillaType').value = '';
+                        document.getElementById('indexSearchWarehouseType').value = '';
+                        document.getElementById('indexSearchSuperBuildupArea').value = '';
 
                         // Update filter tags without redirecting when clearing
                         indexApplyFilters(false);
@@ -2712,6 +2984,7 @@
                 // Initialize price range modal
                 initIndexPriceRangeModal();
                 updateIndexFilterGroupsByPropertyType();
+                updateIndexPropertiesSearchVisibility();
             }
 
             // Apply filters (optionally redirects to properties page with filters)
@@ -2758,6 +3031,27 @@
                     if (indexSelectedBHK !== null) {
                         params.set('bhk', indexSelectedBHK);
                     }
+
+                    const length = document.getElementById('indexSearchLength')?.value.trim() || '';
+                    if (length) params.set('length', length);
+
+                    const breadth = document.getElementById('indexSearchBreadth')?.value.trim() || '';
+                    if (breadth) params.set('breadth', breadth);
+
+                    const plotArea = document.getElementById('indexSearchPlotArea')?.value.trim() || '';
+                    if (plotArea) params.set('plot_area', plotArea);
+
+                    const carpetArea = document.getElementById('indexSearchCarpetArea')?.value.trim() || '';
+                    if (carpetArea) params.set('carpet_area', carpetArea);
+
+                    const villaType = document.getElementById('indexSearchVillaType')?.value.trim() || '';
+                    if (villaType) params.set('villa_type', villaType);
+
+                    const warehouseType = document.getElementById('indexSearchWarehouseType')?.value.trim() || '';
+                    if (warehouseType) params.set('warehouse_type', warehouseType);
+
+                    const superBuildupArea = document.getElementById('indexSearchSuperBuildupArea')?.value.trim() || '';
+                    if (superBuildupArea) params.set('super_buildup_area', superBuildupArea);
 
                     // Redirect to properties page with filters
                     const queryString = params.toString();
@@ -2896,6 +3190,45 @@
                     });
                 }
 
+                const length = document.getElementById('indexSearchLength')?.value.trim() || '';
+                if (length) {
+                    activeFilters.push({
+                        type: 'length',
+                        label: `Length: ${length} ft`,
+                        icon: 'fa-arrows-alt-h',
+                        value: length
+                    });
+                }
+
+                const breadth = document.getElementById('indexSearchBreadth')?.value.trim() || '';
+                if (breadth) {
+                    activeFilters.push({
+                        type: 'breadth',
+                        label: `Breadth: ${breadth} ft`,
+                        icon: 'fa-arrows-alt-v',
+                        value: breadth
+                    });
+                }
+
+                const plotArea = document.getElementById('indexSearchPlotArea')?.value.trim() || '';
+                if (plotArea) {
+                    activeFilters.push({
+                        type: 'plot_area',
+                        label: `Plot Area: ${plotArea} sq.ft`,
+                        icon: 'fa-ruler-combined',
+                        value: plotArea
+                    });
+                }
+
+                const carpetArea = document.getElementById('indexSearchCarpetArea')?.value.trim() || '';
+                if (carpetArea) {
+                    activeFilters.push({
+                        type: 'carpet_area',
+                        label: `Carpet Area: ${carpetArea} sq.ft`,
+                        icon: 'fa-vector-square',
+                        value: carpetArea
+                    });
+                }
                 if (activeFilters.length > 0) {
                     filterTags.innerHTML = activeFilters.map(filter => `
                         <div class="filter-tag" data-filter-type="${filter.type}" data-filter-value="${filter.value || ''}">
@@ -2978,6 +3311,27 @@
                         const amenitiesSelect = document.getElementById('indexSearchAmenities');
                         if (amenitiesSelect) amenitiesSelect.value = '';
                         break;
+                    case 'length':
+                        const lengthInput = document.getElementById('indexSearchLength');
+                        if (lengthInput) lengthInput.value = '';
+                        break;
+                    case 'breadth':
+                        const breadthInput = document.getElementById('indexSearchBreadth');
+                        if (breadthInput) breadthInput.value = '';
+                        break;
+                    case 'plot_area':
+                        const plotAreaInput = document.getElementById('indexSearchPlotArea');
+                        if (plotAreaInput) plotAreaInput.value = '';
+                        break;
+                    case 'carpet_area':
+                        const carpetAreaInput = document.getElementById('indexSearchCarpetArea');
+                        if (carpetAreaInput) carpetAreaInput.value = '';
+                        break;
+                }
+                const indexFiltersRoot = document.getElementById('indexPropertiesFilters');
+                if (indexFiltersRoot) {
+                    if (indexSelectedPropertyType) indexFiltersRoot.setAttribute('data-show-search', 'true');
+                    else indexFiltersRoot.removeAttribute('data-show-search');
                 }
                 // Update filter tags without redirecting
                 indexApplyFilters(false);
@@ -3174,6 +3528,23 @@
                     priceRangeBtnApply.addEventListener('click', applyPriceRange);
                 }
 
+                function initializeFromFilter() {
+                    if (searchPriceInput && searchPriceInput.value) {
+                        const priceValue = searchPriceInput.value;
+                        if (priceValue.includes('-')) {
+                            const [min, max] = priceValue.split('-').map(v => v === '' ? Infinity : parseFloat(v));
+                            minValue = priceToCr(min || 0);
+                            maxValue = max === Infinity ? 100 : priceToCr(max);
+                            validateRange();
+                            updateSliderFromInput();
+                            if (priceRangeDisplay) {
+                                priceRangeDisplay.textContent = formatPriceDisplay(minValue, maxValue);
+                            }
+                        }
+                    }
+                }
+
+                initializeFromFilter();
                 updateProgress();
                 updateLabels();
             }

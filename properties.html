@@ -145,9 +145,6 @@
                                         data-property-type="apartment" data-parent-category="residential"
                                         id="propertiesFilterApartments">Apartments</button>
                                     <button type="button" class="filter-button subcategory-button"
-                                        data-property-type="house" data-parent-category="residential"
-                                        id="propertiesFilterIndividualHouse">Individual House</button>
-                                    <button type="button" class="filter-button subcategory-button"
                                         data-property-type="villa" data-parent-category="residential"
                                         id="propertiesFilterVillas">Villas</button>
                                 </div>
@@ -168,8 +165,9 @@
                         <!-- Advanced Search Form -->
                         <div class="properties-search">
                             <form class="search-form" id="propertiesPropertiesSearchForm">
-                                <!-- Common Filters -->
+                                <!-- filter-group-sidebar: aligned to Step 2 of add property modal (all property types) -->
                                 <div class="filter-group-sidebar">
+                                    <!-- Common (all types) -->
                                     <div class="search-group filter-group" data-filter-for="common">
                                         <label><i class="fas fa-map-marker-alt"></i> City</label>
                                         <select id="propertiesSearchCity">
@@ -202,7 +200,6 @@
                                         <label>
                                             <span class="currency-symbol">₹</span> Price Range
                                         </label>
-
                                         <button type="button" class="price-range-btn" id="propertiesPriceRangeBtn">
                                             <span class="price-range-display" id="propertiesPriceRangeDisplay">Any
                                                 Price</span>
@@ -210,7 +207,8 @@
                                         </button>
                                         <input type="hidden" id="propertiesSearchPrice" value="">
                                     </div>
-                                    <div class="search-group filter-group" data-filter-for="common">
+                                    <!-- Direction: Step 2 only in Apartments -->
+                                    <div class="search-group filter-group" data-filter-for="apartment">
                                         <label><i class="fas fa-compass"></i> Direction</label>
                                         <select id="propertiesSearchDirection">
                                             <option value="">Any Direction</option>
@@ -224,7 +222,35 @@
                                             <option value="southwest">South West</option>
                                         </select>
                                     </div>
-                                    <div class="search-group filter-group" data-filter-for="residential">
+                                    <!-- Unit Type: Step 2 in apartment, house, villa -->
+                                    <div class="search-group filter-group" data-filter-for="apartment house villa">
+                                        <label><i class="fas fa-home"></i> Unit Type</label>
+                                        <select id="propertiesSearchUnitType">
+                                            <option value="">Any Unit Type</option>
+                                        </select>
+                                    </div>
+                                    <!-- Villa Type: Step 2 in villa -->
+                                    <div class="search-group filter-group" data-filter-for="villa">
+                                        <label><i class="fas fa-home"></i> Villa Type</label>
+                                        <select id="propertiesSearchVillaType">
+                                            <option value="">Any Villa Type</option>
+                                            <option value="independent_villa">Independent Villa</option>
+                                            <option value="row_villa">Row Villa</option>
+                                            <option value="villament">Villament</option>
+                                        </select>
+                                    </div>
+                                    <!-- Warehouse Type: Step 2 in warehouse -->
+                                    <div class="search-group filter-group" data-filter-for="warehouse">
+                                        <label><i class="fas fa-warehouse"></i> Warehouse Type</label>
+                                        <select id="propertiesSearchWarehouseType">
+                                            <option value="">Any Type</option>
+                                            <option value="cold_storage">Cold storage</option>
+                                            <option value="industrial">Industrial</option>
+                                            <option value="logistic">Logistic</option>
+                                        </select>
+                                    </div>
+                                    <!-- Amenities: Step 2 in apartment, house, villa, office-space, showrooms, warehouse -->
+                                    <div class="search-group filter-group" data-filter-for="apartment house villa office-space showrooms warehouse">
                                         <label><i class="fas fa-star"></i> Amenities</label>
                                         <select id="propertiesSearchAmenities">
                                             <option value="">Any Amenity</option>
@@ -232,27 +258,31 @@
                                     </div>
                                 </div>
 
-                                <!-- Additional Details - residential (apartment, house, villa) + commercial (length/breadth/carpet); hidden for plots -->
+                                <!-- filter-additional-sidebar: Step 2 dimension/area fields per property type -->
                                 <div class="filter-additional-sidebar">
-                                    <div class="search-group filter-group" data-filter-for="residential">
-                                        <label><i class="fas fa-home"></i> Unit Type</label>
-                                        <select id="propertiesSearchUnitType">
-                                            <option value="">Any Unit Type</option>
-                                        </select>
+                                    <!-- Plot Area: Step 2 in plots, villa, warehouse -->
+                                    <div class="search-group filter-group" data-filter-for="plots villa warehouse">
+                                        <label><i class="fas fa-map"></i> Plot Area (sq.ft)</label>
+                                        <input type="text" id="propertiesSearchPlotArea" placeholder="Min plot area (sq ft)">
                                     </div>
-                                    <div class="search-group filter-group" data-filter-for="residential commercial">
-                                        <label><i class="fas fa-ruler"></i> Length</label>
+                                    <!-- Length/Breadth: Step 2 in plots, villa, house -->
+                                    <div class="search-group filter-group" data-filter-for="plots villa house">
+                                        <label><i class="fas fa-ruler"></i> Length (ft)</label>
                                         <input type="text" id="propertiesSearchLength" placeholder="Enter length (ft)">
                                     </div>
-                                    <div class="search-group filter-group" data-filter-for="residential commercial">
-                                        <label><i class="fas fa-ruler"></i> Breadth</label>
-                                        <input type="text" id="propertiesSearchBreadth"
-                                            placeholder="Enter breadth (ft)">
+                                    <div class="search-group filter-group" data-filter-for="plots villa house">
+                                        <label><i class="fas fa-ruler"></i> Breadth (ft)</label>
+                                        <input type="text" id="propertiesSearchBreadth" placeholder="Enter breadth (ft)">
                                     </div>
-                                    <div class="search-group filter-group" data-filter-for="residential commercial">
-                                        <label><i class="fas fa-vector-square"></i> Carpet Area</label>
-                                        <input type="text" id="propertiesSearchCarpetArea"
-                                            placeholder="Enter carpet area (sq ft)">
+                                    <!-- Super Builtup Area: Step 2 in apartment, office-space, showrooms, warehouse -->
+                                    <div class="search-group filter-group" data-filter-for="apartment office-space showrooms warehouse">
+                                        <label><i class="fas fa-ruler-combined"></i> Super Builtup Area (sq.ft)</label>
+                                        <input type="text" id="propertiesSearchSuperBuildupArea" placeholder="Min super builtup (sq ft)">
+                                    </div>
+                                    <!-- Carpet Area: Step 2 in apartment, house, villa, office-space, showrooms, warehouse -->
+                                    <div class="search-group filter-group" data-filter-for="apartment house villa office-space showrooms warehouse">
+                                        <label><i class="fas fa-vector-square"></i> Carpet Area (sq.ft)</label>
+                                        <input type="text" id="propertiesSearchCarpetArea" placeholder="Min carpet area (sq ft)">
                                     </div>
                                 </div>
 
@@ -674,6 +704,10 @@
                 'searchLength': 'propertiesSearchLength',
                 'searchBreadth': 'propertiesSearchBreadth',
                 'searchCarpetArea': 'propertiesSearchCarpetArea',
+                'searchVillaType': 'propertiesSearchVillaType',
+                'searchWarehouseType': 'propertiesSearchWarehouseType',
+                'searchPlotArea': 'propertiesSearchPlotArea',
+                'searchSuperBuildupArea': 'propertiesSearchSuperBuildupArea',
                 'propertiesSearchForm': 'propertiesPropertiesSearchForm',
                 'filterTagsContainer': 'propertiesFilterTagsContainer',
                 'filterTags': 'propertiesFilterTags',

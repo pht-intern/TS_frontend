@@ -301,13 +301,16 @@ async function loadPropertiesFromAPI() {
                 });
             }
 
+            const propType = typeof property.type === 'string' ? property.type : property.type?.value || property.type || 'apartment';
             return {
                 id: property.id,
                 title: property.title || 'Untitled Property',
                 location: property.location || 'Location not specified',
                 price: priceValue,
                 price_text: priceText,
-                type: typeof property.type === 'string' ? property.type : property.type?.value || property.type || 'apartment',
+                type: propType,
+                property_type: property.property_type ?? propType,
+                category: property.property_category || (property.category || '').toLowerCase(),
                 bedrooms: property.bedrooms || 0,
                 bathrooms: property.bathrooms || 0,
                 area: property.area || null,
@@ -569,9 +572,21 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Check URL parameters and apply filters
     const urlParams = new URLSearchParams(window.location.search);
     const typeParam = urlParams.get('type');
+    const categoryParam = urlParams.get('category');
     const statusParam = urlParams.get('status');
     const searchParam = urlParams.get('search');
     const directionParam = urlParams.get('direction');
+    const amenitiesParam = urlParams.get('amenities');
+    const priceParam = urlParams.get('price');
+    const conditionParam = urlParams.get('condition');
+    const bhkParam = urlParams.get('bhk');
+    const lengthParam = urlParams.get('length');
+    const breadthParam = urlParams.get('breadth');
+    const carpetAreaParam = urlParams.get('carpet_area');
+    const plotAreaParam = urlParams.get('plot_area');
+    const villaTypeParam = urlParams.get('villa_type');
+    const warehouseTypeParam = urlParams.get('warehouse_type');
+    const superBuildupParam = urlParams.get('super_buildup_area');
 
     // Apply search parameter if present
     if (searchParam) {
@@ -604,12 +619,18 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     }
 
-    // Apply type filter if present
-    if (typeParam) {
-        // Set the type filter in the search form
-        const searchTypeSelect = document.getElementById('searchType');
-        if (searchTypeSelect) {
-            searchTypeSelect.value = typeParam;
+    if (conditionParam && (conditionParam === 'new' || conditionParam === 'resale')) {
+        const propertyConditionSelect = document.getElementById('searchPropertyCondition');
+        if (propertyConditionSelect) {
+            propertyConditionSelect.value = conditionParam;
+            selectedCondition = conditionParam;
+        }
+    }
+
+    if (typeof bhkParam === 'string' && bhkParam.trim() !== '') {
+        const parsedBhk = parseInt(bhkParam, 10);
+        if (!isNaN(parsedBhk)) {
+            selectedBHK = parsedBhk;
         }
     }
 
@@ -627,10 +648,121 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     }
 
-    // Apply all filters if any URL parameters are present
-    if (typeParam || statusParam || searchParam || directionParam) {
-        applyFilters();
-        // Scroll to properties section
+    if (amenitiesParam) {
+        const amenitiesSelect = document.getElementById('searchAmenities');
+        if (amenitiesSelect) {
+            amenitiesSelect.value = amenitiesParam;
+        }
+    }
+
+    if (priceParam) {
+        const priceInput = document.getElementById('searchPrice');
+        if (priceInput) {
+            priceInput.value = priceParam;
+        }
+
+        const priceRangeDisplay = document.getElementById('priceRangeDisplay');
+        if (priceRangeDisplay) {
+            const [min, max] = String(priceParam).split('-').map(v => v === '' ? null : parseInt(v, 10));
+            const formatNumber = (num) => {
+                if (num >= 10000000) return `₹${(num / 10000000).toFixed(1)}Cr`;
+                if (num >= 100000) return `₹${(num / 100000).toFixed(1)}L`;
+                return `₹${num.toLocaleString('en-IN')}`;
+            };
+            if (min === null && max === null) {
+                priceRangeDisplay.textContent = 'Any Price';
+            } else if (min !== null && max !== null) {
+                priceRangeDisplay.textContent = `${formatNumber(min)} - ${formatNumber(max)}`;
+            } else if (min !== null && max === null) {
+                priceRangeDisplay.textContent = `${formatNumber(min)}+`;
+            } else {
+                priceRangeDisplay.textContent = `Up to ${formatNumber(max)}`;
+            }
+        }
+    }
+
+    if (lengthParam) {
+        const lengthInput = document.getElementById('searchLength');
+        if (lengthInput) lengthInput.value = lengthParam;
+    }
+
+    if (breadthParam) {
+        const breadthInput = document.getElementById('searchBreadth');
+        if (breadthInput) breadthInput.value = breadthParam;
+    }
+
+    if (carpetAreaParam) {
+        const carpetAreaInput = document.getElementById('searchCarpetArea');
+        if (carpetAreaInput) carpetAreaInput.value = carpetAreaParam;
+    }
+
+    if (plotAreaParam) {
+        const plotAreaInput = document.getElementById('searchPlotArea');
+        if (plotAreaInput) plotAreaInput.value = plotAreaParam;
+    }
+
+    if (villaTypeParam) {
+        const villaTypeInput = document.getElementById('searchVillaType');
+        if (villaTypeInput) villaTypeInput.value = villaTypeParam;
+    }
+
+    if (warehouseTypeParam) {
+        const warehouseTypeInput = document.getElementById('searchWarehouseType');
+        if (warehouseTypeInput) warehouseTypeInput.value = warehouseTypeParam;
+    }
+
+    if (superBuildupParam) {
+        const superBuildupInput = document.getElementById('searchSuperBuildupArea');
+        if (superBuildupInput) superBuildupInput.value = superBuildupParam;
+    }
+
+    const propertyTypeToCategory = {
+        'plots': 'residential',
+        'apartment': 'residential',
+        'house': 'residential',
+        'villa': 'residential',
+        'row-house': 'residential',
+        'office-space': 'commercial',
+        'warehouse': 'commercial',
+        'showrooms': 'commercial'
+    };
+
+    if (typeParam) {
+        selectedPropertyType = typeParam;
+        selectedCategory = propertyTypeToCategory[typeParam] || selectedCategory;
+
+        if (selectedCategory && categorySection) {
+            categorySection.setAttribute('data-active-category', selectedCategory);
+        }
+
+        document.querySelectorAll('.subcategory-button[data-property-type]').forEach(btn => btn.classList.remove('active'));
+        document.querySelectorAll('.category-text-button[data-category]').forEach(btn => btn.classList.remove('active'));
+
+        const typeBtn = document.querySelector(`.subcategory-button[data-property-type="${typeParam}"]`);
+        if (typeBtn) typeBtn.classList.add('active');
+
+        if (selectedCategory) {
+            const categoryBtn = document.querySelector(`.category-text-button[data-category="${selectedCategory}"]`);
+            if (categoryBtn) categoryBtn.classList.add('active');
+        }
+    } else if (categoryParam && (categoryParam === 'residential' || categoryParam === 'commercial')) {
+        selectedCategory = categoryParam;
+        selectedPropertyType = null;
+        if (categorySection) categorySection.setAttribute('data-active-category', categoryParam);
+
+        document.querySelectorAll('.subcategory-button[data-property-type]').forEach(btn => btn.classList.remove('active'));
+        document.querySelectorAll('.category-text-button[data-category]').forEach(btn => btn.classList.remove('active'));
+
+        const categoryBtn = document.querySelector(`.category-text-button[data-category="${categoryParam}"]`);
+        if (categoryBtn) categoryBtn.classList.add('active');
+    }
+
+    updateFilterGroupsByPropertyType();
+
+    // Apply filters (required so category gate runs: no properties until Residential/Commercial is selected, unless URL has category/type)
+    applyFilters();
+    updateFilterGroupsByPropertyType();
+    if (typeParam || categoryParam || statusParam || searchParam || directionParam || amenitiesParam || priceParam || conditionParam || bhkParam || lengthParam || breadthParam || carpetAreaParam || plotAreaParam || villaTypeParam || warehouseTypeParam || superBuildupParam || urlParams.get('city') || urlParams.get('area')) {
         setTimeout(() => {
             const propertiesSection = document.querySelector('.properties-section');
             if (propertiesSection) {
@@ -646,13 +778,22 @@ function renderProperties(propertiesToRender = filteredProperties.slice(0, displ
     if (!grid) return;
 
     if (propertiesToRender.length === 0) {
-        grid.innerHTML = `
+        const noCategory = !selectedCategory && !selectedPropertyType;
+        grid.innerHTML = noCategory
+            ? `
+            <div class="no-properties no-properties-select-category">
+                <i class="fas fa-filter"></i>
+                <h3>Select a category to view properties</h3>
+                <p>Choose <strong>Residential</strong> or <strong>Commercial</strong> above to see properties.</p>
+            </div>
+            `
+            : `
             <div class="no-properties">
                 <i class="fas fa-spinner fa-spin"></i>
                 <h3>Best Properties Being Selected</h3>
                 <p>Best of the properties are being selected for you, please wait...</p>
             </div>
-        `;
+            `;
         return;
     }
 
@@ -912,6 +1053,11 @@ async function loadActiveCities() {
                 const cityParam = urlParams.get('city');
                 if (cityParam && citySelect.querySelector(`option[value="${cityParam}"]`)) {
                     citySelect.value = cityParam;
+                    const cityName = cityParam.includes(',') ? cityParam.split(',')[0].trim() : cityParam.trim();
+                    if (cityName) {
+                        await loadLocalitiesForCity(cityName);
+                    }
+                    applyFilters();
                 } else if (currentValue && citySelect.querySelector(`option[value="${currentValue}"]`)) {
                     citySelect.value = currentValue;
                 }
@@ -1011,9 +1157,15 @@ async function loadLocalitiesForCity(cityName) {
                 console.log(`Added ${addedCount} localities to dropdown`);
 
                 // Restore previous selection if it still exists
-                if (currentValue && areaSelect.querySelector(`option[value="${currentValue}"]`)) {
+                const urlParams = new URLSearchParams(window.location.search);
+                const areaParam = urlParams.get('area');
+                if (areaParam && areaSelect.querySelector(`option[value="${areaParam}"]`)) {
+                    areaSelect.value = areaParam;
+                } else if (currentValue && areaSelect.querySelector(`option[value="${currentValue}"]`)) {
                     areaSelect.value = currentValue;
                 }
+
+                applyFilters();
             }
         } else {
             console.error('Failed to load localities:', response.status, response.statusText);
@@ -1094,6 +1246,7 @@ async function loadAmenities() {
                 const amenitiesParam = urlParams.get('amenities');
                 if (amenitiesParam) {
                     amenitiesSelect.value = amenitiesParam;
+                    applyFilters();
                 } else if (currentValue) {
                     amenitiesSelect.value = currentValue;
                 }
@@ -1165,9 +1318,24 @@ async function loadUnitTypes() {
 
                 // Restore selected value from URL params if present, otherwise restore previous selection
                 const urlParams = new URLSearchParams(window.location.search);
-                const unitTypeParam = urlParams.get('unit_type') || urlParams.get('type');
+                const unitTypeParam = urlParams.get('unit_type');
+                const bhkParam = urlParams.get('bhk');
                 if (unitTypeParam && unitTypeSelect.querySelector(`option[value="${unitTypeParam}"]`)) {
                     unitTypeSelect.value = unitTypeParam;
+                    const opt = unitTypeSelect.options[unitTypeSelect.selectedIndex];
+                    const bhk = opt && opt.dataset ? parseInt(opt.dataset.bhk) : NaN;
+                    if (!isNaN(bhk)) selectedBHK = bhk;
+                    applyFilters();
+                } else if (typeof bhkParam === 'string' && bhkParam.trim() !== '') {
+                    const parsedBhk = parseInt(bhkParam, 10);
+                    if (!isNaN(parsedBhk)) {
+                        const matchOpt = Array.from(unitTypeSelect.options).find(o => parseInt(o.dataset.bhk, 10) === parsedBhk);
+                        if (matchOpt) {
+                            unitTypeSelect.value = matchOpt.value;
+                            selectedBHK = parsedBhk;
+                            applyFilters();
+                        }
+                    }
                 } else if (currentValue && unitTypeSelect.querySelector(`option[value="${currentValue}"]`)) {
                     unitTypeSelect.value = currentValue;
                 }
@@ -1196,30 +1364,52 @@ async function loadUnitTypes() {
     }
 }
 
-// Update filter input visibility by selected subcategory (per dashboard add-property modal)
+// Update filter input visibility by selected category/subcategory (per dashboard add-property modal)
 function updateFilterGroupsByPropertyType() {
     const container = document.getElementById('propertiesPropertiesFilters');
     if (!container) return;
 
-    // Toggle active class on container to show/hide filter groups
-    if (selectedCategory) {
+    const hasCategoryOrType = selectedCategory || selectedPropertyType;
+    if (hasCategoryOrType) {
         container.classList.add('filters-active');
     } else {
         container.classList.remove('filters-active');
     }
 
     const propertyType = typeof selectedPropertyType === 'string' ? selectedPropertyType : null;
-    const residentialTypes = ['apartment', 'house', 'villa'];
+    const residentialTypes = ['apartment', 'house', 'villa', 'plots'];
     const commercialTypes = ['office-space', 'warehouse', 'showrooms'];
+    const typesInCategory = selectedCategory === 'residential' ? residentialTypes : (selectedCategory === 'commercial' ? commercialTypes : []);
+
     container.querySelectorAll('.filter-group[data-filter-for]').forEach(el => {
         const forStr = (el.getAttribute('data-filter-for') || '').trim();
+        const types = forStr.split(/\s+/);
         let show = false;
-        if (forStr.includes('common')) show = true;
-        else if (forStr.includes('residential') && forStr.includes('commercial')) show = !propertyType || residentialTypes.includes(propertyType) || commercialTypes.includes(propertyType);
-        else if (forStr.includes('residential')) show = !propertyType || residentialTypes.includes(propertyType);
-        else if (forStr.includes('commercial')) show = !propertyType || commercialTypes.includes(propertyType);
+
+        if (types.includes('common')) {
+            show = true;
+        } else if (propertyType) {
+            if (types.includes(propertyType)) show = true;
+            else if (types.includes('residential') && residentialTypes.includes(propertyType)) show = true;
+            else if (types.includes('commercial') && commercialTypes.includes(propertyType)) show = true;
+        } else if (selectedCategory && typesInCategory.length > 0) {
+            show = types.some(t => typesInCategory.includes(t));
+        }
+
         el.style.display = show ? '' : 'none';
     });
+
+    const additionalSidebar = container.querySelector('.filter-additional-sidebar');
+    if (additionalSidebar) {
+        const visibleAdditional = additionalSidebar.querySelectorAll('.filter-group').length > 0 &&
+            Array.from(additionalSidebar.querySelectorAll('.filter-group')).some(child => child.style.display !== 'none');
+        additionalSidebar.style.display = (hasCategoryOrType && visibleAdditional) ? 'flex' : 'none';
+    }
+
+    const groupSidebar = container.querySelector('.filter-group-sidebar');
+    if (groupSidebar) {
+        groupSidebar.style.display = hasCategoryOrType ? 'flex' : 'none';
+    }
 }
 
 // Load categories and populate dropdown
@@ -1525,6 +1715,27 @@ function initPriceRange() {
 function applyFilters() {
     let filtered = [...allProperties];
 
+    // Category / Property Type: show properties only when a category (Residential or Commercial) or a specific property type is selected
+    const propertyTypeToCategory = {
+        'plots': 'residential',
+        'plot': 'residential',
+        'apartment': 'residential',
+        'house': 'residential',
+        'villa': 'residential',
+        'row-house': 'residential',
+        'office-space': 'commercial',
+        'office_space': 'commercial',
+        'warehouse': 'commercial',
+        'showrooms': 'commercial'
+    };
+    const residentialTypes = ['plots', 'plot', 'apartment', 'house', 'villa', 'row-house'];
+    const commercialTypes = ['office-space', 'office_space', 'warehouse', 'showrooms'];
+
+    if (!selectedCategory && !selectedPropertyType) {
+        // No category selected: show no properties (user must select Residential or Commercial first)
+        filtered = [];
+    }
+
     // Buy/Rent filter (status)
     if (currentFilter !== 'all') {
         filtered = filtered.filter(p => p.status === currentFilter);
@@ -1567,100 +1778,64 @@ function applyFilters() {
     }
 
     // Category and Property Type filter
-    // Define property type to category mapping
-    const propertyTypeToCategory = {
-        'plots': 'residential',
-        'apartment': 'residential',
-        'house': 'residential',
-        'villa': 'residential',
-        'row-house': 'residential',
-        'office-space': 'commercial',
-        'warehouse': 'commercial',
-        'showrooms': 'commercial'
+    const typeMapping = {
+        'plots': 'plots',
+        'apartment': 'apartment',
+        'office-space': 'office-space',
+        'warehouse': 'warehouse',
+        'showrooms': 'showrooms',
+        'house': 'house',
+        'villa': 'villa',
+        'row-house': 'row-house'
     };
 
-    // If property type is selected, it implies a category
+    // Normalize API type (API may return 'plot', 'office_space')
+    function normalizeType(t) {
+        if (t == null || t === '') return '';
+        const s = String(t).toLowerCase().trim().replace(/_/g, '-');
+        return s === 'plot' ? 'plots' : s;
+    }
+
+    // If property type (subcategory) is selected, filter to that type only
     if (selectedPropertyType) {
-        // Ensure category is set based on property type
         if (!selectedCategory && propertyTypeToCategory[selectedPropertyType]) {
             selectedCategory = propertyTypeToCategory[selectedPropertyType];
         }
-
-        // Map new property types to existing types or check for new fields
-        const typeMapping = {
-            'plots': 'plots',
-            'apartment': 'apartment',
-            'office-space': 'office-space',
-            'warehouse': 'warehouse',
-            'showrooms': 'showrooms',
-            'house': 'house',
-            'villa': 'villa',
-            'row-house': 'row-house'
-        };
+        const selNorm = normalizeType(selectedPropertyType);
+        const mappedType = typeMapping[selectedPropertyType];
 
         filtered = filtered.filter(p => {
-            // Check if property has a new type field
-            if (p.property_type !== undefined) {
-                return p.property_type === selectedPropertyType;
-            }
-            // Map to existing type field
-            const mappedType = typeMapping[selectedPropertyType];
-            if (mappedType === 'house' && p.type === 'house') return true;
-            if (mappedType === 'villa' && p.type === 'villa') return true;
-            if (mappedType === 'apartment' && (p.type === 'apartment' || p.type === 'apartments')) return true;
-            // For new types (plots, office-space, etc.), check if type field matches
-            return p.type === selectedPropertyType;
+            const pType = p.property_type ?? p.type;
+            const pNorm = normalizeType(pType);
+            if (pNorm === selNorm) return true;
+            if (mappedType === 'house' && (p.type === 'house' || pNorm === 'house')) return true;
+            if (mappedType === 'villa' && (p.type === 'villa' || pNorm === 'villa')) return true;
+            if ((mappedType === 'apartment' || selectedPropertyType === 'apartment') && (p.type === 'apartment' || p.type === 'apartments' || pNorm === 'apartment')) return true;
+            return false;
         });
     }
 
-
-    // Residential/Commercial filter (category)
-    // If category is selected but no specific property type, show all properties of that category
+    // If only category (Residential or Commercial) is selected, show all properties of that category
     if (selectedCategory && !selectedPropertyType) {
-        // Map category to property types
         const categoryPropertyTypes = {
-            'residential': ['plots', 'apartment', 'house', 'villa', 'row-house'],
-            'commercial': ['office-space', 'warehouse', 'showrooms']
+            'residential': ['plots', 'plot', 'apartment', 'house', 'villa', 'row-house'],
+            'commercial': ['office-space', 'office_space', 'warehouse', 'showrooms']
         };
-
         const typesForCategory = categoryPropertyTypes[selectedCategory] || [];
 
         filtered = filtered.filter(p => {
-            // Check if property has a category field
             if (p.category !== undefined) {
                 return p.category.toLowerCase() === selectedCategory;
             }
-
-            // If no category field, check by property type
-            const typeMapping = {
-                'plots': 'plots',
-                'apartment': 'apartment',
-                'office-space': 'office-space',
-                'warehouse': 'warehouse',
-                'showrooms': 'showrooms',
-                'house': 'house',
-                'villa': 'villa',
-                'row-house': 'row-house'
-            };
-
-            // Check if property type matches any in the category
-            if (p.property_type !== undefined) {
-                return typesForCategory.includes(p.property_type);
-            }
-
-            // Check existing type field
-            if (p.type) {
-                const propertyType = p.type.toLowerCase();
-                // Map existing types to new types
-                if (propertyType === 'house' && typesForCategory.includes('house')) return true;
-                if (propertyType === 'villa' && typesForCategory.includes('villa')) return true;
-                if ((propertyType === 'apartment' || propertyType === 'apartments') && typesForCategory.includes('apartment')) return true;
-                // Check if type matches any in category
-                return typesForCategory.some(t => propertyType.includes(t.replace('-', '')));
-            }
-
-            // If we can't determine, include it (no filter applied)
-            return true;
+            const pType = (p.property_type ?? p.type);
+            if (pType == null) return false;
+            const normalized = String(pType).toLowerCase().trim().replace(/_/g, '-');
+            const asPlot = normalized === 'plot' ? 'plots' : normalized;
+            if (typesForCategory.includes(pType)) return true;
+            if (typesForCategory.includes(normalized)) return true;
+            if (typesForCategory.includes(asPlot)) return true;
+            if ((normalized === 'apartment' || normalized === 'apartments') && typesForCategory.includes('apartment')) return true;
+            return typesForCategory.some(t => asPlot.includes(t.replace(/-/g, '')) || (t === 'plot' && normalized === 'plot'));
         });
     }
 
@@ -1678,7 +1853,7 @@ function applyFilters() {
     }
 
     // City filter
-    const city = document.getElementById('searchCity')?.value.toLowerCase().trim() || '';
+    const city = document.getElementById('propertiesSearchCity')?.value.toLowerCase().trim() || '';
     if (city) {
         filtered = filtered.filter(p =>
             (p.location && p.location.toLowerCase().includes(city)) ||
@@ -1687,7 +1862,7 @@ function applyFilters() {
     }
 
     // Area filter
-    const area = document.getElementById('searchArea')?.value.toLowerCase().trim() || '';
+    const area = document.getElementById('propertiesSearchArea')?.value.toLowerCase().trim() || '';
     if (area) {
         filtered = filtered.filter(p =>
             (p.location && p.location.toLowerCase().includes(area)) ||
@@ -1696,7 +1871,7 @@ function applyFilters() {
     }
 
     // Price filter
-    const price = document.getElementById('searchPrice')?.value || '';
+    const price = document.getElementById('propertiesSearchPrice')?.value || '';
     if (price) {
         const [min, max] = price.split('-').map(v => v === '' ? Infinity : parseInt(v));
         filtered = filtered.filter(p => {
@@ -1708,75 +1883,99 @@ function applyFilters() {
     }
 
     // Length filter
-    const length = document.getElementById('searchLength')?.value.toLowerCase().trim() || '';
+    const length = document.getElementById('propertiesSearchLength')?.value.toLowerCase().trim() || '';
     if (length) {
         filtered = filtered.filter(p => {
             if (p.length !== undefined) {
                 return p.length.toString().toLowerCase().includes(length);
             }
-            // Check dimensions if length field doesn't exist
-            if (p.dimensions !== undefined) {
-                return p.dimensions.toLowerCase().includes(length);
-            }
-            return true;
+            return p.dimensions && p.dimensions.toLowerCase().includes(length);
         });
     }
 
     // Breadth filter
-    const breadth = document.getElementById('searchBreadth')?.value.toLowerCase().trim() || '';
+    const breadth = document.getElementById('propertiesSearchBreadth')?.value.toLowerCase().trim() || '';
     if (breadth) {
         filtered = filtered.filter(p => {
             if (p.breadth !== undefined) {
                 return p.breadth.toString().toLowerCase().includes(breadth);
             }
-            // Check dimensions if breadth field doesn't exist
-            if (p.dimensions !== undefined) {
-                return p.dimensions.toLowerCase().includes(breadth);
-            }
-            return true;
+            return p.dimensions && p.dimensions.toLowerCase().includes(breadth);
         });
     }
 
     // Carpet Area filter
-    const carpetArea = document.getElementById('searchCarpetArea')?.value.toLowerCase().trim() || '';
+    const carpetArea = document.getElementById('propertiesSearchCarpetArea')?.value.toLowerCase().trim() || '';
     if (carpetArea) {
         filtered = filtered.filter(p => {
-            if (p.carpet_area !== undefined) {
-                return p.carpet_area.toString().toLowerCase().includes(carpetArea);
-            }
-            if (p.carpetArea !== undefined) {
-                return p.carpetArea.toString().toLowerCase().includes(carpetArea);
-            }
-            return true;
+            return (p.carpet_area && p.carpet_area.toString().toLowerCase().includes(carpetArea)) ||
+                (p.carpetArea && p.carpetArea.toString().toLowerCase().includes(carpetArea));
         });
     }
 
     // Direction filter
-    const direction = (document.getElementById('searchDirection') || document.getElementById('searchDirections'))?.value.toLowerCase().trim() || '';
+    const direction = document.getElementById('propertiesSearchDirection')?.value.toLowerCase().trim() || '';
     if (direction) {
         filtered = filtered.filter(p => {
-            if (p.directions !== undefined) {
-                return p.directions.toLowerCase().includes(direction);
-            }
-            if (p.direction !== undefined) {
-                return p.direction.toLowerCase().includes(direction);
-            }
-            return true;
+            return (p.directions && p.directions.toLowerCase().includes(direction)) ||
+                (p.direction && p.direction.toLowerCase().includes(direction));
         });
     }
 
     // Amenities filter
-    const amenities = (document.getElementById('propertiesSearchAmenities') || document.getElementById('searchAmenities'))?.value.toLowerCase().trim() || '';
+    const amenities = document.getElementById('propertiesSearchAmenities')?.value.toLowerCase().trim() || '';
     if (amenities) {
         filtered = filtered.filter(p => {
-            if (p.amenities !== undefined) {
+            if (p.amenities) {
                 const propertyAmenities = Array.isArray(p.amenities)
                     ? p.amenities.join(' ').toLowerCase()
                     : p.amenities.toString().toLowerCase();
                 return propertyAmenities.includes(amenities);
             }
-            return true;
+            return false;
         });
+    }
+
+    // Villa Type filter (Step 2 - villa)
+    const villaType = document.getElementById('propertiesSearchVillaType')?.value.trim() || '';
+    if (villaType) {
+        filtered = filtered.filter(p => {
+            const pVilla = (p.villa_type || p.villaType || '').toLowerCase().replace(/-/g, '_');
+            return pVilla === villaType.toLowerCase().replace(/-/g, '_');
+        });
+    }
+
+    // Warehouse Type filter (Step 2 - warehouse)
+    const warehouseType = document.getElementById('propertiesSearchWarehouseType')?.value.trim() || '';
+    if (warehouseType) {
+        filtered = filtered.filter(p => {
+            const pWarehouse = (p.warehouse_type || p.warehouseType || '').toLowerCase().replace(/-/g, '_');
+            return pWarehouse === warehouseType.toLowerCase().replace(/-/g, '_');
+        });
+    }
+
+    // Plot Area filter (Step 2 - plots, villa, warehouse)
+    const plotArea = document.getElementById('propertiesSearchPlotArea')?.value.trim() || '';
+    if (plotArea) {
+        const minPlot = parseFloat(plotArea);
+        if (!isNaN(minPlot)) {
+            filtered = filtered.filter(p => {
+                const area = p.plot_area != null ? parseFloat(p.plot_area) : (p.plotArea != null ? parseFloat(p.plotArea) : null);
+                return area != null && area >= minPlot;
+            });
+        }
+    }
+
+    // Super Builtup Area filter (Step 2 - apartment, office-space, showrooms, warehouse)
+    const superBuildupArea = document.getElementById('propertiesSearchSuperBuildupArea')?.value.trim() || '';
+    if (superBuildupArea) {
+        const minSba = parseFloat(superBuildupArea);
+        if (!isNaN(minSba)) {
+            filtered = filtered.filter(p => {
+                const sba = p.super_built_up_area != null ? parseFloat(p.super_built_up_area) : (p.superBuildupArea != null ? parseFloat(p.superBuildupArea) : null);
+                return sba != null && sba >= minSba;
+            });
+        }
     }
 
     filteredProperties = filtered;
@@ -1979,6 +2178,50 @@ function updateFilterTags() {
         });
     }
 
+    // Villa Type filter
+    const villaTypeTag = document.getElementById('propertiesSearchVillaType')?.value.trim() || '';
+    if (villaTypeTag) {
+        activeFilters.push({
+            type: 'villaType',
+            label: `Villa Type: ${villaTypeTag.replace(/_/g, ' ')}`,
+            icon: 'fa-home',
+            value: villaTypeTag
+        });
+    }
+
+    // Warehouse Type filter
+    const warehouseTypeTag = document.getElementById('propertiesSearchWarehouseType')?.value.trim() || '';
+    if (warehouseTypeTag) {
+        activeFilters.push({
+            type: 'warehouseType',
+            label: `Warehouse: ${warehouseTypeTag.replace(/_/g, ' ')}`,
+            icon: 'fa-warehouse',
+            value: warehouseTypeTag
+        });
+    }
+
+    // Plot Area filter
+    const plotAreaTag = document.getElementById('propertiesSearchPlotArea')?.value.trim() || '';
+    if (plotAreaTag) {
+        activeFilters.push({
+            type: 'plotArea',
+            label: `Plot Area: ${plotAreaTag} sq.ft`,
+            icon: 'fa-map',
+            value: plotAreaTag
+        });
+    }
+
+    // Super Builtup Area filter
+    const superBuildupTag = document.getElementById('propertiesSearchSuperBuildupArea')?.value.trim() || '';
+    if (superBuildupTag) {
+        activeFilters.push({
+            type: 'superBuildupArea',
+            label: `Super Builtup: ${superBuildupTag} sq.ft`,
+            icon: 'fa-ruler-combined',
+            value: superBuildupTag
+        });
+    }
+
     // Directions filter
     const directions = document.getElementById('searchDirections')?.value.trim() || '';
     if (directions) {
@@ -2113,6 +2356,22 @@ function removeFilter(filterType) {
             const carpetAreaInput = document.getElementById('searchCarpetArea');
             if (carpetAreaInput) carpetAreaInput.value = '';
             break;
+        case 'villaType':
+            const villaTypeInput = document.getElementById('searchVillaType');
+            if (villaTypeInput) villaTypeInput.value = '';
+            break;
+        case 'warehouseType':
+            const warehouseTypeInput = document.getElementById('searchWarehouseType');
+            if (warehouseTypeInput) warehouseTypeInput.value = '';
+            break;
+        case 'plotArea':
+            const plotAreaInput = document.getElementById('searchPlotArea');
+            if (plotAreaInput) plotAreaInput.value = '';
+            break;
+        case 'superBuildupArea':
+            const superBuildupInput = document.getElementById('searchSuperBuildupArea');
+            if (superBuildupInput) superBuildupInput.value = '';
+            break;
         case 'directions':
             const directionsInput = document.getElementById('searchDirections');
             if (directionsInput) directionsInput.value = '';
@@ -2176,6 +2435,10 @@ function initFilterTags() {
             const breadthInput = document.getElementById('searchBreadth');
             const carpetAreaInput = document.getElementById('searchCarpetArea');
             const amenitiesInput = document.getElementById('searchAmenities');
+            const villaTypeInput = document.getElementById('searchVillaType');
+            const warehouseTypeInput = document.getElementById('searchWarehouseType');
+            const plotAreaInput = document.getElementById('searchPlotArea');
+            const superBuildupInput = document.getElementById('searchSuperBuildupArea');
 
             if (cityInput) cityInput.value = '';
             if (areaInput) areaInput.value = '';
@@ -2185,6 +2448,10 @@ function initFilterTags() {
             if (breadthInput) breadthInput.value = '';
             if (carpetAreaInput) carpetAreaInput.value = '';
             if (amenitiesInput) amenitiesInput.value = '';
+            if (villaTypeInput) villaTypeInput.value = '';
+            if (warehouseTypeInput) warehouseTypeInput.value = '';
+            if (plotAreaInput) plotAreaInput.value = '';
+            if (superBuildupInput) superBuildupInput.value = '';
 
             applyFilters();
         });

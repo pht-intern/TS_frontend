@@ -201,23 +201,34 @@ function showErrorState(message = 'Property not found') {
 }
 
 // Load Property from API by ID
-async function loadPropertyFromAPI(propertyId) {
+// category is REQUIRED (residential | commercial | plot) - IDs are not globally unique across tables
+async function loadPropertyFromAPI(propertyId, category) {
+    if (!category || !['residential', 'commercial', 'plot'].includes(category.toLowerCase())) {
+        throw new Error('Property category is required. Please open this property from the listing page.');
+    }
     try {
-        const response = await fetch(`/api/properties/${propertyId}`);
+        const normalizedCategory = category.toLowerCase();
+        const response = await fetch(`/api/properties/${propertyId}?category=${encodeURIComponent(normalizedCategory)}`);
         if (!response.ok) {
+            const errorText = await response.text();
+            let message = `Failed to fetch property: ${response.status}`;
+            try {
+                const err = JSON.parse(errorText);
+                message = err.error || err.message || err.detail || message;
+                if (typeof message !== 'string') message = JSON.stringify(message);
+            } catch (_) {
+                if (errorText) message = errorText;
+            }
             if (response.status === 404) {
                 throw new Error('Property not found');
             }
-            const errorText = await response.text();
-            throw new Error(`Failed to fetch property: ${response.status} ${errorText}`);
+            throw new Error(message);
         }
         const property = await response.json();
-        
-        // Convert API format to display format
         return convertPropertyFromAPI(property);
     } catch (error) {
         console.error('Error loading property from API:', error);
-        throw error; // Re-throw to let caller handle it
+        throw error;
     }
 }
 
@@ -426,6 +437,46 @@ function convertPropertyFromAPI(property) {
     // Create placeholder image for properties without images
     const imagePlaceholder = 'data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'400\' height=\'300\'%3E%3Crect fill=\'%23ddd\' width=\'400\' height=\'300\'/%3E%3Ctext fill=\'%23999\' font-family=\'sans-serif\' font-size=\'18\' x=\'50%25\' y=\'50%25\' text-anchor=\'middle\' dy=\'.3em\'%3ENo Image Available%3C/text%3E%3C/svg%3E';
     
+    // Get property_type for commercial properties
+    let propertyType = property.property_type || '';
+    if (!propertyType && property.property_category === 'commercial') {
+        // Fallback: use type field if property_type is not available
+        propertyType = convertedPropertyType;
+    }
+    
+    // Get commercial-specific fields
+    const commercialFields = {
+        // Office Space specific
+        floor_number: property.floor_number || null,
+        total_seats_workstations: property.total_seats_workstations || null,
+        number_of_cabins: property.number_of_cabins || null,
+        number_of_parking_slots: property.number_of_parking_slots || null,
+        parking_options: property.parking_options || null,
+        // Showrooms specific
+        frontage_width: property.frontage_width || null,
+        frontage_unit: property.frontage_unit || null,
+        footfall_potential: property.footfall_potential || null,
+        ground_floor_area: property.ground_floor_area || null,
+        ceiling_height: property.ceiling_height || null,
+        mezzanine_area: property.mezzanine_area || null,
+        // Warehouse specific
+        warehouse_type: property.warehouse_type || null,
+        clearance_height: property.clearance_height || null,
+        clearance_height_unit: property.clearance_height_unit || null,
+        dock_levelers: property.dock_levelers || null,
+        number_of_shutters: property.number_of_shutters || null,
+        shutter_height: property.shutter_height || null,
+        shutter_height_unit: property.shutter_height_unit || null,
+        floor_load_capacity: property.floor_load_capacity || null
+    };
+    
+    // Get residential-specific fields
+    const residentialFields = {
+        villa_type: property.villa_type || null,
+        length: property.length || null,
+        breadth: property.breadth || null
+    };
+    
     return {
         id: property.id,
         title: title,
@@ -433,6 +484,7 @@ function convertPropertyFromAPI(property) {
         price: property.price, // Numeric value for backend
         price_text: priceText, // Text value for display
         type: convertedPropertyType,
+        property_type: propertyType, // Important for commercial properties
         status: statusValue,
         bedrooms: bedrooms,
         bathrooms: bathrooms,
@@ -459,11 +511,16 @@ function convertPropertyFromAPI(property) {
         plot_breadth: property.plot_breadth || '',
         property_category: property.property_category || '',
         listing_type: property.listing_type || '',
+        property_status: property.property_status || '',
         price_negotiable: property.price_negotiable || false,
         video_link: property.video_link || '',
         location_link: property.location_link || '',
         direction: property.directions || property.facing || property.orientation || '',
-        created_at: property.created_at || null
+        created_at: property.created_at || null,
+        // Commercial-specific fields
+        ...commercialFields,
+        // Residential-specific fields
+        ...residentialFields
     };
 }
 
@@ -678,8 +735,9 @@ async function loadPropertyDetails() {
     console.log('[Property Details] Starting to load property details...');
     const urlParams = new URLSearchParams(window.location.search);
     const propertyId = parseInt(urlParams.get('id'));
+    const category = (urlParams.get('category') || '').toLowerCase();
     
-    console.log('[Property Details] Property ID from URL:', propertyId);
+    console.log('[Property Details] Property ID from URL:', propertyId, 'category:', category || '(missing)');
     
     if (!propertyId || isNaN(propertyId)) {
         console.error('[Property Details] Invalid property ID');
@@ -687,12 +745,18 @@ async function loadPropertyDetails() {
         return;
     }
     
+    if (!category || !['residential', 'commercial', 'plot'].includes(category)) {
+        console.error('[Property Details] Missing or invalid category in URL');
+        showErrorState('This link is invalid. Please open the property from the listing page.');
+        return;
+    }
+    
     showLoadingState();
     console.log('[Property Details] Loading state shown');
     
     try {
-    // Try to load from API first
-    let property = await loadPropertyFromAPI(propertyId);
+    // Load from API (category is required)
+    let property = await loadPropertyFromAPI(propertyId, category);
     
     if (!property) {
             showErrorState('Property not found');
@@ -797,12 +861,15 @@ function renderPropertyDetails(property) {
     // Get property details for bottom right section
     const amenitiesCount = features.length;
     const bhk = property.bedrooms || 0;
-    const displayPropertyType = property.type || 'N/A';
+    // For commercial properties, use property_type; for others, use type
+    const displayPropertyType = property.property_category === 'commercial' 
+        ? (property.property_type || property.type || 'N/A')
+        : (property.type || 'N/A');
     const direction = property.directions || property.facing || property.orientation || 'N/A';
     
     // Format property type
     const formatPropertyType = (type) => {
-        if (!type) return 'N/A';
+        if (!type || type === 'N/A') return 'N/A';
         return type.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
     };
     
@@ -819,8 +886,47 @@ function renderPropertyDetails(property) {
         return dir.replace(/\b\w/g, l => l.toUpperCase());
     };
     
+    // Determine property category for conditional display
+    const isCommercialProperty = property.property_category === 'commercial' || (property.property_type && ['office_space', 'warehouse', 'showrooms'].includes(property.property_type));
+    const isPlotProperty = property.type === 'plot' || property.property_category === 'plot';
+    const isResidentialProperty = !isCommercialProperty && !isPlotProperty;
+    
     const headerDescriptionSection = document.getElementById('propertyHeaderDescription');
     if (headerDescriptionSection) {
+        let statsHTML = `
+            <div class="property-stat-item">
+                <span class="stat-label">Amenities</span>
+                <span class="stat-value">${amenitiesCount}</span>
+            </div>
+        `;
+        
+        // Only show BHK for residential properties
+        if (isResidentialProperty && bhk > 0) {
+            statsHTML += `
+                <div class="property-stat-item">
+                    <span class="stat-label">BHK</span>
+                    <span class="stat-value">${bhk}</span>
+                </div>
+            `;
+        }
+        
+        statsHTML += `
+            <div class="property-stat-item">
+                <span class="stat-label">Type</span>
+                <span class="stat-value">${formatPropertyType(displayPropertyType)}</span>
+            </div>
+        `;
+        
+        // Only show direction if available and not 'N/A'
+        if (direction && direction !== 'N/A') {
+            statsHTML += `
+                <div class="property-stat-item">
+                    <span class="stat-label">Direction</span>
+                    <span class="stat-value">${formatDirection(direction)}</span>
+                </div>
+            `;
+        }
+        
         headerDescriptionSection.innerHTML = `
         <div class="property-header-description-content">
             <div class="property-header-info">
@@ -831,22 +937,7 @@ function renderPropertyDetails(property) {
                 </div>
             </div>
             <div class="property-header-stats">
-                <div class="property-stat-item">
-                    <span class="stat-label">Amenities</span>
-                    <span class="stat-value">${amenitiesCount}</span>
-                </div>
-                <div class="property-stat-item">
-                    <span class="stat-label">BHK</span>
-                    <span class="stat-value">${bhk}</span>
-                </div>
-                <div class="property-stat-item">
-                    <span class="stat-label">Type</span>
-                    <span class="stat-value">${formatPropertyType(displayPropertyType)}</span>
-                </div>
-                <div class="property-stat-item">
-                    <span class="stat-label">Direction</span>
-                    <span class="stat-value">${formatDirection(direction)}</span>
-                </div>
+                ${statsHTML}
             </div>
         </div>
     `;
@@ -1022,17 +1113,27 @@ function renderPropertyDetails(property) {
     `;
     
     const status = document.getElementById('propertyStatus');
+    // Get status badge text and class from database status field (works for residential, commercial, and plot properties)
     let statusText = 'For Sale';
     let statusClass = 'sale';
-    if (property.status === 'rent') {
+    const propertyStatus = String(property.status || 'sale').toLowerCase();
+    
+    if (propertyStatus === 'new') {
+        statusText = 'New';
+        statusClass = 'new';
+    } else if (propertyStatus === 'sell' || propertyStatus === 'sale') {
+        statusText = 'For Sale';
+        statusClass = 'sale';
+    } else if (propertyStatus === 'resale') {
+        statusText = 'Resale';
+        statusClass = 'resale';
+    } else if (propertyStatus === 'rent') {
         statusText = 'For Rent';
         statusClass = 'rent';
-    } else if (property.status === 'ready_to_move') {
-        statusText = 'Ready to Move';
-        statusClass = 'ready-to-move';
-    } else if (property.status === 'under_construction') {
-        statusText = 'Under Construction';
-        statusClass = 'under-construction';
+    } else {
+        // Default fallback
+        statusText = 'For Sale';
+        statusClass = 'sale';
     }
     status.innerHTML = `<span class="status-badge ${statusClass}">${escapeHtml(statusText)}</span>`;
     
@@ -1064,10 +1165,43 @@ function renderPropertyDetails(property) {
     }
     
     const quickInfo = document.getElementById('propertyQuickInfo');
-    const propertyTypeFormatted = escapeHtml((property.type || 'apartment').charAt(0).toUpperCase() + (property.type || 'apartment').slice(1));
+    // Determine property type - for commercial, use property_type; for others, use type
+    const rawPropertyType = property.property_category === 'commercial' 
+        ? (property.property_type || property.type || 'commercial')
+        : (property.type || 'apartment');
+    const propertyTypeFormatted = escapeHtml(rawPropertyType.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()));
     const isPlot = property.type === 'plot' || property.property_category === 'plot';
+    const isCommercial = property.property_category === 'commercial' || (property.property_type && ['office_space', 'warehouse', 'showrooms'].includes(property.property_type));
     
-    let quickInfoHTML = `
+    let quickInfoHTML = '';
+    
+    // City and Locality - Show for all property types
+    if (property.city) {
+        quickInfoHTML += `
+        <div class="quick-info-item">
+            <i class="fas fa-map-marker-alt"></i>
+            <div>
+                <span class="quick-info-label">City</span>
+                <span class="quick-info-value">${escapeHtml(property.city)}</span>
+            </div>
+        </div>
+        `;
+    }
+    
+    if (property.locality) {
+        quickInfoHTML += `
+        <div class="quick-info-item">
+            <i class="fas fa-map-marker-alt"></i>
+            <div>
+                <span class="quick-info-label">Locality</span>
+                <span class="quick-info-value">${escapeHtml(property.locality)}</span>
+            </div>
+        </div>
+        `;
+    }
+    
+    // Property Type
+    quickInfoHTML += `
         <div class="quick-info-item">
             <i class="fas fa-building"></i>
             <div>
@@ -1077,8 +1211,105 @@ function renderPropertyDetails(property) {
         </div>
     `;
     
+    // Villa Type (for villas only)
+    if (property.type === 'villa' && property.villa_type) {
+        quickInfoHTML += `
+        <div class="quick-info-item">
+            <i class="fas fa-home"></i>
+            <div>
+                <span class="quick-info-label">Villa Type</span>
+                <span class="quick-info-value">${escapeHtml(property.villa_type)}</span>
+            </div>
+        </div>
+        `;
+    }
+    
+    // Unit Type/Configuration (for residential)
+    if (!isPlot && !isCommercial) {
+        if (property.unit_type) {
+            const unitTypeFormatted = property.unit_type.toUpperCase() === 'RK' ? 'RK' : 
+                                     property.unit_type.toUpperCase() === 'BHK' ? `${property.bedrooms || ''}BHK` :
+                                     property.unit_type.toUpperCase() === '4PLUS' ? '4+BHK' : property.unit_type.toUpperCase();
+            quickInfoHTML += `
+            <div class="quick-info-item">
+                <i class="fas fa-door-open"></i>
+                <div>
+                    <span class="quick-info-label">Unit Type</span>
+                    <span class="quick-info-value">${escapeHtml(unitTypeFormatted)}</span>
+                </div>
+            </div>
+            `;
+        }
+        if (property.configuration && property.configuration !== property.unit_type) {
+            quickInfoHTML += `
+            <div class="quick-info-item">
+                <i class="fas fa-cog"></i>
+                <div>
+                    <span class="quick-info-label">Configuration</span>
+                    <span class="quick-info-value">${escapeHtml(property.configuration)}</span>
+                </div>
+            </div>
+            `;
+        }
+    }
+    
+    // Commercial Property Type
+    if (isCommercial && property.property_type) {
+        const commercialTypeFormatted = property.property_type.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+        quickInfoHTML += `
+        <div class="quick-info-item">
+            <i class="fas fa-briefcase"></i>
+            <div>
+                <span class="quick-info-label">Property Type</span>
+                <span class="quick-info-value">${escapeHtml(commercialTypeFormatted)}</span>
+            </div>
+        </div>
+        `;
+    }
+    
+    // Status
+    if (property.status) {
+        const statusFormatted = property.status.charAt(0).toUpperCase() + property.status.slice(1);
+        quickInfoHTML += `
+        <div class="quick-info-item">
+            <i class="fas fa-tag"></i>
+            <div>
+                <span class="quick-info-label">Status</span>
+                <span class="quick-info-value">${escapeHtml(statusFormatted)}</span>
+            </div>
+        </div>
+        `;
+    }
+    
+    // Listing Type
+    if (property.listing_type) {
+        quickInfoHTML += `
+        <div class="quick-info-item">
+            <i class="fas fa-calendar-check"></i>
+            <div>
+                <span class="quick-info-label">Listing Type</span>
+                <span class="quick-info-value">${escapeHtml(property.listing_type)}</span>
+            </div>
+        </div>
+        `;
+    }
+    
+    // Property Status (if different from status)
+    if (property.property_status && property.property_status !== property.status) {
+        const propertyStatusFormatted = property.property_status.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+        quickInfoHTML += `
+        <div class="quick-info-item">
+            <i class="fas fa-info-circle"></i>
+            <div>
+                <span class="quick-info-label">Property Status</span>
+                <span class="quick-info-value">${escapeHtml(propertyStatusFormatted)}</span>
+            </div>
+        </div>
+        `;
+    }
+    
     // For residential properties, show bedrooms and bathrooms
-    if (!isPlot && property.bedrooms !== null && property.bedrooms !== undefined && property.bedrooms > 0) {
+    if (!isPlot && !isCommercial && property.bedrooms !== null && property.bedrooms !== undefined && property.bedrooms > 0) {
         quickInfoHTML += `
         <div class="quick-info-item">
             <i class="fas fa-bed"></i>
@@ -1091,7 +1322,7 @@ function renderPropertyDetails(property) {
     }
     
     // Bathrooms: show for all residential (including 0)
-    if (!isPlot) {
+    if (!isPlot && !isCommercial) {
         const bathroomsVal = (property.bathrooms !== null && property.bathrooms !== undefined) ? property.bathrooms : 0;
         quickInfoHTML += `
         <div class="quick-info-item">
@@ -1104,19 +1335,33 @@ function renderPropertyDetails(property) {
         `;
     }
     
-    // Show area (buildup_area for residential, plot_area for plots)
-    if (property.area) {
-        const areaLabel = isPlot ? 'Plot Area' : 'Area';
-        const areaValue = isPlot ? (property.plot_area || property.area) : (property.buildup_area || property.area);
-        quickInfoHTML += `
-        <div class="quick-info-item">
-            <i class="fas fa-ruler-combined"></i>
-            <div>
-                <span class="quick-info-label">${areaLabel}</span>
-                <span class="quick-info-value">${escapeHtml(String(areaValue))} sq.ft.</span>
+    // Show area (buildup_area for residential, plot_area for plots, carpet_area/super_built_up_area for commercial)
+    if (property.area || property.buildup_area || property.plot_area || property.carpet_area || property.super_built_up_area) {
+        let areaLabel = 'Area';
+        let areaValue = '';
+        
+        if (isPlot) {
+            areaLabel = 'Plot Area';
+            areaValue = property.plot_area || property.area;
+        } else if (isCommercial) {
+            areaLabel = 'Area';
+            areaValue = property.super_built_up_area || property.carpet_area || property.plot_area || property.area;
+        } else {
+            areaLabel = 'Buildup Area';
+            areaValue = property.buildup_area || property.area;
+        }
+        
+        if (areaValue) {
+            quickInfoHTML += `
+            <div class="quick-info-item">
+                <i class="fas fa-ruler-combined"></i>
+                <div>
+                    <span class="quick-info-label">${areaLabel}</span>
+                    <span class="quick-info-value">${escapeHtml(String(areaValue))} sq.ft.</span>
+                </div>
             </div>
-        </div>
-        `;
+            `;
+        }
     }
     
     // For plots, show plot dimensions
@@ -1132,8 +1377,21 @@ function renderPropertyDetails(property) {
         `;
     }
     
+    // For residential, show length and breadth if available
+    if (!isPlot && !isCommercial && property.length && property.breadth) {
+        quickInfoHTML += `
+        <div class="quick-info-item">
+            <i class="fas fa-ruler"></i>
+            <div>
+                <span class="quick-info-label">Dimensions</span>
+                <span class="quick-info-value">${escapeHtml(String(property.length))} × ${escapeHtml(String(property.breadth))} ft</span>
+            </div>
+        </div>
+        `;
+    }
+    
     // For residential, show carpet area if available
-    if (!isPlot && property.carpet_area) {
+    if (!isPlot && !isCommercial && property.carpet_area) {
         quickInfoHTML += `
         <div class="quick-info-item">
             <i class="fas fa-ruler"></i>
@@ -1145,19 +1403,32 @@ function renderPropertyDetails(property) {
         `;
     }
     
+    // Super Built-up Area (for residential and commercial)
+    if (property.super_built_up_area && (!isPlot || property.super_built_up_area !== property.area)) {
+        quickInfoHTML += `
+        <div class="quick-info-item">
+            <i class="fas fa-ruler-combined"></i>
+            <div>
+                <span class="quick-info-label">Super Built-up Area</span>
+                <span class="quick-info-value">${escapeHtml(String(property.super_built_up_area))} sq.ft.</span>
+            </div>
+        </div>
+        `;
+    }
+    
     // Show direction if available
-    if (property.direction || property.facing || property.orientation) {
-        const direction = property.direction || property.facing || property.orientation;
+    if (property.direction || property.facing || property.orientation || property.directions) {
+        const direction = property.direction || property.facing || property.orientation || property.directions;
         const formatDirection = (dir) => {
             if (!dir) return 'N/A';
-            const dirLower = dir.toLowerCase();
+            const dirLower = String(dir).toLowerCase();
             const directions = ['north', 'south', 'east', 'west', 'northeast', 'northwest', 'southeast', 'southwest'];
             for (const d of directions) {
                 if (dirLower.includes(d)) {
                     return d.replace(/\b\w/g, l => l.toUpperCase());
                 }
             }
-            return dir.replace(/\b\w/g, l => l.toUpperCase());
+            return String(dir).replace(/\b\w/g, l => l.toUpperCase());
         };
         quickInfoHTML += `
         <div class="quick-info-item">
@@ -1170,7 +1441,7 @@ function renderPropertyDetails(property) {
         `;
     }
     
-    // Add new fields if available (with proper escaping)
+    // Builder/Developer
     if (property.builder) {
         quickInfoHTML += `
         <div class="quick-info-item">
@@ -1183,20 +1454,8 @@ function renderPropertyDetails(property) {
         `;
     }
     
-    
-    if (property.super_built_up_area) {
-        quickInfoHTML += `
-        <div class="quick-info-item">
-            <i class="fas fa-ruler-combined"></i>
-            <div>
-                <span class="quick-info-label">Super Built-up Area</span>
-                <span class="quick-info-value">${escapeHtml(property.super_built_up_area)}</span>
-            </div>
-        </div>
-        `;
-    }
-    
-    if (property.total_flats) {
+    // Total Flats (for residential apartments)
+    if (!isPlot && !isCommercial && property.total_flats) {
         quickInfoHTML += `
         <div class="quick-info-item">
             <i class="fas fa-building"></i>
@@ -1208,6 +1467,7 @@ function renderPropertyDetails(property) {
         `;
     }
     
+    // Total Floors
     if (property.total_floors) {
         quickInfoHTML += `
         <div class="quick-info-item">
@@ -1220,6 +1480,7 @@ function renderPropertyDetails(property) {
         `;
     }
     
+    // Total Acres
     if (property.total_acres) {
         quickInfoHTML += `
         <div class="quick-info-item">
@@ -1232,20 +1493,191 @@ function renderPropertyDetails(property) {
         `;
     }
     
-    // Show plot_area separately if it's different from area (for plots)
-    if (isPlot && property.plot_area && property.plot_area !== property.area) {
-        quickInfoHTML += `
-        <div class="quick-info-item">
-            <i class="fas fa-ruler"></i>
-            <div>
-                <span class="quick-info-label">Plot Area</span>
-                <span class="quick-info-value">${escapeHtml(String(property.plot_area))} sq.ft.</span>
-            </div>
-        </div>
-        `;
+    // Commercial Property Specific Fields
+    if (isCommercial) {
+        // Office Space specific
+        if (property.property_type === 'office_space') {
+            if (property.floor_number) {
+                quickInfoHTML += `
+                <div class="quick-info-item">
+                    <i class="fas fa-layer-group"></i>
+                    <div>
+                        <span class="quick-info-label">Floor Number</span>
+                        <span class="quick-info-value">${escapeHtml(String(property.floor_number))}</span>
+                    </div>
+                </div>
+                `;
+            }
+            if (property.total_seats_workstations) {
+                quickInfoHTML += `
+                <div class="quick-info-item">
+                    <i class="fas fa-chair"></i>
+                    <div>
+                        <span class="quick-info-label">Seats/Workstations</span>
+                        <span class="quick-info-value">${escapeHtml(String(property.total_seats_workstations))}</span>
+                    </div>
+                </div>
+                `;
+            }
+            if (property.number_of_cabins) {
+                quickInfoHTML += `
+                <div class="quick-info-item">
+                    <i class="fas fa-door-closed"></i>
+                    <div>
+                        <span class="quick-info-label">Number of Cabins</span>
+                        <span class="quick-info-value">${escapeHtml(String(property.number_of_cabins))}</span>
+                    </div>
+                </div>
+                `;
+            }
+            if (property.number_of_parking_slots) {
+                quickInfoHTML += `
+                <div class="quick-info-item">
+                    <i class="fas fa-parking"></i>
+                    <div>
+                        <span class="quick-info-label">Parking Slots</span>
+                        <span class="quick-info-value">${escapeHtml(String(property.number_of_parking_slots))}</span>
+                    </div>
+                </div>
+                `;
+            }
+        }
+        
+        // Showrooms specific
+        if (property.property_type === 'showrooms') {
+            if (property.frontage_width) {
+                const frontageUnit = property.frontage_unit || 'ft';
+                quickInfoHTML += `
+                <div class="quick-info-item">
+                    <i class="fas fa-ruler-horizontal"></i>
+                    <div>
+                        <span class="quick-info-label">Frontage Width</span>
+                        <span class="quick-info-value">${escapeHtml(String(property.frontage_width))} ${escapeHtml(frontageUnit)}</span>
+                    </div>
+                </div>
+                `;
+            }
+            if (property.ground_floor_area) {
+                quickInfoHTML += `
+                <div class="quick-info-item">
+                    <i class="fas fa-ruler-combined"></i>
+                    <div>
+                        <span class="quick-info-label">Ground Floor Area</span>
+                        <span class="quick-info-value">${escapeHtml(String(property.ground_floor_area))} sq.ft.</span>
+                    </div>
+                </div>
+                `;
+            }
+            if (property.mezzanine_area) {
+                quickInfoHTML += `
+                <div class="quick-info-item">
+                    <i class="fas fa-layer-group"></i>
+                    <div>
+                        <span class="quick-info-label">Mezzanine Area</span>
+                        <span class="quick-info-value">${escapeHtml(String(property.mezzanine_area))} sq.ft.</span>
+                    </div>
+                </div>
+                `;
+            }
+            if (property.ceiling_height) {
+                quickInfoHTML += `
+                <div class="quick-info-item">
+                    <i class="fas fa-arrows-alt-v"></i>
+                    <div>
+                        <span class="quick-info-label">Ceiling Height</span>
+                        <span class="quick-info-value">${escapeHtml(String(property.ceiling_height))} ft</span>
+                    </div>
+                </div>
+                `;
+            }
+            if (property.footfall_potential) {
+                quickInfoHTML += `
+                <div class="quick-info-item">
+                    <i class="fas fa-users"></i>
+                    <div>
+                        <span class="quick-info-label">Footfall Potential</span>
+                        <span class="quick-info-value">${escapeHtml(property.footfall_potential.charAt(0).toUpperCase() + property.footfall_potential.slice(1))}</span>
+                    </div>
+                </div>
+                `;
+            }
+        }
+        
+        // Warehouse specific
+        if (property.property_type === 'warehouse') {
+            if (property.warehouse_type) {
+                const warehouseTypeFormatted = property.warehouse_type.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+                quickInfoHTML += `
+                <div class="quick-info-item">
+                    <i class="fas fa-warehouse"></i>
+                    <div>
+                        <span class="quick-info-label">Warehouse Type</span>
+                        <span class="quick-info-value">${escapeHtml(warehouseTypeFormatted)}</span>
+                    </div>
+                </div>
+                `;
+            }
+            if (property.clearance_height) {
+                const clearanceUnit = property.clearance_height_unit || 'ft';
+                quickInfoHTML += `
+                <div class="quick-info-item">
+                    <i class="fas fa-arrows-alt-v"></i>
+                    <div>
+                        <span class="quick-info-label">Clearance Height</span>
+                        <span class="quick-info-value">${escapeHtml(String(property.clearance_height))} ${escapeHtml(clearanceUnit)}</span>
+                    </div>
+                </div>
+                `;
+            }
+            if (property.dock_levelers) {
+                quickInfoHTML += `
+                <div class="quick-info-item">
+                    <i class="fas fa-truck-loading"></i>
+                    <div>
+                        <span class="quick-info-label">Dock Levelers</span>
+                        <span class="quick-info-value">${escapeHtml(String(property.dock_levelers))}</span>
+                    </div>
+                </div>
+                `;
+            }
+            if (property.number_of_shutters) {
+                quickInfoHTML += `
+                <div class="quick-info-item">
+                    <i class="fas fa-door-open"></i>
+                    <div>
+                        <span class="quick-info-label">Number of Shutters</span>
+                        <span class="quick-info-value">${escapeHtml(String(property.number_of_shutters))}</span>
+                    </div>
+                </div>
+                `;
+            }
+            if (property.shutter_height) {
+                const shutterUnit = property.shutter_height_unit || 'ft';
+                quickInfoHTML += `
+                <div class="quick-info-item">
+                    <i class="fas fa-ruler-vertical"></i>
+                    <div>
+                        <span class="quick-info-label">Shutter Height</span>
+                        <span class="quick-info-value">${escapeHtml(String(property.shutter_height))} ${escapeHtml(shutterUnit)}</span>
+                    </div>
+                </div>
+                `;
+            }
+            if (property.floor_load_capacity) {
+                quickInfoHTML += `
+                <div class="quick-info-item">
+                    <i class="fas fa-weight"></i>
+                    <div>
+                        <span class="quick-info-label">Floor Load Capacity</span>
+                        <span class="quick-info-value">${escapeHtml(String(property.floor_load_capacity))} Kg/Sq ft</span>
+                    </div>
+                </div>
+                `;
+            }
+        }
     }
     
-    quickInfo.innerHTML = quickInfoHTML;
+    quickInfo.innerHTML = quickInfoHTML || '<p style="color: #6b7280; font-style: italic; padding: 1rem;">No additional details available for this property.</p>';
     
     // Render Location and Directions Links
     const locationLinks = document.getElementById('propertyLocationLinks');
@@ -1271,10 +1703,6 @@ function renderPropertyDetails(property) {
             <a href="${escapeHtml(mapsSearchUrl)}" target="_blank" rel="noopener noreferrer" class="property-location-link">
                 <i class="fas fa-map-marker-alt"></i>
                 <span>${escapeHtml(propertyLocation)}</span>
-            </a>
-            <a href="${escapeHtml(mapsDirectionsUrl)}" target="_blank" rel="noopener noreferrer" class="property-directions-link">
-                <i class="fas fa-directions"></i>
-                <span>Get Directions</span>
             </a>
         </div>
     `;

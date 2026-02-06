@@ -125,15 +125,30 @@ function initializeDashboard() {
         initDashboard();
         
         // Set up event delegation for edit buttons (fallback for inline onclick)
+        // CRITICAL FIX: Use once: true or check if already handled by inline onclick
         document.addEventListener('click', (e) => {
             const editBtn = e.target.closest('.dashboard-action-btn.edit');
             if (editBtn && editBtn.hasAttribute('data-property-id')) {
+                // CRITICAL FIX: Check if this click was already handled by inline onclick handler
+                // The inline onclick handler will have already called editProperty, so we can skip
+                // However, if the inline handler failed, we'll still handle it here
+                // To prevent double calls, we check if the default was prevented
+                if (e.defaultPrevented) {
+                    return; // Already handled
+                }
+                
                 const propertyId = editBtn.getAttribute('data-property-id');
+                const propertyCategory = editBtn.getAttribute('data-property-category'); // Get category from data attribute
                 if (propertyId && typeof editProperty === 'function') {
                     e.preventDefault();
                     e.stopPropagation();
-                    console.log('Event delegation: calling editProperty with id:', propertyId);
-                    editProperty(parseInt(propertyId));
+                    if (!propertyCategory) {
+                        console.error('Event delegation: Edit button missing category attribute');
+                        showNotification('Property category missing. Please refresh the page.', 'error');
+                        return;
+                    }
+                    console.log('Event delegation: calling editProperty with id:', propertyId, 'category:', propertyCategory);
+                    editProperty(parseInt(propertyId), propertyCategory);
                 } else if (!propertyId) {
                     console.error('Edit button clicked but no property ID found');
                 } else {
@@ -1683,9 +1698,33 @@ function renderProperties(properties) {
         // Normalize status for CSS class (replace underscores with hyphens)
         const statusClass = actualStatus ? actualStatus.replace(/_/g, '-') : 'sale';
         
-        // Property category: Residential = plots, villas, individual houses, apartments; Commercial = showrooms, office space, warehouse
+        // Property category: Residential = plots, villas, apartments; Commercial = showrooms, office space, warehouse
         const categoryRaw = (property.property_category || property.project_category || '').toLowerCase();
         const categoryDisplay = (categoryRaw === 'residential' || categoryRaw === 'plot') ? 'Residential' : (categoryRaw === 'commercial' ? 'Commercial' : (categoryRaw ? categoryRaw.charAt(0).toUpperCase() + categoryRaw.slice(1) : '—'));
+        
+        // CRITICAL FIX: Normalize category for API query parameter
+        // Category is REQUIRED because IDs are not globally unique across tables
+        // Map 'plot' category correctly (backend expects 'plot', not 'residential')
+        let apiCategory = categoryRaw || '';
+        
+        // Normalize category values
+        if (apiCategory === 'plot') {
+            apiCategory = 'plot'; // Keep as 'plot' for API
+        } else if (apiCategory === 'residential') {
+            apiCategory = 'residential';
+        } else if (apiCategory === 'commercial') {
+            apiCategory = 'commercial';
+        } else {
+            // If category is missing or invalid, try to infer from property_type (fallback)
+            const propertyTypeLower = (property.property_type || property.type || '').toLowerCase();
+            if (['office_space', 'warehouse', 'showrooms'].includes(propertyTypeLower)) {
+                apiCategory = 'commercial';
+            } else if (propertyTypeLower === 'plot_properties' || propertyTypeLower === 'plot') {
+                apiCategory = 'plot';
+            } else {
+                apiCategory = 'residential'; // Default fallback
+            }
+        }
         
         // Prepare image URL for use in HTML attribute
         // Escape only what's needed for JavaScript template literal context
@@ -1789,7 +1828,7 @@ function renderProperties(properties) {
             </td>
             <td>
                 <div class="dashboard-table-actions">
-                    <button class="dashboard-action-btn edit" onclick="(function(id) { if(typeof window.editProperty === 'function') { window.editProperty(id); } else if(typeof editProperty === 'function') { editProperty(id); } else { console.error('editProperty not found'); if(window.TSPropertiesUI&&window.TSPropertiesUI.alert) window.TSPropertiesUI.alert({ title: 'Error', message: 'Edit function not available. Please refresh the page.' }); else alert('Edit function not available. Please refresh the page.'); } })(${property.id})" title="Edit" data-property-id="${property.id}">
+                    <button class="dashboard-action-btn edit" onclick="(function(id, category, e) { if(e) { e.preventDefault(); e.stopPropagation(); } if(typeof window.editProperty === 'function') { window.editProperty(id, category); } else if(typeof editProperty === 'function') { editProperty(id, category); } else { console.error('editProperty not found'); if(window.TSPropertiesUI&&window.TSPropertiesUI.alert) window.TSPropertiesUI.alert({ title: 'Error', message: 'Edit function not available. Please refresh the page.' }); else alert('Edit function not available. Please refresh the page.'); } })(${property.id}, '${apiCategory}', event)" title="Edit" data-property-id="${property.id}" data-property-category="${apiCategory}">
                         <i class="fas fa-edit"></i>
                     </button>
                     <button class="dashboard-action-btn delete" onclick="deleteProperty(${property.id})" title="Delete">
@@ -2002,15 +2041,33 @@ async function loadPageVisitStats(showLoadingIndicator = false) {
 }
 
 // Property modal functions removed
-async function openResidentialPropertyModal(propertyId = null) {
-    // Auto-refresh properties when modal opens
-    await loadProperties(true);
-    
+// CRITICAL FIX: Track edit mode to prevent inference logic
+let isEditMode = false;
+
+async function openResidentialPropertyModal(propertyId = null, category = null, preFetchedProperty = null) {
     const modal = document.getElementById('residentialPropertyModal');
     const form = document.getElementById('residentialPropertyForm');
     const modalTitle = document.getElementById('residentialModalTitle');
     
     if (!modal || !form) return;
+    
+    // When we have pre-fetched data (from editProperty), skip blocking refresh so modal opens immediately
+    if (!preFetchedProperty) {
+        await loadProperties(true);
+    }
+    
+    // CRITICAL FIX: Set edit mode flag
+    // If editProperty already set it to true, keep it true
+    // Otherwise, set based on whether propertyId is provided
+    if (propertyId) {
+        isEditMode = true; // Edit mode
+    } else {
+        isEditMode = false; // Add mode
+    }
+    
+    // CRITICAL FIX: Hard reset modal state BEFORE opening (prevents bleed-over from previous edit)
+    // Always reset to ensure clean state
+    resetResidentialPropertyModalState();
 
     // Lazy load Quill and init property description editor (same as add blog modal)
     if (window.loadQuillEditor && typeof Quill === 'undefined') {
@@ -2146,51 +2203,44 @@ async function openResidentialPropertyModal(propertyId = null) {
 
     if (propertyId) {
         modalTitle.textContent = 'Edit Property';
-        // Fetch property data for editing
-        try {
-            const response = await fetch(`/api/properties/${propertyId}`);
-            if (!response.ok) {
-                throw new Error('Failed to fetch property');
-            }
-            const property = await response.json();
-            
-            // CRITICAL: Ensure property ID is set BEFORE populating form
+        // Use pre-fetched data from editProperty when available so modal always opens (no second fetch)
+        if (preFetchedProperty && preFetchedProperty.id) {
             const propertyIdInput = document.getElementById('residentialPropertyId');
-            if (propertyIdInput) propertyIdInput.value = property.id || propertyId;
-            
-            // Populate all form fields with property data
-            populateResidentialForm(property);
-            
-            // Double-check property ID after population (in case form reset cleared it)
-            if (propertyIdInput) propertyIdInput.value = property.id || propertyId;
-            
-            // CRITICAL: After populateResidentialForm sets the property type, ensure it's properly cached and displayed
-            // Wait a bit for populateResidentialForm to complete (it's async due to Step 2 loading)
-            setTimeout(() => {
-                const propertyTypeCacheInput = document.getElementById('residentialPropertyTypeCache');
-                const propertyTypeSelect = document.getElementById('residentialPropertyType');
-                
-                // Ensure property type is properly cached and displayed
-                if (propertyTypeSelect && propertyTypeSelect.value) {
-                    // If dropdown has a value, ensure cache is set
-                    if (propertyTypeCacheInput) {
-                        propertyTypeCacheInput.value = propertyTypeSelect.value;
+            if (propertyIdInput) propertyIdInput.value = preFetchedProperty.id || propertyId;
+            populateResidentialForm(preFetchedProperty);
+            if (propertyIdInput) propertyIdInput.value = preFetchedProperty.id || propertyId;
+        } else {
+            try {
+                const categoryParam = category || 'residential';
+                const response = await fetch(`/api/properties/${propertyId}?category=${encodeURIComponent(categoryParam)}`);
+                if (!response.ok) {
+                    let errMsg = 'Failed to fetch property';
+                    try {
+                        const errData = await response.json();
+                        if (response.status === 500 && errData.error === 'DATA_INTEGRITY_ERROR') {
+                            showNotification(errData.detail || errData.message || 'Property exists in multiple tables. Contact admin.', 'error');
+                        } else {
+                            showNotification(errData.detail || errData.message || errMsg, 'error');
+                        }
+                    } catch (e) {
+                        showNotification(errMsg, 'error');
                     }
+                    const propertyIdInput = document.getElementById('residentialPropertyId');
+                    if (propertyIdInput) propertyIdInput.value = propertyId;
+                    return;
                 }
-                // If cache is set, ensure dropdown reflects it
-                else if (propertyTypeCacheInput && propertyTypeCacheInput.value && propertyTypeSelect) {
-                    propertyTypeSelect.value = propertyTypeCacheInput.value;
-                    // Trigger change to load Step 2 if needed
-                    handleResidentialPropertyTypeChange();
-                }
-            }, 500); // Give time for Step 2 content to load and property type to be set
-        } catch (error) {
-            console.error('Error loading property:', error);
-            showNotification('Failed to load property details.', 'error');
-            // Keep property ID set even if fetch fails
-            const propertyIdInput = document.getElementById('residentialPropertyId');
-            if (propertyIdInput) propertyIdInput.value = propertyId;
-            return;
+                const property = await response.json();
+                const propertyIdInput = document.getElementById('residentialPropertyId');
+                if (propertyIdInput) propertyIdInput.value = property.id || propertyId;
+                populateResidentialForm(property);
+                if (propertyIdInput) propertyIdInput.value = property.id || propertyId;
+            } catch (error) {
+                console.error('Error loading property:', error);
+                showNotification('Failed to load property details.', 'error');
+                const propertyIdInput = document.getElementById('residentialPropertyId');
+                if (propertyIdInput) propertyIdInput.value = propertyId;
+                return;
+            }
         }
     } else {
         modalTitle.textContent = 'Add Other Properties';
@@ -2202,6 +2252,11 @@ async function openResidentialPropertyModal(propertyId = null) {
     // Show modal after everything is set up
     modal.classList.add('active');
     document.body.style.overflow = 'hidden';
+    
+    // Refresh list in background when opened with pre-fetched data (edit flow)
+    if (preFetchedProperty) {
+        loadProperties(true);
+    }
 }
 
 // Close Residential Property Modal
@@ -2209,6 +2264,9 @@ async function closeResidentialPropertyModal() {
     const modal = document.getElementById('residentialPropertyModal');
     
     if (modal) {
+        // CRITICAL FIX: Reset edit mode flag when closing
+        isEditMode = false;
+        
         // Reset modal state (form, steps, cache, etc.)
         resetResidentialPropertyModalState();
         
@@ -2221,12 +2279,31 @@ async function closeResidentialPropertyModal() {
 }
 
 // Reset Residential Property Modal State (Best Practice: Called after API success)
+// CRITICAL FIX: Hard reset ALL state to prevent bleed-over between edits
 function resetResidentialPropertyModalState() {
     const form = document.getElementById('residentialPropertyForm');
     
     if (form) {
         // Reset form to clear all inputs
         form.reset();
+        
+        // CRITICAL FIX: Clear ALL dropdowns completely
+        const propertyTypeSelect = document.getElementById('residentialPropertyType');
+        if (propertyTypeSelect) {
+            propertyTypeSelect.innerHTML = '<option value="">Select Property Type</option>';
+            propertyTypeSelect.value = '';
+        }
+        
+        const projectCategorySelect = document.getElementById('residentialProjectCategory');
+        if (projectCategorySelect) {
+            projectCategorySelect.value = '';
+        }
+        
+        // Clear Step 2 container
+        const step2Container = document.getElementById('residentialStep2');
+        if (step2Container) {
+            step2Container.innerHTML = '';
+        }
         
         // Clear all cached values
         const propertyTypeCacheInput = document.getElementById('residentialPropertyTypeCache');
@@ -2656,8 +2733,8 @@ function validateResidentialPropertyStep(stepNumber) {
             }
             
             // Price is now in Step 1, so validation is handled there
-        } else if (propertyType === 'villas' || propertyType === 'individual_house') {
-            // Validate villas/individual house fields
+        } else if (propertyType === 'villas') {
+            // Validate villas fields
             const villaType = document.getElementById('residentialVillaType');
             const listingType = document.getElementById('residentialListingType');
             const status = document.getElementById('residentialStatus');
@@ -2891,9 +2968,6 @@ function loadStep2Content(propertyType, container) {
         case 'villas':
             html = getVillasStep2HTML();
             break;
-        case 'individual_house':
-            html = getIndividualHouseStep2HTML ? getIndividualHouseStep2HTML() : getVillasStep2HTML();
-            break;
         case 'plot_properties':
             html = getPlotPropertiesStep2HTML();
             break;
@@ -2938,7 +3012,7 @@ function loadStep2Content(propertyType, container) {
     }
 
     // Restore cached villa type after Step 2 is re-rendered
-    if (propertyType === 'villas' || propertyType === 'individual_house') {
+    if (propertyType === 'villas') {
         const villaTypeCacheInput = document.getElementById('residentialVillaTypeCache');
         const villaTypeSelect = document.getElementById('residentialVillaType');
         if (villaTypeCacheInput && villaTypeSelect && villaTypeCacheInput.value) {
@@ -4170,7 +4244,6 @@ let allCategories = [];
 // Property types by project category (dropdown options)
 const RESIDENTIAL_PROPERTY_TYPES = [
     { value: 'plot_properties', label: 'Plot Properties' },
-    { value: 'individual_house', label: 'Individual Houses' },
     { value: 'villas', label: 'Villas' },
     { value: 'apartments', label: 'Apartments' }
 ];
@@ -4181,6 +4254,7 @@ const COMMERCIAL_PROPERTY_TYPES = [
 ];
 
 // Populate Property Type dropdown based on selected Project Category
+// CRITICAL FIX: Don't clear values in edit mode - trust API values
 function populatePropertyTypeByProjectCategory() {
     const projectCategorySelect = document.getElementById('residentialProjectCategory');
     const propertyTypeSelect = document.getElementById('residentialPropertyType');
@@ -4192,6 +4266,9 @@ function populatePropertyTypeByProjectCategory() {
     const currentValue = propertyTypeSelect.value;
     const validValues = types.map(t => t.value);
     const selectionStillValid = currentValue && validValues.includes(currentValue);
+    
+    console.log('[populatePropertyTypeByProjectCategory] Category:', category, 'Types:', types.map(t => t.value), 'isEditMode:', isEditMode);
+    
     propertyTypeSelect.innerHTML = '<option value="">Select Property Type</option>';
     types.forEach(t => {
         const opt = document.createElement('option');
@@ -4199,12 +4276,25 @@ function populatePropertyTypeByProjectCategory() {
         opt.textContent = t.label;
         propertyTypeSelect.appendChild(opt);
     });
+    
+    // CRITICAL FIX: In edit mode, preserve the value even if it seems invalid
+    // The API is the source of truth, not our validation
     if (selectionStillValid) {
         propertyTypeSelect.value = currentValue;
+        console.log('[populatePropertyTypeByProjectCategory] Restored previous value:', currentValue);
+    } else if (isEditMode) {
+        // In edit mode, keep the value even if it doesn't match current category
+        // This prevents clearing office_space when category is temporarily wrong
+        if (currentValue) {
+            propertyTypeSelect.value = currentValue;
+            console.log('[populatePropertyTypeByProjectCategory] Preserving value in edit mode:', currentValue);
+        }
     } else {
+        // Only clear in add mode
         propertyTypeSelect.value = '';
         if (step2Container) step2Container.innerHTML = '';
         if (propertyTypeCacheInput) propertyTypeCacheInput.value = '';
+        console.log('[populatePropertyTypeByProjectCategory] Cleared value (add mode)');
     }
 }
 
@@ -4308,7 +4398,7 @@ function generateUnitTypeButtonsHTML(propertyType) {
                 <button type="button" class="dashboard-unit-type-btn" id="residentialUnitType3BHK" data-bedrooms="3" data-unit-type="bhk">3 BHK</button>
                 <button type="button" class="dashboard-unit-type-btn" id="residentialUnitType4BHK" data-bedrooms="4" data-unit-type="bhk">4 BHK</button>
             `;
-        } else if (propertyType === 'villas' || propertyType === 'individual_house') {
+        } else if (propertyType === 'villas') {
             return `
                 <button type="button" class="dashboard-unit-type-btn" id="residentialUnitType3BHK" data-bedrooms="3" data-unit-type="bhk">3 BHK</button>
                 <button type="button" class="dashboard-unit-type-btn" id="residentialUnitType4BHK" data-bedrooms="4" data-unit-type="4plus">4 BHK</button>
@@ -4329,8 +4419,8 @@ function generateUnitTypeButtonsHTML(propertyType) {
             // Include BHK types and unit types with 1-4 bedrooms
             return name.includes('BHK') || (bedrooms >= 1 && bedrooms <= 4);
         });
-    } else if (propertyType === 'villas' || propertyType === 'individual_house') {
-        // For villas/houses, show larger unit types (typically 3+ bedrooms)
+    } else if (propertyType === 'villas') {
+        // For villas, show larger unit types (typically 3+ bedrooms)
         filteredUnitTypes = allUnitTypes.filter(ut => {
             const bedrooms = ut.bedrooms || 0;
             // Include unit types with 3+ bedrooms
@@ -4436,124 +4526,97 @@ function populateResidentialForm(property) {
     // Project Category (Step 1) - set first so Property Type dropdown can be populated
     const projectCategoryInput = document.getElementById('residentialProjectCategory');
     if (projectCategoryInput) {
-        let categoryValue = (property.project_category || '').toLowerCase();
-        if (!categoryValue && property.property_type) {
-            const pt = (property.property_type || '').toLowerCase();
-            if (['office_space', 'warehouse', 'showrooms'].includes(pt)) categoryValue = 'commercial';
+        // CRITICAL FIX: In edit mode, TRUST API - NO INFERENCE, NO FALLBACK
+        let categoryValue = '';
+        
+        if (isEditMode) {
+            // EDIT MODE: Trust backend completely - NO inference, NO fallback, NO guessing
+            if (property.property_category) {
+                categoryValue = property.property_category.toLowerCase();
+                console.log('[populateResidentialForm] EDIT MODE: Using property_category from API:', categoryValue);
+            } else if (property.project_category) {
+                categoryValue = property.project_category.toLowerCase();
+                console.log('[populateResidentialForm] EDIT MODE: Using project_category from API:', categoryValue);
+            } else {
+                console.error('[populateResidentialForm] EDIT MODE ERROR: No category in API response!', property);
+                // In edit mode, if category is missing, that's a critical error - don't guess
+                throw new Error('Property category missing from API response');
+            }
+            
+            // CRITICAL FIX: Validate category is valid
+            if (!['commercial', 'residential', 'plot'].includes(categoryValue)) {
+                console.error('[populateResidentialForm] EDIT MODE ERROR: Invalid category:', categoryValue);
+                throw new Error(`Invalid property category: ${categoryValue}`);
+            }
+        } else {
+            // ADD MODE: Can infer if needed
+            if (property.property_category) {
+                categoryValue = property.property_category.toLowerCase();
+            } else if (property.project_category) {
+                categoryValue = property.project_category.toLowerCase();
+            } else {
+                // Only infer in add mode
+                const propertyTypeLower = (property.property_type || property.type || '').toLowerCase();
+                if (['office_space', 'warehouse', 'showrooms'].includes(propertyTypeLower)) {
+                    categoryValue = 'commercial';
+                } else {
+                    categoryValue = 'residential';
+                }
+            }
         }
-        if (!categoryValue) categoryValue = 'residential';
-        safeSetSelectValueFromCandidates(projectCategoryInput, [categoryValue, 'residential', 'commercial']);
+        
+        // Modal Step 1 only has "Residential" and "Commercial"; plot uses Residential + property type "Plot Properties"
+        const categoryForDropdown = (categoryValue === 'plot') ? 'residential' : categoryValue;
+        console.log('[populateResidentialForm] Setting category:', categoryForDropdown, '(API:', categoryValue, ') property_type:', property.property_type, 'isEditMode:', isEditMode);
+        
+        // CRITICAL FIX: Set category FIRST, then populate dropdown, then set property type
+        projectCategoryInput.value = categoryForDropdown;
         const projectCategoryCacheInput = document.getElementById('residentialProjectCategoryCache');
         if (projectCategoryCacheInput) {
-            projectCategoryCacheInput.value = projectCategoryInput.value || '';
+            projectCategoryCacheInput.value = categoryForDropdown;
         }
+        
+        // Populate property type dropdown based on category
         populatePropertyTypeByProjectCategory();
-    }
-    
-    // Location link and price are in Step 2; populated in populateStep2Fields after Step 2 loads
-    
-    // Set property type (if available) or infer from existing data
-    // This is critical for edit mode to dynamically set the select value from database
-    const propertyTypeSelect = document.getElementById('residentialPropertyType');
-    if (propertyTypeSelect) {
-        // Try to get property_type from property, or infer from type and unit_type
-        let inferredPropertyType = null;
         
-        // Priority 1: Use property_type directly from database (most accurate)
-        if (property.property_type) {
-            // Map database property_type values to select option values
-            const propertyTypeMap = {
-                'apartment': 'apartments',
-                'apartments': 'apartments',
-                'villa': 'villas',
-                'villas': 'villas',
-                'house': 'individual_house',
-                'individual_house': 'individual_house',
-                'plot': 'plot_properties',
-                'plot_properties': 'plot_properties',
-                'office_space': 'office_space',
-                'warehouse': 'warehouse',
-                'showrooms': 'showrooms'
-            };
-            inferredPropertyType = propertyTypeMap[property.property_type.toLowerCase()] || property.property_type;
-        } 
-        // Priority 2: Infer from type field
-        else if (property.type) {
-            // Map DB type to frontend property_type
-            const typeMap = {
-                'apartment': 'apartments',
-                'villa': 'villas',
-                'house': 'apartments', // individual_house maps to apartments in select
-                'plot': 'plot_properties'
-            };
-            inferredPropertyType = typeMap[property.type.toLowerCase()] || property.type;
-        } 
-        // Priority 3: Infer from unit_type (fallback)
-        else if (property.unit_type === 'bhk') {
-            inferredPropertyType = 'apartments';
-        }
-        
-        // Only set property type if we have a valid value (edit mode)
-        if (inferredPropertyType) {
-            // Verify the value exists in the select options
-            const optionExists = Array.from(propertyTypeSelect.options).some(
-                option => option.value === inferredPropertyType
-            );
+        // CRITICAL FIX: In edit mode, set property type DIRECTLY from API - NO inference, NO setTimeout
+        if (isEditMode && property.property_type) {
+            const propertyTypeSelect = document.getElementById('residentialPropertyType');
+            const propertyTypeCacheInput = document.getElementById('residentialPropertyTypeCache');
             
-            if (optionExists) {
-                // CRITICAL: Store property type in cache field FIRST (before setting dropdown)
-                const propertyTypeCacheInput = document.getElementById('residentialPropertyTypeCache');
-                if (propertyTypeCacheInput) {
-                    propertyTypeCacheInput.value = inferredPropertyType;
-                }
-                
-                // CRITICAL: Set the dropdown value dynamically from database
-                propertyTypeSelect.value = inferredPropertyType;
-                
-                // CRITICAL: Double-check that the value is set (in case of timing issues)
-                if (propertyTypeSelect.value !== inferredPropertyType) {
-                    // Force set it again
-                    propertyTypeSelect.value = inferredPropertyType;
-                }
-                
-                // CRITICAL: Ensure cache is still set after dropdown value is set
-                if (propertyTypeCacheInput) {
-                    propertyTypeCacheInput.value = inferredPropertyType;
-                }
-                
-                // Trigger change to load Step 2 content
-                handleResidentialPropertyTypeChange();
-                
-                // Wait for Step 2 content to load, then populate fields
-                // Use a more reliable approach - check for actual form fields, not just HTML
-                let attempts = 0;
-                const maxAttempts = 20; // Increased attempts for slower systems
-                const checkAndPopulate = () => {
-                    attempts++;
-                    const step2Content = document.getElementById('residentialStep2');
-                    // Check for Step 2 content (status/listing type are now in Step 1)
-                    const hasFields = step2Content && (
-                        document.getElementById('residentialUnitType') ||
-                        document.getElementById('residentialBedrooms') ||
-                        step2Content.querySelector('input, select, textarea')
-                    );
-                    
-                    if (hasFields) {
-                        // Step 2 content is loaded with actual form fields, populate all fields
-                        populateStep2Fields(property);
-                    } else if (attempts < maxAttempts) {
-                        // Step 2 not ready yet, try again with longer delay
-                        setTimeout(checkAndPopulate, 200);
-                    } else {
-                        // Max attempts reached, try to populate anyway (silently)
-                        populateStep2Fields(property);
-                    }
+            if (propertyTypeSelect) {
+                const apiPropertyType = property.property_type.toLowerCase();
+                // Map to dropdown value if needed
+                const propertyTypeMap = {
+                    'office_space': 'office_space',
+                    'warehouse': 'warehouse',
+                    'showrooms': 'showrooms',
+                    'plot_properties': 'plot_properties',
+                    'plot': 'plot_properties',
+                    'apartments': 'apartments',
+                    'apartment': 'apartments',
+                    'villas': 'villas',
+                    'villa': 'villas'
                 };
-                // Start checking after a longer delay to allow Step 2 to fully load and initialize
-                setTimeout(checkAndPopulate, 300);
-            } else {
-                console.warn(`[Dashboard] Property type "${inferredPropertyType}" does not exist in select options`);
+                
+                const mappedType = propertyTypeMap[apiPropertyType] || apiPropertyType;
+                
+                // Set directly - trust API completely
+                propertyTypeSelect.value = mappedType;
+                if (propertyTypeCacheInput) {
+                    propertyTypeCacheInput.value = mappedType;
+                }
+                
+                console.log('[populateResidentialForm] EDIT MODE: Set property_type from API:', mappedType);
+                
+                // Trigger change to load Step 2 content synchronously
+                handleResidentialPropertyTypeChange();
             }
+        } else if (!isEditMode) {
+            // ADD MODE: Can use inference logic with setTimeout
+            setTimeout(() => {
+                setPropertyTypeFromProperty(property);
+            }, 150);
         }
     }
     
@@ -4652,26 +4715,206 @@ function populateResidentialForm(property) {
         uniqueGallery.forEach((g) => {
             addResidentialGalleryItem(g.image_url, g.title || '', g.category || 'project');
         });
-    } else if (property.images && Array.isArray(property.images) && property.images.length > 0) {
-        const normalized = property.images
-            .map(img => {
-                if (!img) return null;
-                const imageUrl = typeof img === 'string' ? img : (img.image_url || null);
-                if (!imageUrl) return null;
-                const category = normalizeGalleryCategory(img.category || img.image_type || img.image_category);
-                const title = (typeof img === 'object' && (img.title || img.image_title)) ? String(img.title || img.image_title).trim() : '';
-                return { image_url: imageUrl, category, title };
-            })
-            .filter(Boolean);
-
-        const uniqueGallery = dedupeGallery(normalized);
-        uniqueGallery.forEach((g) => {
-            addResidentialGalleryItem(g.image_url, g.title || '', g.category || 'project');
-        });
     }
 
     // Load amenities/features (will be populated in Step 2 for apartments/villas)
     // This is handled in populateStep2Fields
+}
+
+// Helper function to set property type from property data
+function setPropertyTypeFromProperty(property) {
+    // Location link and price are in Step 2; populated in populateStep2Fields after Step 2 loads
+    
+    // Set property type (if available) or infer from existing data
+    // This is critical for edit mode to dynamically set the select value from database
+    const propertyTypeSelect = document.getElementById('residentialPropertyType');
+    if (propertyTypeSelect) {
+        // Try to get property_type from property, or infer from type and unit_type
+        let inferredPropertyType = null;
+        
+        // Map database property_type values to select option values
+        const propertyTypeMap = {
+            'apartment': 'apartments',
+            'apartments': 'apartments',
+            'villa': 'villas',
+            'villas': 'villas',
+            'plot': 'plot_properties',
+            'plot_properties': 'plot_properties',
+            'office_space': 'office_space',
+            'warehouse': 'warehouse',
+            'showrooms': 'showrooms'
+        };
+        
+        // Map DB type to frontend property_type (for residential properties)
+        const typeMap = {
+            'apartment': 'apartments',
+            'villa': 'villas',
+            'house': 'apartments', // house maps to apartments in select
+            'plot': 'plot_properties'
+        };
+        
+        // GOLDEN RULE: Trust backend property_type - NEVER infer from fields
+        // Backend always sends property_type
+        const propertyCategoryLower = (property.property_category || property.project_category || '').toLowerCase();
+        const propertyTypeLower = (property.property_type || '').toLowerCase();
+        const typeLower = (property.type || '').toLowerCase();
+        
+        console.log('[setPropertyTypeFromProperty] Property data:', {
+            id: property.id,
+            property_category: property.property_category,
+            property_type: property.property_type,
+            type: property.type,
+            normalized: { propertyCategoryLower, propertyTypeLower, typeLower }
+        });
+        
+        // Priority 1: Use property_type directly from database (backend is source of truth)
+        if (property.property_type) {
+            inferredPropertyType = propertyTypeMap[propertyTypeLower] || property.property_type;
+            console.log('[setPropertyTypeFromProperty] Using property_type from API:', inferredPropertyType);
+        } 
+        // Priority 2: Fallback to type field (backend aliases property_type as type for some properties)
+        else if (property.type) {
+            // Check if it's a commercial type
+            if (['office_space', 'warehouse', 'showrooms'].includes(typeLower)) {
+                inferredPropertyType = propertyTypeMap[typeLower] || property.type;
+                console.log('[setPropertyTypeFromProperty] Using type field (commercial):', inferredPropertyType);
+            }
+            // For residential properties
+            else {
+                inferredPropertyType = typeMap[typeLower] || property.type;
+                console.log('[setPropertyTypeFromProperty] Using type field (residential):', inferredPropertyType);
+            }
+        } 
+        // Priority 4: Infer from unit_type (fallback)
+        else if (property.unit_type === 'bhk') {
+            inferredPropertyType = 'apartments';
+        }
+        
+        // Only set property type if we have a valid value (edit mode)
+        if (inferredPropertyType) {
+            console.log('[setPropertyTypeFromProperty] Inferred property type:', inferredPropertyType);
+            
+            // Get current dropdown options for debugging
+            const currentOptions = Array.from(propertyTypeSelect.options).map(opt => opt.value);
+            console.log('[setPropertyTypeFromProperty] Current dropdown options:', currentOptions);
+            
+            // Verify the value exists in the select options
+            const optionExists = Array.from(propertyTypeSelect.options).some(
+                option => option.value === inferredPropertyType
+            );
+            
+            console.log('[setPropertyTypeFromProperty] Option exists?', optionExists);
+            
+            if (optionExists) {
+                // CRITICAL: Store property type in cache field FIRST (before setting dropdown)
+                const propertyTypeCacheInput = document.getElementById('residentialPropertyTypeCache');
+                if (propertyTypeCacheInput) {
+                    propertyTypeCacheInput.value = inferredPropertyType;
+                }
+                
+                // CRITICAL: Set the dropdown value dynamically from database
+                propertyTypeSelect.value = inferredPropertyType;
+                
+                // CRITICAL: Double-check that the value is set (in case of timing issues)
+                if (propertyTypeSelect.value !== inferredPropertyType) {
+                    // Force set it again
+                    propertyTypeSelect.value = inferredPropertyType;
+                }
+                
+                // CRITICAL: Ensure cache is still set after dropdown value is set
+                if (propertyTypeCacheInput) {
+                    propertyTypeCacheInput.value = inferredPropertyType;
+                }
+                
+                // CRITICAL FIX: Verify the project category matches the property type
+                // If property type is commercial but category is residential, fix it
+                const projectCategorySelect = document.getElementById('residentialProjectCategory');
+                if (projectCategorySelect && ['office_space', 'warehouse', 'showrooms'].includes(inferredPropertyType)) {
+                    if (projectCategorySelect.value !== 'commercial') {
+                        projectCategorySelect.value = 'commercial';
+                        populatePropertyTypeByProjectCategory();
+                        // Wait a bit for dropdown to repopulate, then set property type again
+                        setTimeout(() => {
+                            propertyTypeSelect.value = inferredPropertyType;
+                            if (propertyTypeCacheInput) {
+                                propertyTypeCacheInput.value = inferredPropertyType;
+                            }
+                            handleResidentialPropertyTypeChange();
+                        }, 50);
+                        return; // Exit early, will continue in setTimeout
+                    }
+                }
+                
+                // Trigger change to load Step 2 content
+                handleResidentialPropertyTypeChange();
+                
+                // Wait for Step 2 content to load, then populate fields
+                // Use a more reliable approach - check for actual form fields, not just HTML
+                let attempts = 0;
+                const maxAttempts = 20; // Increased attempts for slower systems
+                const checkAndPopulate = () => {
+                    attempts++;
+                    const step2Content = document.getElementById('residentialStep2');
+                    // Check for Step 2 content (status/listing type are now in Step 1)
+                    const hasFields = step2Content && (
+                        document.getElementById('residentialUnitType') ||
+                        document.getElementById('residentialBedrooms') ||
+                        step2Content.querySelector('input, select, textarea')
+                    );
+                    
+                    if (hasFields) {
+                        // Step 2 content is loaded with actual form fields, populate all fields
+                        populateStep2Fields(property);
+                    } else if (attempts < maxAttempts) {
+                        // Step 2 not ready yet, try again with longer delay
+                        setTimeout(checkAndPopulate, 200);
+                    } else {
+                        // Max attempts reached, try to populate anyway (silently)
+                        populateStep2Fields(property);
+                    }
+                };
+                // Start checking after a longer delay to allow Step 2 to fully load and initialize
+                setTimeout(checkAndPopulate, 300);
+            } else {
+                // CRITICAL FIX: If option doesn't exist, it might be because project category is wrong
+                // Try to fix the project category and repopulate dropdown
+                console.warn(`[Dashboard] Property type "${inferredPropertyType}" does not exist in select options. Attempting to fix project category...`);
+                
+                const projectCategorySelect = document.getElementById('residentialProjectCategory');
+                if (projectCategorySelect && ['office_space', 'warehouse', 'showrooms'].includes(inferredPropertyType)) {
+                    // Property type is commercial but dropdown has residential options - fix category
+                    projectCategorySelect.value = 'commercial';
+                    const projectCategoryCacheInput = document.getElementById('residentialProjectCategoryCache');
+                    if (projectCategoryCacheInput) {
+                        projectCategoryCacheInput.value = 'commercial';
+                    }
+                    populatePropertyTypeByProjectCategory();
+                    
+                    // Wait for dropdown to repopulate, then try setting property type again
+                    setTimeout(() => {
+                        const optionExistsNow = Array.from(propertyTypeSelect.options).some(
+                            option => option.value === inferredPropertyType
+                        );
+                        if (optionExistsNow) {
+                            propertyTypeSelect.value = inferredPropertyType;
+                            const propertyTypeCacheInput = document.getElementById('residentialPropertyTypeCache');
+                            if (propertyTypeCacheInput) {
+                                propertyTypeCacheInput.value = inferredPropertyType;
+                            }
+                            handleResidentialPropertyTypeChange();
+                        } else {
+                            console.error(`[Dashboard] Property type "${inferredPropertyType}" still does not exist after fixing category`);
+                        }
+                    }, 100);
+                } else {
+                    console.warn(`[Dashboard] Property type "${inferredPropertyType}" does not exist in select options`);
+                }
+            }
+        } else {
+            // If inferredPropertyType is null, log a warning
+            console.warn('[Dashboard] Could not infer property type from property data:', property);
+        }
+    }
 }
 
 function safeSetSelectValue(selectEl, value) {
@@ -4932,7 +5175,7 @@ function populateStep2Fields(property) {
             };
             applyAmenities();
         }
-    } else if (propertyType === 'villas' || propertyType === 'individual_house') {
+    } else if (propertyType === 'villas') {
         // Villa type
         const villaTypeInput = document.getElementById('residentialVillaType');
         if (villaTypeInput && property.villa_type) {
@@ -5216,8 +5459,6 @@ async function handleResidentialPropertySubmit(e) {
         const typeField = formData.get('type');
         if (typeField === 'villa') {
             propertyType = 'villas';
-        } else if (typeField === 'house') {
-            propertyType = 'individual_house';
         } else {
             // Default to apartments if we have unit_type or bedrooms
             const unitType = formData.get('unit_type');
@@ -5535,10 +5776,8 @@ async function handleResidentialPropertySubmit(e) {
 }
 
 // Open Plot Property Modal
-async function openPlotPropertyModal(propertyId = null) {
-    // Auto-refresh properties when modal opens
-    await loadProperties(true);
-    
+// preFetchedProperty: when opening for edit, pass the property object from editProperty to avoid double fetch
+async function openPlotPropertyModal(propertyId = null, category = 'plot', preFetchedProperty = null) {
     const modal = document.getElementById('plotPropertyModal');
     const form = document.getElementById('plotPropertyForm');
     const modalTitle = document.getElementById('plotModalTitle');
@@ -5563,24 +5802,39 @@ async function openPlotPropertyModal(propertyId = null) {
 
     if (propertyId) {
         modalTitle.textContent = 'Edit Plot Property';
-        // Fetch property data for editing
-        try {
-            const response = await fetch(`/api/properties/${propertyId}`);
-            if (!response.ok) {
-                throw new Error('Failed to fetch property');
+        // Use pre-fetched data when coming from editProperty to avoid second fetch and ensure modal opens
+        if (preFetchedProperty && preFetchedProperty.id) {
+            populatePlotForm(preFetchedProperty);
+            if (propertyIdInput) propertyIdInput.value = preFetchedProperty.id || propertyId;
+        } else {
+            // Add mode or opened without pre-fetched data: fetch now
+            try {
+                const categoryParam = category || 'plot';
+                const response = await fetch(`/api/properties/${propertyId}?category=${encodeURIComponent(categoryParam)}`);
+                if (!response.ok) {
+                    let errorMessage = 'Failed to fetch property';
+                    let errorData = null;
+                    try {
+                        errorData = await response.json();
+                        errorMessage = errorData.detail || errorData.message || errorMessage;
+                    } catch (e) { /* ignore */ }
+                    if (response.status === 500 && errorData && errorData.error === 'DATA_INTEGRITY_ERROR') {
+                        showNotification(errorData.detail || errorData.message || 'Property exists in multiple tables. Contact admin.', 'error');
+                    } else {
+                        showNotification(errorMessage, 'error');
+                    }
+                    if (propertyIdInput) propertyIdInput.value = propertyId;
+                    return;
+                }
+                const property = await response.json();
+                populatePlotForm(property);
+                if (propertyIdInput) propertyIdInput.value = property.id || propertyId;
+            } catch (error) {
+                console.error('Error loading property:', error);
+                showNotification('Failed to load property details.', 'error');
+                if (propertyIdInput) propertyIdInput.value = propertyId;
+                return;
             }
-            const property = await response.json();
-            populatePlotForm(property);
-            // CRITICAL: Ensure property ID is set after populating form
-            const propertyIdInput = document.getElementById('plotPropertyId');
-            if (propertyIdInput) propertyIdInput.value = property.id || propertyId;
-        } catch (error) {
-            console.error('Error loading property:', error);
-            showNotification('Failed to load property details.', 'error');
-            // Keep property ID set even if fetch fails
-            const propertyIdInput = document.getElementById('plotPropertyId');
-            if (propertyIdInput) propertyIdInput.value = propertyId;
-            return;
         }
     } else {
         modalTitle.textContent = 'Add Plot Property';
@@ -5588,6 +5842,9 @@ async function openPlotPropertyModal(propertyId = null) {
 
     modal.classList.add('active');
     document.body.style.overflow = 'hidden';
+    
+    // Auto-refresh list after modal is shown (non-blocking)
+    loadProperties(true);
 }
 
 // Close Plot Property Modal
@@ -5811,38 +6068,87 @@ async function handlePlotPropertySubmit(e) {
 }
 
 // Edit Property
-async function editProperty(id) {
-    console.log('editProperty called with id:', id);
+// CRITICAL FIX: Prevent multiple simultaneous calls to editProperty for the same property
+let editPropertyInProgress = false;
+let lastEditPropertyId = null;
+
+async function editProperty(id, category) {
+    // CRITICAL FIX: Lock edit mode IMMEDIATELY - before ANY other code runs
+    // This prevents any add-mode defaults from contaminating edit flow
+    isEditMode = true;
+    
+    console.log('[editProperty] Called with id:', id, 'category:', category);
     
     // Validate input
     if (!id) {
         console.error('editProperty: No ID provided');
+        isEditMode = false; // Reset on error
         showNotification('Property ID is missing. Please try again.', 'error');
         return;
     }
+    
+    // CRITICAL FIX: Category is REQUIRED - IDs are not globally unique across tables
+    if (!category || !['commercial', 'residential', 'plot'].includes(category.toLowerCase())) {
+        console.error('editProperty: Invalid or missing category:', category);
+        isEditMode = false; // Reset on error
+        showNotification('Property category is required. Please refresh and try again.', 'error');
+        return;
+    }
+    
+    // CRITICAL FIX: Prevent duplicate calls - if already editing this property, ignore
+    if (editPropertyInProgress && lastEditPropertyId === id) {
+        console.log('editProperty: Already processing property', id, '- ignoring duplicate call');
+        return;
+    }
+    
+    // CRITICAL FIX: Prevent duplicate calls - if already editing a different property, ignore
+    if (editPropertyInProgress) {
+        console.log('editProperty: Already processing property', lastEditPropertyId, '- ignoring call for', id);
+        return;
+    }
+    
+    // Set flag to prevent duplicate calls
+    editPropertyInProgress = true;
+    lastEditPropertyId = id;
+    
+    // CRITICAL FIX: Hard reset modal state BEFORE fetching - prevents bleed-over
+    resetResidentialPropertyModalState();
     
     try {
         // Show loading notification
         showNotification('Loading property details...', 'info');
         
-        // Fetch property to determine its type
-        const response = await fetch(`/api/properties/${id}`);
+        // CRITICAL FIX: Category is REQUIRED in API call - IDs are not globally unique
+        // Backend requires category to know which table to query
+        const normalizedCategory = category.toLowerCase();
+        const response = await fetch(`/api/properties/${id}?category=${encodeURIComponent(normalizedCategory)}`);
         
         if (!response.ok) {
             // Try to get error message from response
             let errorMessage = 'Failed to fetch property';
+            let errorData = null;
             try {
-                const errorData = await response.json();
-                errorMessage = errorData.message || errorData.error || errorMessage;
+                errorData = await response.json();
+                errorMessage = errorData.message || errorData.detail || errorData.error || errorMessage;
             } catch (e) {
-                // If response is not JSON, use status text
                 errorMessage = response.statusText || errorMessage;
             }
             
-            // Provide more specific error messages based on status code
+            // CRITICAL: Handle DATA_INTEGRITY_ERROR (500) - show clear message, don't throw
+            if (response.status === 500 && errorData && errorData.error === 'DATA_INTEGRITY_ERROR') {
+                const detailMsg = errorData.detail || errorData.message ||
+                    `Property ID ${id} exists in multiple tables: ${(errorData.tables || []).join(', ')}. ` +
+                    'This is a data integrity issue. Admin must remove the duplicate from the wrong table (see ID_COLLISION_FIX.md).';
+                console.error('[editProperty] DATA_INTEGRITY_ERROR:', errorData);
+                showNotification(detailMsg, 'error');
+                isEditMode = false;
+                editPropertyInProgress = false;
+                return;
+            }
+            
             if (response.status === 404) {
                 errorMessage = 'Property not found. It may have been deleted.';
-            } else if (response.status === 500) {
+            } else if (response.status === 500 && !errorData) {
                 errorMessage = 'Server error while loading property. Please try again.';
             }
             
@@ -5850,27 +6156,88 @@ async function editProperty(id) {
         }
         
         const property = await response.json();
-        console.log('Property fetched:', property);
+        console.log('[editProperty] Property fetched from API:', {
+            id: property.id,
+            property_category: property.property_category,
+            project_category: property.project_category,
+            property_type: property.property_type,
+            type: property.type
+        });
         
-        // Validate property data
+        // CRITICAL FIX: Defensive guard - validate property data integrity
         if (!property || !property.id) {
             throw new Error('Invalid property data received');
         }
         
-        // Check if modal function exists
-        if (typeof openResidentialPropertyModal !== 'function') {
-            console.error('openResidentialPropertyModal is not a function');
-            throw new Error('Modal function not available. Please refresh the page.');
+        // CRITICAL FIX: Check for data integrity errors from backend
+        if (property.error === 'DATA_INTEGRITY_ERROR') {
+            console.error('[editProperty] DATA INTEGRITY ERROR:', property);
+            const errorMsg = property.detail || property.message || 
+                `Property ID ${id} exists in multiple tables: ${property.tables?.join(', ') || 'unknown'}. ` +
+                `This is a data corruption issue. Please contact admin to resolve.`;
+            showNotification(errorMsg, 'error');
+            isEditMode = false;
+            editPropertyInProgress = false;
+            return;
         }
         
-        // Open residential property modal (handles all property types: apartments, villas, plot_properties, individual_house)
-        // The modal uses a 3-step wizard and dynamically loads Step 2 content based on property_type
-        console.log('Opening modal for property:', property.id);
-        openResidentialPropertyModal(property.id);
+        // CRITICAL FIX: Validate required fields exist (prevent silent failures)
+        if (!property.property_category && !property.project_category) {
+            console.error('[editProperty] Missing category in property data:', property);
+            showNotification(
+                'This property has corrupted data (missing category). Please contact admin.',
+                'error'
+            );
+            isEditMode = false;
+            editPropertyInProgress = false;
+            return;
+        }
+        
+        if (!property.property_type && !property.type) {
+            console.error('[editProperty] Missing property_type in property data:', property);
+            showNotification(
+                'This property has corrupted data (missing property type). Please contact admin.',
+                'error'
+            );
+            isEditMode = false;
+            editPropertyInProgress = false;
+            return;
+        }
+        
+        // CRITICAL FIX: Route to correct modal based on API category - NO assumptions
+        const projectCategory = (property.property_category || property.project_category || '').toLowerCase();
+        console.log('[editProperty] Routing based on API category:', projectCategory);
+        
+        // Use the category that was passed to editProperty (from edit button) - this is the source of truth
+        // If category from button doesn't match API, prefer button category (it knows which table was clicked)
+        const routingCategory = category || projectCategory;
+        
+        if (routingCategory === 'commercial' || projectCategory === 'commercial') {
+            // Commercial properties: pass fetched property so modal opens without second fetch
+            console.log('[editProperty] Opening commercial property modal with category:', routingCategory);
+            await openResidentialPropertyModal(property.id, routingCategory, property);
+        } else if (routingCategory === 'plot' || projectCategory === 'plot') {
+            // Plot properties: use same residential modal; Step 2 will show plot fields (plot_properties type)
+            console.log('[editProperty] Opening residential modal for plot property with category:', routingCategory);
+            await openResidentialPropertyModal(property.id, routingCategory, property);
+        } else {
+            // Residential properties: pass fetched property so modal opens without second fetch
+            console.log('[editProperty] Opening residential property modal with category:', routingCategory);
+            await openResidentialPropertyModal(property.id, routingCategory, property);
+        }
     } catch (error) {
         console.error('Error in editProperty:', error);
         const errorMsg = error.message || 'Failed to load property details.';
         showNotification(errorMsg, 'error');
+        // Reset edit mode on error
+        isEditMode = false;
+    } finally {
+        // CRITICAL FIX: Reset flag after modal opens (with a small delay to prevent rapid re-clicks)
+        setTimeout(() => {
+            editPropertyInProgress = false;
+            lastEditPropertyId = null;
+            // Don't reset isEditMode here - let closeResidentialPropertyModal handle it
+        }, 500);
     }
 }
 

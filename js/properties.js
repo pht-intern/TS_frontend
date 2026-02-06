@@ -302,6 +302,18 @@ async function loadPropertiesFromAPI() {
             }
 
             const propType = typeof property.type === 'string' ? property.type : property.type?.value || property.type || 'apartment';
+            // Extract listing_type - handle enum objects or strings
+            let listingType = null;
+            if (property.listing_type) {
+                if (typeof property.listing_type === 'string') {
+                    listingType = property.listing_type;
+                } else if (property.listing_type?.value) {
+                    listingType = property.listing_type.value;
+                } else if (property.listing_type) {
+                    listingType = String(property.listing_type);
+                }
+            }
+            const category = (property.property_category || (property.category || '').toLowerCase()) || 'residential';
             return {
                 id: property.id,
                 title: property.title || 'Untitled Property',
@@ -310,11 +322,13 @@ async function loadPropertiesFromAPI() {
                 price_text: priceText,
                 type: propType,
                 property_type: property.property_type ?? propType,
-                category: property.property_category || (property.category || '').toLowerCase(),
+                category,
+                property_category: category,
                 bedrooms: property.bedrooms || 0,
                 bathrooms: property.bathrooms || 0,
                 area: property.area || null,
                 status: typeof property.status === 'string' ? property.status : property.status?.value || property.status || 'sale',
+                listing_type: listingType,
                 image: imageUrl,
                 images: safeImages,
                 description: property.description || '',
@@ -755,6 +769,19 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         const categoryBtn = document.querySelector(`.category-text-button[data-category="${categoryParam}"]`);
         if (categoryBtn) categoryBtn.classList.add('active');
+        
+        // Explicitly hide filter-group-sidebar and filter-additional-sidebar when only category is selected (not subcategory)
+        const container = document.getElementById('propertiesPropertiesFilters');
+        if (container) {
+            const groupSidebar = container.querySelector('.filter-group-sidebar');
+            if (groupSidebar) {
+                groupSidebar.style.display = 'none';
+            }
+            const additionalSidebar = container.querySelector('.filter-additional-sidebar');
+            if (additionalSidebar) {
+                additionalSidebar.style.display = 'none';
+            }
+        }
     }
 
     updateFilterGroupsByPropertyType();
@@ -811,18 +838,44 @@ function renderProperties(propertiesToRender = filteredProperties.slice(0, displ
         const bathrooms = property.bathrooms || 0;
         const area = property.area || 0;
         const propertyId = property.id || 0;
+        // Category required for property-details page (API uses category + id). Use category (display format) or property_category (raw API).
+        const rawCategory = (property.category ?? property.property_category ?? property.project_category ?? 'residential').toLowerCase();
+        const apiCategory = ['commercial', 'residential', 'plot'].includes(rawCategory) ? rawCategory : 'residential';
         const priceDisplay = getPriceForDisplay(property);
         const priceHtml = priceDisplay.value != null
             ? `₹ <span class="price-value">${priceDisplay.value}</span> <span class="price-unit">${priceDisplay.unit}</span>`
             : 'Price on request';
 
+        // Get status badge text and class from database status field
+        let badgeText = '';
+        let badgeClass = '';
+        const status = String(propertyStatus).toLowerCase();
+        
+        if (status === 'new') {
+            badgeText = 'New';
+            badgeClass = 'new';
+        } else if (status === 'sell' || status === 'sale') {
+            badgeText = 'For Sale';
+            badgeClass = 'sale';
+        } else if (status === 'resale') {
+            badgeText = 'Resale';
+            badgeClass = 'resale';
+        } else if (status === 'rent') {
+            badgeText = 'For Rent';
+            badgeClass = 'rent';
+        } else {
+            // Default fallback
+            badgeText = 'For Sale';
+            badgeClass = 'sale';
+        }
+
         return `
         <div class="property-card" data-type="${propertyType}" data-status="${propertyStatus}" data-id="${propertyId}" data-property-id="${propertyId}">
             <div class="property-image">
                 <img src="${finalImageUrl}" alt="${title}" loading="lazy" onerror="this.src='${imagePlaceholder}'">
-                <div class="property-badge ${propertyStatus}">${propertyStatus === 'sale' ? 'For Sale' : 'For Rent'}</div>
+                <div class="property-badge ${badgeClass}">${escapeHtml(badgeText)}</div>
                 <div class="property-actions">
-                    <button class="property-action-btn" title="Share" aria-label="Share property" data-property-id="${propertyId}">
+                    <button class="property-action-btn" title="Share" aria-label="Share property" data-property-id="${propertyId}" data-property-category="${escapeHtml(apiCategory)}">
                         <i class="fas fa-share-alt"></i>
                     </button>
                 </div>
@@ -835,7 +888,7 @@ function renderProperties(propertiesToRender = filteredProperties.slice(0, displ
                     <span>${location}</span>
                 </div>
                 <div class="property-footer">
-                    <a href="/property-details.html?id=${propertyId}" class="btn-view-details" target="_blank">View Details</a>
+                    <a href="/property-details.html?id=${propertyId}&category=${encodeURIComponent(apiCategory)}" class="btn-view-details" target="_blank">View Details</a>
                 </div>
             </div>
         </div>
@@ -848,10 +901,11 @@ function renderProperties(propertiesToRender = filteredProperties.slice(0, displ
             btn.addEventListener('click', async (e) => {
                 e.stopPropagation();
                 const propertyId = btn.getAttribute('data-property-id');
+                const category = btn.getAttribute('data-property-category') || 'residential';
                 if (!propertyId) return;
 
-                // Create the property URL
-                const propertyUrl = `${window.location.origin}/property-details.html?id=${propertyId}`;
+                // Create the property URL (category required for API)
+                const propertyUrl = `${window.location.origin}/property-details.html?id=${propertyId}&category=${encodeURIComponent(category)}`;
 
                 try {
                     // Copy to clipboard using Clipboard API
@@ -1378,7 +1432,8 @@ function updateFilterGroupsByPropertyType() {
 
     const propertyType = typeof selectedPropertyType === 'string' ? selectedPropertyType : null;
     const residentialTypes = ['apartment', 'house', 'villa', 'plots'];
-    const commercialTypes = ['office-space', 'warehouse', 'showrooms'];
+    // CRITICAL FIX: Use 'office_space' (underscore) to match backend/database format
+    const commercialTypes = ['office_space', 'office-space', 'warehouse', 'showrooms'];
     const typesInCategory = selectedCategory === 'residential' ? residentialTypes : (selectedCategory === 'commercial' ? commercialTypes : []);
 
     container.querySelectorAll('.filter-group[data-filter-for]').forEach(el => {
@@ -1401,14 +1456,23 @@ function updateFilterGroupsByPropertyType() {
 
     const additionalSidebar = container.querySelector('.filter-additional-sidebar');
     if (additionalSidebar) {
-        const visibleAdditional = additionalSidebar.querySelectorAll('.filter-group').length > 0 &&
-            Array.from(additionalSidebar.querySelectorAll('.filter-group')).some(child => child.style.display !== 'none');
-        additionalSidebar.style.display = (hasCategoryOrType && visibleAdditional) ? 'flex' : 'none';
+        // Only show filter-additional-sidebar when a subcategory (property type) is selected, not on category-only click
+        const shouldShowAdditional = selectedPropertyType && typeof selectedPropertyType === 'string' && selectedPropertyType.trim() !== '';
+        if (shouldShowAdditional) {
+            const visibleAdditional = additionalSidebar.querySelectorAll('.filter-group').length > 0 &&
+                Array.from(additionalSidebar.querySelectorAll('.filter-group')).some(child => child.style.display !== 'none');
+            additionalSidebar.style.display = visibleAdditional ? 'flex' : 'none';
+        } else {
+            additionalSidebar.style.display = 'none';
+        }
     }
 
     const groupSidebar = container.querySelector('.filter-group-sidebar');
     if (groupSidebar) {
-        groupSidebar.style.display = hasCategoryOrType ? 'flex' : 'none';
+        // Only show filter-group-sidebar when a subcategory (property type) is selected, not on category-only click
+        // Explicitly check that selectedPropertyType is truthy and not just selectedCategory
+        const shouldShowSidebar = selectedPropertyType && typeof selectedPropertyType === 'string' && selectedPropertyType.trim() !== '';
+        groupSidebar.style.display = shouldShowSidebar ? 'flex' : 'none';
     }
 }
 
@@ -1515,6 +1579,20 @@ function initFilters() {
                 selectedCategory = category;
                 selectedPropertyType = null; // Clear specific property type when selecting category
             }
+            
+            // Explicitly hide filter-group-sidebar and filter-additional-sidebar when only category is selected (not subcategory)
+            const container = document.getElementById('propertiesPropertiesFilters');
+            if (container) {
+                const groupSidebar = container.querySelector('.filter-group-sidebar');
+                if (groupSidebar) {
+                    groupSidebar.style.display = 'none';
+                }
+                const additionalSidebar = container.querySelector('.filter-additional-sidebar');
+                if (additionalSidebar) {
+                    additionalSidebar.style.display = 'none';
+                }
+            }
+            
             updateFilterGroupsByPropertyType();
             applyFilters();
         });
@@ -1992,6 +2070,13 @@ function updateFilterTags() {
 
     if (!filterTagsContainer || !filterTags) return;
 
+    // Only show filter tags when a subcategory (property type) is selected
+    if (!selectedPropertyType || typeof selectedPropertyType !== 'string' || selectedPropertyType.trim() === '') {
+        filterTagsContainer.style.display = 'none';
+        filterTags.innerHTML = '';
+        return;
+    }
+
     const activeFilters = [];
 
     // Main search (check both main search and nav search)
@@ -2072,15 +2157,8 @@ function updateFilterTags() {
             icon: 'fa-building',
             value: selectedPropertyType
         });
-    } else if (selectedCategory) {
-        // Only category selected (no specific property type)
-        activeFilters.push({
-            type: 'category',
-            label: selectedCategory === 'residential' ? 'Residential' : 'Commercial',
-            icon: 'fa-home',
-            value: selectedCategory
-        });
     }
+    // Note: Category-only tags are not shown - tags only appear when a subcategory is selected
 
     // City filter
     const city = document.getElementById('searchCity')?.value.trim() || '';

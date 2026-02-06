@@ -2701,8 +2701,33 @@ section:not(.hero).section-visible .section-header {
     font-weight: 600;
 }
 
+.property-badge.sale {
+    background: var(--primary-color);
+    color: var(--white);
+}
+
 .property-badge.rent {
     background: var(--grey-medium);
+    color: var(--white);
+}
+
+.property-badge.new {
+    background: #2196f3;
+    color: var(--white);
+}
+
+.property-badge.resale {
+    background: #9c27b0;
+    color: var(--white);
+}
+
+.property-badge.under-construction {
+    background: #ff9800;
+    color: var(--white);
+}
+
+.property-badge.ready-to-move {
+    background: #4caf50;
     color: var(--white);
 }
 
@@ -9383,41 +9408,23 @@ section:not(.hero).section-visible .section-header {
 }
 
 .properties-filters {
-    background: linear-gradient(135deg, var(--white) 0%, var(--white-off) 100%);
+    background: var(--white);
     padding: 2.5rem;
-    border-radius: 20px;
     scroll-margin-top: 100px;
-    /* for hero-scroll-indicator scroll-into-view (fixed nav) */
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08);
     margin-bottom: 3rem;
     width: 100%;
     max-width: 100%;
     box-sizing: border-box;
-    overflow: hidden;
-    border: 1px solid var(--grey-lightest);
-    position: relative;
-}
-
-.properties-filters::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 4px;
-    background: linear-gradient(90deg, var(--primary-color) 0%, var(--accent-color) 100%);
-    border-radius: 20px 20px 0 0;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
 }
 
 .filter-section {
     margin-bottom: 2.5rem;
     padding-bottom: 2rem;
-    border-bottom: 1px solid var(--grey-lightest);
     position: relative;
 }
 
 .filter-section:last-of-type {
-    border-bottom: none;
     margin-bottom: 0;
     padding-bottom: 0;
 }
@@ -9625,21 +9632,9 @@ section:not(.hero).section-visible .section-header {
     flex-direction: column;
     align-items: center;
     width: 100%;
-    margin-top: 2.5rem;
-    padding-top: 2.5rem;
-    border-top: 2px solid var(--grey-lightest);
+    margin-top: 1.5rem;
+    padding-top: 1.5rem;
     position: relative;
-}
-
-.category-section-centered::before {
-    content: '';
-    position: absolute;
-    top: -2px;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 60px;
-    height: 2px;
-    background: linear-gradient(90deg, var(--primary-color) 0%, var(--accent-color) 100%);
 }
 
 .category-main-buttons {
@@ -10856,6 +10851,7 @@ section:not(.hero).section-visible .section-header {
     margin: 0;
     box-shadow: none;
     border-radius: 0;
+    border: none;
 }
 
 .properties-sidebar .category-section-centered {
@@ -10868,6 +10864,95 @@ section:not(.hero).section-visible .section-header {
     flex-direction: column;
     gap: 0.75rem;
     width: 100%;
+}
+
+/* Simple category-text-button style for properties page to match index.html */
+#propertiesPropertiesFilters .category-text-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.85rem 1.5rem;
+    border-radius: 10px;
+    text-decoration: none;
+    font-size: 0.95rem;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    cursor: pointer;
+    border: 2px solid var(--primary-color);
+    background: transparent;
+    color: var(--primary-color);
+    transition: all 0.3s ease;
+    box-shadow: none;
+    transform: none;
+    position: relative;
+    overflow: visible;
+}
+
+#propertiesPropertiesFilters .category-text-button::before {
+    display: none;
+}
+
+#propertiesPropertiesFilters .category-text-button:hover,
+#propertiesPropertiesFilters .category-text-button.active {
+    background: var(--primary-color);
+    color: var(--white);
+    border-color: var(--primary-color);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+}
+
+#propertiesPropertiesFilters .category-text-button:active {
+    transform: translateY(-1px);
+}
+
+#propertiesPropertiesFilters .category-text-button.active::after {
+    display: none;
+}
+
+/* Simple subcategory-button style for properties page to match category buttons */
+#propertiesPropertiesFilters .subcategory-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.85rem 1.5rem;
+    border-radius: 10px;
+    text-decoration: none;
+    font-size: 0.95rem;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    cursor: pointer;
+    border: 2px solid var(--primary-color);
+    background: transparent;
+    color: var(--primary-color);
+    transition: all 0.3s ease;
+    box-shadow: none;
+    transform: none;
+    position: relative;
+    overflow: visible;
+}
+
+#propertiesPropertiesFilters .subcategory-button::before {
+    display: none;
+}
+
+#propertiesPropertiesFilters .subcategory-button:hover,
+#propertiesPropertiesFilters .subcategory-button.active {
+    background: var(--primary-color);
+    color: var(--white);
+    border-color: var(--primary-color);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+}
+
+#propertiesPropertiesFilters .subcategory-button:active {
+    transform: translateY(-1px);
+}
+
+/* Remove border-top from subcategory-buttons container */
+#propertiesPropertiesFilters .category-subcategories-container .subcategory-buttons::before {
+    display: none;
 }
 
 .properties-sidebar .category-text-button {
@@ -10897,22 +10982,19 @@ section:not(.hero).section-visible .section-header {
     padding: 1.5rem;
 }
 
-.filters-active .filter-group-sidebar {
-    display: flex;
-}
+/* filter-group-sidebar visibility is controlled by JavaScript based on subcategory selection */
+/* Removed .filters-active .filter-group-sidebar rule - sidebar only shows when subcategory button is clicked */
 
 .filter-additional-sidebar {
     display: none;
     flex-direction: column;
     gap: 1.25rem;
     padding: 1.5rem;
-    border-top: 1px solid var(--border-color);
     margin-top: 0;
 }
 
-.filters-active .filter-additional-sidebar {
-    display: flex;
-}
+/* filter-additional-sidebar visibility is controlled by JavaScript based on subcategory selection */
+/* Removed .filters-active .filter-additional-sidebar rule - sidebar only shows when subcategory button is clicked */
 
 .properties-sidebar .filter-button-center {
     display: none;
@@ -10932,7 +11014,6 @@ section:not(.hero).section-visible .section-header {
     padding: 1.5rem;
     border-radius: 0;
     box-shadow: none;
-    border-top: 1px solid var(--border-color);
 }
 
 .properties-sidebar .filter-tags-header {
@@ -12912,6 +12993,18 @@ section:not(.hero).section-visible .section-header {
     background: var(--pastel-grey);
     color: var(--text-dark);
     border: 1px solid var(--grey-medium);
+}
+
+.status-badge.new {
+    background: #dbeafe;
+    color: #1e40af;
+    border: 1px solid #93c5fd;
+}
+
+.status-badge.resale {
+    background: #f3e8ff;
+    color: #6b21a8;
+    border: 1px solid #c084fc;
 }
 
 .property-quick-info {
@@ -15303,6 +15396,17 @@ section:not(.hero).section-visible .section-header {
     background: var(--primary-lightest);
     transform: scale(1.01);
     transition: all 0.2s ease;
+}
+
+/* Widen Created At and Updated At columns in properties table */
+.dashboard-properties-table th.dashboard-table-col-created,
+.dashboard-properties-table th.dashboard-table-col-updated {
+    min-width: 150px;
+}
+.dashboard-properties-table:has(th.dashboard-table-col-created) td:nth-child(8),
+.dashboard-properties-table:has(th.dashboard-table-col-created) td:nth-child(9) {
+    min-width: 150px;
+    white-space: nowrap;
 }
 
 .dashboard-table-image {
@@ -18606,6 +18710,52 @@ section:not(.hero).section-visible .section-header {
 }
 
 #indexPropertiesFilters .category-text-button.active::after {
+    display: none;
+}
+
+/* Simple subcategory-button style for index.html to match category buttons */
+#indexPropertiesFilters .subcategory-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.85rem 1.5rem;
+    border-radius: 10px;
+    text-decoration: none;
+    font-size: 0.95rem;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    cursor: pointer;
+    border: 2px solid var(--primary-color);
+    background: transparent;
+    color: var(--primary-color);
+    transition: all 0.3s ease;
+    box-shadow: none;
+    transform: none;
+    position: relative;
+    overflow: visible;
+}
+
+#indexPropertiesFilters .subcategory-button::before {
+    display: none;
+}
+
+#indexPropertiesFilters .subcategory-button:hover,
+#indexPropertiesFilters .subcategory-button.active {
+    background: var(--primary-color);
+    color: var(--white);
+    border-color: var(--primary-color);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+}
+
+#indexPropertiesFilters .subcategory-button:active {
+    transform: translateY(-1px);
+}
+
+/* Remove border-top from subcategory-buttons container in index.html */
+#indexPropertiesFilters .category-subcategories-container .subcategory-buttons::before,
+#indexCategorySection .category-subcategories-container .subcategory-buttons::before {
     display: none;
 }
 

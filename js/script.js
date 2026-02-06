@@ -375,17 +375,43 @@ function renderProperties(propertiesToRender = properties) {
     if (!grid) return;
 
     grid.innerHTML = propertiesToRender.map(property => {
+        const rawCat = (property.property_category || property.project_category || property.type || 'residential').toLowerCase();
+        const apiCategory = ['commercial', 'residential', 'plot'].includes(rawCat) ? rawCat : 'residential';
         const priceDisplay = getPriceForDisplay(property);
         const priceHtml = priceDisplay.value != null
             ? `₹ <span class="price-value">${priceDisplay.value}</span> <span class="price-unit">${priceDisplay.unit}</span>`
             : 'Price on request';
+        
+        // Get status badge text and class from database status field
+        let badgeText = '';
+        let badgeClass = '';
+        const status = String(property.status || 'sale').toLowerCase();
+        
+        if (status === 'new') {
+            badgeText = 'New';
+            badgeClass = 'new';
+        } else if (status === 'sell' || status === 'sale') {
+            badgeText = 'For Sale';
+            badgeClass = 'sale';
+        } else if (status === 'resale') {
+            badgeText = 'Resale';
+            badgeClass = 'resale';
+        } else if (status === 'rent') {
+            badgeText = 'For Rent';
+            badgeClass = 'rent';
+        } else {
+            // Default fallback
+            badgeText = 'For Sale';
+            badgeClass = 'sale';
+        }
+        
         return `
         <div class="property-card" data-type="${property.type}">
             <div class="property-image">
                 <img src="${property.image}" alt="${property.title}" onerror="this.style.background='linear-gradient(135deg, #667eea 0%, #764ba2 100%)'">
-                <div class="property-badge ${property.status}">${property.status === 'sale' ? 'For Sale' : 'For Rent'}</div>
+                <div class="property-badge ${badgeClass}">${badgeText}</div>
                 <div class="property-actions">
-                    <button class="property-action-btn" title="Share" aria-label="Share property" data-property-id="${property.id || 0}">
+                    <button class="property-action-btn" title="Share" aria-label="Share property" data-property-id="${property.id || 0}" data-property-category="${apiCategory}">
                         <i class="fas fa-share-alt"></i>
                     </button>
                 </div>
@@ -422,10 +448,11 @@ function renderProperties(propertiesToRender = properties) {
             btn.addEventListener('click', async (e) => {
                 e.stopPropagation();
                 const propertyId = btn.getAttribute('data-property-id');
+                const category = btn.getAttribute('data-property-category') || 'residential';
                 if (!propertyId || propertyId === '0') return;
 
-                // Create the property URL
-                const propertyUrl = `${window.location.origin}/property-details.html?id=${propertyId}`;
+                // Create the property URL (category required for details API)
+                const propertyUrl = `${window.location.origin}/property-details.html?id=${propertyId}&category=${encodeURIComponent(category)}`;
 
                 try {
                     // Copy to clipboard using Clipboard API

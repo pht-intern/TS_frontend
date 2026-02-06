@@ -1726,7 +1726,7 @@ function renderProperties(properties) {
         // Normalize status for CSS class (replace underscores with hyphens)
         const statusClass = actualStatus ? actualStatus.replace(/_/g, '-') : 'sale';
         
-        // Property category: Residential = plots, villas, individual houses, apartments; Commercial = showrooms, office space, warehouse
+        // Property category: Residential = plots, villas, apartments; Commercial = showrooms, office space, warehouse
         const categoryRaw = (property.property_category || property.project_category || '').toLowerCase();
         const categoryDisplay = (categoryRaw === 'residential' || categoryRaw === 'plot') ? 'Residential' : (categoryRaw === 'commercial' ? 'Commercial' : (categoryRaw ? categoryRaw.charAt(0).toUpperCase() + categoryRaw.slice(1) : '—'));
         
@@ -2713,8 +2713,8 @@ function validateResidentialPropertyStep(stepNumber) {
             }
             
             // Price is now in Step 1, so validation is handled there
-        } else if (propertyType === 'villas' || propertyType === 'individual_house') {
-            // Validate villas/individual house fields
+        } else if (propertyType === 'villas') {
+            // Validate villas fields
             const villaType = document.getElementById('residentialVillaType');
             const listingType = document.getElementById('residentialListingType');
             const status = document.getElementById('residentialStatus');
@@ -2948,9 +2948,6 @@ function loadStep2Content(propertyType, container) {
         case 'villas':
             html = getVillasStep2HTML();
             break;
-        case 'individual_house':
-            html = getIndividualHouseStep2HTML ? getIndividualHouseStep2HTML() : getVillasStep2HTML();
-            break;
         case 'plot_properties':
             html = getPlotPropertiesStep2HTML();
             break;
@@ -2995,7 +2992,7 @@ function loadStep2Content(propertyType, container) {
     }
 
     // Restore cached villa type after Step 2 is re-rendered
-    if (propertyType === 'villas' || propertyType === 'individual_house') {
+    if (propertyType === 'villas') {
         const villaTypeCacheInput = document.getElementById('residentialVillaTypeCache');
         const villaTypeSelect = document.getElementById('residentialVillaType');
         if (villaTypeCacheInput && villaTypeSelect && villaTypeCacheInput.value) {
@@ -4227,7 +4224,6 @@ let allCategories = [];
 // Property types by project category (dropdown options)
 const RESIDENTIAL_PROPERTY_TYPES = [
     { value: 'plot_properties', label: 'Plot Properties' },
-    { value: 'individual_house', label: 'Individual Houses' },
     { value: 'villas', label: 'Villas' },
     { value: 'apartments', label: 'Apartments' }
 ];
@@ -4365,7 +4361,7 @@ function generateUnitTypeButtonsHTML(propertyType) {
                 <button type="button" class="dashboard-unit-type-btn" id="residentialUnitType3BHK" data-bedrooms="3" data-unit-type="bhk">3 BHK</button>
                 <button type="button" class="dashboard-unit-type-btn" id="residentialUnitType4BHK" data-bedrooms="4" data-unit-type="bhk">4 BHK</button>
             `;
-        } else if (propertyType === 'villas' || propertyType === 'individual_house') {
+        } else if (propertyType === 'villas') {
             return `
                 <button type="button" class="dashboard-unit-type-btn" id="residentialUnitType3BHK" data-bedrooms="3" data-unit-type="bhk">3 BHK</button>
                 <button type="button" class="dashboard-unit-type-btn" id="residentialUnitType4BHK" data-bedrooms="4" data-unit-type="4plus">4 BHK</button>
@@ -4386,8 +4382,8 @@ function generateUnitTypeButtonsHTML(propertyType) {
             // Include BHK types and unit types with 1-4 bedrooms
             return name.includes('BHK') || (bedrooms >= 1 && bedrooms <= 4);
         });
-    } else if (propertyType === 'villas' || propertyType === 'individual_house') {
-        // For villas/houses, show larger unit types (typically 3+ bedrooms)
+    } else if (propertyType === 'villas') {
+        // For villas, show larger unit types (typically 3+ bedrooms)
         filteredUnitTypes = allUnitTypes.filter(ut => {
             const bedrooms = ut.bedrooms || 0;
             // Include unit types with 3+ bedrooms
@@ -4493,11 +4489,19 @@ function populateResidentialForm(property) {
     // Project Category (Step 1) - set first so Property Type dropdown can be populated
     const projectCategoryInput = document.getElementById('residentialProjectCategory');
     if (projectCategoryInput) {
-        let categoryValue = (property.project_category || '').toLowerCase();
+        // Priority 1: Check property_category (API returns this for commercial properties)
+        let categoryValue = (property.property_category || property.project_category || '').toLowerCase();
+        // Priority 2: Infer from property_type if category is not set
         if (!categoryValue && property.property_type) {
             const pt = (property.property_type || '').toLowerCase();
             if (['office_space', 'warehouse', 'showrooms'].includes(pt)) categoryValue = 'commercial';
         }
+        // Priority 3: Infer from type field (backend aliases property_type as type for commercial)
+        if (!categoryValue && property.type) {
+            const pt = (property.type || '').toLowerCase();
+            if (['office_space', 'warehouse', 'showrooms'].includes(pt)) categoryValue = 'commercial';
+        }
+        // Default to residential if still not set
         if (!categoryValue) categoryValue = 'residential';
         safeSetSelectValueFromCandidates(projectCategoryInput, [categoryValue, 'residential', 'commercial']);
         const projectCategoryCacheInput = document.getElementById('residentialProjectCategoryCache');
@@ -4505,8 +4509,20 @@ function populateResidentialForm(property) {
             projectCategoryCacheInput.value = projectCategoryInput.value || '';
         }
         populatePropertyTypeByProjectCategory();
+        
+        // Wait for dropdown to be populated before setting property type
+        // Use setTimeout to ensure DOM is updated
+        setTimeout(() => {
+            setPropertyTypeFromProperty(property);
+        }, 50);
+    } else {
+        // If project category input doesn't exist, set property type immediately
+        setPropertyTypeFromProperty(property);
     }
-    
+}
+
+// Helper function to set property type from property data
+function setPropertyTypeFromProperty(property) {
     // Location link and price are in Step 2; populated in populateStep2Fields after Step 2 loads
     
     // Set property type (if available) or infer from existing data
@@ -4516,36 +4532,46 @@ function populateResidentialForm(property) {
         // Try to get property_type from property, or infer from type and unit_type
         let inferredPropertyType = null;
         
+        // Map database property_type values to select option values
+        const propertyTypeMap = {
+            'apartment': 'apartments',
+            'apartments': 'apartments',
+            'villa': 'villas',
+            'villas': 'villas',
+            'plot': 'plot_properties',
+            'plot_properties': 'plot_properties',
+            'office_space': 'office_space',
+            'warehouse': 'warehouse',
+            'showrooms': 'showrooms'
+        };
+        
+        // Map DB type to frontend property_type (for residential properties)
+        const typeMap = {
+            'apartment': 'apartments',
+            'villa': 'villas',
+            'house': 'apartments', // house maps to apartments in select
+            'plot': 'plot_properties'
+        };
+        
         // Priority 1: Use property_type directly from database (most accurate)
         if (property.property_type) {
-            // Map database property_type values to select option values
-            const propertyTypeMap = {
-                'apartment': 'apartments',
-                'apartments': 'apartments',
-                'villa': 'villas',
-                'villas': 'villas',
-                'house': 'individual_house',
-                'individual_house': 'individual_house',
-                'plot': 'plot_properties',
-                'plot_properties': 'plot_properties',
-                'office_space': 'office_space',
-                'warehouse': 'warehouse',
-                'showrooms': 'showrooms'
-            };
             inferredPropertyType = propertyTypeMap[property.property_type.toLowerCase()] || property.property_type;
         } 
-        // Priority 2: Infer from type field
-        else if (property.type) {
-            // Map DB type to frontend property_type
-            const typeMap = {
-                'apartment': 'apartments',
-                'villa': 'villas',
-                'house': 'apartments', // individual_house maps to apartments in select
-                'plot': 'plot_properties'
-            };
+        // Priority 2: For commercial properties, check type field (backend aliases property_type as type)
+        // Also check if type field contains commercial property types even if category isn't set
+        else if ((property.property_category === 'commercial' || 
+                  (property.type && ['office_space', 'warehouse', 'showrooms'].includes(property.type.toLowerCase()))) 
+                 && property.type) {
+            // For commercial properties, type field contains the property_type (office_space, warehouse, showrooms)
+            inferredPropertyType = propertyTypeMap[property.type.toLowerCase()] || property.type;
+        }
+        // Priority 3: Infer from type field (for residential properties only - skip if commercial)
+        else if (property.type && 
+                 property.property_category !== 'commercial' && 
+                 !['office_space', 'warehouse', 'showrooms'].includes(property.type.toLowerCase())) {
             inferredPropertyType = typeMap[property.type.toLowerCase()] || property.type;
         } 
-        // Priority 3: Infer from unit_type (fallback)
+        // Priority 4: Infer from unit_type (fallback)
         else if (property.unit_type === 'bhk') {
             inferredPropertyType = 'apartments';
         }
@@ -4611,124 +4637,11 @@ function populateResidentialForm(property) {
             } else {
                 console.warn(`[Dashboard] Property type "${inferredPropertyType}" does not exist in select options`);
             }
+        } else {
+            // If inferredPropertyType is null, log a warning
+            console.warn('[Dashboard] Could not infer property type from property data:', property);
         }
     }
-    
-    // Populate Step 3 fields - ensure all fields are set
-    // These fields should always exist, so populate them directly
-    const descriptionInput = document.getElementById('residentialDescription');
-    const descHtml = property.description || '';
-    if (propertyDescriptionEditor) {
-        propertyDescriptionEditor.root.innerHTML = descHtml;
-        if (descriptionInput) descriptionInput.value = descHtml;
-    } else if (descriptionInput) {
-        descriptionInput.value = descHtml;
-    }
-    
-    const videoLinkInput = document.getElementById('residentialVideoPreviewLink');
-    if (videoLinkInput) {
-        videoLinkInput.value = property.video_preview_link || '';
-    }
-    
-
-    // Set unit type buttons
-    const unitTypeButtons = document.querySelectorAll('#residentialPropertyForm .dashboard-unit-type-btn');
-    unitTypeButtons.forEach(btn => btn.classList.remove('active'));
-    
-    const bedrooms = property.bedrooms || 1;
-    const unitType = property.unit_type || 'bhk';
-    let activeButton = null;
-    
-    // unit_type can never be 'villa' - it must be 'rk', 'bhk', or '4plus'
-    // For villas, check the 'type' field instead
-    if (property.type === 'villa') {
-        // For villas, find button by bedrooms
-        activeButton = Array.from(unitTypeButtons).find(btn => 
-            parseInt(btn.dataset.bedrooms) === bedrooms
-        );
-    } else {
-        activeButton = Array.from(unitTypeButtons).find(btn => 
-            btn.dataset.unitType === unitType && parseInt(btn.dataset.bedrooms) === bedrooms
-        );
-    }
-    
-    if (!activeButton) {
-        // Fallback: find by bedrooms only
-        activeButton = Array.from(unitTypeButtons).find(btn => 
-            parseInt(btn.dataset.bedrooms) === bedrooms
-        );
-    }
-    
-    if (activeButton) {
-        activeButton.classList.add('active');
-    } else {
-        // Default to 1BHK if no match
-        const defaultButton = document.getElementById('residentialUnitType1BHK');
-        if (defaultButton) defaultButton.classList.add('active');
-    }
-
-    // Load gallery images
-    // Deduplicate by image_url (some legacy data can contain the same url in multiple categories)
-    const categoryPriority = { masterplan: 3, floorplan: 2, project: 1 };
-    const normalizeGalleryCategory = (c) => {
-        const v = (c || '').toString().trim().toLowerCase();
-        if (v === 'master_plan') return 'masterplan';
-        if (v === 'floor_plan') return 'floorplan';
-        if (v === 'masterplan' || v === 'floorplan' || v === 'project') return v;
-        return 'project';
-    };
-    const dedupeGallery = (rawItems) => {
-        const byUrl = new Map();
-        (rawItems || []).forEach((raw) => {
-            if (!raw) return;
-            const url = (raw.image_url || '').toString().trim();
-            if (!url) return;
-            const category = normalizeGalleryCategory(raw.category || raw.image_type || raw.image_category);
-            const title = (raw.title || '').toString();
-
-            const existing = byUrl.get(url);
-            if (!existing) {
-                byUrl.set(url, { image_url: url, category, title });
-                return;
-            }
-
-            const existingPri = categoryPriority[existing.category] || 0;
-            const newPri = categoryPriority[category] || 0;
-            if (newPri > existingPri) {
-                existing.category = category;
-            }
-            if (!existing.title && title) {
-                existing.title = title;
-            }
-        });
-        return Array.from(byUrl.values());
-    };
-
-    if (property.image_gallery && Array.isArray(property.image_gallery) && property.image_gallery.length > 0) {
-        const uniqueGallery = dedupeGallery(property.image_gallery);
-        uniqueGallery.forEach((g) => {
-            addResidentialGalleryItem(g.image_url, g.title || '', g.category || 'project');
-        });
-    } else if (property.images && Array.isArray(property.images) && property.images.length > 0) {
-        const normalized = property.images
-            .map(img => {
-                if (!img) return null;
-                const imageUrl = typeof img === 'string' ? img : (img.image_url || null);
-                if (!imageUrl) return null;
-                const category = normalizeGalleryCategory(img.category || img.image_type || img.image_category);
-                const title = (typeof img === 'object' && (img.title || img.image_title)) ? String(img.title || img.image_title).trim() : '';
-                return { image_url: imageUrl, category, title };
-            })
-            .filter(Boolean);
-
-        const uniqueGallery = dedupeGallery(normalized);
-        uniqueGallery.forEach((g) => {
-            addResidentialGalleryItem(g.image_url, g.title || '', g.category || 'project');
-        });
-    }
-
-    // Load amenities/features (will be populated in Step 2 for apartments/villas)
-    // This is handled in populateStep2Fields
 }
 
 function safeSetSelectValue(selectEl, value) {
@@ -4989,7 +4902,7 @@ function populateStep2Fields(property) {
             };
             applyAmenities();
         }
-    } else if (propertyType === 'villas' || propertyType === 'individual_house') {
+    } else if (propertyType === 'villas') {
         // Villa type
         const villaTypeInput = document.getElementById('residentialVillaType');
         if (villaTypeInput && property.villa_type) {
@@ -5276,8 +5189,6 @@ async function handleResidentialPropertySubmit(e) {
         const typeField = formData.get('type');
         if (typeField === 'villa') {
             propertyType = 'villas';
-        } else if (typeField === 'house') {
-            propertyType = 'individual_house';
         } else {
             // Default to apartments if we have unit_type or bedrooms
             const unitType = formData.get('unit_type');
@@ -5924,7 +5835,7 @@ async function editProperty(id) {
             throw new Error('Modal function not available. Please refresh the page.');
         }
         
-        // Open residential property modal (handles all property types: apartments, villas, plot_properties, individual_house)
+        // Open residential property modal (handles all property types: apartments, villas, plot_properties)
         // The modal uses a 3-step wizard and dynamically loads Step 2 content based on property_type
         console.log('Opening modal for property:', property.id);
         openResidentialPropertyModal(property.id);

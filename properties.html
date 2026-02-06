@@ -858,8 +858,59 @@
             const VISITOR_FORM_SKIPPED_KEY = 'visitorFormSkipped';
             const VISITOR_MODAL_TRIGGERED_KEY = 'visitorModalTriggeredByFilter';
 
-            // Show modal
-            function showVisitorModal() {
+            // Track server-side check status
+            let serverCheckCompleted = false;
+            let serverCheckResult = false;
+
+            // Check with backend if visitor has already submitted (using session/IP tracking)
+            async function checkVisitorSubmissionStatus() {
+                try {
+                    const response = await fetch('/api/visitor-info/check', {
+                        method: 'GET',
+                        credentials: 'include' // Important: include cookies for session
+                    });
+                    
+                    if (response.ok) {
+                        const data = await response.json();
+                        serverCheckResult = data.submitted === true;
+                        serverCheckCompleted = true;
+                        
+                        // If server says already submitted, mark local storage too
+                        if (serverCheckResult) {
+                            sessionStorage.setItem(VISITOR_FORM_SUBMITTED_KEY, 'true');
+                        }
+                        
+                        return serverCheckResult;
+                    } else {
+                        // On error, allow modal to show (fail open)
+                        serverCheckCompleted = true;
+                        return false;
+                    }
+                } catch (error) {
+                    console.error('Error checking visitor submission status:', error);
+                    // On error, allow modal to show (fail open)
+                    serverCheckCompleted = true;
+                    return false;
+                }
+            }
+
+            // Show modal (only if not already submitted)
+            async function showVisitorModal() {
+                // Wait for server check if not completed yet
+                if (!serverCheckCompleted) {
+                    const submitted = await checkVisitorSubmissionStatus();
+                    if (submitted) {
+                        return; // Don't show modal if already submitted
+                    }
+                } else if (serverCheckResult) {
+                    return; // Already checked and submitted
+                }
+                
+                // Also check local sessionStorage as fallback
+                if (isFormSubmitted()) {
+                    return;
+                }
+                
                 if (visitorModal) {
                     visitorModal.classList.add('active');
                     document.body.style.overflow = 'hidden';
@@ -874,9 +925,17 @@
                 }
             }
 
-            // Check if form was already submitted
+            // Check if form was already submitted (local check)
             function isFormSubmitted() {
                 return sessionStorage.getItem(VISITOR_FORM_SUBMITTED_KEY) === 'true';
+            }
+            
+            // Check if form was already submitted (server check)
+            async function isFormSubmittedServer() {
+                if (!serverCheckCompleted) {
+                    return await checkVisitorSubmissionStatus();
+                }
+                return serverCheckResult;
             }
 
             // Check if form was skipped
@@ -950,9 +1009,17 @@
                         return;
                     }
 
-                    // Check if form was already submitted in this session
+                    // Check if form was already submitted (local and server)
                     if (isFormSubmitted()) {
                         showVisitorMessage('Form has already been submitted.', 'error');
+                        return;
+                    }
+                    
+                    // Also check server-side session
+                    const serverSubmitted = await isFormSubmittedServer();
+                    if (serverSubmitted) {
+                        showVisitorMessage('Form has already been submitted.', 'error');
+                        markFormSubmitted(); // Sync local storage
                         return;
                     }
 
@@ -997,26 +1064,37 @@
                             headers: {
                                 'Content-Type': 'application/json',
                             },
+                            credentials: 'include', // Important: include cookies for session
                             body: JSON.stringify(formData)
                         });
 
+                        const data = await response.json();
+                        
+                        // Check if server says form was already submitted (200 response with submitted flag)
+                        if (response.ok && data.submitted === true) {
+                            markFormSubmitted();
+                            serverCheckResult = true;
+                            serverCheckCompleted = true;
+                            showVisitorMessage('Form has already been submitted.', 'error');
+                            isSubmitting = false;
+                            return;
+                        }
+                        
                         if (!response.ok) {
-                            const text = await response.text();
                             let errorMessage = 'Failed to submit. Please try again.';
-                            try {
-                                const errorData = JSON.parse(text);
-                                errorMessage = errorData.detail || errorData.error || errorData.message || errorMessage;
-                            } catch {
-                                errorMessage = text || `HTTP ${response.status}: ${response.statusText}`;
+                            if (data) {
+                                errorMessage = data.detail || data.error || data.message || errorMessage;
                             }
                             showVisitorMessage(errorMessage, 'error');
                             isSubmitting = false;
                             return;
                         }
 
-                        const data = await response.json();
                         // Success - mark as submitted immediately to prevent duplicate submissions
                         markFormSubmitted();
+                        // Update server check status
+                        serverCheckResult = true;
+                        serverCheckCompleted = true;
                         showVisitorMessage('Thank you! We will get in touch with you soon.', 'success');
                         // Reset isSubmitting after successful submission (sessionStorage check will prevent duplicates)
                         isSubmitting = false;
@@ -1061,15 +1139,15 @@
             // Show modal every 20 seconds (only if skipped)
             function startVisitorModalInterval() {
                 // Don't start if form was already submitted
-                if (isFormSubmitted()) {
+                if (isFormSubmitted() || serverCheckResult) {
                     return;
                 }
 
                 // Then show every 20 seconds
-                visitorModalInterval = setInterval(() => {
+                visitorModalInterval = setInterval(async () => {
                     // Only show if modal is not already active and form wasn't submitted
-                    if (visitorModal && !visitorModal.classList.contains('active') && !isFormSubmitted()) {
-                        showVisitorModal();
+                    if (visitorModal && !visitorModal.classList.contains('active') && !isFormSubmitted() && !serverCheckResult) {
+                        await showVisitorModal();
                     }
                 }, 20000); // 20 seconds = 20000 milliseconds
             }
@@ -1078,20 +1156,23 @@
             function initFilterButtonTrigger() {
                 const filterForm = document.getElementById('propertiesPropertiesSearchForm');
                 if (filterForm) {
-                    filterForm.addEventListener('submit', (e) => {
+                    filterForm.addEventListener('submit', async (e) => {
                         // Check if modal was already triggered by filter button
                         const alreadyTriggered = sessionStorage.getItem(VISITOR_MODAL_TRIGGERED_KEY) === 'true';
 
+                        // Check server-side session
+                        const submitted = await isFormSubmittedServer();
+
                         // Only show modal if:
                         // 1. It hasn't been triggered by filter button before
-                        // 2. Form wasn't already submitted
-                        if (!alreadyTriggered && !isFormSubmitted()) {
+                        // 2. Form wasn't already submitted (local or server)
+                        if (!alreadyTriggered && !isFormSubmitted() && !submitted) {
                             // Mark as triggered
                             sessionStorage.setItem(VISITOR_MODAL_TRIGGERED_KEY, 'true');
 
                             // Show modal after a short delay (let filter process first)
-                            setTimeout(() => {
-                                showVisitorModal();
+                            setTimeout(async () => {
+                                await showVisitorModal();
                             }, 500);
                         }
                     });
@@ -1102,27 +1183,38 @@
             function initViewDetailsTrigger() {
                 const propertiesGrid = document.getElementById('propertiesGrid');
                 if (propertiesGrid) {
-                    propertiesGrid.addEventListener('click', (e) => {
+                    propertiesGrid.addEventListener('click', async (e) => {
                         const viewDetailsLink = e.target.closest('.btn-view-details');
-                        if (viewDetailsLink && !isFormSubmitted()) {
-                            e.preventDefault();
-                            const href = viewDetailsLink.getAttribute('href');
-                            if (href) {
-                                pendingPropertyDetailsUrl = href.startsWith('/') ? (window.location.origin + href) : href;
+                        if (viewDetailsLink) {
+                            // Check server-side session before showing modal
+                            const submitted = await isFormSubmittedServer();
+                            if (!submitted && !isFormSubmitted()) {
+                                e.preventDefault();
+                                const href = viewDetailsLink.getAttribute('href');
+                                if (href) {
+                                    pendingPropertyDetailsUrl = href.startsWith('/') ? (window.location.origin + href) : href;
+                                }
+                                await showVisitorModal();
                             }
-                            showVisitorModal();
                         }
                     });
                 }
             }
 
             // Show visitor modal on page load (when customer opens properties.html)
-            function showVisitorModalOnPageLoad() {
+            async function showVisitorModalOnPageLoad() {
+                // Check server-side session first
+                const submitted = await checkVisitorSubmissionStatus();
+                if (submitted) {
+                    return; // Don't show modal if already submitted
+                }
+                
                 if (isFormSubmitted()) return;
                 // Small delay so page renders first
-                setTimeout(() => {
-                    if (!isFormSubmitted() && visitorModal && !visitorModal.classList.contains('active')) {
-                        showVisitorModal();
+                setTimeout(async () => {
+                    // Double-check server status before showing
+                    if (!isFormSubmitted() && !serverCheckResult && visitorModal && !visitorModal.classList.contains('active')) {
+                        await showVisitorModal();
                     }
                 }, 800);
             }

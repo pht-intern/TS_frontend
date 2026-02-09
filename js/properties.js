@@ -601,6 +601,23 @@ document.addEventListener('DOMContentLoaded', async () => {
     const villaTypeParam = urlParams.get('villa_type');
     const warehouseTypeParam = urlParams.get('warehouse_type');
     const superBuildupParam = urlParams.get('super_buildup_area');
+    const bedroomsParam = urlParams.get('bedrooms');
+    const bathroomsParam = urlParams.get('bathrooms');
+    const buildupAreaParam = urlParams.get('buildup_area');
+    const totalFloorsParam = urlParams.get('total_floors');
+    const showroomTotalFloorsParam = urlParams.get('showroom_total_floors');
+    const totalSeatsParam = urlParams.get('total_seats_workstations');
+    const numberCabinsParam = urlParams.get('number_of_cabins');
+    const parkingSlotsParam = urlParams.get('number_of_parking_slots');
+    const frontageWidthParam = urlParams.get('frontage_width');
+    const footfallPotentialParam = urlParams.get('footfall_potential');
+    const groundFloorAreaParam = urlParams.get('ground_floor_area');
+    const ceilingHeightParam = urlParams.get('ceiling_height');
+    const mezzanineAreaParam = urlParams.get('mezzanine_area');
+    const clearanceHeightParam = urlParams.get('clearance_height');
+    const dockLevelersParam = urlParams.get('dock_levelers');
+    const numberShuttersParam = urlParams.get('number_of_shutters');
+    const floorLoadCapacityParam = urlParams.get('floor_load_capacity');
 
     // Apply search parameter if present
     if (searchParam) {
@@ -726,8 +743,80 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     if (superBuildupParam) {
-        const superBuildupInput = document.getElementById('searchSuperBuildupArea');
+        const superBuildupInput = document.getElementById('searchSuperBuildupArea') || document.getElementById('propertiesSearchSuperBuildupArea');
         if (superBuildupInput) superBuildupInput.value = superBuildupParam;
+    }
+
+    if (bedroomsParam) {
+        const bedroomsInput = document.getElementById('searchBedrooms') || document.getElementById('propertiesSearchBedrooms');
+        if (bedroomsInput) bedroomsInput.value = bedroomsParam;
+    }
+
+    if (bathroomsParam) {
+        const bathroomsInput = document.getElementById('searchBathrooms') || document.getElementById('propertiesSearchBathrooms');
+        if (bathroomsInput) bathroomsInput.value = bathroomsParam;
+    }
+
+    if (buildupAreaParam) {
+        const buildupAreaInput = document.getElementById('searchBuildupArea') || document.getElementById('propertiesSearchBuildupArea');
+        if (buildupAreaInput) buildupAreaInput.value = buildupAreaParam;
+    }
+
+    if (totalFloorsParam) {
+        const el = document.getElementById('searchTotalFloors') || document.getElementById('propertiesSearchTotalFloors');
+        if (el) el.value = totalFloorsParam;
+    }
+    if (showroomTotalFloorsParam) {
+        const el = document.getElementById('searchShowroomTotalFloors') || document.getElementById('propertiesSearchShowroomTotalFloors');
+        if (el) el.value = showroomTotalFloorsParam;
+    }
+    if (totalSeatsParam) {
+        const el = document.getElementById('searchTotalSeats') || document.getElementById('propertiesSearchTotalSeats');
+        if (el) el.value = totalSeatsParam;
+    }
+    if (numberCabinsParam) {
+        const el = document.getElementById('searchNumberCabins') || document.getElementById('propertiesSearchNumberCabins');
+        if (el) el.value = numberCabinsParam;
+    }
+    if (parkingSlotsParam) {
+        const el = document.getElementById('searchParkingSlots') || document.getElementById('propertiesSearchParkingSlots');
+        if (el) el.value = parkingSlotsParam;
+    }
+    if (frontageWidthParam) {
+        const el = document.getElementById('searchFrontageWidth') || document.getElementById('propertiesSearchFrontageWidth');
+        if (el) el.value = frontageWidthParam;
+    }
+    if (footfallPotentialParam) {
+        const el = document.getElementById('searchFootfallPotential') || document.getElementById('propertiesSearchFootfallPotential');
+        if (el) el.value = footfallPotentialParam;
+    }
+    if (groundFloorAreaParam) {
+        const el = document.getElementById('searchGroundFloorArea') || document.getElementById('propertiesSearchGroundFloorArea');
+        if (el) el.value = groundFloorAreaParam;
+    }
+    if (ceilingHeightParam) {
+        const el = document.getElementById('searchCeilingHeight') || document.getElementById('propertiesSearchCeilingHeight');
+        if (el) el.value = ceilingHeightParam;
+    }
+    if (mezzanineAreaParam) {
+        const el = document.getElementById('searchMezzanineArea') || document.getElementById('propertiesSearchMezzanineArea');
+        if (el) el.value = mezzanineAreaParam;
+    }
+    if (clearanceHeightParam) {
+        const el = document.getElementById('searchClearanceHeight') || document.getElementById('propertiesSearchClearanceHeight');
+        if (el) el.value = clearanceHeightParam;
+    }
+    if (dockLevelersParam) {
+        const el = document.getElementById('searchDockLevelers') || document.getElementById('propertiesSearchDockLevelers');
+        if (el) el.value = dockLevelersParam;
+    }
+    if (numberShuttersParam) {
+        const el = document.getElementById('searchNumberShutters') || document.getElementById('propertiesSearchNumberShutters');
+        if (el) el.value = numberShuttersParam;
+    }
+    if (floorLoadCapacityParam) {
+        const el = document.getElementById('searchFloorLoadCapacity') || document.getElementById('propertiesSearchFloorLoadCapacity');
+        if (el) el.value = floorLoadCapacityParam;
     }
 
     const propertyTypeToCategory = {
@@ -2056,6 +2145,182 @@ function applyFilters() {
         }
     }
 
+    // Buildup Area filter (Step 2 - villa, house)
+    const buildupArea = document.getElementById('propertiesSearchBuildupArea')?.value.trim() || '';
+    if (buildupArea) {
+        const minBuildup = parseFloat(buildupArea);
+        if (!isNaN(minBuildup)) {
+            filtered = filtered.filter(p => {
+                const ba = p.buildup_area != null ? parseFloat(p.buildup_area) : (p.buildupArea != null ? parseFloat(p.buildupArea) : null);
+                return ba != null && ba >= minBuildup;
+            });
+        }
+    }
+
+    // Bedrooms filter (Step 2 - apartment, house, villa)
+    const bedrooms = document.getElementById('propertiesSearchBedrooms')?.value.trim() || '';
+    if (bedrooms) {
+        const minBedrooms = parseInt(bedrooms, 10);
+        if (!isNaN(minBedrooms)) {
+            filtered = filtered.filter(p => {
+                const b = p.bedrooms != null ? parseInt(p.bedrooms, 10) : (p.bedrooms_count != null ? parseInt(p.bedrooms_count, 10) : null);
+                return b != null && b >= minBedrooms;
+            });
+        }
+    }
+
+    // Bathrooms filter (Step 2 - apartment, house, villa)
+    const bathrooms = document.getElementById('propertiesSearchBathrooms')?.value.trim() || '';
+    if (bathrooms) {
+        const minBathrooms = parseInt(bathrooms, 10);
+        if (!isNaN(minBathrooms)) {
+            filtered = filtered.filter(p => {
+                const b = p.bathrooms != null ? parseInt(p.bathrooms, 10) : null;
+                return b != null && b >= minBathrooms;
+            });
+        }
+    }
+
+    // Office: total_floors, total_seats_workstations, number_of_cabins, number_of_parking_slots
+    const totalFloors = document.getElementById('propertiesSearchTotalFloors')?.value.trim() || '';
+    if (totalFloors) {
+        const minFloors = parseInt(totalFloors, 10);
+        if (!isNaN(minFloors)) {
+            filtered = filtered.filter(p => {
+                const v = p.total_floors != null ? parseInt(p.total_floors, 10) : null;
+                return v != null && v >= minFloors;
+            });
+        }
+    }
+    const totalSeats = document.getElementById('propertiesSearchTotalSeats')?.value.trim() || '';
+    if (totalSeats) {
+        const minSeats = parseInt(totalSeats, 10);
+        if (!isNaN(minSeats)) {
+            filtered = filtered.filter(p => {
+                const v = p.total_seats_workstations != null ? parseInt(p.total_seats_workstations, 10) : null;
+                return v != null && v >= minSeats;
+            });
+        }
+    }
+    const numberCabins = document.getElementById('propertiesSearchNumberCabins')?.value.trim() || '';
+    if (numberCabins) {
+        const minCabins = parseInt(numberCabins, 10);
+        if (!isNaN(minCabins)) {
+            filtered = filtered.filter(p => {
+                const v = p.number_of_cabins != null ? parseInt(p.number_of_cabins, 10) : null;
+                return v != null && v >= minCabins;
+            });
+        }
+    }
+    const parkingSlots = document.getElementById('propertiesSearchParkingSlots')?.value.trim() || '';
+    if (parkingSlots) {
+        const minSlots = parseInt(parkingSlots, 10);
+        if (!isNaN(minSlots)) {
+            filtered = filtered.filter(p => {
+                const v = p.number_of_parking_slots != null ? parseInt(p.number_of_parking_slots, 10) : null;
+                return v != null && v >= minSlots;
+            });
+        }
+    }
+
+    // Showrooms: total_floors (showroom), frontage_width, footfall_potential, ground_floor_area, ceiling_height, mezzanine_area
+    const showroomTotalFloors = document.getElementById('propertiesSearchShowroomTotalFloors')?.value.trim() || '';
+    if (showroomTotalFloors) {
+        const minF = parseInt(showroomTotalFloors, 10);
+        if (!isNaN(minF)) {
+            filtered = filtered.filter(p => {
+                const v = p.total_floors != null ? parseInt(p.total_floors, 10) : null;
+                return v != null && v >= minF;
+            });
+        }
+    }
+    const frontageWidth = document.getElementById('propertiesSearchFrontageWidth')?.value.trim() || '';
+    if (frontageWidth) {
+        const minFw = parseFloat(frontageWidth);
+        if (!isNaN(minFw)) {
+            filtered = filtered.filter(p => {
+                const v = p.frontage_width != null ? parseFloat(p.frontage_width) : null;
+                return v != null && v >= minFw;
+            });
+        }
+    }
+    const footfallPotential = document.getElementById('propertiesSearchFootfallPotential')?.value.trim() || '';
+    if (footfallPotential) {
+        filtered = filtered.filter(p => (p.footfall_potential || '').toLowerCase() === footfallPotential.toLowerCase());
+    }
+    const groundFloorArea = document.getElementById('propertiesSearchGroundFloorArea')?.value.trim() || '';
+    if (groundFloorArea) {
+        const minGfa = parseFloat(groundFloorArea);
+        if (!isNaN(minGfa)) {
+            filtered = filtered.filter(p => {
+                const v = p.ground_floor_area != null ? parseFloat(p.ground_floor_area) : null;
+                return v != null && v >= minGfa;
+            });
+        }
+    }
+    const ceilingHeight = document.getElementById('propertiesSearchCeilingHeight')?.value.trim() || '';
+    if (ceilingHeight) {
+        const minCh = parseFloat(ceilingHeight);
+        if (!isNaN(minCh)) {
+            filtered = filtered.filter(p => {
+                const v = p.ceiling_height != null ? parseFloat(p.ceiling_height) : null;
+                return v != null && v >= minCh;
+            });
+        }
+    }
+    const mezzanineArea = document.getElementById('propertiesSearchMezzanineArea')?.value.trim() || '';
+    if (mezzanineArea) {
+        const minMa = parseFloat(mezzanineArea);
+        if (!isNaN(minMa)) {
+            filtered = filtered.filter(p => {
+                const v = p.mezzanine_area != null ? parseFloat(p.mezzanine_area) : null;
+                return v != null && v >= minMa;
+            });
+        }
+    }
+
+    // Warehouse: clearance_height, dock_levelers, number_of_shutters, floor_load_capacity
+    const clearanceHeight = document.getElementById('propertiesSearchClearanceHeight')?.value.trim() || '';
+    if (clearanceHeight) {
+        const minCh = parseFloat(clearanceHeight);
+        if (!isNaN(minCh)) {
+            filtered = filtered.filter(p => {
+                const v = p.clearance_height != null ? parseFloat(p.clearance_height) : null;
+                return v != null && v >= minCh;
+            });
+        }
+    }
+    const dockLevelers = document.getElementById('propertiesSearchDockLevelers')?.value.trim() || '';
+    if (dockLevelers) {
+        const minDl = parseInt(dockLevelers, 10);
+        if (!isNaN(minDl)) {
+            filtered = filtered.filter(p => {
+                const v = p.dock_levelers != null ? parseInt(p.dock_levelers, 10) : null;
+                return v != null && v >= minDl;
+            });
+        }
+    }
+    const numberShutters = document.getElementById('propertiesSearchNumberShutters')?.value.trim() || '';
+    if (numberShutters) {
+        const minNs = parseInt(numberShutters, 10);
+        if (!isNaN(minNs)) {
+            filtered = filtered.filter(p => {
+                const v = p.number_of_shutters != null ? parseInt(p.number_of_shutters, 10) : null;
+                return v != null && v >= minNs;
+            });
+        }
+    }
+    const floorLoadCapacity = document.getElementById('propertiesSearchFloorLoadCapacity')?.value.trim() || '';
+    if (floorLoadCapacity) {
+        const minFl = parseFloat(floorLoadCapacity);
+        if (!isNaN(minFl)) {
+            filtered = filtered.filter(p => {
+                const v = p.floor_load_capacity != null ? parseFloat(p.floor_load_capacity) : null;
+                return v != null && v >= minFl;
+            });
+        }
+    }
+
     filteredProperties = filtered;
     displayedProperties = 8;
     renderProperties();
@@ -2300,6 +2565,97 @@ function updateFilterTags() {
         });
     }
 
+    // Buildup Area filter (Step 2 - villa, house)
+    const buildupAreaTag = document.getElementById('propertiesSearchBuildupArea')?.value.trim() || '';
+    if (buildupAreaTag) {
+        activeFilters.push({
+            type: 'buildupArea',
+            label: `Buildup Area: ${buildupAreaTag} sq.ft`,
+            icon: 'fa-ruler-combined',
+            value: buildupAreaTag
+        });
+    }
+
+    // Bedrooms filter (Step 2 - apartment, house, villa)
+    const bedroomsTag = document.getElementById('propertiesSearchBedrooms')?.value.trim() || '';
+    if (bedroomsTag) {
+        activeFilters.push({
+            type: 'bedrooms',
+            label: `Min Bedrooms: ${bedroomsTag}`,
+            icon: 'fa-bed',
+            value: bedroomsTag
+        });
+    }
+
+    // Bathrooms filter (Step 2 - apartment, house, villa)
+    const bathroomsTag = document.getElementById('propertiesSearchBathrooms')?.value.trim() || '';
+    if (bathroomsTag) {
+        activeFilters.push({
+            type: 'bathrooms',
+            label: `Min Bathrooms: ${bathroomsTag}`,
+            icon: 'fa-bath',
+            value: bathroomsTag
+        });
+    }
+
+    // Office / Showroom / Warehouse filters
+    const totalFloorsTag = document.getElementById('propertiesSearchTotalFloors')?.value.trim() || '';
+    if (totalFloorsTag) {
+        activeFilters.push({ type: 'totalFloors', label: `Min Floors: ${totalFloorsTag}`, icon: 'fa-layer-group', value: totalFloorsTag });
+    }
+    const totalSeatsTag = document.getElementById('propertiesSearchTotalSeats')?.value.trim() || '';
+    if (totalSeatsTag) {
+        activeFilters.push({ type: 'totalSeats', label: `Min Seats: ${totalSeatsTag}`, icon: 'fa-chair', value: totalSeatsTag });
+    }
+    const numberCabinsTag = document.getElementById('propertiesSearchNumberCabins')?.value.trim() || '';
+    if (numberCabinsTag) {
+        activeFilters.push({ type: 'numberCabins', label: `Min Cabins: ${numberCabinsTag}`, icon: 'fa-door-open', value: numberCabinsTag });
+    }
+    const parkingSlotsTag = document.getElementById('propertiesSearchParkingSlots')?.value.trim() || '';
+    if (parkingSlotsTag) {
+        activeFilters.push({ type: 'parkingSlots', label: `Min Parking: ${parkingSlotsTag}`, icon: 'fa-parking', value: parkingSlotsTag });
+    }
+    const showroomTotalFloorsTag = document.getElementById('propertiesSearchShowroomTotalFloors')?.value.trim() || '';
+    if (showroomTotalFloorsTag) {
+        activeFilters.push({ type: 'showroomTotalFloors', label: `Min Floors (Showroom): ${showroomTotalFloorsTag}`, icon: 'fa-layer-group', value: showroomTotalFloorsTag });
+    }
+    const frontageWidthTag = document.getElementById('propertiesSearchFrontageWidth')?.value.trim() || '';
+    if (frontageWidthTag) {
+        activeFilters.push({ type: 'frontageWidth', label: `Min Frontage: ${frontageWidthTag} ft`, icon: 'fa-arrows-alt-h', value: frontageWidthTag });
+    }
+    const footfallPotentialTag = document.getElementById('propertiesSearchFootfallPotential')?.value.trim() || '';
+    if (footfallPotentialTag) {
+        activeFilters.push({ type: 'footfallPotential', label: `Footfall: ${footfallPotentialTag}`, icon: 'fa-walking', value: footfallPotentialTag });
+    }
+    const groundFloorAreaTag = document.getElementById('propertiesSearchGroundFloorArea')?.value.trim() || '';
+    if (groundFloorAreaTag) {
+        activeFilters.push({ type: 'groundFloorArea', label: `Min Ground Floor: ${groundFloorAreaTag} sq.ft`, icon: 'fa-th-large', value: groundFloorAreaTag });
+    }
+    const ceilingHeightTag = document.getElementById('propertiesSearchCeilingHeight')?.value.trim() || '';
+    if (ceilingHeightTag) {
+        activeFilters.push({ type: 'ceilingHeight', label: `Min Ceiling: ${ceilingHeightTag} ft`, icon: 'fa-arrows-alt-v', value: ceilingHeightTag });
+    }
+    const mezzanineAreaTag = document.getElementById('propertiesSearchMezzanineArea')?.value.trim() || '';
+    if (mezzanineAreaTag) {
+        activeFilters.push({ type: 'mezzanineArea', label: `Min Mezzanine: ${mezzanineAreaTag} sq.ft`, icon: 'fa-layer-group', value: mezzanineAreaTag });
+    }
+    const clearanceHeightTag = document.getElementById('propertiesSearchClearanceHeight')?.value.trim() || '';
+    if (clearanceHeightTag) {
+        activeFilters.push({ type: 'clearanceHeight', label: `Min Clearance: ${clearanceHeightTag} ft`, icon: 'fa-arrows-alt-v', value: clearanceHeightTag });
+    }
+    const dockLevelersTag = document.getElementById('propertiesSearchDockLevelers')?.value.trim() || '';
+    if (dockLevelersTag) {
+        activeFilters.push({ type: 'dockLevelers', label: `Min Dock Levelers: ${dockLevelersTag}`, icon: 'fa-truck-loading', value: dockLevelersTag });
+    }
+    const numberShuttersTag = document.getElementById('propertiesSearchNumberShutters')?.value.trim() || '';
+    if (numberShuttersTag) {
+        activeFilters.push({ type: 'numberShutters', label: `Min Shutters: ${numberShuttersTag}`, icon: 'fa-door-closed', value: numberShuttersTag });
+    }
+    const floorLoadCapacityTag = document.getElementById('propertiesSearchFloorLoadCapacity')?.value.trim() || '';
+    if (floorLoadCapacityTag) {
+        activeFilters.push({ type: 'floorLoadCapacity', label: `Min Floor Load: ${floorLoadCapacityTag}`, icon: 'fa-weight-hanging', value: floorLoadCapacityTag });
+    }
+
     // Directions filter
     const directions = document.getElementById('searchDirections')?.value.trim() || '';
     if (directions) {
@@ -2447,8 +2803,76 @@ function removeFilter(filterType) {
             if (plotAreaInput) plotAreaInput.value = '';
             break;
         case 'superBuildupArea':
-            const superBuildupInput = document.getElementById('searchSuperBuildupArea');
+            const superBuildupInput = document.getElementById('searchSuperBuildupArea') || document.getElementById('propertiesSearchSuperBuildupArea');
             if (superBuildupInput) superBuildupInput.value = '';
+            break;
+        case 'buildupArea':
+            const buildupAreaInput = document.getElementById('searchBuildupArea') || document.getElementById('propertiesSearchBuildupArea');
+            if (buildupAreaInput) buildupAreaInput.value = '';
+            break;
+        case 'bedrooms':
+            const bedroomsInput = document.getElementById('searchBedrooms') || document.getElementById('propertiesSearchBedrooms');
+            if (bedroomsInput) bedroomsInput.value = '';
+            break;
+        case 'bathrooms':
+            const bathroomsInput = document.getElementById('searchBathrooms') || document.getElementById('propertiesSearchBathrooms');
+            if (bathroomsInput) bathroomsInput.value = '';
+            break;
+        case 'totalFloors':
+            const totalFloorsInput = document.getElementById('searchTotalFloors') || document.getElementById('propertiesSearchTotalFloors');
+            if (totalFloorsInput) totalFloorsInput.value = '';
+            break;
+        case 'totalSeats':
+            const totalSeatsInput = document.getElementById('searchTotalSeats') || document.getElementById('propertiesSearchTotalSeats');
+            if (totalSeatsInput) totalSeatsInput.value = '';
+            break;
+        case 'numberCabins':
+            const numberCabinsInput = document.getElementById('searchNumberCabins') || document.getElementById('propertiesSearchNumberCabins');
+            if (numberCabinsInput) numberCabinsInput.value = '';
+            break;
+        case 'parkingSlots':
+            const parkingSlotsInput = document.getElementById('searchParkingSlots') || document.getElementById('propertiesSearchParkingSlots');
+            if (parkingSlotsInput) parkingSlotsInput.value = '';
+            break;
+        case 'showroomTotalFloors':
+            const showroomTotalFloorsInput = document.getElementById('searchShowroomTotalFloors') || document.getElementById('propertiesSearchShowroomTotalFloors');
+            if (showroomTotalFloorsInput) showroomTotalFloorsInput.value = '';
+            break;
+        case 'frontageWidth':
+            const frontageWidthInput = document.getElementById('searchFrontageWidth') || document.getElementById('propertiesSearchFrontageWidth');
+            if (frontageWidthInput) frontageWidthInput.value = '';
+            break;
+        case 'footfallPotential':
+            const footfallPotentialInput = document.getElementById('searchFootfallPotential') || document.getElementById('propertiesSearchFootfallPotential');
+            if (footfallPotentialInput) footfallPotentialInput.value = '';
+            break;
+        case 'groundFloorArea':
+            const groundFloorAreaInput = document.getElementById('searchGroundFloorArea') || document.getElementById('propertiesSearchGroundFloorArea');
+            if (groundFloorAreaInput) groundFloorAreaInput.value = '';
+            break;
+        case 'ceilingHeight':
+            const ceilingHeightInput = document.getElementById('searchCeilingHeight') || document.getElementById('propertiesSearchCeilingHeight');
+            if (ceilingHeightInput) ceilingHeightInput.value = '';
+            break;
+        case 'mezzanineArea':
+            const mezzanineAreaInput = document.getElementById('searchMezzanineArea') || document.getElementById('propertiesSearchMezzanineArea');
+            if (mezzanineAreaInput) mezzanineAreaInput.value = '';
+            break;
+        case 'clearanceHeight':
+            const clearanceHeightInput = document.getElementById('searchClearanceHeight') || document.getElementById('propertiesSearchClearanceHeight');
+            if (clearanceHeightInput) clearanceHeightInput.value = '';
+            break;
+        case 'dockLevelers':
+            const dockLevelersInput = document.getElementById('searchDockLevelers') || document.getElementById('propertiesSearchDockLevelers');
+            if (dockLevelersInput) dockLevelersInput.value = '';
+            break;
+        case 'numberShutters':
+            const numberShuttersInput = document.getElementById('searchNumberShutters') || document.getElementById('propertiesSearchNumberShutters');
+            if (numberShuttersInput) numberShuttersInput.value = '';
+            break;
+        case 'floorLoadCapacity':
+            const floorLoadCapacityInput = document.getElementById('searchFloorLoadCapacity') || document.getElementById('propertiesSearchFloorLoadCapacity');
+            if (floorLoadCapacityInput) floorLoadCapacityInput.value = '';
             break;
         case 'directions':
             const directionsInput = document.getElementById('searchDirections');
@@ -2504,19 +2928,36 @@ function initFilterTags() {
             if (categorySection) categorySection.removeAttribute('data-active-category');
             updateFilterGroupsByPropertyType();
 
-            // Clear all form filters
-            const cityInput = document.getElementById('searchCity');
-            const areaInput = document.getElementById('searchArea');
-            const directionInput = document.getElementById('searchDirection') || document.getElementById('searchDirections');
-            const priceSelect = document.getElementById('searchPrice');
-            const lengthInput = document.getElementById('searchLength');
-            const breadthInput = document.getElementById('searchBreadth');
-            const carpetAreaInput = document.getElementById('searchCarpetArea');
-            const amenitiesInput = document.getElementById('searchAmenities');
-            const villaTypeInput = document.getElementById('searchVillaType');
-            const warehouseTypeInput = document.getElementById('searchWarehouseType');
-            const plotAreaInput = document.getElementById('searchPlotArea');
-            const superBuildupInput = document.getElementById('searchSuperBuildupArea');
+            // Clear all form filters (support both search* and propertiesSearch* IDs)
+            const cityInput = document.getElementById('searchCity') || document.getElementById('propertiesSearchCity');
+            const areaInput = document.getElementById('searchArea') || document.getElementById('propertiesSearchArea');
+            const directionInput = document.getElementById('searchDirection') || document.getElementById('searchDirections') || document.getElementById('propertiesSearchDirection');
+            const priceSelect = document.getElementById('searchPrice') || document.getElementById('propertiesSearchPrice');
+            const lengthInput = document.getElementById('searchLength') || document.getElementById('propertiesSearchLength');
+            const breadthInput = document.getElementById('searchBreadth') || document.getElementById('propertiesSearchBreadth');
+            const carpetAreaInput = document.getElementById('searchCarpetArea') || document.getElementById('propertiesSearchCarpetArea');
+            const amenitiesInput = document.getElementById('searchAmenities') || document.getElementById('propertiesSearchAmenities');
+            const villaTypeInput = document.getElementById('searchVillaType') || document.getElementById('propertiesSearchVillaType');
+            const warehouseTypeInput = document.getElementById('searchWarehouseType') || document.getElementById('propertiesSearchWarehouseType');
+            const plotAreaInput = document.getElementById('searchPlotArea') || document.getElementById('propertiesSearchPlotArea');
+            const superBuildupInput = document.getElementById('searchSuperBuildupArea') || document.getElementById('propertiesSearchSuperBuildupArea');
+            const bedroomsInput = document.getElementById('searchBedrooms') || document.getElementById('propertiesSearchBedrooms');
+            const bathroomsInput = document.getElementById('searchBathrooms') || document.getElementById('propertiesSearchBathrooms');
+            const buildupAreaInput = document.getElementById('searchBuildupArea') || document.getElementById('propertiesSearchBuildupArea');
+            const totalFloorsInput = document.getElementById('searchTotalFloors') || document.getElementById('propertiesSearchTotalFloors');
+            const totalSeatsInput = document.getElementById('searchTotalSeats') || document.getElementById('propertiesSearchTotalSeats');
+            const numberCabinsInput = document.getElementById('searchNumberCabins') || document.getElementById('propertiesSearchNumberCabins');
+            const parkingSlotsInput = document.getElementById('searchParkingSlots') || document.getElementById('propertiesSearchParkingSlots');
+            const showroomTotalFloorsInput = document.getElementById('searchShowroomTotalFloors') || document.getElementById('propertiesSearchShowroomTotalFloors');
+            const frontageWidthInput = document.getElementById('searchFrontageWidth') || document.getElementById('propertiesSearchFrontageWidth');
+            const footfallPotentialInput = document.getElementById('searchFootfallPotential') || document.getElementById('propertiesSearchFootfallPotential');
+            const groundFloorAreaInput = document.getElementById('searchGroundFloorArea') || document.getElementById('propertiesSearchGroundFloorArea');
+            const ceilingHeightInput = document.getElementById('searchCeilingHeight') || document.getElementById('propertiesSearchCeilingHeight');
+            const mezzanineAreaInput = document.getElementById('searchMezzanineArea') || document.getElementById('propertiesSearchMezzanineArea');
+            const clearanceHeightInput = document.getElementById('searchClearanceHeight') || document.getElementById('propertiesSearchClearanceHeight');
+            const dockLevelersInput = document.getElementById('searchDockLevelers') || document.getElementById('propertiesSearchDockLevelers');
+            const numberShuttersInput = document.getElementById('searchNumberShutters') || document.getElementById('propertiesSearchNumberShutters');
+            const floorLoadCapacityInput = document.getElementById('searchFloorLoadCapacity') || document.getElementById('propertiesSearchFloorLoadCapacity');
 
             if (cityInput) cityInput.value = '';
             if (areaInput) areaInput.value = '';
@@ -2530,6 +2971,23 @@ function initFilterTags() {
             if (warehouseTypeInput) warehouseTypeInput.value = '';
             if (plotAreaInput) plotAreaInput.value = '';
             if (superBuildupInput) superBuildupInput.value = '';
+            if (bedroomsInput) bedroomsInput.value = '';
+            if (bathroomsInput) bathroomsInput.value = '';
+            if (buildupAreaInput) buildupAreaInput.value = '';
+            if (totalFloorsInput) totalFloorsInput.value = '';
+            if (totalSeatsInput) totalSeatsInput.value = '';
+            if (numberCabinsInput) numberCabinsInput.value = '';
+            if (parkingSlotsInput) parkingSlotsInput.value = '';
+            if (showroomTotalFloorsInput) showroomTotalFloorsInput.value = '';
+            if (frontageWidthInput) frontageWidthInput.value = '';
+            if (footfallPotentialInput) footfallPotentialInput.value = '';
+            if (groundFloorAreaInput) groundFloorAreaInput.value = '';
+            if (ceilingHeightInput) ceilingHeightInput.value = '';
+            if (mezzanineAreaInput) mezzanineAreaInput.value = '';
+            if (clearanceHeightInput) clearanceHeightInput.value = '';
+            if (dockLevelersInput) dockLevelersInput.value = '';
+            if (numberShuttersInput) numberShuttersInput.value = '';
+            if (floorLoadCapacityInput) floorLoadCapacityInput.value = '';
 
             applyFilters();
         });

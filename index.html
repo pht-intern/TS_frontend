@@ -859,6 +859,16 @@
                                     <option value="villament">Villament</option>
                                 </select>
                             </div>
+                            <!-- Bedrooms: Step 2 in apartment, house, villa -->
+                            <div class="search-group filter-group" data-filter-for="apartment house villa">
+                                <label><i class="fas fa-bed"></i> Min Bedrooms</label>
+                                <input type="number" id="indexSearchBedrooms" placeholder="e.g., 2" min="0" max="10" step="1">
+                            </div>
+                            <!-- Bathrooms: Step 2 in apartment, house, villa -->
+                            <div class="search-group filter-group" data-filter-for="apartment house villa">
+                                <label><i class="fas fa-bath"></i> Min Bathrooms</label>
+                                <input type="number" id="indexSearchBathrooms" placeholder="e.g., 2" min="0" max="10" step="1">
+                            </div>
                             <!-- Warehouse Type: Step 2 in warehouse -->
                             <div class="search-group filter-group" data-filter-for="warehouse">
                                 <label><i class="fas fa-warehouse"></i> Warehouse Type</label>
@@ -872,27 +882,96 @@
                             <!-- Plot Area: Step 2 in plots, villa, warehouse -->
                             <div class="search-group filter-group" data-filter-for="plots villa warehouse">
                                 <label><i class="fas fa-ruler-combined"></i> Plot Area (sq.ft)</label>
-                                <input type="number" id="indexSearchPlotArea" placeholder="Min Plot Area">
+                                <input type="number" id="indexSearchPlotArea" placeholder="Min plot area (sq ft)" step="0.01" min="0">
                             </div>
                             <!-- Length/Breadth: Step 2 in plots, villa, house -->
                             <div class="search-group filter-group" data-filter-for="plots villa house">
                                 <label><i class="fas fa-arrows-alt-h"></i> Length (ft)</label>
-                                <input type="number" id="indexSearchLength" placeholder="Length">
+                                <input type="number" id="indexSearchLength" placeholder="e.g., 30" step="0.01" min="0">
                             </div>
                             <div class="search-group filter-group" data-filter-for="plots villa house">
                                 <label><i class="fas fa-arrows-alt-v"></i> Breadth (ft)</label>
-                                <input type="number" id="indexSearchBreadth" placeholder="Breadth">
+                                <input type="number" id="indexSearchBreadth" placeholder="e.g., 40" step="0.01" min="0">
+                            </div>
+                            <!-- Buildup Area: Step 2 in villa, house -->
+                            <div class="search-group filter-group" data-filter-for="villa house">
+                                <label><i class="fas fa-ruler-combined"></i> Buildup Area (sq.ft)</label>
+                                <input type="number" id="indexSearchBuildupArea" placeholder="Min buildup (sq ft)" step="0.01" min="0">
                             </div>
                             <!-- Super Builtup Area: Step 2 in apartment, office-space, showrooms, warehouse -->
                             <div class="search-group filter-group" data-filter-for="apartment office-space showrooms warehouse">
                                 <label><i class="fas fa-ruler-combined"></i> Super Builtup Area (sq.ft)</label>
-                                <input type="number" id="indexSearchSuperBuildupArea" placeholder="Min Super Builtup">
+                                <input type="number" id="indexSearchSuperBuildupArea" placeholder="Min super builtup (sq ft)" step="0.01" min="0">
                             </div>
                             <!-- Carpet Area: Step 2 in apartment, house, villa, office-space, showrooms, warehouse -->
                             <div class="search-group filter-group"
                                 data-filter-for="apartment house villa office-space showrooms warehouse">
                                 <label><i class="fas fa-vector-square"></i> Carpet Area (sq.ft)</label>
-                                <input type="number" id="indexSearchCarpetArea" placeholder="Min Carpet Area">
+                                <input type="number" id="indexSearchCarpetArea" placeholder="Min carpet area (sq ft)" step="0.01" min="0">
+                            </div>
+                            <!-- Office Space: Step 2 -->
+                            <div class="search-group filter-group" data-filter-for="office-space">
+                                <label><i class="fas fa-layer-group"></i> Min Total Floors</label>
+                                <input type="number" id="indexSearchTotalFloors" placeholder="e.g., 5" min="1" step="1">
+                            </div>
+                            <div class="search-group filter-group" data-filter-for="office-space">
+                                <label><i class="fas fa-chair"></i> Min Seats / Workstations</label>
+                                <input type="number" id="indexSearchTotalSeats" placeholder="e.g., 50" min="0" step="1">
+                            </div>
+                            <div class="search-group filter-group" data-filter-for="office-space">
+                                <label><i class="fas fa-door-open"></i> Min Cabins</label>
+                                <input type="number" id="indexSearchNumberCabins" placeholder="e.g., 2" min="0" step="1">
+                            </div>
+                            <div class="search-group filter-group" data-filter-for="office-space">
+                                <label><i class="fas fa-parking"></i> Min Parking Slots</label>
+                                <input type="number" id="indexSearchParkingSlots" placeholder="e.g., 5" min="0" step="1">
+                            </div>
+                            <!-- Showrooms: Step 2 -->
+                            <div class="search-group filter-group" data-filter-for="showrooms">
+                                <label><i class="fas fa-layer-group"></i> Min Total Floors</label>
+                                <input type="number" id="indexSearchShowroomTotalFloors" placeholder="e.g., 3" min="1" step="1">
+                            </div>
+                            <div class="search-group filter-group" data-filter-for="showrooms">
+                                <label><i class="fas fa-arrows-alt-h"></i> Min Frontage Width (ft)</label>
+                                <input type="number" id="indexSearchFrontageWidth" placeholder="e.g., 30" step="0.01" min="0">
+                            </div>
+                            <div class="search-group filter-group" data-filter-for="showrooms">
+                                <label><i class="fas fa-walking"></i> Footfall Potential</label>
+                                <select id="indexSearchFootfallPotential">
+                                    <option value="">Any</option>
+                                    <option value="low">Low</option>
+                                    <option value="medium">Medium</option>
+                                    <option value="high">High</option>
+                                </select>
+                            </div>
+                            <div class="search-group filter-group" data-filter-for="showrooms">
+                                <label><i class="fas fa-th-large"></i> Min Ground Floor Area (sq.ft)</label>
+                                <input type="number" id="indexSearchGroundFloorArea" placeholder="e.g., 2000" step="0.01" min="0">
+                            </div>
+                            <div class="search-group filter-group" data-filter-for="showrooms">
+                                <label><i class="fas fa-arrows-alt-v"></i> Min Ceiling Height (ft)</label>
+                                <input type="number" id="indexSearchCeilingHeight" placeholder="e.g., 12" step="0.01" min="0">
+                            </div>
+                            <div class="search-group filter-group" data-filter-for="showrooms">
+                                <label><i class="fas fa-layer-group"></i> Min Mezzanine Area (sq.ft)</label>
+                                <input type="number" id="indexSearchMezzanineArea" placeholder="e.g., 500" step="0.01" min="0">
+                            </div>
+                            <!-- Warehouse: Step 2 -->
+                            <div class="search-group filter-group" data-filter-for="warehouse">
+                                <label><i class="fas fa-arrows-alt-v"></i> Min Clearance Height (ft)</label>
+                                <input type="number" id="indexSearchClearanceHeight" placeholder="e.g., 25" step="0.01" min="0">
+                            </div>
+                            <div class="search-group filter-group" data-filter-for="warehouse">
+                                <label><i class="fas fa-truck-loading"></i> Min Dock Levelers</label>
+                                <input type="number" id="indexSearchDockLevelers" placeholder="e.g., 2" min="0" step="1">
+                            </div>
+                            <div class="search-group filter-group" data-filter-for="warehouse">
+                                <label><i class="fas fa-door-closed"></i> Min Shutters</label>
+                                <input type="number" id="indexSearchNumberShutters" placeholder="e.g., 4" min="0" step="1">
+                            </div>
+                            <div class="search-group filter-group" data-filter-for="warehouse">
+                                <label><i class="fas fa-weight-hanging"></i> Min Floor Load (Kg/sq.ft)</label>
+                                <input type="number" id="indexSearchFloorLoadCapacity" placeholder="e.g., 500" step="0.01" min="0">
                             </div>
                         </div>
 
@@ -2975,6 +3054,40 @@
                         document.getElementById('indexSearchVillaType').value = '';
                         document.getElementById('indexSearchWarehouseType').value = '';
                         document.getElementById('indexSearchSuperBuildupArea').value = '';
+                        const indexSearchBedrooms = document.getElementById('indexSearchBedrooms');
+                        const indexSearchBathrooms = document.getElementById('indexSearchBathrooms');
+                        const indexSearchBuildupArea = document.getElementById('indexSearchBuildupArea');
+                        if (indexSearchBedrooms) indexSearchBedrooms.value = '';
+                        if (indexSearchBathrooms) indexSearchBathrooms.value = '';
+                        if (indexSearchBuildupArea) indexSearchBuildupArea.value = '';
+                        const idxTotalFloors = document.getElementById('indexSearchTotalFloors');
+                        const idxTotalSeats = document.getElementById('indexSearchTotalSeats');
+                        const idxNumberCabins = document.getElementById('indexSearchNumberCabins');
+                        const idxParkingSlots = document.getElementById('indexSearchParkingSlots');
+                        const idxShowroomTotalFloors = document.getElementById('indexSearchShowroomTotalFloors');
+                        const idxFrontageWidth = document.getElementById('indexSearchFrontageWidth');
+                        const idxFootfallPotential = document.getElementById('indexSearchFootfallPotential');
+                        const idxGroundFloorArea = document.getElementById('indexSearchGroundFloorArea');
+                        const idxCeilingHeight = document.getElementById('indexSearchCeilingHeight');
+                        const idxMezzanineArea = document.getElementById('indexSearchMezzanineArea');
+                        const idxClearanceHeight = document.getElementById('indexSearchClearanceHeight');
+                        const idxDockLevelers = document.getElementById('indexSearchDockLevelers');
+                        const idxNumberShutters = document.getElementById('indexSearchNumberShutters');
+                        const idxFloorLoadCapacity = document.getElementById('indexSearchFloorLoadCapacity');
+                        if (idxTotalFloors) idxTotalFloors.value = '';
+                        if (idxTotalSeats) idxTotalSeats.value = '';
+                        if (idxNumberCabins) idxNumberCabins.value = '';
+                        if (idxParkingSlots) idxParkingSlots.value = '';
+                        if (idxShowroomTotalFloors) idxShowroomTotalFloors.value = '';
+                        if (idxFrontageWidth) idxFrontageWidth.value = '';
+                        if (idxFootfallPotential) idxFootfallPotential.value = '';
+                        if (idxGroundFloorArea) idxGroundFloorArea.value = '';
+                        if (idxCeilingHeight) idxCeilingHeight.value = '';
+                        if (idxMezzanineArea) idxMezzanineArea.value = '';
+                        if (idxClearanceHeight) idxClearanceHeight.value = '';
+                        if (idxDockLevelers) idxDockLevelers.value = '';
+                        if (idxNumberShutters) idxNumberShutters.value = '';
+                        if (idxFloorLoadCapacity) idxFloorLoadCapacity.value = '';
 
                         // Update filter tags without redirecting when clearing
                         indexApplyFilters(false);
@@ -3052,6 +3165,44 @@
 
                     const superBuildupArea = document.getElementById('indexSearchSuperBuildupArea')?.value.trim() || '';
                     if (superBuildupArea) params.set('super_buildup_area', superBuildupArea);
+
+                    const bedrooms = document.getElementById('indexSearchBedrooms')?.value.trim() || '';
+                    if (bedrooms) params.set('bedrooms', bedrooms);
+
+                    const bathrooms = document.getElementById('indexSearchBathrooms')?.value.trim() || '';
+                    if (bathrooms) params.set('bathrooms', bathrooms);
+
+                    const buildupArea = document.getElementById('indexSearchBuildupArea')?.value.trim() || '';
+                    if (buildupArea) params.set('buildup_area', buildupArea);
+
+                    const totalFloors = document.getElementById('indexSearchTotalFloors')?.value.trim() || '';
+                    if (totalFloors) params.set('total_floors', totalFloors);
+                    const showroomTotalFloors = document.getElementById('indexSearchShowroomTotalFloors')?.value.trim() || '';
+                    if (showroomTotalFloors) params.set('showroom_total_floors', showroomTotalFloors);
+                    const totalSeats = document.getElementById('indexSearchTotalSeats')?.value.trim() || '';
+                    if (totalSeats) params.set('total_seats_workstations', totalSeats);
+                    const numberCabins = document.getElementById('indexSearchNumberCabins')?.value.trim() || '';
+                    if (numberCabins) params.set('number_of_cabins', numberCabins);
+                    const parkingSlots = document.getElementById('indexSearchParkingSlots')?.value.trim() || '';
+                    if (parkingSlots) params.set('number_of_parking_slots', parkingSlots);
+                    const frontageWidth = document.getElementById('indexSearchFrontageWidth')?.value.trim() || '';
+                    if (frontageWidth) params.set('frontage_width', frontageWidth);
+                    const footfallPotential = document.getElementById('indexSearchFootfallPotential')?.value.trim() || '';
+                    if (footfallPotential) params.set('footfall_potential', footfallPotential);
+                    const groundFloorArea = document.getElementById('indexSearchGroundFloorArea')?.value.trim() || '';
+                    if (groundFloorArea) params.set('ground_floor_area', groundFloorArea);
+                    const ceilingHeight = document.getElementById('indexSearchCeilingHeight')?.value.trim() || '';
+                    if (ceilingHeight) params.set('ceiling_height', ceilingHeight);
+                    const mezzanineArea = document.getElementById('indexSearchMezzanineArea')?.value.trim() || '';
+                    if (mezzanineArea) params.set('mezzanine_area', mezzanineArea);
+                    const clearanceHeight = document.getElementById('indexSearchClearanceHeight')?.value.trim() || '';
+                    if (clearanceHeight) params.set('clearance_height', clearanceHeight);
+                    const dockLevelers = document.getElementById('indexSearchDockLevelers')?.value.trim() || '';
+                    if (dockLevelers) params.set('dock_levelers', dockLevelers);
+                    const numberShutters = document.getElementById('indexSearchNumberShutters')?.value.trim() || '';
+                    if (numberShutters) params.set('number_of_shutters', numberShutters);
+                    const floorLoadCapacity = document.getElementById('indexSearchFloorLoadCapacity')?.value.trim() || '';
+                    if (floorLoadCapacity) params.set('floor_load_capacity', floorLoadCapacity);
 
                     // Redirect to properties page with filters
                     const queryString = params.toString();
@@ -3229,6 +3380,66 @@
                         value: carpetArea
                     });
                 }
+
+                const superBuildupAreaTag = document.getElementById('indexSearchSuperBuildupArea')?.value.trim() || '';
+                if (superBuildupAreaTag) {
+                    activeFilters.push({
+                        type: 'super_buildup_area',
+                        label: `Super Builtup: ${superBuildupAreaTag} sq.ft`,
+                        icon: 'fa-ruler-combined',
+                        value: superBuildupAreaTag
+                    });
+                }
+
+                const bedroomsVal = document.getElementById('indexSearchBedrooms')?.value.trim() || '';
+                if (bedroomsVal) {
+                    activeFilters.push({
+                        type: 'bedrooms',
+                        label: `Min Bedrooms: ${bedroomsVal}`,
+                        icon: 'fa-bed',
+                        value: bedroomsVal
+                    });
+                }
+
+                const bathroomsVal = document.getElementById('indexSearchBathrooms')?.value.trim() || '';
+                if (bathroomsVal) {
+                    activeFilters.push({
+                        type: 'bathrooms',
+                        label: `Min Bathrooms: ${bathroomsVal}`,
+                        icon: 'fa-bath',
+                        value: bathroomsVal
+                    });
+                }
+
+                const buildupAreaVal = document.getElementById('indexSearchBuildupArea')?.value.trim() || '';
+                if (buildupAreaVal) {
+                    activeFilters.push({
+                        type: 'buildup_area',
+                        label: `Buildup Area: ${buildupAreaVal} sq.ft`,
+                        icon: 'fa-ruler-combined',
+                        value: buildupAreaVal
+                    });
+                }
+
+                const addTag = (type, labelPrefix, icon, elId) => {
+                    const value = document.getElementById(elId)?.value.trim() || '';
+                    if (value) activeFilters.push({ type, label: `${labelPrefix}: ${value}`, icon, value });
+                };
+                addTag('total_floors', 'Min Floors', 'fa-layer-group', 'indexSearchTotalFloors');
+                addTag('total_seats', 'Min Seats', 'fa-chair', 'indexSearchTotalSeats');
+                addTag('number_cabins', 'Min Cabins', 'fa-door-open', 'indexSearchNumberCabins');
+                addTag('parking_slots', 'Min Parking', 'fa-parking', 'indexSearchParkingSlots');
+                addTag('showroom_total_floors', 'Min Floors (Showroom)', 'fa-layer-group', 'indexSearchShowroomTotalFloors');
+                addTag('frontage_width', 'Min Frontage (ft)', 'fa-arrows-alt-h', 'indexSearchFrontageWidth');
+                addTag('footfall_potential', 'Footfall', 'fa-walking', 'indexSearchFootfallPotential');
+                addTag('ground_floor_area', 'Min Ground Floor (sq.ft)', 'fa-th-large', 'indexSearchGroundFloorArea');
+                addTag('ceiling_height', 'Min Ceiling (ft)', 'fa-arrows-alt-v', 'indexSearchCeilingHeight');
+                addTag('mezzanine_area', 'Min Mezzanine (sq.ft)', 'fa-layer-group', 'indexSearchMezzanineArea');
+                addTag('clearance_height', 'Min Clearance (ft)', 'fa-arrows-alt-v', 'indexSearchClearanceHeight');
+                addTag('dock_levelers', 'Min Dock Levelers', 'fa-truck-loading', 'indexSearchDockLevelers');
+                addTag('number_shutters', 'Min Shutters', 'fa-door-closed', 'indexSearchNumberShutters');
+                addTag('floor_load_capacity', 'Min Floor Load', 'fa-weight-hanging', 'indexSearchFloorLoadCapacity');
+
                 if (activeFilters.length > 0) {
                     filterTags.innerHTML = activeFilters.map(filter => `
                         <div class="filter-tag" data-filter-type="${filter.type}" data-filter-value="${filter.value || ''}">
@@ -3326,6 +3537,78 @@
                     case 'carpet_area':
                         const carpetAreaInput = document.getElementById('indexSearchCarpetArea');
                         if (carpetAreaInput) carpetAreaInput.value = '';
+                        break;
+                    case 'super_buildup_area':
+                        const superBuildupInput = document.getElementById('indexSearchSuperBuildupArea');
+                        if (superBuildupInput) superBuildupInput.value = '';
+                        break;
+                    case 'bedrooms':
+                        const bedroomsInput = document.getElementById('indexSearchBedrooms');
+                        if (bedroomsInput) bedroomsInput.value = '';
+                        break;
+                    case 'bathrooms':
+                        const bathroomsInput = document.getElementById('indexSearchBathrooms');
+                        if (bathroomsInput) bathroomsInput.value = '';
+                        break;
+                    case 'buildup_area':
+                        const buildupAreaInput = document.getElementById('indexSearchBuildupArea');
+                        if (buildupAreaInput) buildupAreaInput.value = '';
+                        break;
+                    case 'total_floors':
+                        const totalFloorsInput = document.getElementById('indexSearchTotalFloors');
+                        if (totalFloorsInput) totalFloorsInput.value = '';
+                        break;
+                    case 'total_seats':
+                        const totalSeatsInput = document.getElementById('indexSearchTotalSeats');
+                        if (totalSeatsInput) totalSeatsInput.value = '';
+                        break;
+                    case 'number_cabins':
+                        const numberCabinsInput = document.getElementById('indexSearchNumberCabins');
+                        if (numberCabinsInput) numberCabinsInput.value = '';
+                        break;
+                    case 'parking_slots':
+                        const parkingSlotsInput = document.getElementById('indexSearchParkingSlots');
+                        if (parkingSlotsInput) parkingSlotsInput.value = '';
+                        break;
+                    case 'showroom_total_floors':
+                        const showroomTotalFloorsInput = document.getElementById('indexSearchShowroomTotalFloors');
+                        if (showroomTotalFloorsInput) showroomTotalFloorsInput.value = '';
+                        break;
+                    case 'frontage_width':
+                        const frontageWidthInput = document.getElementById('indexSearchFrontageWidth');
+                        if (frontageWidthInput) frontageWidthInput.value = '';
+                        break;
+                    case 'footfall_potential':
+                        const footfallPotentialInput = document.getElementById('indexSearchFootfallPotential');
+                        if (footfallPotentialInput) footfallPotentialInput.value = '';
+                        break;
+                    case 'ground_floor_area':
+                        const groundFloorAreaInput = document.getElementById('indexSearchGroundFloorArea');
+                        if (groundFloorAreaInput) groundFloorAreaInput.value = '';
+                        break;
+                    case 'ceiling_height':
+                        const ceilingHeightInput = document.getElementById('indexSearchCeilingHeight');
+                        if (ceilingHeightInput) ceilingHeightInput.value = '';
+                        break;
+                    case 'mezzanine_area':
+                        const mezzanineAreaInput = document.getElementById('indexSearchMezzanineArea');
+                        if (mezzanineAreaInput) mezzanineAreaInput.value = '';
+                        break;
+                    case 'clearance_height':
+                        const clearanceHeightInput = document.getElementById('indexSearchClearanceHeight');
+                        if (clearanceHeightInput) clearanceHeightInput.value = '';
+                        break;
+                    case 'dock_levelers':
+                        const dockLevelersInput = document.getElementById('indexSearchDockLevelers');
+                        if (dockLevelersInput) dockLevelersInput.value = '';
+                        break;
+                    case 'number_shutters':
+                        const numberShuttersInput = document.getElementById('indexSearchNumberShutters');
+                        if (numberShuttersInput) numberShuttersInput.value = '';
+                        break;
+                    case 'floor_load_capacity':
+                        const floorLoadCapacityInput = document.getElementById('indexSearchFloorLoadCapacity');
+                        if (floorLoadCapacityInput) floorLoadCapacityInput.value = '';
                         break;
                 }
                 const indexFiltersRoot = document.getElementById('indexPropertiesFilters');

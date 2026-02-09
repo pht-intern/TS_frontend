@@ -498,6 +498,10 @@ function initDashboard() {
     if (residentialPropertyTypeSelect) {
         residentialPropertyTypeSelect.addEventListener('change', handleResidentialPropertyTypeChange);
     }
+    const residentialStatusSelect = document.getElementById('residentialStatus');
+    if (residentialStatusSelect) {
+        residentialStatusSelect.addEventListener('change', updateListingTypeOptions);
+    }
     const residentialProjectCategorySelect = document.getElementById('residentialProjectCategory');
     if (residentialProjectCategorySelect) {
         residentialProjectCategorySelect.addEventListener('change', function() {
@@ -509,24 +513,11 @@ function initDashboard() {
         });
     }
 
-    // Show/hide Possession Date when Listing Type is "Under Construction"
-    const residentialListingTypeSelect = document.getElementById('residentialListingType');
-    const residentialPossessionDateRow = document.getElementById('residentialPossessionDateRow');
+    // Possession Date is shown for all listing types; ensure min date is set when needed
     const residentialPossessionDateInput = document.getElementById('residentialPossessionDate');
-    if (residentialListingTypeSelect && residentialPossessionDateRow) {
-        function togglePossessionDateRow() {
-            const isUnderConstruction = residentialListingTypeSelect.value === 'under_construction';
-            residentialPossessionDateRow.style.display = isUnderConstruction ? '' : 'none';
-            if (residentialPossessionDateInput) {
-                if (!isUnderConstruction) residentialPossessionDateInput.value = '';
-                else {
-                    const today = new Date().toISOString().split('T')[0];
-                    if (!residentialPossessionDateInput.getAttribute('min')) residentialPossessionDateInput.setAttribute('min', today);
-                }
-            }
-        }
-        residentialListingTypeSelect.addEventListener('change', togglePossessionDateRow);
-        togglePossessionDateRow();
+    if (residentialPossessionDateInput && !residentialPossessionDateInput.getAttribute('min')) {
+        const today = new Date().toISOString().split('T')[0];
+        residentialPossessionDateInput.setAttribute('min', today);
     }
 
     // Location link validation with real-time feedback
@@ -1793,7 +1784,7 @@ function renderProperties(properties) {
             <td>
                 <span class="dashboard-table-timestamp">${formatTimestamp(property.updated_at)}</span>
             </td>
-            <td>
+            <td class="dashboard-table-col-actions">
                 <div class="dashboard-table-actions">
                     <button class="dashboard-action-btn edit" onclick="editProperty(${property.id}, '${apiCategory}')" title="Edit" data-property-id="${property.id}" data-property-category="${apiCategory}">
                         <i class="fas fa-edit"></i>
@@ -2781,6 +2772,9 @@ function handleResidentialPropertyTypeChange() {
     
     // Load Step 2 content based on property type
     loadStep2Content(selectedType, step2Container);
+    
+    // Update listing type options (Plot: Ready to register / Under development; others by status)
+    updateListingTypeOptions();
     
     // Ensure Step 3 is not active when we're not on step 3
     if (currentStep !== 3) {
@@ -4130,36 +4124,82 @@ function populatePropertyTypeByProjectCategory() {
     }
 }
 
-// Load status and listing_type options from API for Step 1 dropdowns
+// Fixed status options: New, Resale, Sale, Rent
+var RESIDENTIAL_STATUS_OPTIONS = [
+    { value: 'new', label: 'New' },
+    { value: 'resale', label: 'Resale' },
+    { value: 'sale', label: 'Sale' },
+    { value: 'rent', label: 'Rent' }
+];
+
+// Update Listing Type dropdown based on Status and Property Type.
+// For Plot: Ready to register, Under development.
+// For New (non-plot): Under construction, Ready to move.
+// For Resale / Sale / Rent (non-plot): Ready to move only.
+function updateListingTypeOptions() {
+    const statusSelect = document.getElementById('residentialStatus');
+    const propertyTypeSelect = document.getElementById('residentialPropertyType');
+    const listingTypeSelect = document.getElementById('residentialListingType');
+    if (!listingTypeSelect) return;
+
+    const status = (statusSelect && statusSelect.value) ? statusSelect.value.trim().toLowerCase() : '';
+    const propertyType = (propertyTypeSelect && propertyTypeSelect.value) ? propertyTypeSelect.value.trim().toLowerCase() : '';
+    const isPlot = propertyType === 'plot_properties' || propertyType === 'plot';
+
+    var options = [];
+    if (isPlot) {
+        options = [
+            { value: 'ready_to_register', label: 'Ready to Register' },
+            { value: 'under_development', label: 'Under Development' }
+        ];
+    } else if (status === 'new') {
+        options = [
+            { value: 'under_construction', label: 'Under Construction' },
+            { value: 'ready_to_move', label: 'Ready to Move' }
+        ];
+    } else if (status === 'resale' || status === 'sale' || status === 'rent') {
+        options = [
+            { value: 'ready_to_move', label: 'Ready to Move' }
+        ];
+    }
+
+    var currentVal = listingTypeSelect.value;
+    listingTypeSelect.innerHTML = '<option value="">Select Listing Type</option>';
+    options.forEach(function (opt) {
+        var o = document.createElement('option');
+        o.value = opt.value;
+        o.textContent = opt.label;
+        listingTypeSelect.appendChild(o);
+    });
+    var validValues = options.map(function (o) { return o.value; });
+    if (currentVal && validValues.indexOf(currentVal) !== -1) {
+        listingTypeSelect.value = currentVal;
+    } else {
+        listingTypeSelect.value = '';
+    }
+
+    var listingTypeCacheInput = document.getElementById('residentialListingTypeCache');
+    if (listingTypeCacheInput) listingTypeCacheInput.value = listingTypeSelect.value || '';
+
+}
+
+// Load status options (fixed: New, Resale, Sale, Rent) and update listing type by status/property type
 async function loadPropertyFieldOptions() {
     try {
-        const res = await fetch('/api/properties/field-options', { cache: 'no-cache' });
-        if (!res.ok) return;
-        const data = await res.json();
         const statusSelect = document.getElementById('residentialStatus');
         const listingTypeSelect = document.getElementById('residentialListingType');
-        if (statusSelect && data.status && Array.isArray(data.status)) {
+        if (statusSelect) {
             const currentVal = statusSelect.value;
             statusSelect.innerHTML = '<option value="">Select Status</option>';
-            data.status.forEach(function (opt) {
+            RESIDENTIAL_STATUS_OPTIONS.forEach(function (opt) {
                 const o = document.createElement('option');
                 o.value = opt.value;
-                o.textContent = opt.label || opt.value;
+                o.textContent = opt.label;
                 statusSelect.appendChild(o);
             });
             if (currentVal) statusSelect.value = currentVal;
         }
-        if (listingTypeSelect && data.listing_type && Array.isArray(data.listing_type)) {
-            const currentVal = listingTypeSelect.value;
-            listingTypeSelect.innerHTML = '<option value="">Select Listing Type</option>';
-            data.listing_type.forEach(function (opt) {
-                const o = document.createElement('option');
-                o.value = opt.value;
-                o.textContent = opt.label || opt.value;
-                listingTypeSelect.appendChild(o);
-            });
-            if (currentVal) listingTypeSelect.value = currentVal;
-        }
+        updateListingTypeOptions();
     } catch (e) {
         console.warn('Load property field options failed:', e);
     }
@@ -4504,7 +4544,25 @@ function populateResidentialForm(property) {
     if (videoLinkInput) {
         videoLinkInput.value = property.video_preview_link || '';
     }
-    
+
+    // Possession Date - set early so it's available in edit modal (backend returns possession_date as ISO string)
+    function applyPossessionDate() {
+        const possessionDateInput = document.getElementById('residentialPossessionDate');
+        if (!possessionDateInput) return;
+        const dateVal = property.possession_date || property.possession_date_text || '';
+        if (dateVal) {
+            const d = typeof dateVal === 'string' ? dateVal.split('T')[0] : (dateVal instanceof Date ? dateVal.toISOString().split('T')[0] : '');
+            if (d) possessionDateInput.value = d;
+        } else {
+            possessionDateInput.value = '';
+        }
+        const today = new Date().toISOString().split('T')[0];
+        if (!possessionDateInput.getAttribute('min')) possessionDateInput.setAttribute('min', today);
+    }
+    applyPossessionDate();
+    // Re-apply after Step 2 / listing type handlers run so value is not lost
+    setTimeout(applyPossessionDate, 150);
+    setTimeout(applyPossessionDate, 400);
 
     // Set unit type buttons
     const unitTypeButtons = document.querySelectorAll('#residentialPropertyForm .dashboard-unit-type-btn');
@@ -4928,44 +4986,53 @@ function populateStep2Fields(property) {
         if (statusCacheInput) statusCacheInput.value = statusInput.value || '';
     }
 
+    // Listing type: refresh options (full set for residential so DB value is always available), then set from DB
+    updateListingTypeOptions();
+
     const listingTypeInput = document.getElementById('residentialListingType');
     if (listingTypeInput) {
-        const apartmentCandidates = [
-            normalizeSaleRentStatus(property.status),
-            normalizeSaleRentStatus(property.property_status),
-            normalizeSaleRentStatus(property.listing_type),
-            normalizeListingTypeValue(property.property_status),
-            normalizeListingTypeValue(property.listing_type)
-        ];
-        const villaPlotCandidates = [
-            normalizeListingTypeValue(property.property_status),
-            normalizeListingTypeValue(property.listing_type),
-            normalizeSaleRentStatus(property.status)
-        ];
-        const candidates = (propertyType === 'apartments') ? apartmentCandidates : villaPlotCandidates;
-        safeSetSelectValueFromCandidates(listingTypeInput, candidates);
+        var listingCandidates;
+        if (propertyType === 'plot_properties') {
+            var raw = (property.listing_type || property.property_status || '').toString().trim().toLowerCase().replace(/\s+/g, '_');
+            if (raw === 'ready_to_move' || raw === 'readytomove' || raw === 'ready to move') {
+                listingCandidates = ['ready_to_register'];
+            } else if (raw === 'under_construction' || raw === 'under_development' || raw === 'underconstruction' || raw === 'underdevelopment') {
+                listingCandidates = ['under_development'];
+            } else {
+                listingCandidates = ['ready_to_register', 'under_development'];
+            }
+        } else {
+            var apartmentCandidates = [
+                normalizeSaleRentStatus(property.status),
+                normalizeSaleRentStatus(property.property_status),
+                normalizeSaleRentStatus(property.listing_type),
+                normalizeListingTypeValue(property.property_status),
+                normalizeListingTypeValue(property.listing_type)
+            ];
+            var villaPlotCandidates = [
+                normalizeListingTypeValue(property.property_status),
+                normalizeListingTypeValue(property.listing_type),
+                normalizeSaleRentStatus(property.status)
+            ];
+            listingCandidates = (propertyType === 'apartments') ? apartmentCandidates : villaPlotCandidates;
+        }
+        safeSetSelectValueFromCandidates(listingTypeInput, listingCandidates);
     }
-    const listingTypeCacheInput = document.getElementById('residentialListingTypeCache');
+    var listingTypeCacheInput = document.getElementById('residentialListingTypeCache');
     if (listingTypeCacheInput && listingTypeInput) listingTypeCacheInput.value = listingTypeInput.value || '';
     
-    // Possession Date (Step 1) - show row and set value when listing type is Under Construction
-    const possessionDateRow = document.getElementById('residentialPossessionDateRow');
+    // Possession Date (Step 1) - set from property same as other fields (status, listing type)
     const possessionDateInput = document.getElementById('residentialPossessionDate');
-    const listingTypeValue = document.getElementById('residentialListingType')?.value;
-    if (possessionDateRow && possessionDateInput) {
-        if (listingTypeValue === 'under_construction') {
-            possessionDateRow.style.display = '';
-            const dateVal = property.possession_date || property.possession_date_text || '';
-            if (dateVal) {
-                const d = typeof dateVal === 'string' ? dateVal.split('T')[0] : (dateVal instanceof Date ? dateVal.toISOString().split('T')[0] : '');
-                if (d) possessionDateInput.value = d;
-            }
-            const today = new Date().toISOString().split('T')[0];
-            if (!possessionDateInput.getAttribute('min')) possessionDateInput.setAttribute('min', today);
+    if (possessionDateInput) {
+        const dateVal = property.possession_date || property.possession_date_text || '';
+        if (dateVal) {
+            const d = typeof dateVal === 'string' ? dateVal.split('T')[0] : (dateVal instanceof Date ? dateVal.toISOString().split('T')[0] : '');
+            possessionDateInput.value = d || '';
         } else {
-            possessionDateRow.style.display = 'none';
             possessionDateInput.value = '';
         }
+        const today = new Date().toISOString().split('T')[0];
+        if (!possessionDateInput.getAttribute('min')) possessionDateInput.setAttribute('min', today);
     }
     
     const directionInput = document.getElementById('residentialDirection');

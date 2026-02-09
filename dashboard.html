@@ -531,7 +531,7 @@ body{font-family:'Inter',sans-serif;font-size:18px;line-height:1.6;color:var(--t
                             Add Property
                         </button>
                     </div>
-                    <div class="dashboard-properties-table-container properties-table-scrollable">
+                    <div class="dashboard-properties-table-container properties-table-scrollable properties-list-table-wrap">
                         <table class="dashboard-properties-table">
                             <thead>
                                 <tr>
@@ -544,7 +544,7 @@ body{font-family:'Inter',sans-serif;font-size:18px;line-height:1.6;color:var(--t
                                     <th>Property Category</th>
                                     <th class="dashboard-table-col-created">Created At</th>
                                     <th class="dashboard-table-col-updated">Updated At</th>
-                                    <th>Actions</th>
+                                    <th class="dashboard-table-col-actions">Actions</th>
                                 </tr>
                             </thead>
                             <tbody id="propertiesTableBody">
@@ -1194,26 +1194,31 @@ body{font-family:'Inter',sans-serif;font-size:18px;line-height:1.6;color:var(--t
                             </select>
                         </div>
                         <div class="dashboard-form-group">
+                            <label for="residentialPropertyType"><i class="fas fa-home"></i> Property Type *</label>
+                            <select id="residentialPropertyType" name="property_type" required>
+                                <option value="">Select Property Type</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="dashboard-form-row">
+                        <div class="dashboard-form-group">
                             <label for="residentialStatus"><i class="fas fa-tag"></i> Status *</label>
                             <select id="residentialStatus" name="status" required>
                                 <option value="">Select Status</option>
                                 <option value="new">New</option>
                                 <option value="resale">Resale</option>
+                                <option value="sale">Sale</option>
+                                <option value="rent">Rent</option>
                             </select>
                         </div>
                         <div class="dashboard-form-group">
                             <label for="residentialListingType"><i class="fas fa-list"></i> Listing Type *</label>
                             <select id="residentialListingType" name="listing_type" required>
                                 <option value="">Select Listing Type</option>
-                                <option value="sale">Sale</option>
-                                <option value="rent">Rent</option>
-                                <option value="under_construction">Under Construction</option>
-                                <option value="ready_to_move">Ready to Move</option>
-                                <option value="under_development">Under Development</option>
                             </select>
                         </div>
                     </div>
-                    <div class="dashboard-form-row" id="residentialPossessionDateRow" style="display: none;">
+                    <div class="dashboard-form-row" id="residentialPossessionDateRow">
                         <div class="dashboard-form-group">
                             <label for="residentialPossessionDate"><i class="fas fa-calendar-alt"></i> Possession Date</label>
                             <input type="date" id="residentialPossessionDate" name="possession_date" min="">
@@ -1229,14 +1234,6 @@ body{font-family:'Inter',sans-serif;font-size:18px;line-height:1.6;color:var(--t
                             <label for="residentialLocality"><i class="fas fa-location-dot"></i> Locality/Area *</label>
                             <input type="text" id="residentialLocality" name="locality" list="residentialLocalityList" placeholder="Type or select locality/area" autocomplete="off" required>
                             <datalist id="residentialLocalityList"><option value="">Select Locality/Area</option></datalist>
-                        </div>
-                    </div>
-                    <div class="dashboard-form-row">
-                        <div class="dashboard-form-group">
-                            <label for="residentialPropertyType"><i class="fas fa-home"></i> Property Type *</label>
-                            <select id="residentialPropertyType" name="property_type" required>
-                                <option value="">Select Property Type</option>
-                            </select>
                         </div>
                     </div>
                 </div>

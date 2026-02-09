@@ -1164,6 +1164,19 @@ body{font-family:'Inter',sans-serif;font-size:18px;line-height:1.6;color:var(--t
                             </select>
                         </div>
                         <div class="dashboard-form-group">
+                            <label for="residentialPropertyType">
+                                <i class="fas fa-home"></i>
+                                Property Type *
+                            </label>
+                            <select id="residentialPropertyType" name="property_type" required>
+                                <option value="">Select Property Type</option>
+                                <!-- Options populated by JS based on Project Category (Residential / Commercial) -->
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="dashboard-form-row">
+                        <div class="dashboard-form-group">
                             <label for="residentialStatus">
                                 <i class="fas fa-tag"></i>
                                 Status *
@@ -1223,19 +1236,6 @@ body{font-family:'Inter',sans-serif;font-size:18px;line-height:1.6;color:var(--t
                             <datalist id="residentialLocalityList">
                                 <option value="">Select Locality/Area</option>
                             </datalist>
-                        </div>
-                    </div>
-
-                    <div class="dashboard-form-row">
-                        <div class="dashboard-form-group">
-                            <label for="residentialPropertyType">
-                                <i class="fas fa-home"></i>
-                                Property Type *
-                            </label>
-                            <select id="residentialPropertyType" name="property_type" required>
-                                <option value="">Select Property Type</option>
-                                <!-- Options populated by JS based on Project Category (Residential / Commercial) -->
-                            </select>
                         </div>
                     </div>
                 </div>

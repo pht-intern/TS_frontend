@@ -576,15 +576,14 @@ function initDashboard() {
     const residentialPossessionDateInput = document.getElementById('residentialPossessionDate');
     if (residentialListingTypeSelect && residentialPossessionDateRow) {
         function togglePossessionDateRow() {
-            const isUnderConstruction = residentialListingTypeSelect.value === 'under_construction';
+            const raw = (residentialListingTypeSelect.value || '').toString().trim().toLowerCase().replace(/\s+/g, '_');
+            const isUnderConstruction = raw === 'under_construction' || raw === 'under_development' || raw === 'underconstruction' || raw === 'underdevelopment';
             residentialPossessionDateRow.style.display = isUnderConstruction ? '' : 'none';
-            if (residentialPossessionDateInput) {
-                if (!isUnderConstruction) residentialPossessionDateInput.value = '';
-                else {
-                    const today = new Date().toISOString().split('T')[0];
-                    if (!residentialPossessionDateInput.getAttribute('min')) residentialPossessionDateInput.setAttribute('min', today);
-                }
+            if (residentialPossessionDateInput && isUnderConstruction) {
+                const today = new Date().toISOString().split('T')[0];
+                if (!residentialPossessionDateInput.getAttribute('min')) residentialPossessionDateInput.setAttribute('min', today);
             }
+            // Do not clear possession date when hiding - keep value so it persists when switching back (edit modal same as other fields)
         }
         residentialListingTypeSelect.addEventListener('change', togglePossessionDateRow);
         togglePossessionDateRow();
@@ -3076,7 +3075,7 @@ function getApartmentsStep2HTML() {
             <div class="dashboard-form-group">
                 <label for="residentialSuperBuildupArea">
                     <i class="fas fa-ruler-combined"></i>
-                    Super Builtup Area (SBA) (sq.ft.)
+                    Super Builtup Area (sq.ft.)
                 </label>
                 <input type="number" id="residentialSuperBuildupArea" name="super_buildup_area" placeholder="e.g., 1500" step="0.01" min="0">
             </div>
@@ -3100,6 +3099,10 @@ function getApartmentsStep2HTML() {
                 <option value="west">West</option>
                 <option value="north">North</option>
                 <option value="south">South</option>
+                <option value="northeast">North East</option>
+                <option value="northwest">North West</option>
+                <option value="southeast">South East</option>
+                <option value="southwest">South West</option>
             </select>
         </div>
 
@@ -4485,7 +4488,25 @@ function populateResidentialForm(property) {
     
     const typeInput = document.getElementById('residentialType');
     if (typeInput) typeInput.value = property.type || 'residential';
-    
+
+    // Possession Date - set early so it's available in edit modal (backend returns possession_date as ISO string)
+    function applyPossessionDate() {
+        const possessionDateInput = document.getElementById('residentialPossessionDate');
+        if (!possessionDateInput) return;
+        const dateVal = property.possession_date || property.possession_date_text || '';
+        if (dateVal) {
+            const d = typeof dateVal === 'string' ? dateVal.split('T')[0] : (dateVal instanceof Date ? dateVal.toISOString().split('T')[0] : '');
+            if (d) possessionDateInput.value = d;
+        } else {
+            possessionDateInput.value = '';
+        }
+        const today = new Date().toISOString().split('T')[0];
+        if (!possessionDateInput.getAttribute('min')) possessionDateInput.setAttribute('min', today);
+    }
+    applyPossessionDate();
+    setTimeout(applyPossessionDate, 150);
+    setTimeout(applyPossessionDate, 400);
+
     // Project Category (Step 1) - set first so Property Type dropdown can be populated
     const projectCategoryInput = document.getElementById('residentialProjectCategory');
     if (projectCategoryInput) {
@@ -4802,24 +4823,24 @@ function populateStep2Fields(property) {
         safeSetSelectValueFromCandidates(listingTypeInput, candidates);
     }
     
-    // Possession Date (Step 1) - show row and set value when listing type is Under Construction
+    // Possession Date (Step 1) - set value from property same as other fields, then show/hide row by listing type
     const possessionDateRow = document.getElementById('residentialPossessionDateRow');
     const possessionDateInput = document.getElementById('residentialPossessionDate');
-    const listingTypeValue = document.getElementById('residentialListingType')?.value;
-    if (possessionDateRow && possessionDateInput) {
-        if (listingTypeValue === 'under_construction') {
-            possessionDateRow.style.display = '';
-            const dateVal = property.possession_date || property.possession_date_text || '';
-            if (dateVal) {
-                const d = typeof dateVal === 'string' ? dateVal.split('T')[0] : (dateVal instanceof Date ? dateVal.toISOString().split('T')[0] : '');
-                if (d) possessionDateInput.value = d;
-            }
-            const today = new Date().toISOString().split('T')[0];
-            if (!possessionDateInput.getAttribute('min')) possessionDateInput.setAttribute('min', today);
+    if (possessionDateInput) {
+        const dateVal = property.possession_date || property.possession_date_text || '';
+        if (dateVal) {
+            const d = typeof dateVal === 'string' ? dateVal.split('T')[0] : (dateVal instanceof Date ? dateVal.toISOString().split('T')[0] : '');
+            if (d) possessionDateInput.value = d;
         } else {
-            possessionDateRow.style.display = 'none';
             possessionDateInput.value = '';
         }
+        const today = new Date().toISOString().split('T')[0];
+        if (!possessionDateInput.getAttribute('min')) possessionDateInput.setAttribute('min', today);
+    }
+    if (possessionDateRow) {
+        const listingTypeRaw = (document.getElementById('residentialListingType')?.value || '').toString().trim().toLowerCase().replace(/\s+/g, '_');
+        const isUnderConstruction = listingTypeRaw === 'under_construction' || listingTypeRaw === 'under_development' || listingTypeRaw === 'underconstruction' || listingTypeRaw === 'underdevelopment';
+        possessionDateRow.style.display = isUnderConstruction ? '' : 'none';
     }
     
     const directionInput = document.getElementById('residentialDirection');

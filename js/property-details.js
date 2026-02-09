@@ -1679,6 +1679,39 @@ function renderPropertyDetails(property) {
     
     quickInfo.innerHTML = quickInfoHTML || '<p style="color: #6b7280; font-style: italic; padding: 1rem;">No additional details available for this property.</p>';
     
+    // Render Possession Date (when available, e.g. Under Construction)
+    const possessionDateEl = document.getElementById('propertyPossessionDate');
+    if (possessionDateEl) {
+        const dateVal = property.possession_date || property.possession_date_text || '';
+        let possessionDisplay = '';
+        if (dateVal) {
+            if (typeof dateVal === 'string' && /^\d{4}-\d{2}-\d{2}/.test(dateVal)) {
+                try {
+                    const d = new Date(dateVal);
+                    possessionDisplay = isNaN(d.getTime()) ? dateVal : d.toLocaleDateString('en-IN', {
+                        day: 'numeric',
+                        month: 'short',
+                        year: 'numeric'
+                    });
+                } catch (e) {
+                    possessionDisplay = dateVal;
+                }
+            } else {
+                possessionDisplay = String(dateVal).trim();
+            }
+            if (possessionDisplay) {
+                possessionDateEl.innerHTML = `
+                    <div class="property-possession-date-content" style="margin-top: 1rem; padding: 0.75rem; background: var(--bg-light, #f9fafb); border-radius: 8px; border-left: 3px solid var(--primary-color, #3b82f6);">
+                        <span style="font-size: 0.9rem; color: var(--text-gray, #6b7280);">Possession:</span>
+                        <span style="font-weight: 600; color: var(--text-color, #1f2937); margin-left: 0.5rem;">${escapeHtml(possessionDisplay)}</span>
+                    </div>
+                `;
+                possessionDateEl.style.display = 'block';
+            }
+        }
+        if (!possessionDisplay) possessionDateEl.style.display = 'none';
+    }
+    
     // Render Location and Directions Links
     const locationLinks = document.getElementById('propertyLocationLinks');
     const propertyLocation = property.location || 'Location not specified';

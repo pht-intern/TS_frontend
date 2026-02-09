@@ -239,6 +239,16 @@
                                             <option value="villament">Villament</option>
                                         </select>
                                     </div>
+                                    <!-- Bedrooms: Step 2 in apartment, house, villa -->
+                                    <div class="search-group filter-group" data-filter-for="apartment house villa">
+                                        <label><i class="fas fa-bed"></i> Min Bedrooms</label>
+                                        <input type="number" id="propertiesSearchBedrooms" placeholder="e.g., 2" min="0" max="10" step="1">
+                                    </div>
+                                    <!-- Bathrooms: Step 2 in apartment, house, villa -->
+                                    <div class="search-group filter-group" data-filter-for="apartment house villa">
+                                        <label><i class="fas fa-bath"></i> Min Bathrooms</label>
+                                        <input type="number" id="propertiesSearchBathrooms" placeholder="e.g., 2" min="0" max="10" step="1">
+                                    </div>
                                     <!-- Warehouse Type: Step 2 in warehouse -->
                                     <div class="search-group filter-group" data-filter-for="warehouse">
                                         <label><i class="fas fa-warehouse"></i> Warehouse Type</label>
@@ -263,26 +273,95 @@
                                     <!-- Plot Area: Step 2 in plots, villa, warehouse -->
                                     <div class="search-group filter-group" data-filter-for="plots villa warehouse">
                                         <label><i class="fas fa-map"></i> Plot Area (sq.ft)</label>
-                                        <input type="text" id="propertiesSearchPlotArea" placeholder="Min plot area (sq ft)">
+                                        <input type="number" id="propertiesSearchPlotArea" placeholder="Min plot area (sq ft)" step="0.01" min="0">
                                     </div>
                                     <!-- Length/Breadth: Step 2 in plots, villa, house -->
                                     <div class="search-group filter-group" data-filter-for="plots villa house">
                                         <label><i class="fas fa-ruler"></i> Length (ft)</label>
-                                        <input type="text" id="propertiesSearchLength" placeholder="Enter length (ft)">
+                                        <input type="number" id="propertiesSearchLength" placeholder="e.g., 30" step="0.01" min="0">
                                     </div>
                                     <div class="search-group filter-group" data-filter-for="plots villa house">
                                         <label><i class="fas fa-ruler"></i> Breadth (ft)</label>
-                                        <input type="text" id="propertiesSearchBreadth" placeholder="Enter breadth (ft)">
+                                        <input type="number" id="propertiesSearchBreadth" placeholder="e.g., 40" step="0.01" min="0">
+                                    </div>
+                                    <!-- Buildup Area: Step 2 in villa, house -->
+                                    <div class="search-group filter-group" data-filter-for="villa house">
+                                        <label><i class="fas fa-ruler-combined"></i> Buildup Area (sq.ft)</label>
+                                        <input type="number" id="propertiesSearchBuildupArea" placeholder="Min buildup (sq ft)" step="0.01" min="0">
                                     </div>
                                     <!-- Super Builtup Area: Step 2 in apartment, office-space, showrooms, warehouse -->
                                     <div class="search-group filter-group" data-filter-for="apartment office-space showrooms warehouse">
                                         <label><i class="fas fa-ruler-combined"></i> Super Builtup Area (sq.ft)</label>
-                                        <input type="text" id="propertiesSearchSuperBuildupArea" placeholder="Min super builtup (sq ft)">
+                                        <input type="number" id="propertiesSearchSuperBuildupArea" placeholder="Min super builtup (sq ft)" step="0.01" min="0">
                                     </div>
                                     <!-- Carpet Area: Step 2 in apartment, house, villa, office-space, showrooms, warehouse -->
                                     <div class="search-group filter-group" data-filter-for="apartment house villa office-space showrooms warehouse">
                                         <label><i class="fas fa-vector-square"></i> Carpet Area (sq.ft)</label>
-                                        <input type="text" id="propertiesSearchCarpetArea" placeholder="Min carpet area (sq ft)">
+                                        <input type="number" id="propertiesSearchCarpetArea" placeholder="Min carpet area (sq ft)" step="0.01" min="0">
+                                    </div>
+                                    <!-- Office Space: Step 2 -->
+                                    <div class="search-group filter-group" data-filter-for="office-space">
+                                        <label><i class="fas fa-layer-group"></i> Min Total Floors</label>
+                                        <input type="number" id="propertiesSearchTotalFloors" placeholder="e.g., 5" min="1" step="1">
+                                    </div>
+                                    <div class="search-group filter-group" data-filter-for="office-space">
+                                        <label><i class="fas fa-chair"></i> Min Seats / Workstations</label>
+                                        <input type="number" id="propertiesSearchTotalSeats" placeholder="e.g., 50" min="0" step="1">
+                                    </div>
+                                    <div class="search-group filter-group" data-filter-for="office-space">
+                                        <label><i class="fas fa-door-open"></i> Min Cabins</label>
+                                        <input type="number" id="propertiesSearchNumberCabins" placeholder="e.g., 2" min="0" step="1">
+                                    </div>
+                                    <div class="search-group filter-group" data-filter-for="office-space">
+                                        <label><i class="fas fa-parking"></i> Min Parking Slots</label>
+                                        <input type="number" id="propertiesSearchParkingSlots" placeholder="e.g., 5" min="0" step="1">
+                                    </div>
+                                    <!-- Showrooms: Step 2 -->
+                                    <div class="search-group filter-group" data-filter-for="showrooms">
+                                        <label><i class="fas fa-layer-group"></i> Min Total Floors (Showroom)</label>
+                                        <input type="number" id="propertiesSearchShowroomTotalFloors" placeholder="e.g., 3" min="1" step="1">
+                                    </div>
+                                    <div class="search-group filter-group" data-filter-for="showrooms">
+                                        <label><i class="fas fa-arrows-alt-h"></i> Min Frontage Width (ft)</label>
+                                        <input type="number" id="propertiesSearchFrontageWidth" placeholder="e.g., 30" step="0.01" min="0">
+                                    </div>
+                                    <div class="search-group filter-group" data-filter-for="showrooms">
+                                        <label><i class="fas fa-walking"></i> Footfall Potential</label>
+                                        <select id="propertiesSearchFootfallPotential">
+                                            <option value="">Any</option>
+                                            <option value="low">Low</option>
+                                            <option value="medium">Medium</option>
+                                            <option value="high">High</option>
+                                        </select>
+                                    </div>
+                                    <div class="search-group filter-group" data-filter-for="showrooms">
+                                        <label><i class="fas fa-th-large"></i> Min Ground Floor Area (sq.ft)</label>
+                                        <input type="number" id="propertiesSearchGroundFloorArea" placeholder="e.g., 2000" step="0.01" min="0">
+                                    </div>
+                                    <div class="search-group filter-group" data-filter-for="showrooms">
+                                        <label><i class="fas fa-arrows-alt-v"></i> Min Ceiling Height (ft)</label>
+                                        <input type="number" id="propertiesSearchCeilingHeight" placeholder="e.g., 12" step="0.01" min="0">
+                                    </div>
+                                    <div class="search-group filter-group" data-filter-for="showrooms">
+                                        <label><i class="fas fa-layer-group"></i> Min Mezzanine Area (sq.ft)</label>
+                                        <input type="number" id="propertiesSearchMezzanineArea" placeholder="e.g., 500" step="0.01" min="0">
+                                    </div>
+                                    <!-- Warehouse: Step 2 -->
+                                    <div class="search-group filter-group" data-filter-for="warehouse">
+                                        <label><i class="fas fa-arrows-alt-v"></i> Min Clearance Height (ft)</label>
+                                        <input type="number" id="propertiesSearchClearanceHeight" placeholder="e.g., 25" step="0.01" min="0">
+                                    </div>
+                                    <div class="search-group filter-group" data-filter-for="warehouse">
+                                        <label><i class="fas fa-truck-loading"></i> Min Dock Levelers</label>
+                                        <input type="number" id="propertiesSearchDockLevelers" placeholder="e.g., 2" min="0" step="1">
+                                    </div>
+                                    <div class="search-group filter-group" data-filter-for="warehouse">
+                                        <label><i class="fas fa-door-closed"></i> Min Shutters</label>
+                                        <input type="number" id="propertiesSearchNumberShutters" placeholder="e.g., 4" min="0" step="1">
+                                    </div>
+                                    <div class="search-group filter-group" data-filter-for="warehouse">
+                                        <label><i class="fas fa-weight-hanging"></i> Min Floor Load (Kg/sq.ft)</label>
+                                        <input type="number" id="propertiesSearchFloorLoadCapacity" placeholder="e.g., 500" step="0.01" min="0">
                                     </div>
                                 </div>
 
@@ -708,6 +787,23 @@
                 'searchWarehouseType': 'propertiesSearchWarehouseType',
                 'searchPlotArea': 'propertiesSearchPlotArea',
                 'searchSuperBuildupArea': 'propertiesSearchSuperBuildupArea',
+                'searchBedrooms': 'propertiesSearchBedrooms',
+                'searchBathrooms': 'propertiesSearchBathrooms',
+                'searchBuildupArea': 'propertiesSearchBuildupArea',
+                'searchTotalFloors': 'propertiesSearchTotalFloors',
+                'searchTotalSeats': 'propertiesSearchTotalSeats',
+                'searchNumberCabins': 'propertiesSearchNumberCabins',
+                'searchParkingSlots': 'propertiesSearchParkingSlots',
+                'searchShowroomTotalFloors': 'propertiesSearchShowroomTotalFloors',
+                'searchFrontageWidth': 'propertiesSearchFrontageWidth',
+                'searchFootfallPotential': 'propertiesSearchFootfallPotential',
+                'searchGroundFloorArea': 'propertiesSearchGroundFloorArea',
+                'searchCeilingHeight': 'propertiesSearchCeilingHeight',
+                'searchMezzanineArea': 'propertiesSearchMezzanineArea',
+                'searchClearanceHeight': 'propertiesSearchClearanceHeight',
+                'searchDockLevelers': 'propertiesSearchDockLevelers',
+                'searchNumberShutters': 'propertiesSearchNumberShutters',
+                'searchFloorLoadCapacity': 'propertiesSearchFloorLoadCapacity',
                 'propertiesSearchForm': 'propertiesPropertiesSearchForm',
                 'filterTagsContainer': 'propertiesFilterTagsContainer',
                 'filterTags': 'propertiesFilterTags',

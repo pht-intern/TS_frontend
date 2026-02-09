@@ -15362,6 +15362,33 @@ section:not(.hero).section-visible .section-header {
     white-space: nowrap;
 }
 
+/* Properties list table: scrollable content with Actions column sticky on the right */
+.properties-list-table-wrap {
+    overflow-x: auto;
+    overflow-y: auto;
+}
+.properties-list-table-wrap .dashboard-properties-table {
+    min-width: 900px;
+}
+.properties-list-table-wrap .dashboard-properties-table th.dashboard-table-col-actions,
+.properties-list-table-wrap .dashboard-properties-table td.dashboard-table-col-actions {
+    position: sticky;
+    right: 0;
+    z-index: 5;
+    background: var(--primary-lightest);
+    box-shadow: -4px 0 8px rgba(0, 0, 0, 0.06);
+    white-space: nowrap;
+}
+.properties-list-table-wrap .dashboard-properties-table thead th.dashboard-table-col-actions {
+    z-index: 15;
+}
+.properties-list-table-wrap .dashboard-properties-table tbody td.dashboard-table-col-actions {
+    background: var(--white);
+}
+.properties-list-table-wrap .dashboard-properties-table tbody tr:hover td.dashboard-table-col-actions {
+    background: var(--primary-lightest);
+}
+
 .dashboard-table-image {
     width: 80px;
     height: 60px;

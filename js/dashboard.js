@@ -123,39 +123,6 @@ function initializeDashboard() {
         console.log('[DASHBOARD] Dashboard page detected, starting initialization...');
         checkAuthentication();
         initDashboard();
-        
-        // Set up event delegation for edit buttons (fallback for inline onclick)
-        // CRITICAL FIX: Use once: true or check if already handled by inline onclick
-        document.addEventListener('click', (e) => {
-            const editBtn = e.target.closest('.dashboard-action-btn.edit');
-            if (editBtn && editBtn.hasAttribute('data-property-id')) {
-                // CRITICAL FIX: Check if this click was already handled by inline onclick handler
-                // The inline onclick handler will have already called editProperty, so we can skip
-                // However, if the inline handler failed, we'll still handle it here
-                // To prevent double calls, we check if the default was prevented
-                if (e.defaultPrevented) {
-                    return; // Already handled
-                }
-                
-                const propertyId = editBtn.getAttribute('data-property-id');
-                const propertyCategory = editBtn.getAttribute('data-property-category'); // Get category from data attribute
-                if (propertyId && typeof editProperty === 'function') {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    if (!propertyCategory) {
-                        console.error('Event delegation: Edit button missing category attribute');
-                        showNotification('Property category missing. Please refresh the page.', 'error');
-                        return;
-                    }
-                    console.log('Event delegation: calling editProperty with id:', propertyId, 'category:', propertyCategory);
-                    editProperty(parseInt(propertyId), propertyCategory);
-                } else if (!propertyId) {
-                    console.error('Edit button clicked but no property ID found');
-                } else {
-                    console.error('editProperty function not available');
-                }
-            }
-        });
     } else {
         console.warn('[DASHBOARD] Dashboard page not detected, skipping initialization');
     }
@@ -1828,7 +1795,7 @@ function renderProperties(properties) {
             </td>
             <td>
                 <div class="dashboard-table-actions">
-                    <button class="dashboard-action-btn edit" onclick="(function(id, category, e) { if(e) { e.preventDefault(); e.stopPropagation(); } if(typeof window.editProperty === 'function') { window.editProperty(id, category); } else if(typeof editProperty === 'function') { editProperty(id, category); } else { console.error('editProperty not found'); if(window.TSPropertiesUI&&window.TSPropertiesUI.alert) window.TSPropertiesUI.alert({ title: 'Error', message: 'Edit function not available. Please refresh the page.' }); else alert('Edit function not available. Please refresh the page.'); } })(${property.id}, '${apiCategory}', event)" title="Edit" data-property-id="${property.id}" data-property-category="${apiCategory}">
+                    <button class="dashboard-action-btn edit" onclick="editProperty(${property.id}, '${apiCategory}')" title="Edit" data-property-id="${property.id}" data-property-category="${apiCategory}">
                         <i class="fas fa-edit"></i>
                     </button>
                     <button class="dashboard-action-btn delete" onclick="deleteProperty(${property.id})" title="Delete">
@@ -2040,8 +2007,25 @@ async function loadPageVisitStats(showLoadingIndicator = false) {
     }
 }
 
-// Property modal functions removed
-// CRITICAL FIX: Track edit mode to prevent inference logic
+// Simple fetch for edit: GET property by id and category
+async function fetchPropertyForEdit(propertyId, category) {
+    const cat = (category || 'residential').toLowerCase();
+    if (!['residential', 'commercial', 'plot'].includes(cat)) return null;
+    try {
+        const res = await fetch(`/api/properties/${propertyId}?category=${encodeURIComponent(cat)}`);
+        if (!res.ok) {
+            const err = await res.json().catch(() => ({}));
+            showNotification(err.detail || err.message || 'Failed to load property', 'error');
+            return null;
+        }
+        return await res.json();
+    } catch (e) {
+        console.error('fetchPropertyForEdit:', e);
+        showNotification('Failed to load property details.', 'error');
+        return null;
+    }
+}
+
 let isEditMode = false;
 
 async function openResidentialPropertyModal(propertyId = null, category = null, preFetchedProperty = null) {
@@ -2187,7 +2171,8 @@ async function openResidentialPropertyModal(propertyId = null, category = null, 
     
     // Load categories for Property Type dropdown
     await loadCategoriesForPropertyTypeDropdown();
-    
+    // Load status and listing type from database
+    await loadPropertyFieldOptions();
     // Load unit types for the form
     await loadUnitTypesForResidentialForm();
     
@@ -2203,50 +2188,18 @@ async function openResidentialPropertyModal(propertyId = null, category = null, 
 
     if (propertyId) {
         modalTitle.textContent = 'Edit Property';
-        // Use pre-fetched data from editProperty when available so modal always opens (no second fetch)
-        if (preFetchedProperty && preFetchedProperty.id) {
-            const propertyIdInput = document.getElementById('residentialPropertyId');
-            if (propertyIdInput) propertyIdInput.value = preFetchedProperty.id || propertyId;
-            populateResidentialForm(preFetchedProperty);
-            if (propertyIdInput) propertyIdInput.value = preFetchedProperty.id || propertyId;
-        } else {
-            try {
-                const categoryParam = category || 'residential';
-                const response = await fetch(`/api/properties/${propertyId}?category=${encodeURIComponent(categoryParam)}`);
-                if (!response.ok) {
-                    let errMsg = 'Failed to fetch property';
-                    try {
-                        const errData = await response.json();
-                        if (response.status === 500 && errData.error === 'DATA_INTEGRITY_ERROR') {
-                            showNotification(errData.detail || errData.message || 'Property exists in multiple tables. Contact admin.', 'error');
-                        } else {
-                            showNotification(errData.detail || errData.message || errMsg, 'error');
-                        }
-                    } catch (e) {
-                        showNotification(errMsg, 'error');
-                    }
-                    const propertyIdInput = document.getElementById('residentialPropertyId');
-                    if (propertyIdInput) propertyIdInput.value = propertyId;
-                    return;
-                }
-                const property = await response.json();
-                const propertyIdInput = document.getElementById('residentialPropertyId');
-                if (propertyIdInput) propertyIdInput.value = property.id || propertyId;
-                populateResidentialForm(property);
-                if (propertyIdInput) propertyIdInput.value = property.id || propertyId;
-            } catch (error) {
-                console.error('Error loading property:', error);
-                showNotification('Failed to load property details.', 'error');
-                const propertyIdInput = document.getElementById('residentialPropertyId');
-                if (propertyIdInput) propertyIdInput.value = propertyId;
-                return;
-            }
-        }
+        const property = preFetchedProperty || await fetchPropertyForEdit(propertyId, category);
+        if (!property) return;
+        const idEl = document.getElementById('residentialPropertyId');
+        if (idEl) idEl.value = property.id || propertyId;
+        populateResidentialForm(property);
     } else {
         modalTitle.textContent = 'Add Other Properties';
     }
 
-    // Ensure buttons are in correct state for step 1
+    // Always show step 1 when modal opens (simple flow: 1 -> 2 -> 3 -> Save)
+    showResidentialPropertyStep(1);
+    updateResidentialPropertyStepIndicators(1);
     updateResidentialPropertyStepButtons(1);
 
     // Show modal after everything is set up
@@ -2259,23 +2212,18 @@ async function openResidentialPropertyModal(propertyId = null, category = null, 
     }
 }
 
-// Close Residential Property Modal
+// Close Residential Property Modal (refresh page on close/cancel like before)
 async function closeResidentialPropertyModal() {
     const modal = document.getElementById('residentialPropertyModal');
     
     if (modal) {
-        // CRITICAL FIX: Reset edit mode flag when closing
         isEditMode = false;
-        
-        // Reset modal state (form, steps, cache, etc.)
         resetResidentialPropertyModalState();
-        
-        // Close modal
         modal.classList.remove('active');
         document.body.style.overflow = '';
     }
-    // Auto-refresh properties when modal closes
-    await loadProperties(true);
+    // Full page refresh on cancel/close so list and state are fresh
+    window.location.href = window.location.href;
 }
 
 // Reset Residential Property Modal State (Best Practice: Called after API success)
@@ -2340,174 +2288,83 @@ function resetResidentialPropertyModalState() {
 
 // Reset Residential Property Form Steps
 function resetResidentialPropertySteps() {
-    // Hide all steps first
     const allSteps = document.querySelectorAll('#residentialPropertyForm .dashboard-form-step');
-    allSteps.forEach(step => {
+    allSteps.forEach(function (step) {
         step.classList.remove('active');
-        step.style.display = 'none';
+        step.style.setProperty('display', 'none', 'important');
     });
-    
-    // Clear Step 2 content to ensure clean state
+
     const step2Container = document.getElementById('residentialStep2');
-    if (step2Container) {
-        step2Container.innerHTML = '';
-    }
-    
-    // Reset property type to empty to clear Step 2
+    if (step2Container) step2Container.innerHTML = '';
+
     const propertyTypeSelect = document.getElementById('residentialPropertyType');
     const propertyTypeCacheInput = document.getElementById('residentialPropertyTypeCache');
     if (propertyTypeSelect) {
-        // Clear the select
         propertyTypeSelect.value = '';
-        // Only restore from cache if cache exists and has a value (for edit mode preservation)
-        // When closing/canceling, cache should already be cleared, so this will stay empty
         if (propertyTypeCacheInput && propertyTypeCacheInput.value && propertyTypeCacheInput.value.trim() !== '') {
             propertyTypeSelect.value = propertyTypeCacheInput.value;
         }
     }
-    
-    // Show step 1
-    const currentStep = 1;
-    const step1 = document.querySelector(`#residentialPropertyForm .dashboard-form-step[data-step="${currentStep}"]`);
+
+    const step1 = document.querySelector('#residentialPropertyForm .dashboard-form-step[data-step="1"]');
     if (step1) {
-        step1.style.display = '';
         step1.classList.add('active');
+        step1.style.setProperty('display', 'block', 'important');
     }
-    
-    updateResidentialPropertyStepIndicators(currentStep);
-    updateResidentialPropertyStepButtons(currentStep);
+
+    const stepOne = 1;
+    updateResidentialPropertyStepIndicators(stepOne);
+    updateResidentialPropertyStepButtons(stepOne);
 }
 
-// Show specific step in Residential Property Form
+// Show specific step in Residential Property Form. Force visibility with inline display so step 2 is never hidden.
 function showResidentialPropertyStep(stepNumber) {
-    console.log('Showing step:', stepNumber);
-    
-    // Hide all steps immediately (no delay to prevent layout issues)
-    const allSteps = document.querySelectorAll('#residentialPropertyForm .dashboard-form-step');
-    allSteps.forEach(step => {
-        step.classList.remove('active');
-        // Force immediate hide to prevent layout issues
-        step.style.display = 'none';
-        step.style.visibility = 'hidden';
-        step.style.opacity = '0';
-        // Force reflow for smooth transition
-        step.offsetHeight;
-    });
-    
-    // Show current step
-    const currentStep = document.querySelector(`#residentialPropertyForm .dashboard-form-step[data-step="${stepNumber}"]`);
-    if (currentStep) {
-        console.log('Step element found:', stepNumber, currentStep);
-        
-        // For step 3, make it immediately visible with explicit styles
-        if (stepNumber === 3) {
-            // Remove any inline styles that might conflict
-            currentStep.style.removeProperty('display');
-            currentStep.style.removeProperty('visibility');
-            currentStep.style.removeProperty('opacity');
-            
-            // Add active class first (CSS will handle display)
-            currentStep.classList.add('active');
-            
-            // Then ensure it's visible with inline styles as backup
-            setTimeout(() => {
-                const computedStyle = window.getComputedStyle(currentStep);
-                if (computedStyle.display === 'none') {
-                    currentStep.style.setProperty('display', 'block', 'important');
-                }
-                if (computedStyle.visibility === 'hidden') {
-                    currentStep.style.setProperty('visibility', 'visible', 'important');
-                }
-                console.log('Step 3 made visible with active class and inline backup');
-            }, 10);
-        } else {
-            // For other steps, use CSS transitions
-            currentStep.style.display = '';
-            currentStep.style.visibility = '';
-            currentStep.style.opacity = '';
-            
-            // Small delay for smooth transition
-            setTimeout(() => {
-                currentStep.classList.add('active');
-            }, 50);
-        }
-        
-        // Ensure other steps are still hidden
-        setTimeout(() => {
-            allSteps.forEach(step => {
-                if (step !== currentStep) {
-                    step.classList.remove('active');
-                    step.style.display = 'none';
-                    step.style.visibility = 'hidden';
-                    step.style.opacity = '0';
-                }
-            });
-            
-            // Verify step 3 is actually visible
-            if (stepNumber === 3) {
-                const step3Check = document.querySelector(`#residentialPropertyForm .dashboard-form-step[data-step="3"]`);
-                if (step3Check) {
-                    const computedStyle = window.getComputedStyle(step3Check);
-                    console.log('Step 3 visibility check:', {
-                        hasActive: step3Check.classList.contains('active'),
-                        display: computedStyle.display,
-                        visibility: computedStyle.visibility,
-                        opacity: computedStyle.opacity,
-                        offsetHeight: step3Check.offsetHeight,
-                        offsetWidth: step3Check.offsetWidth
-                    });
-                    
-                    // Force visibility if still not visible
-                    if (computedStyle.display === 'none' || step3Check.offsetHeight === 0) {
-                        step3Check.style.display = 'block';
-                        step3Check.style.visibility = 'visible';
-                        step3Check.style.opacity = '1';
-                        step3Check.classList.add('active');
-                        console.log('Step 3 forced to be visible');
-                    }
-                }
-            }
-            
-            // Scroll to top of step content smoothly
-            const form = document.getElementById('residentialPropertyForm');
-            if (form) {
-                setTimeout(() => {
-                    const formRect = form.getBoundingClientRect();
-                    const stepRect = currentStep.getBoundingClientRect();
-                    const scrollOffset = stepRect.top - formRect.top - 20;
-                    
-                    form.scrollTo({
-                        top: form.scrollTop + scrollOffset,
-                        behavior: 'smooth'
-                    });
-                }, stepNumber === 3 ? 0 : 100);
-            }
-        }, stepNumber === 3 ? 0 : 50);
-        
-        // Check if unit types need refresh when showing Step 2
-        if (stepNumber === 2) {
-            const residentialPropertyForm = document.getElementById('residentialPropertyForm');
-            if (residentialPropertyForm && residentialPropertyForm.getAttribute('data-unit-types-refresh-needed') === 'true') {
-                // Remove the flag
-                residentialPropertyForm.removeAttribute('data-unit-types-refresh-needed');
-                
-                // Refresh unit type buttons
-                const propertyTypeSelect = document.getElementById('residentialPropertyType');
-                const currentPropertyType = propertyTypeSelect ? propertyTypeSelect.value : 'apartments';
-                
-                const unitTypeButtonsContainer = currentStep.querySelector('.dashboard-unit-type-buttons');
-                if (unitTypeButtonsContainer) {
-                    unitTypeButtonsContainer.innerHTML = generateUnitTypeButtonsHTML(currentPropertyType);
-                    
-                    // Re-initialize event listeners for the new buttons
-                    setTimeout(() => {
-                        initializeStep2EventListeners(currentPropertyType);
-                    }, 100);
-                }
-            }
-        }
-    } else {
+    const form = document.getElementById('residentialPropertyForm');
+    if (!form) return;
+    const stepNum = Number(stepNumber);
+    if (stepNum < 1 || stepNum > 3) return;
+
+    const allSteps = form.querySelectorAll('.dashboard-form-step');
+    const targetStep = form.querySelector('.dashboard-form-step[data-step="' + stepNum + '"]');
+    if (!targetStep) {
         console.error('Step element not found for step:', stepNumber);
+        return;
+    }
+
+    // Step 2: ensure content is loaded before showing (so panel isn't empty)
+    if (stepNum === 2) {
+        const step2Container = document.getElementById('residentialStep2');
+        const propertyTypeSelect = document.getElementById('residentialPropertyType');
+        const selectedType = (propertyTypeSelect && propertyTypeSelect.value) ? propertyTypeSelect.value.trim() : '';
+        if (step2Container && (!step2Container.children.length || step2Container.children.length === 0)) {
+            loadStep2Content(selectedType || '', step2Container);
+        }
+    }
+
+    // Hide every step with inline display:none, then show only target with inline display:block (overrides any CSS)
+    allSteps.forEach(function (step) {
+        step.classList.remove('active');
+        step.style.setProperty('display', 'none', 'important');
+    });
+    targetStep.classList.add('active');
+    targetStep.style.setProperty('display', 'block', 'important');
+
+    const stepsBody = form.querySelector('.dashboard-form-steps-body');
+    if (stepsBody) stepsBody.scrollTop = 0;
+
+    // Step 2: unit types refresh when needed
+    if (stepNum === 2) {
+        const residentialPropertyForm = document.getElementById('residentialPropertyForm');
+        const propertyTypeSelect = document.getElementById('residentialPropertyType');
+        if (residentialPropertyForm && residentialPropertyForm.getAttribute('data-unit-types-refresh-needed') === 'true') {
+            residentialPropertyForm.removeAttribute('data-unit-types-refresh-needed');
+            const currentPropertyType = propertyTypeSelect ? propertyTypeSelect.value : 'apartments';
+            const unitTypeButtonsContainer = targetStep.querySelector('.dashboard-unit-type-buttons');
+            if (unitTypeButtonsContainer) {
+                unitTypeButtonsContainer.innerHTML = generateUnitTypeButtonsHTML(currentPropertyType);
+                setTimeout(function () { initializeStep2EventListeners(currentPropertyType); }, 100);
+            }
+        }
     }
 }
 
@@ -2553,8 +2410,15 @@ function updateResidentialPropertyStepButtons(currentStep) {
     }
 }
 
+// Prevent double-click from skipping step 2 (ignore navigation within 300ms of last)
+var _lastResidentialStepChangeAt = 0;
+
 // Handle step navigation
 function handleResidentialPropertyStepNavigation(direction) {
+    var now = Date.now();
+    if (now - _lastResidentialStepChangeAt < 300) return;
+    _lastResidentialStepChangeAt = now;
+
     const currentStep = getCurrentResidentialPropertyStep();
     let newStep = currentStep;
     
@@ -2595,43 +2459,14 @@ function handleResidentialPropertyStepNavigation(direction) {
             updateResidentialPropertyStepButtons(newStep);
         }, 100);
         
-        // Focus first input in new step and ensure step 3 is accessible
-        setTimeout(() => {
-            const newStepElement = document.querySelector(`#residentialPropertyForm .dashboard-form-step[data-step="${newStep}"]`);
-            if (newStepElement) {
-                // Ensure step 3 is visible and accessible
-                if (newStep === 3) {
-                    newStepElement.style.display = 'block';
-                    newStepElement.style.visibility = 'visible';
-                    newStepElement.style.opacity = '1';
-                    newStepElement.classList.add('active');
-                    
-                    // Double-check visibility
-                    const computedStyle = window.getComputedStyle(newStepElement);
-                    if (computedStyle.display === 'none' || newStepElement.offsetHeight === 0) {
-                        newStepElement.style.setProperty('display', 'block', 'important');
-                        newStepElement.style.setProperty('visibility', 'visible', 'important');
-                        newStepElement.style.setProperty('opacity', '1', 'important');
-                        console.log('Step 3 forced to be visible with !important');
-                    }
-                    
-                    console.log('Step 3 accessibility check:', {
-                        display: computedStyle.display,
-                        visibility: computedStyle.visibility,
-                        opacity: computedStyle.opacity,
-                        offsetHeight: newStepElement.offsetHeight,
-                        hasActive: newStepElement.classList.contains('active')
-                    });
-                }
-                
-                const firstInput = newStepElement.querySelector('input:not([type="hidden"]):not([type="file"]), select, textarea');
-                if (firstInput && firstInput.offsetParent !== null) {
-                    firstInput.focus();
-                }
-            } else {
-                console.error('Step element not found after navigation:', newStep);
+        // Focus first input in new step
+        setTimeout(function () {
+            const newStepEl = document.querySelector('#residentialPropertyForm .dashboard-form-step[data-step="' + newStep + '"]');
+            if (newStepEl) {
+                const firstInput = newStepEl.querySelector('input:not([type="hidden"]):not([type="file"]), select, textarea');
+                if (firstInput && firstInput.offsetParent !== null) firstInput.focus();
             }
-        }, newStep === 3 ? 150 : 400);
+        }, 150);
     }
     // When newStep === currentStep (e.g. already on step 3 and Next clicked), no-op is intentional
 }
@@ -2947,11 +2782,10 @@ function handleResidentialPropertyTypeChange() {
     // Load Step 2 content based on property type
     loadStep2Content(selectedType, step2Container);
     
-    // Ensure Step 3 is hidden after Step 2 content is loaded
-    const step3 = document.querySelector(`#residentialPropertyForm .dashboard-form-step[data-step="3"]`);
-    if (step3 && currentStep !== 3) {
-        step3.classList.remove('active');
-        step3.style.display = 'none';
+    // Ensure Step 3 is not active when we're not on step 3
+    if (currentStep !== 3) {
+        const step3 = document.querySelector(`#residentialPropertyForm .dashboard-form-step[data-step="3"]`);
+        if (step3) step3.classList.remove('active');
     }
 }
 
@@ -2988,14 +2822,12 @@ function loadStep2Content(propertyType, container) {
     html += getStep2PriceAndLocationLinkHTML();
     container.innerHTML = html;
     
-    // Ensure Step 3 is hidden after loading Step 2 content
-    // But only if we're not currently on step 3
+    // Ensure Step 3 is not active when we're on step 1 or 2 (visibility is controlled by .active class)
     const currentStep = getCurrentResidentialPropertyStep();
     if (currentStep !== 3) {
         const step3 = document.querySelector(`#residentialPropertyForm .dashboard-form-step[data-step="3"]`);
         if (step3) {
             step3.classList.remove('active');
-            step3.style.display = 'none';
         }
     }
     
@@ -4298,6 +4130,41 @@ function populatePropertyTypeByProjectCategory() {
     }
 }
 
+// Load status and listing_type options from API for Step 1 dropdowns
+async function loadPropertyFieldOptions() {
+    try {
+        const res = await fetch('/api/properties/field-options', { cache: 'no-cache' });
+        if (!res.ok) return;
+        const data = await res.json();
+        const statusSelect = document.getElementById('residentialStatus');
+        const listingTypeSelect = document.getElementById('residentialListingType');
+        if (statusSelect && data.status && Array.isArray(data.status)) {
+            const currentVal = statusSelect.value;
+            statusSelect.innerHTML = '<option value="">Select Status</option>';
+            data.status.forEach(function (opt) {
+                const o = document.createElement('option');
+                o.value = opt.value;
+                o.textContent = opt.label || opt.value;
+                statusSelect.appendChild(o);
+            });
+            if (currentVal) statusSelect.value = currentVal;
+        }
+        if (listingTypeSelect && data.listing_type && Array.isArray(data.listing_type)) {
+            const currentVal = listingTypeSelect.value;
+            listingTypeSelect.innerHTML = '<option value="">Select Listing Type</option>';
+            data.listing_type.forEach(function (opt) {
+                const o = document.createElement('option');
+                o.value = opt.value;
+                o.textContent = opt.label || opt.value;
+                listingTypeSelect.appendChild(o);
+            });
+            if (currentVal) listingTypeSelect.value = currentVal;
+        }
+    } catch (e) {
+        console.warn('Load property field options failed:', e);
+    }
+}
+
 // Load categories and populate Property Type dropdown (based on Project Category)
 async function loadCategoriesForPropertyTypeDropdown() {
     try {
@@ -4611,6 +4478,8 @@ function populateResidentialForm(property) {
                 
                 // Trigger change to load Step 2 content synchronously
                 handleResidentialPropertyTypeChange();
+                // Step 2 DOM is now ready; fill all inputs from DB (status, listing type, project name, price, location link, possession, direction, etc.)
+                populateStep2Fields(property);
             }
         } else if (!isEditMode) {
             // ADD MODE: Can use inference logic with setTimeout
@@ -5055,6 +4924,8 @@ function populateStep2Fields(property) {
                 normalizeNewResaleValue(property.status)
             ]);
         }
+        const statusCacheInput = document.getElementById('residentialStatusCache');
+        if (statusCacheInput) statusCacheInput.value = statusInput.value || '';
     }
 
     const listingTypeInput = document.getElementById('residentialListingType');
@@ -5074,6 +4945,8 @@ function populateStep2Fields(property) {
         const candidates = (propertyType === 'apartments') ? apartmentCandidates : villaPlotCandidates;
         safeSetSelectValueFromCandidates(listingTypeInput, candidates);
     }
+    const listingTypeCacheInput = document.getElementById('residentialListingTypeCache');
+    if (listingTypeCacheInput && listingTypeInput) listingTypeCacheInput.value = listingTypeInput.value || '';
     
     // Possession Date (Step 1) - show row and set value when listing type is Under Construction
     const possessionDateRow = document.getElementById('residentialPossessionDateRow');
@@ -5704,21 +5577,15 @@ async function handleResidentialPropertySubmit(e) {
     try {
         let response;
         if (propertyId) {
-            // Update existing property - use PUT to /api/properties/{id}
             response = await authenticatedFetch(`/api/properties/${propertyId}`, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(data)
             });
         } else {
-            // Create new property
             response = await authenticatedFetch('/api/properties', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(data)
             });
         }
@@ -5763,7 +5630,7 @@ async function handleResidentialPropertySubmit(e) {
         await loadProperties(true);
         
         // Show success notification
-        showNotification(propertyId ? 'Residential property updated successfully!' : 'Residential property added successfully!');
+        showNotification(propertyId ? 'Property updated successfully!' : 'Residential property added successfully!');
     } catch (error) {
         console.error('Error saving residential property:', error);
         showNotification(error.message || 'Failed to save property. Please try again.', 'error');
@@ -6067,178 +5934,20 @@ async function handlePlotPropertySubmit(e) {
     }
 }
 
-// Edit Property
-// CRITICAL FIX: Prevent multiple simultaneous calls to editProperty for the same property
-let editPropertyInProgress = false;
-let lastEditPropertyId = null;
-
+// Edit property: fetch then open same modal with data
 async function editProperty(id, category) {
-    // CRITICAL FIX: Lock edit mode IMMEDIATELY - before ANY other code runs
-    // This prevents any add-mode defaults from contaminating edit flow
+    if (!id || !category) {
+        showNotification('Invalid property or category.', 'error');
+        return;
+    }
     isEditMode = true;
-    
-    console.log('[editProperty] Called with id:', id, 'category:', category);
-    
-    // Validate input
-    if (!id) {
-        console.error('editProperty: No ID provided');
-        isEditMode = false; // Reset on error
-        showNotification('Property ID is missing. Please try again.', 'error');
-        return;
-    }
-    
-    // CRITICAL FIX: Category is REQUIRED - IDs are not globally unique across tables
-    if (!category || !['commercial', 'residential', 'plot'].includes(category.toLowerCase())) {
-        console.error('editProperty: Invalid or missing category:', category);
-        isEditMode = false; // Reset on error
-        showNotification('Property category is required. Please refresh and try again.', 'error');
-        return;
-    }
-    
-    // CRITICAL FIX: Prevent duplicate calls - if already editing this property, ignore
-    if (editPropertyInProgress && lastEditPropertyId === id) {
-        console.log('editProperty: Already processing property', id, '- ignoring duplicate call');
-        return;
-    }
-    
-    // CRITICAL FIX: Prevent duplicate calls - if already editing a different property, ignore
-    if (editPropertyInProgress) {
-        console.log('editProperty: Already processing property', lastEditPropertyId, '- ignoring call for', id);
-        return;
-    }
-    
-    // Set flag to prevent duplicate calls
-    editPropertyInProgress = true;
-    lastEditPropertyId = id;
-    
-    // CRITICAL FIX: Hard reset modal state BEFORE fetching - prevents bleed-over
-    resetResidentialPropertyModalState();
-    
-    try {
-        // Show loading notification
-        showNotification('Loading property details...', 'info');
-        
-        // CRITICAL FIX: Category is REQUIRED in API call - IDs are not globally unique
-        // Backend requires category to know which table to query
-        const normalizedCategory = category.toLowerCase();
-        const response = await fetch(`/api/properties/${id}?category=${encodeURIComponent(normalizedCategory)}`);
-        
-        if (!response.ok) {
-            // Try to get error message from response
-            let errorMessage = 'Failed to fetch property';
-            let errorData = null;
-            try {
-                errorData = await response.json();
-                errorMessage = errorData.message || errorData.detail || errorData.error || errorMessage;
-            } catch (e) {
-                errorMessage = response.statusText || errorMessage;
-            }
-            
-            // CRITICAL: Handle DATA_INTEGRITY_ERROR (500) - show clear message, don't throw
-            if (response.status === 500 && errorData && errorData.error === 'DATA_INTEGRITY_ERROR') {
-                const detailMsg = errorData.detail || errorData.message ||
-                    `Property ID ${id} exists in multiple tables: ${(errorData.tables || []).join(', ')}. ` +
-                    'This is a data integrity issue. Admin must remove the duplicate from the wrong table (see ID_COLLISION_FIX.md).';
-                console.error('[editProperty] DATA_INTEGRITY_ERROR:', errorData);
-                showNotification(detailMsg, 'error');
-                isEditMode = false;
-                editPropertyInProgress = false;
-                return;
-            }
-            
-            if (response.status === 404) {
-                errorMessage = 'Property not found. It may have been deleted.';
-            } else if (response.status === 500 && !errorData) {
-                errorMessage = 'Server error while loading property. Please try again.';
-            }
-            
-            throw new Error(errorMessage);
-        }
-        
-        const property = await response.json();
-        console.log('[editProperty] Property fetched from API:', {
-            id: property.id,
-            property_category: property.property_category,
-            project_category: property.project_category,
-            property_type: property.property_type,
-            type: property.type
-        });
-        
-        // CRITICAL FIX: Defensive guard - validate property data integrity
-        if (!property || !property.id) {
-            throw new Error('Invalid property data received');
-        }
-        
-        // CRITICAL FIX: Check for data integrity errors from backend
-        if (property.error === 'DATA_INTEGRITY_ERROR') {
-            console.error('[editProperty] DATA INTEGRITY ERROR:', property);
-            const errorMsg = property.detail || property.message || 
-                `Property ID ${id} exists in multiple tables: ${property.tables?.join(', ') || 'unknown'}. ` +
-                `This is a data corruption issue. Please contact admin to resolve.`;
-            showNotification(errorMsg, 'error');
-            isEditMode = false;
-            editPropertyInProgress = false;
-            return;
-        }
-        
-        // CRITICAL FIX: Validate required fields exist (prevent silent failures)
-        if (!property.property_category && !property.project_category) {
-            console.error('[editProperty] Missing category in property data:', property);
-            showNotification(
-                'This property has corrupted data (missing category). Please contact admin.',
-                'error'
-            );
-            isEditMode = false;
-            editPropertyInProgress = false;
-            return;
-        }
-        
-        if (!property.property_type && !property.type) {
-            console.error('[editProperty] Missing property_type in property data:', property);
-            showNotification(
-                'This property has corrupted data (missing property type). Please contact admin.',
-                'error'
-            );
-            isEditMode = false;
-            editPropertyInProgress = false;
-            return;
-        }
-        
-        // CRITICAL FIX: Route to correct modal based on API category - NO assumptions
-        const projectCategory = (property.property_category || property.project_category || '').toLowerCase();
-        console.log('[editProperty] Routing based on API category:', projectCategory);
-        
-        // Use the category that was passed to editProperty (from edit button) - this is the source of truth
-        // If category from button doesn't match API, prefer button category (it knows which table was clicked)
-        const routingCategory = category || projectCategory;
-        
-        if (routingCategory === 'commercial' || projectCategory === 'commercial') {
-            // Commercial properties: pass fetched property so modal opens without second fetch
-            console.log('[editProperty] Opening commercial property modal with category:', routingCategory);
-            await openResidentialPropertyModal(property.id, routingCategory, property);
-        } else if (routingCategory === 'plot' || projectCategory === 'plot') {
-            // Plot properties: use same residential modal; Step 2 will show plot fields (plot_properties type)
-            console.log('[editProperty] Opening residential modal for plot property with category:', routingCategory);
-            await openResidentialPropertyModal(property.id, routingCategory, property);
-        } else {
-            // Residential properties: pass fetched property so modal opens without second fetch
-            console.log('[editProperty] Opening residential property modal with category:', routingCategory);
-            await openResidentialPropertyModal(property.id, routingCategory, property);
-        }
-    } catch (error) {
-        console.error('Error in editProperty:', error);
-        const errorMsg = error.message || 'Failed to load property details.';
-        showNotification(errorMsg, 'error');
-        // Reset edit mode on error
+    showNotification('Loading property...', 'info');
+    const property = await fetchPropertyForEdit(id, category);
+    if (!property) {
         isEditMode = false;
-    } finally {
-        // CRITICAL FIX: Reset flag after modal opens (with a small delay to prevent rapid re-clicks)
-        setTimeout(() => {
-            editPropertyInProgress = false;
-            lastEditPropertyId = null;
-            // Don't reset isEditMode here - let closeResidentialPropertyModal handle it
-        }, 500);
+        return;
     }
+    await openResidentialPropertyModal(id, category, property);
 }
 
 // Delete Property
@@ -8976,11 +8685,6 @@ window.removeBlogImagePreview = removeBlogImagePreview;
 window.editProperty = editProperty;
 window.deleteProperty = deleteProperty;
 window.updateInquiryStatus = updateInquiryStatus;
-
-// Also ensure editProperty is available as a direct reference
-if (typeof window.editProperty === 'undefined') {
-    window.editProperty = editProperty;
-}
 
 // ============================================
 // INQUIRIES MANAGEMENT

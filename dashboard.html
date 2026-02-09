@@ -1139,13 +1139,13 @@ body{font-family:'Inter',sans-serif;font-size:18px;line-height:1.6;color:var(--t
         </div>
     </div>
 
-    <!-- Add/Edit Residential Property Modal -->
+    <!-- Add/Edit Residential Property Modal (same fields for add and edit) -->
     <div class="dashboard-modal" id="residentialPropertyModal">
         <div class="dashboard-modal-overlay" id="residentialPropertyModalOverlay"></div>
         <div class="dashboard-modal-content" style="max-width: 900px; max-height: 90vh; overflow-y: auto;">
             <div class="dashboard-modal-header">
                 <h2 id="residentialModalTitle">Add Other Properties</h2>
-                <button class="dashboard-modal-close" id="residentialPropertyModalClose" onclick="closeResidentialPropertyModal(); window.location.href = window.location.href;">
+                <button class="dashboard-modal-close" id="residentialPropertyModalClose" type="button" aria-label="Close">
                     <i class="fas fa-times"></i>
                 </button>
             </div>
@@ -1163,7 +1163,6 @@ body{font-family:'Inter',sans-serif;font-size:18px;line-height:1.6;color:var(--t
                 <input type="hidden" id="residentialBedroomsCache" name="bedrooms_cache">
                 <input type="hidden" id="residentialProjectCategoryCache" name="project_category_cache">
 
-                <!-- Step Progress Indicator -->
                 <div class="dashboard-form-steps">
                     <div class="dashboard-step-indicator">
                         <div class="dashboard-step-item active" data-step="1">
@@ -1183,14 +1182,11 @@ body{font-family:'Inter',sans-serif;font-size:18px;line-height:1.6;color:var(--t
                     </div>
                 </div>
 
-                <!-- Step 1: Basic Information -->
+                <div class="dashboard-form-steps-body">
                 <div class="dashboard-form-step active" data-step="1">
                     <div class="dashboard-form-row">
                         <div class="dashboard-form-group">
-                            <label for="residentialProjectCategory">
-                                <i class="fas fa-building"></i>
-                                Project Category *
-                            </label>
+                            <label for="residentialProjectCategory"><i class="fas fa-building"></i> Project Category *</label>
                             <select id="residentialProjectCategory" name="project_category" required>
                                 <option value="">Select Project Category</option>
                                 <option value="residential">Residential</option>
@@ -1198,10 +1194,7 @@ body{font-family:'Inter',sans-serif;font-size:18px;line-height:1.6;color:var(--t
                             </select>
                         </div>
                         <div class="dashboard-form-group">
-                            <label for="residentialStatus">
-                                <i class="fas fa-tag"></i>
-                                Status *
-                            </label>
+                            <label for="residentialStatus"><i class="fas fa-tag"></i> Status *</label>
                             <select id="residentialStatus" name="status" required>
                                 <option value="">Select Status</option>
                                 <option value="new">New</option>
@@ -1209,138 +1202,84 @@ body{font-family:'Inter',sans-serif;font-size:18px;line-height:1.6;color:var(--t
                             </select>
                         </div>
                         <div class="dashboard-form-group">
-                            <label for="residentialListingType">
-                                <i class="fas fa-list"></i>
-                                Listing Type *
-                            </label>
+                            <label for="residentialListingType"><i class="fas fa-list"></i> Listing Type *</label>
                             <select id="residentialListingType" name="listing_type" required>
                                 <option value="">Select Listing Type</option>
                                 <option value="sale">Sale</option>
                                 <option value="rent">Rent</option>
                                 <option value="under_construction">Under Construction</option>
                                 <option value="ready_to_move">Ready to Move</option>
-                                <option value="ready_to_move">Ready to Register</option>
                                 <option value="under_development">Under Development</option>
                             </select>
                         </div>
                     </div>
-
                     <div class="dashboard-form-row" id="residentialPossessionDateRow" style="display: none;">
                         <div class="dashboard-form-group">
-                            <label for="residentialPossessionDate">
-                                <i class="fas fa-calendar-alt"></i>
-                                Possession Date
-                            </label>
+                            <label for="residentialPossessionDate"><i class="fas fa-calendar-alt"></i> Possession Date</label>
                             <input type="date" id="residentialPossessionDate" name="possession_date" min="">
                         </div>
                     </div>
-
                     <div class="dashboard-form-row">
                         <div class="dashboard-form-group">
-                            <label for="residentialCity">
-                                <i class="fas fa-map-marker-alt"></i>
-                                City *
-                            </label>
-                            <input type="text" id="residentialCity" name="city" list="residentialCityList" 
-                                placeholder="Type or select city" autocomplete="off" required>
-                            <datalist id="residentialCityList">
-                                <option value="">Select City</option>
-                            </datalist>
+                            <label for="residentialCity"><i class="fas fa-map-marker-alt"></i> City *</label>
+                            <input type="text" id="residentialCity" name="city" list="residentialCityList" placeholder="Type or select city" autocomplete="off" required>
+                            <datalist id="residentialCityList"><option value="">Select City</option></datalist>
                         </div>
                         <div class="dashboard-form-group">
-                            <label for="residentialLocality">
-                                <i class="fas fa-location-dot"></i>
-                                Locality/Area *
-                            </label>
-                            <input type="text" id="residentialLocality" name="locality" list="residentialLocalityList" 
-                                placeholder="Type or select locality/area" autocomplete="off" required>
-                            <datalist id="residentialLocalityList">
-                                <option value="">Select Locality/Area</option>
-                            </datalist>
+                            <label for="residentialLocality"><i class="fas fa-location-dot"></i> Locality/Area *</label>
+                            <input type="text" id="residentialLocality" name="locality" list="residentialLocalityList" placeholder="Type or select locality/area" autocomplete="off" required>
+                            <datalist id="residentialLocalityList"><option value="">Select Locality/Area</option></datalist>
                         </div>
                     </div>
-
                     <div class="dashboard-form-row">
                         <div class="dashboard-form-group">
-                            <label for="residentialPropertyType">
-                                <i class="fas fa-home"></i>
-                                Property Type *
-                            </label>
+                            <label for="residentialPropertyType"><i class="fas fa-home"></i> Property Type *</label>
                             <select id="residentialPropertyType" name="property_type" required>
                                 <option value="">Select Property Type</option>
-                                <!-- Options populated by JS based on Project Category (Residential / Commercial) -->
                             </select>
                         </div>
                     </div>
                 </div>
 
-                <!-- Step 2: Property Details (Dynamic based on property type) -->
-                <div class="dashboard-form-step" data-step="2" id="residentialStep2">
-                    <!-- Content will be dynamically loaded based on property type -->
-                </div>
+                <div class="dashboard-form-step" data-step="2" id="residentialStep2"></div>
 
-                <!-- Step 3: Media & Features -->
                 <div class="dashboard-form-step" data-step="3">
                     <div class="dashboard-form-group">
-                        <label>
-                            <i class="fas fa-images"></i>
-                            Gallery Details
-                        </label>
-                        <div id="residentialGalleryContainer">
-                            <!-- Gallery items will be dynamically added here -->
-                        </div>
-                        <button type="button" class="dashboard-btn-secondary" id="residentialAddImageBtn"
-                            style="margin-top: 1rem;">
-                            <i class="fas fa-plus"></i>
-                            Add Image
+                        <label><i class="fas fa-images"></i> Gallery Details</label>
+                        <div id="residentialGalleryContainer"></div>
+                        <button type="button" class="dashboard-btn-secondary" id="residentialAddImageBtn" style="margin-top: 1rem;">
+                            <i class="fas fa-plus"></i> Add Image
                         </button>
                     </div>
-
                     <div class="dashboard-form-group">
-                        <label for="residentialVideoPreviewLink">
-                            <i class="fas fa-video"></i>
-                            Video Preview Link
-                        </label>
-                        <input type="url" id="residentialVideoPreviewLink" name="video_preview_link"
-                            placeholder="e.g., https://www.youtube.com/watch?v=... or https://vimeo.com/...">
+                        <label for="residentialVideoPreviewLink"><i class="fas fa-video"></i> Video Preview Link</label>
+                        <input type="url" id="residentialVideoPreviewLink" name="video_preview_link" placeholder="e.g. https://www.youtube.com/watch?v=...">
                     </div>
-
                     <div class="dashboard-form-group">
-                        <label for="residentialDescription">
-                            <i class="fas fa-align-left"></i>
-                            Description
-                        </label>
+                        <label for="residentialDescription"><i class="fas fa-align-left"></i> Description</label>
                         <div id="residentialDescriptionEditor" style="min-height: 200px;"></div>
                         <textarea id="residentialDescription" name="description" style="display: none;"></textarea>
                     </div>
-
+                </div>
                 </div>
 
-                <!-- Hidden fields for form submission -->
                 <input type="hidden" id="residentialType" name="type" value="residential">
                 <input type="hidden" id="residentialUnitType" name="unit_type" value="bhk">
                 <input type="hidden" id="residentialBedrooms" name="bedrooms" value="1">
 
-                <!-- Step Navigation Buttons -->
                 <div class="dashboard-modal-actions">
-                    <button type="button" class="dashboard-btn-secondary" id="cancelResidentialPropertyBtn" onclick="closeResidentialPropertyModal(); window.location.href = window.location.href;">
-                        <i class="fas fa-times"></i>
-                        Cancel
+                    <button type="button" class="dashboard-btn-secondary" id="cancelResidentialPropertyBtn">
+                        <i class="fas fa-times"></i> Cancel
                     </button>
                     <div class="dashboard-step-buttons">
-                        <button type="button" class="dashboard-btn-secondary" id="residentialPrevStepBtn"
-                            style="display: none;">
-                            <i class="fas fa-arrow-left"></i>
-                            Previous
+                        <button type="button" class="dashboard-btn-secondary" id="residentialPrevStepBtn" style="display: none;">
+                            <i class="fas fa-arrow-left"></i> Previous
                         </button>
                         <button type="button" class="dashboard-btn-primary" id="residentialNextStepBtn">
-                            Next
-                            <i class="fas fa-arrow-right"></i>
+                            Next <i class="fas fa-arrow-right"></i>
                         </button>
-                        <button type="submit" class="dashboard-btn-primary" id="residentialSubmitBtn"
-                            style="display: none;" onclick="event.preventDefault(); const form = document.getElementById('residentialPropertyForm'); if(form && typeof handleResidentialPropertySubmit === 'function') { const submitEvent = { preventDefault: function() {}, target: form, currentTarget: form }; handleResidentialPropertySubmit(submitEvent).then(function() { window.location.href = window.location.href; }).catch(function() { window.location.href = window.location.href; }); }">
-                            <i class="fas fa-save"></i>
-                            Save Property
+                        <button type="submit" class="dashboard-btn-primary" id="residentialSubmitBtn" style="display: none;">
+                            <i class="fas fa-save"></i> Save Property
                         </button>
                     </div>
                 </div>

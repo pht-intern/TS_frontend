@@ -2571,19 +2571,6 @@ function validateResidentialPropertyStep(stepNumber) {
                 return false;
             }
             
-            // Check if plot area is required (for independent villa)
-            if (villaType.value === 'independent_villa') {
-                const plotArea = document.getElementById('residentialPlotArea');
-                if (plotArea && plotArea.offsetParent !== null) {
-                    // Only validate if plot area field is visible
-                    if (!plotArea.value || parseFloat(plotArea.value) <= 0) {
-                        showNotification('Please enter plot area for independent villa', 'error');
-                        plotArea?.focus();
-                        return false;
-                    }
-                }
-            }
-            
             if (!listingType || !listingType.value) {
                 showNotification('Please select listing type', 'error');
                 listingType?.focus();
@@ -2859,6 +2846,24 @@ function getStep2PriceAndLocationLinkHTML() {
             <input type="url" id="residentialLocationLink" name="location_link"
                 placeholder="e.g., https://maps.google.com/...">
         </div>
+        <div class="dashboard-form-row">
+            <div class="dashboard-form-group">
+                <label for="residentialReraNumber">
+                    <i class="fas fa-certificate"></i>
+                    RERA Number
+                </label>
+                <input type="text" id="residentialReraNumber" name="rera_number"
+                    placeholder="e.g., PGRERA12345678">
+            </div>
+            <div class="dashboard-form-group">
+                <label for="residentialReraUrl">
+                    <i class="fas fa-external-link-alt"></i>
+                    RERA URL
+                </label>
+                <input type="url" id="residentialReraUrl" name="rera_url"
+                    placeholder="e.g., https://maharera.mahaonline.gov.in/...">
+            </div>
+        </div>
         <div class="dashboard-form-group">
             <label for="residentialPrice">
                 <i class="fas fa-rupee-sign"></i>
@@ -2984,14 +2989,6 @@ function getVillasStep2HTML() {
                 <option value="row_villa">Row Villa</option>
                 <option value="villament">Villament</option>
             </select>
-        </div>
-
-        <div class="dashboard-form-group" id="residentialPlotAreaContainer" style="display: none;">
-            <label for="residentialPlotArea">
-                <i class="fas fa-map"></i>
-                Plot Area (sq.ft.) *
-            </label>
-            <input type="number" id="residentialPlotArea" name="plot_area" placeholder="e.g., 2400" step="0.01" min="0">
         </div>
 
         <div class="dashboard-form-group">
@@ -3555,7 +3552,7 @@ function initializeStep2EventListeners(propertyType) {
         });
     });
     
-    // Handle villa type change to show/hide plot area
+    // Handle villa type change (cache value for restore after Step 2 re-render)
     const villaTypeSelect = document.getElementById('residentialVillaType');
     if (villaTypeSelect) {
         villaTypeSelect.addEventListener('change', () => {
@@ -3563,20 +3560,15 @@ function initializeStep2EventListeners(propertyType) {
             if (villaTypeCacheInput) {
                 villaTypeCacheInput.value = villaTypeSelect.value || '';
             }
-            const plotAreaContainer = document.getElementById('residentialPlotAreaContainer');
-            const plotAreaInput = document.getElementById('residentialPlotArea');
-            
-            if (villaTypeSelect.value === 'independent_villa') {
-                if (plotAreaContainer) plotAreaContainer.style.display = 'block';
-                if (plotAreaInput) plotAreaInput.setAttribute('required', 'required');
-            } else {
-                if (plotAreaContainer) plotAreaContainer.style.display = 'none';
-                if (plotAreaInput) {
-                    plotAreaInput.removeAttribute('required');
-                    plotAreaInput.value = '';
-                }
-            }
         });
+    }
+    
+    // Villas: ensure plot area is never shown (no plot area for villas including independent)
+    if (propertyType === 'villas') {
+        const plotAreaContainer = document.getElementById('residentialPlotAreaContainer');
+        const plotAreaInput = document.getElementById('residentialPlotArea');
+        if (plotAreaContainer) plotAreaContainer.style.display = 'none';
+        if (plotAreaInput) { plotAreaInput.removeAttribute('required'); plotAreaInput.value = ''; }
     }
     
     // Auto-calculate length and breadth from plot area / carpet area
@@ -4944,6 +4936,10 @@ function populateStep2Fields(property) {
             }, 100);
         }
     }
+    const reraNumberInput = document.getElementById('residentialReraNumber');
+    if (reraNumberInput) reraNumberInput.value = property.rera_number || '';
+    const reraUrlInput = document.getElementById('residentialReraUrl');
+    if (reraUrlInput) reraUrlInput.value = property.rera_url || '';
     const priceInput = document.getElementById('residentialPrice');
     if (priceInput) {
         if (property.price_text) {
@@ -5126,7 +5122,6 @@ function populateStep2Fields(property) {
             if (villaTypeCacheInput) {
                 villaTypeCacheInput.value = villaTypeInput.value || '';
             }
-            // Trigger change to show/hide plot area
             villaTypeInput.dispatchEvent(new Event('change'));
         }
         
@@ -5416,6 +5411,8 @@ async function handleResidentialPropertySubmit(e) {
         city: formData.get('city'),
         locality: formData.get('locality'),
         location_link: formData.get('location_link') || null,
+        rera_number: formData.get('rera_number') || null,
+        rera_url: formData.get('rera_url') || null,
         directions: formData.get('direction') || null,
         property_name: formData.get('property_name'),
         type: formData.get('type') || 'residential',
@@ -5851,6 +5848,8 @@ async function handlePlotPropertySubmit(e) {
         city: formData.get('city'),
         locality: formData.get('locality'),
         location_link: formData.get('location_link') || null,
+        rera_number: formData.get('rera_number') || null,
+        rera_url: formData.get('rera_url') || null,
         directions: formData.get('directions') || null,
         project_name: formData.get('project_name'),
         property_name: formData.get('project_name'), // Backend accepts both project_name and property_name
